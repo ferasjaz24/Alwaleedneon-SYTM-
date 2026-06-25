@@ -1,0 +1,171 @@
+/* Custom Design System for Holool Tech */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=DM+Sans:wght@300;400;500&family=Syne:wght@800&display=swap');
+
+:root {
+  --bg-deep: #050A18;
+  --bg-surface: #0D1530;
+  --primary: #2563FF;
+  --accent: #06D6FF;
+  --highlight: #FF3D6E;
+  --gold: #F5C518;
+  --text-main: #F0F4FF;
+  --text-muted: #7A8BA8;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: 'DM Sans', sans-serif;
+}
+
+[dir="rtl"] {
+  font-family: 'Cairo', sans-serif;
+}
+
+h1, h2, h3, .heading {
+  font-family: 'Syne', sans-serif;
+}
+
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] .heading {
+  font-family: 'Cairo', sans-serif;
+}
+
+/* Bold Typography Theme Styles */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 40px;
+  position: relative;
+  background: radial-gradient(circle at 10% 20%, rgba(37,99,255,0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(6,214,255,0.1) 0%, transparent 40%);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  margin-bottom: 60px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 6px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.lang-switch {
+  display: flex;
+  background: var(--bg-surface);
+  padding: 4px;
+  border-radius: 100px;
+  border: 1px solid rgba(122,139,168,0.2);
+}
+
+.lang-btn {
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.lang-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 1;
+  max-width: 900px;
+}
+
+.headline-bold {
+  font-size: 80px;
+  line-height: 0.9;
+  font-weight: 900;
+  margin-bottom: 24px;
+  letter-spacing: -3px;
+}
+
+.sub-text {
+  font-size: 20px;
+  line-height: 1.6;
+  opacity: 0.7;
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+
+.cta-group {
+  display: flex;
+  gap: 20px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  padding: 18px 36px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(37,99,255,0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #fff;
+  padding: 18px 36px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-decoration: none;
+  border: 1px solid rgba(240,244,255,0.2);
+}
+
+/* Language Switcher */
+[data-lang="ar"] { display: none; }
+[dir="rtl"] [data-lang="ar"] { display: block; }
+[dir="rtl"] [data-lang="en"] { display: none; }
+[data-lang="en"] { display: block; }
+
+/* Pulse Animation */
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+.whatsapp-float {
+  animation: pulse 2s infinite;
+}

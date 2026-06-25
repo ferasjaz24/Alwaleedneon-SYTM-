@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --primary-color: #0072BC;
+  --accent-color: #00AEEF;
+  --bg-dark-accent: #0f172a;
+}
+
+/* Quill Fonts */
+.ql-font-tajawal { font-family: 'Tajawal', sans-serif; }
+.ql-font-arial { font-family: 'Arial', sans-serif; }
+.ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
+.ql-font-cairo { font-family: 'Cairo', sans-serif; }
+.ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item:not([data-value])::before { content: 'الخط الافتراضي'; font-family: 'Tajawal'; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before { content: 'Tajawal'; font-family: 'Tajawal'; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before { content: 'Arial'; font-family: 'Arial'; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tahoma"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tahoma"]::before { content: 'Tahoma'; font-family: 'Tahoma'; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before { content: 'Cairo'; font-family: 'Cairo'; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before { content: 'Times New Roman'; font-family: 'Times New Roman'; }
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #1e293b;
+  overflow-x: hidden;
+  line-height: 1.75;
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 114, 188, 0.08);
+}
+
+.dark-glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 174, 239, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Special Neon glow animations */
+.neon-glow-cyan {
+  box-shadow: 0 0 10px rgba(0, 174, 239, 0.5), 0 0 20px rgba(0, 174, 239, 0.2);
+}
+
+.neon-glow-blue {
+  box-shadow: 0 0 10px rgba(0, 114, 188, 0.6), 0 0 20px rgba(0, 114, 188, 0.3);
+}
+
+.neon-border-active {
+  border-color: #00AEEF;
+  box-shadow: 0 0 8px rgba(0, 174, 239, 0.4);
+}
+
+/* Custom scrollbars for a steel appearance */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0072BC;
+}
+
+/* Printing styling for smart templates certificates */
+@media print {
+  /* Hide typical web controls when printing */
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-certificate-area, #printable-certificate-area * {
+    visibility: visible;
+  }
+  
+  #printable-certificate-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm; /* A4 size */
+    height: 297mm;
+    margin: 0;
+    padding: 20mm;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* AI Markdown Dark Styling */
+.ai-markdown-dark {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.625;
+}
+.ai-markdown-dark h1,
+.ai-markdown-dark h2,
+.ai-markdown-dark h3,
+.ai-markdown-dark h4 {
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.ai-markdown-dark h1 { font-size: 1.25rem; }
+.ai-markdown-dark h2 { font-size: 1.15rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem; }
+.ai-markdown-dark h3 { font-size: 1.05rem; color: #bae6fd; } /* sky-200 */
+.ai-markdown-dark p {
+  margin-bottom: 0.75rem;
+  color: #e2e8f0;
+}
+.ai-markdown-dark ul, .ai-markdown-dark ol {
+  margin-bottom: 1rem;
+  padding-inline-start: 1.25rem;
+}
+.ai-markdown-dark ul { list-style-type: disc; }
+.ai-markdown-dark ol { list-style-type: decimal; }
+.ai-markdown-dark li {
+  margin-bottom: 0.25rem;
+  color: #cbd5e1;
+}
+.ai-markdown-dark strong {
+  font-weight: 700;
+  color: #f8fafc;
+}
+.ai-markdown-dark blockquote {
+  border-right: 3px solid rgba(255,255,255,0.2);
+  padding-right: 1rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+.ai-markdown-dark hr {
+  border-color: rgba(255,255,255,0.1);
+  margin: 1rem 0;
+}
