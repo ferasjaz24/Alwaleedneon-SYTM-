@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import "./env.js";
 import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+
 import { Employee, User, Quotation, ClearanceProfile } from "./src/types";
 import { db } from "./src/lib/firebase.js";
 import {
@@ -431,10 +433,10 @@ async function seedInitialDataIfEmpty() {
   // Disabled
 }
 
+export const app = express();
 export async function startServer() {
   const PORT = parseInt(process.env.PORT || "3000", 10);
 
-  const app = express();
   app.use(express.json({ limit: "50mb" }));
 
   // Disable caching for API routes
@@ -923,7 +925,17 @@ export async function startServer() {
     res.json({ success: true, payment: body });
   });
 
-  // Audit log storage
+  // API: Audit / Operations Logs
+  app.get("/api/hr_operations_logs", async (req, res) => {
+    res.json(await getCollectionDocs("hr_operations_logs"));
+  });
+
+  app.post("/api/hr_operations_logs", async (req, res) => {
+    const body = req.body;
+    body.id = body.id || `LOG-${Date.now()}`;
+    await setDoc(doc(db, "hr_operations_logs", body.id), body);
+    res.json({ success: true, log: body });
+  });
 
   // API v1: Employee Audit Trails
   app.get("/api/v1/hr/employee/audit-trails", async (req, res) => {
@@ -1688,11 +1700,15 @@ export async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(
-      `[AL-WALEED BRACKET SERVER] Running perfectly at http://localhost:${PORT}`,
-    );
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `[AL-WALEED BRACKET SERVER] Running perfectly at http://localhost:${PORT}`,
+      );
+    });
+  }
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}

@@ -8,7 +8,7 @@ const getEnv = () => {
   if (typeof process !== 'undefined' && process.env && process.env.VITE_FIREBASE_PROJECT_ID) {
     return process.env;
   }
-  return (import.meta as any).env || {};
+  return import.meta.env || {};
 };
 
 const env = getEnv();
