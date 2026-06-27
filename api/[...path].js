@@ -1,4 +1,4 @@
-const { db } = require("../lib/firebaseAdmin");
+import { db } from "../lib/firebaseAdmin.js";
 
 const collectionMap = {
   employees: "employees",
@@ -66,8 +66,31 @@ function getRouteKey(req) {
   return parts[0];
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
+
+  // Allow CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  const path = req.query.path || [];
+  const parts = Array.isArray(path) ? path : [path];
+
+  let id = null;
+  if (parts[0] === "dynamic") {
+    id = parts[2] || null;
+  } else if (parts[0] === "v1") {
+    if (parts.length > 2 && parts[parts.length - 1] !== "dashboard" && parts[parts.length - 1] !== "clearances" && parts[parts.length - 1] !== "hr") {
+      id = parts[parts.length - 1];
+    }
+  } else {
+    id = parts[1] || null;
+  }
 
   try {
     const routeKey = getRouteKey(req);
@@ -81,52 +104,93 @@ module.exports = async function handler(req, res) {
     }
 
     const ref = db.collection(collectionName);
+    const body = req.body || {};
+    const finalId = id || req.query.id || body.id || body.firestoreId || body.username;
 
     if (req.method === "GET") {
-      const snapshot = await ref.get();
-      const data = snapshot.docs.map((doc) => ({
-        firestoreId: doc.id,
-        id: doc.id,
-        ...doc.data(),
-      }));
+      if (finalId) {
+        const docSnap = await ref.doc(String(finalId)).get();
+        if (!docSnap.exists) {
+          return res.status(404).json({
+            success: false,
+            error: `Document not found with ID: ${finalId}`,
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          data: {
+            firestoreId: docSnap.id,
+            id: docSnap.id,
+            ...docSnap.data(),
+          },
+        });
+      } else {
+        const snapshot = await ref.get();
+        const data = snapshot.docs.map((doc) => ({
+          firestoreId: doc.id,
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      return res.status(200).json({
-        success: true,
-        data,
-      });
+        return res.status(200).json({
+          success: true,
+          data,
+        });
+      }
     }
 
     if (req.method === "POST") {
-      const body = req.body || {};
-      const docRef = await ref.add({
-        ...body,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      if (finalId) {
+        await ref.doc(String(finalId)).set({
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
 
-      return res.status(200).json({
-        success: true,
-        id: docRef.id,
-      });
+        const docSnap = await ref.doc(String(finalId)).get();
+        return res.status(200).json({
+          success: true,
+          id: finalId,
+          data: {
+            firestoreId: finalId,
+            id: finalId,
+            ...docSnap.data(),
+          },
+        });
+      } else {
+        const docRef = await ref.add({
+          ...body,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        const docSnap = await docRef.get();
+        return res.status(200).json({
+          success: true,
+          id: docRef.id,
+          data: {
+            firestoreId: docRef.id,
+            id: docRef.id,
+            ...docSnap.data(),
+          },
+        });
+      }
     }
 
     if (req.method === "PUT" || req.method === "PATCH") {
-      const body = req.body || {};
-      const id = req.query.id || body.id || body.firestoreId;
-
-      if (!id) {
+      if (!finalId) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
         });
       }
 
-      delete body.id;
-      delete body.firestoreId;
+      const updateData = { ...body };
+      delete updateData.id;
+      delete updateData.firestoreId;
 
-      await ref.doc(id).set(
+      await ref.doc(String(finalId)).set(
         {
-          ...body,
+          ...updateData,
           updatedAt: new Date().toISOString(),
         },
         { merge: true }
@@ -134,26 +198,23 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        id,
+        id: finalId,
       });
     }
 
     if (req.method === "DELETE") {
-      const body = req.body || {};
-      const id = req.query.id || body.id || body.firestoreId;
-
-      if (!id) {
+      if (!finalId) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
         });
       }
 
-      await ref.doc(id).delete();
+      await ref.doc(String(finalId)).delete();
 
       return res.status(200).json({
         success: true,
-        id,
+        id: finalId,
       });
     }
 
@@ -169,4 +230,4 @@ module.exports = async function handler(req, res) {
       error: error.message,
     });
   }
-};
+}
