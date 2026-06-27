@@ -432,7 +432,7 @@ async function seedInitialDataIfEmpty() {
 }
 
 export async function startServer() {
-  const PORT = parseInt(process.env.PORT || "3000", 10);
+  const PORT = process.env.NODE_ENV === "production" ? parseInt(process.env.PORT || "8080", 10) : 3000;
 
   const app = express();
   app.use(express.json({ limit: "50mb" }));

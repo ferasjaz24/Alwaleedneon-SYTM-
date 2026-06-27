@@ -1,111 +1,74 @@
 import admin from 'firebase-admin';
 
-// تشغيل الفايربيس أدمن عن طريق قراءة ملف الـ JSON الكامل من متغيرات البيئة
 if (!admin.apps.length) {
   try {
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-      throw new Error("متغير البيئة FIREBASE_SERVICE_ACCOUNT غير مضاف في Vercel");
-    }
-    
-    // تحويل النص السري إلى كائن JSON مرمز
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert({
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+      })
     });
-    console.log("تم الاتصال بفايربيس بنجاح!");
-  } catch (initError) {
-    console.error("فشل تشغيل الفايربيس:", initError.message);
+  } catch (e) {
+    console.error("Firebase Init Error", e.message);
   }
 }
-
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  // تفعيل الـ CORS لتجنب حظر الطلبات
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { path } = req.query; 
-    if (!path) {
-      return res.status(400).json({ error: "المسار فارغ" });
-    }
-
-    // تقسيم المسار وتنظيفه من الكلمات الزائدة ديناميكياً
+    const { path } = req.query;
     let segments = Array.isArray(path) ? path : path.split('/');
-    if (segments[0] === 'dynamic' || segments[0] === 'v1') {
-      segments.shift();
+    
+    // تنظيف المسار ديناميكياً
+    if (segments[0] === 'dynamic' || segments[0] === 'v1') segments.shift();
+    if (segments[0] === 'hr' || segments[0] === 'dashboard') segments.shift();
+
+    const collectionName = segments[0];
+    const docId = segments[1];
+    if (!collectionName) return res.status(400).json({ error: "Missing collection" });
+
+    const ref = db.collection(collectionName);
+
+    if (req.method === 'GET') {
+      if (docId) {
+        const doc = await ref.doc(docId).get();
+        return doc.exists ? res.status(200).json({ id: doc.id, ...doc.data() }) : res.status(404).json({ error: "Not found" });
+      }
+      const snapshot = await ref.get();
+      return res.status(200).json(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     }
 
-    const collectionName = segments[0]; // اسم الجدول بالفايربيس
-    const docId = segments[1];          // معرف المستند (إن وجد)
-
-    if (!collectionName) {
-      return res.status(400).json({ error: "لم يتم تحديد اسم الـ Collection" });
+    if (req.method === 'POST') {
+      const data = req.body || {};
+      const id = docId || data.id;
+      if (id) {
+        const clean = { ...data }; delete clean.id;
+        await ref.doc(id).set(clean, { merge: true });
+        return res.status(201).json({ id, ...clean });
+      }
+      const newDoc = await ref.add(data);
+      return res.status(201).json({ id: newDoc.id, ...data });
     }
 
-    const collectionRef = db.collection(collectionName);
-
-    // معالجة العمليات الأربعة بالحذف والإضافة والتعديل والجلب
-    switch (req.method) {
-      case 'GET':
-        if (docId) {
-          const docSnapshot = await collectionRef.doc(docId).get();
-          if (!docSnapshot.exists) {
-            return res.status(404).json({ error: "المستند غير موجود" });
-          }
-          return res.status(200).json({ id: docSnapshot.id, ...docSnapshot.data() });
-        } else {
-          const querySnapshot = await collectionRef.get();
-          const documents = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          return res.status(200).json(documents);
-        }
-
-      case 'POST':
-        const newData = req.body || {};
-        if (docId || newData.id) {
-          const targetId = docId || newData.id;
-          const cleanData = { ...newData };
-          delete cleanData.id;
-          await collectionRef.doc(targetId).set(cleanData, { merge: true });
-          return res.status(201).json({ id: targetId, ...cleanData });
-        } else {
-          const docRef = await collectionRef.add(newData);
-          return res.status(201).json({ id: docRef.id, ...newData });
-        }
-
-      case 'PUT':
-      case 'PATCH':
-        if (!docId) {
-          return res.status(400).json({ error: "يجب تمرير ID للتعديل" });
-        }
-        const updateData = req.body || {};
-        delete updateData.id;
-        await collectionRef.doc(docId).set(updateData, { merge: true });
-        return res.status(200).json({ id: docId, ...updateData });
-
-      case 'DELETE':
-        if (!docId) {
-          return res.status(400).json({ error: "يجب تمرير ID للحذف" });
-        }
-        await collectionRef.doc(docId).delete();
-        return res.status(200).json({ id: docId, message: "تم الحذف بنجاح" });
-
-      default:
-        return res.status(405).json({ error: "العملية غير مدعومة" });
+    if (req.method === 'PUT' || req.method === 'PATCH') {
+      if (!docId) return res.status(400).json({ error: "Missing ID" });
+      const data = req.body || {}; delete data.id;
+      await ref.doc(docId).set(data, { merge: true });
+      return res.status(200).json({ id: docId, ...data });
     }
 
-  } catch (error) {
-    console.error("خطأ بالسيرفر الداخلي:", error);
-    return res.status(500).json({ 
-      error: "انهيار في معالجة البيانات", 
-      message: error.message 
-    });
+    if (req.method === 'DELETE') {
+      if (!docId) return res.status(400).json({ error: "Missing ID" });
+      await ref.doc(docId).delete();
+      return res.status(200).json({ id: docId, success: true });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }
