@@ -1,21 +1,21 @@
-import admin from 'firebase-admin';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc } from "firebase/firestore";
 
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-      })
-    });
-  } catch (e) {
-    console.error("Firebase Init Error", e.message);
-  }
-}
-const db = admin.firestore();
+// الإعدادات تسحب القيم تلقائياً من المتغيرات اللي أنت حاطها في Vercel
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export default async function handler(req, res) {
+  // حل مشكلة الحظر CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -25,50 +25,55 @@ export default async function handler(req, res) {
     const { path } = req.query;
     let segments = Array.isArray(path) ? path : path.split('/');
     
-    // تنظيف المسار ديناميكياً
+    // تنظيف روابط النظام تلقائياً للتعرف على الجداول
     if (segments[0] === 'dynamic' || segments[0] === 'v1') segments.shift();
     if (segments[0] === 'hr' || segments[0] === 'dashboard') segments.shift();
 
     const collectionName = segments[0];
     const docId = segments[1];
+
     if (!collectionName) return res.status(400).json({ error: "Missing collection" });
+    const ref = collection(db, collectionName);
 
-    const ref = db.collection(collectionName);
-
+    // 1. جلب البيانات (GET)
     if (req.method === 'GET') {
       if (docId) {
-        const doc = await ref.doc(docId).get();
-        return doc.exists ? res.status(200).json({ id: doc.id, ...doc.data() }) : res.status(404).json({ error: "Not found" });
+        const docSnap = await getDoc(doc(db, collectionName, docId));
+        return docSnap.exists() ? res.status(200).json({ id: docSnap.id, ...docSnap.data() }) : res.status(404).json({ error: "Not found" });
       }
-      const snapshot = await ref.get();
-      return res.status(200).json(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      const querySnap = await getDocs(ref);
+      return res.status(200).json(querySnap.docs.map(d => ({ id: d.id, ...d.data() })));
     }
 
+    // 2. إضافة بيانات (POST)
     if (req.method === 'POST') {
-      const data = req.body || {};
-      const id = docId || data.id;
+      const body = req.body || {};
+      const id = docId || body.id;
       if (id) {
-        const clean = { ...data }; delete clean.id;
-        await ref.doc(id).set(clean, { merge: true });
+        const clean = { ...body }; delete clean.id;
+        await setDoc(doc(db, collectionName, id), clean, { merge: true });
         return res.status(201).json({ id, ...clean });
       }
-      const newDoc = await ref.add(data);
-      return res.status(201).json({ id: newDoc.id, ...data });
+      const newDoc = await addDoc(ref, body);
+      return res.status(201).json({ id: newDoc.id, ...body });
     }
 
+    // 3. تعديل بيانات (PUT)
     if (req.method === 'PUT' || req.method === 'PATCH') {
       if (!docId) return res.status(400).json({ error: "Missing ID" });
-      const data = req.body || {}; delete data.id;
-      await ref.doc(docId).set(data, { merge: true });
-      return res.status(200).json({ id: docId, ...data });
+      const body = req.body || {}; delete body.id;
+      await setDoc(doc(db, collectionName, docId), body, { merge: true });
+      return res.status(200).json({ id: docId, ...body });
     }
 
+    // 4. حذف بيانات (DELETE)
     if (req.method === 'DELETE') {
       if (!docId) return res.status(400).json({ error: "Missing ID" });
-      await ref.doc(docId).delete();
+      await deleteDoc(doc(db, collectionName, docId));
       return res.status(200).json({ id: docId, success: true });
     }
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
