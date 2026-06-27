@@ -32,8 +32,19 @@ const collectionMap = {
   suppliers: "suppliers",
   system_settings: "system_settings",
   terms_templates: "terms_templates",
+
   vacations: "vacations",
   leaves: "vacations",
+
+  attendance: "attendance",
+  inquiries: "inquiries",
+  deductions: "deductions",
+
+  employee_docs: "employee_docs",
+  "employee-docs": "employee_docs",
+
+  vehicle_docs: "vehicle_docs",
+  "vehicle-docs": "vehicle_docs",
 
   activity_logs: "activity_logs",
   doc_activity_logs: "doc_activity_logs",
@@ -48,15 +59,13 @@ const collectionMap = {
 };
 
 function getRouteKey(req) {
-  const path = req.query.path || [];
-  const parts = Array.isArray(path) ? path : [path];
+  const rawPath = req.query.path || [];
+  const parts = Array.isArray(rawPath) ? rawPath : [rawPath];
 
-  // Handles /api/dynamic/materials or /api/dynamic/materials_warehouse
   if (parts[0] === "dynamic") {
     return parts[1];
   }
 
-  // Handles /api/v1/hr/dashboard/metrics safely
   if (parts[0] === "v1") {
     if (parts.includes("dashboard")) return "employees";
     if (parts.includes("clearances")) return "employees";
@@ -66,34 +75,41 @@ function getRouteKey(req) {
   return parts[0];
 }
 
+function getDocumentId(req) {
+  const rawPath = req.query.path || [];
+  const parts = Array.isArray(rawPath) ? rawPath : [rawPath];
+
+  if (req.query.id) return req.query.id;
+  if (req.body?.id) return req.body.id;
+  if (req.body?.firestoreId) return req.body.firestoreId;
+
+  if (parts.length >= 2 && parts[0] !== "dynamic" && parts[0] !== "v1") {
+    return parts[1];
+  }
+
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
-
-  // Allow CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  const path = req.query.path || [];
-  const parts = Array.isArray(path) ? path : [path];
-
-  let id = null;
-  if (parts[0] === "dynamic") {
-    id = parts[2] || null;
-  } else if (parts[0] === "v1") {
-    if (parts.length > 2 && parts[parts.length - 1] !== "dashboard" && parts[parts.length - 1] !== "clearances" && parts[parts.length - 1] !== "hr") {
-      id = parts[parts.length - 1];
-    }
-  } else {
-    id = parts[1] || null;
+    return res.status(200).json({ success: true });
   }
 
   try {
     const routeKey = getRouteKey(req);
+
+    if (!routeKey) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing API route key",
+      });
+    }
+
     const collectionName = collectionMap[routeKey];
 
     if (!collectionName) {
@@ -104,93 +120,55 @@ export default async function handler(req, res) {
     }
 
     const ref = db.collection(collectionName);
-    const body = req.body || {};
-    const finalId = id || req.query.id || body.id || body.firestoreId || body.username;
 
     if (req.method === "GET") {
-      if (finalId) {
-        const docSnap = await ref.doc(String(finalId)).get();
-        if (!docSnap.exists) {
-          return res.status(404).json({
-            success: false,
-            error: `Document not found with ID: ${finalId}`,
-          });
-        }
-        return res.status(200).json({
-          success: true,
-          data: {
-            firestoreId: docSnap.id,
-            id: docSnap.id,
-            ...docSnap.data(),
-          },
-        });
-      } else {
-        const snapshot = await ref.get();
-        const data = snapshot.docs.map((doc) => ({
-          firestoreId: doc.id,
-          id: doc.id,
-          ...doc.data(),
-        }));
+      const snapshot = await ref.get();
 
-        return res.status(200).json({
-          success: true,
-          data,
-        });
-      }
+      const data = snapshot.docs.map((doc) => ({
+        firestoreId: doc.id,
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return res.status(200).json({
+        success: true,
+        data,
+      });
     }
 
     if (req.method === "POST") {
-      if (finalId) {
-        await ref.doc(String(finalId)).set({
-          ...body,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
+      const body = req.body || {};
 
-        const docSnap = await ref.doc(String(finalId)).get();
-        return res.status(200).json({
-          success: true,
-          id: finalId,
-          data: {
-            firestoreId: finalId,
-            id: finalId,
-            ...docSnap.data(),
-          },
-        });
-      } else {
-        const docRef = await ref.add({
-          ...body,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+      const docRef = await ref.add({
+        ...body,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-        const docSnap = await docRef.get();
-        return res.status(200).json({
-          success: true,
-          id: docRef.id,
-          data: {
-            firestoreId: docRef.id,
-            id: docRef.id,
-            ...docSnap.data(),
-          },
-        });
-      }
+      return res.status(200).json({
+        success: true,
+        id: docRef.id,
+      });
     }
 
     if (req.method === "PUT" || req.method === "PATCH") {
-      if (!finalId) {
+      const body = req.body || {};
+      const id = getDocumentId(req);
+
+      if (!id) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
         });
       }
 
-      const updateData = { ...body };
-      delete updateData.id;
-      delete updateData.firestoreId;
+      const cleanBody = { ...body };
+      delete cleanBody.id;
+      delete cleanBody.firestoreId;
 
-      await ref.doc(String(finalId)).set(
+      await ref.doc(id).set(
         {
-          ...updateData,
+          ...cleanBody,
           updatedAt: new Date().toISOString(),
         },
         { merge: true }
@@ -198,23 +176,25 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        id: finalId,
+        id,
       });
     }
 
     if (req.method === "DELETE") {
-      if (!finalId) {
+      const id = getDocumentId(req);
+
+      if (!id) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
         });
       }
 
-      await ref.doc(String(finalId)).delete();
+      await ref.doc(id).delete();
 
       return res.status(200).json({
         success: true,
-        id: finalId,
+        id,
       });
     }
 
@@ -223,7 +203,7 @@ export default async function handler(req, res) {
       error: `Method ${req.method} not allowed`,
     });
   } catch (error) {
-    console.error("API error:", error);
+    console.error("API ERROR:", error);
 
     return res.status(500).json({
       success: false,
