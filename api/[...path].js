@@ -58,36 +58,38 @@ const collectionMap = {
   financials: "financial_collections",
 };
 
-function getRouteKey(req) {
+function resolveRequest(req) {
   const rawPath = req.query.path || [];
   const parts = Array.isArray(rawPath) ? rawPath : [rawPath];
+
+  let collectionFromPath = "";
+  let id = null;
 
   if (parts[0] === "dynamic") {
-    return parts[1];
+    collectionFromPath = parts[1] || "";
+    id = parts[2] || null;
+  } else if (parts[0] === "v1") {
+    if (parts.includes("dashboard") || parts.includes("clearances") || parts.includes("hr")) {
+      collectionFromPath = "employees";
+    } else {
+      collectionFromPath = parts[1] || "";
+      id = parts[2] || null;
+    }
+  } else {
+    collectionFromPath = parts[0] || "";
+    id = parts[1] || null;
   }
 
-  if (parts[0] === "v1") {
-    if (parts.includes("dashboard")) return "employees";
-    if (parts.includes("clearances")) return "employees";
-    if (parts.includes("hr")) return "employees";
-  }
+  // Fallback ID checking from query parameter or request body
+  const finalId = id || req.query.id || req.body?.id || req.body?.firestoreId || null;
 
-  return parts[0];
-}
+  // Map collection name if a mapping exists, otherwise use it directly
+  const finalCollection = collectionMap[collectionFromPath] || collectionFromPath;
 
-function getDocumentId(req) {
-  const rawPath = req.query.path || [];
-  const parts = Array.isArray(rawPath) ? rawPath : [rawPath];
-
-  if (req.query.id) return req.query.id;
-  if (req.body?.id) return req.body.id;
-  if (req.body?.firestoreId) return req.body.firestoreId;
-
-  if (parts.length >= 2 && parts[0] !== "dynamic" && parts[0] !== "v1") {
-    return parts[1];
-  }
-
-  return null;
+  return {
+    collectionName: finalCollection,
+    documentId: finalId,
+  };
 }
 
 export default async function handler(req, res) {
@@ -101,61 +103,86 @@ export default async function handler(req, res) {
   }
 
   try {
-    const routeKey = getRouteKey(req);
-
-    if (!routeKey) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing API route key",
-      });
-    }
-
-    const collectionName = collectionMap[routeKey];
+    const { collectionName, documentId } = resolveRequest(req);
 
     if (!collectionName) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        error: `Unknown API route: ${routeKey}`,
+        error: "Missing API collection name",
       });
     }
 
     const ref = db.collection(collectionName);
 
     if (req.method === "GET") {
-      const snapshot = await ref.get();
+      if (documentId) {
+        const docSnap = await ref.doc(String(documentId)).get();
+        if (!docSnap.exists) {
+          return res.status(404).json({
+            success: false,
+            error: `Document not found with ID: ${documentId} in collection: ${collectionName}`,
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          data: {
+            firestoreId: docSnap.id,
+            id: docSnap.id,
+            ...docSnap.data(),
+          },
+        });
+      } else {
+        const snapshot = await ref.get();
+        const data = snapshot.docs.map((doc) => ({
+          firestoreId: doc.id,
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      const data = snapshot.docs.map((doc) => ({
-        firestoreId: doc.id,
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      return res.status(200).json({
-        success: true,
-        data,
-      });
+        return res.status(200).json({
+          success: true,
+          data,
+        });
+      }
     }
 
     if (req.method === "POST") {
       const body = req.body || {};
+      const customId = body.id || body.firestoreId || documentId;
 
-      const docRef = await ref.add({
-        ...body,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      if (customId) {
+        const updateBody = { ...body };
+        delete updateBody.id;
+        delete updateBody.firestoreId;
 
-      return res.status(200).json({
-        success: true,
-        id: docRef.id,
-      });
+        await ref.doc(String(customId)).set({
+          ...updateBody,
+          createdAt: body.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+
+        return res.status(200).json({
+          success: true,
+          id: customId,
+        });
+      } else {
+        const docRef = await ref.add({
+          ...body,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        return res.status(200).json({
+          success: true,
+          id: docRef.id,
+        });
+      }
     }
 
     if (req.method === "PUT" || req.method === "PATCH") {
       const body = req.body || {};
-      const id = getDocumentId(req);
 
-      if (!id) {
+      if (!documentId) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
@@ -166,7 +193,7 @@ export default async function handler(req, res) {
       delete cleanBody.id;
       delete cleanBody.firestoreId;
 
-      await ref.doc(id).set(
+      await ref.doc(String(documentId)).set(
         {
           ...cleanBody,
           updatedAt: new Date().toISOString(),
@@ -176,25 +203,23 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        id,
+        id: documentId,
       });
     }
 
     if (req.method === "DELETE") {
-      const id = getDocumentId(req);
-
-      if (!id) {
+      if (!documentId) {
         return res.status(400).json({
           success: false,
           error: "Missing document id",
         });
       }
 
-      await ref.doc(id).delete();
+      await ref.doc(String(documentId)).delete();
 
       return res.status(200).json({
         success: true,
-        id,
+        id: documentId,
       });
     }
 
