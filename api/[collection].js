@@ -1,4 +1,4 @@
-import { db } from "../_firebaseAdmin.js";
+import { db } from "./_firebaseAdmin.js";
 
 function getFirestoreCollection(collectionName) {
   const mapping = {
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ success: false, error: "Method Not Allowed" });
   } catch (error) {
-    console.error(`Error in api/dynamic/[collection] (${collection}):`, error);
+    console.error(`Error in api/[collection] (${collection}):`, error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

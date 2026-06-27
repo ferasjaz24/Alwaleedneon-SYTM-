@@ -271,7 +271,28 @@ const customFetch = async function (this: any, input: any, init?: any): Promise<
   }
 
   // Fallback to real fetch for everything else
-  return originalFetch.apply(this, [input, init]);
+  const response = await originalFetch.apply(this, [input, init]);
+
+  if (response.ok && pathname.startsWith('/api/')) {
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        const clone = response.clone();
+        const json = await clone.json();
+        if (json && json.success === true && json.data !== undefined) {
+          return new Response(JSON.stringify(json.data), {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          });
+        }
+      } catch (e) {
+        // Safe fallback on parsing error
+      }
+    }
+  }
+
+  return response;
 };
 
 try {

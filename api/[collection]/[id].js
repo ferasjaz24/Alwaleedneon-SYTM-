@@ -36,10 +36,10 @@ function getFirestoreCollection(collectionName) {
 }
 
 export default async function handler(req, res) {
-  const { collection } = req.query;
+  const { collection, id } = req.query;
   try {
-    if (!collection) {
-      return res.status(400).json({ success: false, error: "Collection is required." });
+    if (!collection || !id) {
+      return res.status(400).json({ success: false, error: "Collection and ID are required." });
     }
 
     if (collection === "employees") {
@@ -50,54 +50,27 @@ export default async function handler(req, res) {
     const method = req.method ? req.method.toUpperCase() : "GET";
 
     if (method === "GET") {
-      const snapshot = await db.collection(firestoreCol).get();
-      const list = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() });
-      });
-      return res.status(200).json({ success: true, data: list });
+      const docSnap = await db.collection(firestoreCol).doc(String(id)).get();
+      if (!docSnap.exists) {
+        return res.status(404).json({ success: false, error: "Document not found." });
+      }
+      return res.status(200).json({ success: true, data: { id: docSnap.id, ...docSnap.data() } });
     }
 
-    if (method === "POST") {
-      const body = req.body || {};
-      let id = body.id || body.username;
-      if (!id) {
-        if (firestoreCol === "users") {
-          return res.status(400).json({ success: false, error: "Username is required." });
-        }
-        const prefix = collection.substring(0, 3).toUpperCase();
-        id = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      }
-
+    if (method === "PUT" || method === "PATCH" || method === "POST") {
       const docRef = db.collection(firestoreCol).doc(String(id));
-      await docRef.set({ ...body, id }, { merge: true });
-      return res.status(200).json({ success: true, id: id });
-    }
-
-    if (method === "PUT" || method === "PATCH") {
-      const body = req.body || {};
-      const id = req.query.id || body.id || body.username;
-      if (!id) {
-        return res.status(400).json({ success: false, error: "Missing document ID for update." });
-      }
-      const docRef = db.collection(firestoreCol).doc(String(id));
-      await docRef.set(body, { merge: true });
+      await docRef.set(req.body, { merge: true });
       return res.status(200).json({ success: true });
     }
 
     if (method === "DELETE") {
-      const body = req.body || {};
-      const id = req.query.id || body.id || body.username;
-      if (!id) {
-        return res.status(400).json({ success: false, error: "Missing document ID for deletion." });
-      }
       await db.collection(firestoreCol).doc(String(id)).delete();
       return res.status(200).json({ success: true });
     }
 
     return res.status(405).json({ success: false, error: "Method Not Allowed" });
   } catch (error) {
-    console.error(`Error in api/dynamic/[collection] (${collection}):`, error);
+    console.error(`Error in api/[collection]/[id] (${collection}/${id}):`, error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
