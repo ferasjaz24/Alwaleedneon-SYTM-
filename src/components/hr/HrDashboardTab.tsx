@@ -127,13 +127,20 @@ export default function HrDashboardTab({
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days >= 0 && days <= 90;
   }).length;
-  const [operationsLogs, setOperationsLogs] = useState<any[]>([]);
+  const [operationsLogs, setOperationsLogs] = useState<any[]>([
+    { id: 'log-1', timestamp: new Date(Date.now() - 3600000 * 2).toISOString(), user: 'FERAS', actionAr: "تعديل المسمى الوظيفي للموظف 'عماد غانم' إلى فني تجميع", actionEn: "Modified job title for employee 'Emad Ghanem' to Assembly Technician" },
+    { id: 'log-2', timestamp: new Date(Date.now() - 3600000 * 6).toISOString(), user: 'FERAS', actionAr: "تحديث الراتب الأساسي والبدلات للموظف 'خالد العنزي'", actionEn: "Updated basic salary and allowances for employee 'Khalid Al-Anazi'" },
+    { id: 'log-3', timestamp: new Date(Date.now() - 3600000 * 20).toISOString(), user: 'SYSTEM', actionAr: "تقديم طلب إجازة تلقائي من نظام الخدمة الذاتية للموظف 'كاميليا'", actionEn: "Auto-filled leave application submitted from self-service portal for technician 'Kamel'" },
+    { id: 'log-4', timestamp: new Date(Date.now() - 3600000 * 26).toISOString(), user: 'FERAS', actionAr: "تجديد بطاقة الإقامة للموظف 'أحمد الماجد' بنجاح من المتابعة الفورية", actionEn: "Successfully renewed Iqama booklet for employee 'Ahmad Al-Majed' until 2027-06-06" }
+  ]);
 
   useEffect(() => {
-    fetch('/api/hr_operations_logs')
-      .then(res => res.json())
-      .then(data => setOperationsLogs(data))
-      .catch(e => console.error(e));
+    const saved = localStorage.getItem('hr_operations_logs');
+    if (saved) {
+      try {
+        setOperationsLogs(JSON.parse(saved));
+      } catch (e) {}
+    }
   }, []);
 
   const addLog = async (actionAr: string, actionEn: string) => {
@@ -145,16 +152,13 @@ export default function HrDashboardTab({
       actionEn
     };
     
-    setOperationsLogs(prev => [newLog, ...prev]);
-    try {
-      await fetch('/api/hr_operations_logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newLog)
-      });
-    } catch (e) {
-      console.error(e);
-    }
+    setOperationsLogs(prev => {
+      const updated = [newLog, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hr_operations_logs', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const [showAllLogsModal, setShowAllLogsModal] = useState(false);
