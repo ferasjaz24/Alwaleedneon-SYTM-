@@ -929,7 +929,7 @@ export default function HrSubSections({
                     <title>كشف مسير راتب أفراد - ${emp.arabicName}</title>
                     <style>
                       ${sharedPrintStyles}
-                      body { padding: 40px; font-family: 'Tajawal', Tahoma, Arial, sans-serif; direction: rtl; text-align: right; background: #fff; }
+                      body { padding: 0; font-family: 'Tajawal', Tahoma, Arial, sans-serif; direction: rtl; text-align: right; background: #fff; }
                       .payslip-box { padding: 0 10px; }
                       table { width: 100%; border-collapse: collapse; margin-top: 15px; }
                       th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: right; font-size: 13px; }

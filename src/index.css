@@ -90,18 +90,71 @@ body {
   background: #0072BC;
 }
 
-/* Printing styling for smart templates certificates */
+/* Printing styling for smart templates certificates & General A4 Documents */
 @media print {
-  /* Hide typical web controls when printing */
-  body * {
+  /* 1. ضبط مقاس الصفحة على A4 وتحديد الهوامش الرسمية */
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+
+  /* 2. تهيئة جسم الصفحة للطباعة */
+  body {
+    background: none !important;
+    color: #000 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 12pt;
+    line-height: 1.5;
+    direction: rtl; /* الحفاظ على الاتجاه العربي للنظام */
+  }
+
+  /* 3. إخفاء العناصر غير الضرورية عند الطباعة مثل القوائم الجانبية والأزرار */
+  nav, .sidebar, .sidebar-menu, button, .no-print, .btn, .print-button {
+    display: none !important;
+  }
+
+  /* 4. الحفاظ على الرأس والتذييل في أماكنهم ومنع تقطيعهم */
+  .print-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+  }
+
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    page-break-after: always;
+  }
+
+  /* 5. منع تقطيع الأسطر أو الجداول في منتصف الصفحة */
+  tr, table, .document-section, p {
+    page-break-inside: avoid;
+  }
+
+  .main-content, .print-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* 6. دعم طباعة الشهادات الذكية السابقة بمرونة بدون تداخل */
+  body:has(#printable-certificate-area) * {
     visibility: hidden;
   }
   
-  #printable-certificate-area, #printable-certificate-area * {
+  body:has(#printable-certificate-area) #printable-certificate-area, 
+  body:has(#printable-certificate-area) #printable-certificate-area * {
     visibility: visible;
   }
   
-  #printable-certificate-area {
+  body:has(#printable-certificate-area) #printable-certificate-area {
     position: absolute;
     left: 0;
     top: 0;
@@ -113,10 +166,6 @@ body {
     border: none !important;
     background: white !important;
     color: black !important;
-  }
-  
-  .no-print {
-    display: none !important;
   }
 }
 

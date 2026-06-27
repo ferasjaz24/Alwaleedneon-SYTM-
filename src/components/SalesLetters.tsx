@@ -216,12 +216,13 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
-              @page { size: A4; margin: 0; }
+              @page { size: A4; margin: 20mm; }
               .print\\:hidden { display: none !important; }
               .page-break { page-break-before: always; border-top: none; }
               .doc-container {
-                width: 210mm;
+                width: 100%;
                 margin: 0 auto;
+                padding: 0;
               }
               .action-btns { 
                 text-align: center; 
@@ -434,10 +435,11 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
-              @page { size: A4; margin: 0; }
+              @page { size: A4; margin: 20mm; }
               .doc-container {
-                width: 210mm;
+                width: 100%;
                 margin: 0 auto;
+                padding: 0;
               }
               .action-btns { 
                 text-align: center; 
@@ -470,7 +472,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
               <button class="print-btn" onclick="window.print()">🖨️ طباعة الخطاب الآن</button>
             </div>
             <div class="doc-container">
-              <div style="width: 210mm; height: 297mm; padding: 1.5cm 2cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white;">
+              <div style="width: 210mm; height: 297mm; padding: 3cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white;">
                 <!-- Header -->
                 <div style="border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <div style="text-align: right;">
@@ -504,7 +506,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
 
               <!-- Page 2 for bank details if needed -->
               ${logItem.title.includes('دفعة') || logItem.title.includes('سداد') || logItem.title.includes('مالي') || logItem.title.includes('مطالبة') ? `
-                <div class="page-break" style="page-break-before: always; width: 210mm; height: 297mm; padding: 1.5cm 2cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white; margin-top: 20px;">
+                <div class="page-break" style="page-break-before: always; width: 210mm; height: 297mm; padding: 3cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white; margin-top: 20px;">
                   <!-- Header -->
                   <div style="border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="text-align: right;">
@@ -568,22 +570,32 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           body * {
             visibility: hidden;
           }
-          #printable-sales-letter, #printable-sales-letter * {
+          #printable-sales-letter-container, #printable-sales-letter-container * {
             visibility: visible;
           }
-          #printable-sales-letter {
+          #printable-sales-letter-container {
             position: absolute;
             left: 0;
             top: 0;
-            margin: 0;
-            padding: 0 !important;
             width: 100%;
-            min-height: auto !important;
-            box-shadow: none;
-            background: white;
-            transform: none;
+            margin: 0;
+            padding: 0;
           }
-          @page { margin: 1cm; size: A4; }
+          #printable-sales-letter, #printable-sales-letter-page2 {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100% !important;
+            box-sizing: border-box;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            box-shadow: none !important;
+            transform: none !important;
+          }
+          #printable-sales-letter-page2 {
+            page-break-before: always;
+          }
+          @page { margin: 20mm; size: A4; }
         }
       `}</style>
       
@@ -746,7 +758,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
             <RichTextToolbar />
           </div>
           <div id="printable-sales-letter-container">
-            <div id="printable-sales-letter" className="relative mx-auto bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '1.5cm 2cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+            <div id="printable-sales-letter" className="relative mx-auto bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
                
                {/* Formal Header */}
               <DocumentHeader />
@@ -774,7 +786,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           </div>
 
           {docCategory === 'financial' && (
-            <div id="printable-sales-letter-page2" className="page-break relative mx-auto mt-8 bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '1.5cm 2cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pageBreakBefore: 'always' }}>
+            <div id="printable-sales-letter-page2" className="page-break relative mx-auto mt-8 bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pageBreakBefore: 'always' }}>
                <DocumentHeader />
                <div className="flex-grow flex flex-col items-center justify-center pt-10">
                  <h2 className="text-xl font-bold text-slate-800 mb-8 border-b-2 border-indigo-500 pb-2">البيانات البنكية لشركة فنون الوليد للصناعة</h2>
@@ -931,8 +943,8 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
             <div className="p-6 md:p-8 bg-slate-100 overflow-y-auto flex-grow flex justify-center">
               <div 
                 id="archived-printable-container" 
-                className="bg-white shadow p-8 md:p-12 relative overflow-hidden text-right leading-7 text-stone-800 font-sans text-sm" 
-                style={{ width: '210mm', minHeight: '297mm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}
+                className="bg-white shadow relative overflow-hidden text-right leading-7 text-stone-800 font-sans text-sm" 
+                style={{ width: '210mm', minHeight: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}
               >
                 {/* Formal Header */}
                 <div className="border-b-2 border-[#0072BC] pb-4 mb-6 flex justify-between items-center w-full">

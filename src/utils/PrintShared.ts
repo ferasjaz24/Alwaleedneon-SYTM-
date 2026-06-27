@@ -30,7 +30,7 @@ export const sharedPrintFooter = `
 export const sharedPrintStyles = `
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page { margin: 10mm; size: A4; }
+    @page { margin: 20mm; size: A4; }
   }
   body { font-family: 'Tajawal', sans-serif, system-ui; direction: rtl; }
   .ql-align-center { text-align: center; }

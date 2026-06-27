@@ -397,7 +397,7 @@ export default function ItemsWarehouse({ lang }: { lang: "ar" | "en" }) {
           <style>
             ${sharedPrintStyles}
             body { font-family: 'Tajawal', Tahoma, Arial; direction: rtl; text-align: right; margin: 0; padding: 0; background: #fff; }
-            .print-container { padding: 40px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
+            .print-container { padding: 0; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
             .content-wrapper { flex-grow: 1; }
             .page-title { color: #0072BC; text-align: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
             .items-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }

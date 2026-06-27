@@ -362,8 +362,8 @@ export default function SalesRepsTargets({ lang, user }: Props) {
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
               @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
-              @page { size: A4; margin: 0; }
-              body { font-family: 'Tajawal', sans-serif !important; background: white; padding: 20px 30px; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
+              @page { size: A4; margin: 20mm; }
+              body { font-family: 'Tajawal', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
               .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px; margin-bottom: 15px; }
               .header-logo { width: 70px; height: 70px; object-fit: contain; }
               .header-text { text-align: right; display: flex; flex-direction: column; justify-content: center;}

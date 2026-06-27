@@ -733,8 +733,8 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
         <title>طباعة التقرير</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-          @page { size: A4; }
-          body { font-family: 'Tajawal', sans-serif !important; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
+          @page { size: A4; margin: 20mm; }
+          body { font-family: 'Tajawal', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
           
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 25px; }
           .header-logo { width: 80px; object-fit: contain; }

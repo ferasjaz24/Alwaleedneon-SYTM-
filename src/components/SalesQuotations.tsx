@@ -241,7 +241,7 @@ export default function SalesQuotations({ lang, user }: Props) {
   const getPrintStyles = () => `
 @page {
   size: A4 portrait;
-  margin: 0;
+  margin: 20mm;
 }
 html,
 body {

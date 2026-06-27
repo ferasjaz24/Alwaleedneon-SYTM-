@@ -196,11 +196,12 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
-              @page { size: A4; margin: 0; }
+              @page { size: A4; margin: 20mm; }
               .print\\:hidden { display: none !important; }
               .doc-container {
-                width: 210mm;
+                width: 100%;
                 margin: 0 auto;
+                padding: 0;
               }
               .action-btns { 
                 text-align: center; 
@@ -294,16 +295,18 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
             position: absolute;
             left: 0;
             top: 0;
-            margin: 0;
+            margin: 0 !important;
             padding: 0 !important;
-            width: 100%;
-            min-height: auto !important;
-            box-shadow: none;
-            background: white;
-            transform: none;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100% !important;
+            box-sizing: border-box;
+            box-shadow: none !important;
+            background: white !important;
+            transform: none !important;
           }
           /* Eliminate weird margins from standard page sizes */
-          @page { margin: 1cm; size: A4; }
+          @page { margin: 20mm; size: A4; }
         }
       `}</style>
 
@@ -371,7 +374,7 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
           <div className="max-w-[210mm] mx-auto print:hidden">
             <RichTextToolbar />
           </div>
-          <div id="printable-document-area" className="relative mx-auto bg-white shadow print:shadow-none print:m-0" style={{ width: '210mm', minHeight: '297mm', padding: '1.5cm 2cm', boxSizing: 'border-box', direction: 'rtl', display: 'flex', flexDirection: 'column' }}>
+          <div id="printable-document-area" className="relative mx-auto bg-white shadow print:shadow-none print:m-0" style={{ width: '210mm', minHeight: '297mm', padding: '3cm', boxSizing: 'border-box', direction: 'rtl', display: 'flex', flexDirection: 'column' }}>
              
              {/* Formal Header */}
             <DocumentHeader />
