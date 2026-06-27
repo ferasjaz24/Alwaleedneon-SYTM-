@@ -1,29 +1,28 @@
 import admin from 'firebase-admin';
 
-// 1. تشغيل الفايربيس أدمن بأمان ومعالجة كسر السطور في المفتاح السري
+// تشغيل الفايربيس أدمن عن طريق قراءة ملف الـ JSON الكامل من متغيرات البيئة
 if (!admin.apps.length) {
   try {
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY 
-      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
-      : undefined;
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+      throw new Error("متغير البيئة FIREBASE_SERVICE_ACCOUNT غير مضاف في Vercel");
+    }
+    
+    // تحويل النص السري إلى كائن JSON مرمز
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
     admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
-      })
+      credential: admin.credential.cert(serviceAccount)
     });
+    console.log("تم الاتصال بفايربيس بنجاح!");
   } catch (initError) {
-    console.error("Firebase initialization failed:", initError);
+    console.error("فشل تشغيل الفايربيس:", initError.message);
   }
 }
 
 const db = admin.firestore();
 
-// 2. الدالة الرئيسية الديناميكية للتعامل مع Vercel
 export default async function handler(req, res) {
-  // تفعيل الـ CORS لتجنب مشاكل الحظر بين النطاقات
+  // تفعيل الـ CORS لتجنب حظر الطلبات
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -33,32 +32,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // استخراج المسار بعد /api/
-    // مثال: /api/dynamic/sales_quotations أو /api/employees/EMP-123
     const { path } = req.query; 
-    if (!path || path.length === 0) {
-      return res.status(400).json({ error: "المسار غير صحيح" });
+    if (!path) {
+      return res.status(400).json({ error: "المسار فارغ" });
     }
 
-    // تنظيف المسار وحذف كلمة "dynamic" أو "v1" إذا كانت موجودة في البداية
+    // تقسيم المسار وتنظيفه من الكلمات الزائدة ديناميكياً
     let segments = Array.isArray(path) ? path : path.split('/');
     if (segments[0] === 'dynamic' || segments[0] === 'v1') {
       segments.shift();
     }
 
-    const collectionName = segments[0]; // اسم الجدول (مثل sales_quotations)
-    const docId = segments[1];          // معرف المستند إن وجد (مثل EMP-123)
+    const collectionName = segments[0]; // اسم الجدول بالفايربيس
+    const docId = segments[1];          // معرف المستند (إن وجد)
 
     if (!collectionName) {
-      return res.status(400).json({ error: "اسم الـ Collection غير محدد" });
+      return res.status(400).json({ error: "لم يتم تحديد اسم الـ Collection" });
     }
 
     const collectionRef = db.collection(collectionName);
 
-    // 3. معالجة العمليات الأربعة (CRUD) ديناميكياً حسب نوع الـ Request
+    // معالجة العمليات الأربعة بالحذف والإضافة والتعديل والجلب
     switch (req.method) {
-      
-      // --- جلب البيانات ---
       case 'GET':
         if (docId) {
           const docSnapshot = await collectionRef.doc(docId).get();
@@ -72,13 +67,12 @@ export default async function handler(req, res) {
           return res.status(200).json(documents);
         }
 
-      // --- إضافة بيانات جديدة ---
       case 'POST':
-        const newData = req.body;
+        const newData = req.body || {};
         if (docId || newData.id) {
           const targetId = docId || newData.id;
           const cleanData = { ...newData };
-          delete cleanData.id; // تجنب تكرار الحقل داخل البيانات
+          delete cleanData.id;
           await collectionRef.doc(targetId).set(cleanData, { merge: true });
           return res.status(201).json({ id: targetId, ...cleanData });
         } else {
@@ -86,21 +80,19 @@ export default async function handler(req, res) {
           return res.status(201).json({ id: docRef.id, ...newData });
         }
 
-      // --- تعديل بيانات مستند ---
       case 'PUT':
       case 'PATCH':
         if (!docId) {
-          return res.status(400).json({ error: "يجب تحديد ID المستند لتعديله" });
+          return res.status(400).json({ error: "يجب تمرير ID للتعديل" });
         }
-        const updateData = req.body;
+        const updateData = req.body || {};
         delete updateData.id;
         await collectionRef.doc(docId).set(updateData, { merge: true });
         return res.status(200).json({ id: docId, ...updateData });
 
-      // --- حذف مستند ---
       case 'DELETE':
         if (!docId) {
-          return res.status(400).json({ error: "يجب تحديد ID المستند لحذفه" });
+          return res.status(400).json({ error: "يجب تمرير ID للحذف" });
         }
         await collectionRef.doc(docId).delete();
         return res.status(200).json({ id: docId, message: "تم الحذف بنجاح" });
@@ -110,9 +102,9 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("خطأ بالسيرفر الداخلي:", error);
     return res.status(500).json({ 
-      error: "انهيار داخلي في السيرفر", 
+      error: "انهيار في معالجة البيانات", 
       message: error.message 
     });
   }
