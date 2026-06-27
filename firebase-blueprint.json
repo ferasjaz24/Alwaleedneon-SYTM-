@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "employee": {
+      "title": "Employee",
+      "description": "Represents an employee profile in the factory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "arabicName": { "type": "string" },
+        "englishName": { "type": "string" },
+        "iqamaId": { "type": "string" },
+        "passportDetails": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "grade": { "type": "string" },
+        "basicSalary": { "type": "number" },
+        "mobile": { "type": "string" },
+        "nationality": { "type": "string" },
+        "department": { "type": "string" },
+        "classification": { "type": "string" },
+        "dateOfJoining": { "type": "string" },
+        "contractExpiry": { "type": "string" }
+      },
+      "required": ["id", "arabicName", "englishName"]
+    },
+    "client": {
+      "title": "Client",
+      "description": "Represents a customer or client account in the CRM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "mobile": { "type": "string" },
+        "email": { "type": "string" },
+        "city": { "type": "string" },
+        "crNumber": { "type": "string" },
+        "taxNumber": { "type": "string" },
+        "classification": { "type": "string" },
+        "dateCreated": { "type": "string" }
+      },
+      "required": ["id", "clientName", "mobile"]
+    }
+  },
+  "firestore": {
+    "employees/{id}": {
+      "schema": "employee",
+      "description": "Stores worker profiles, salaries, contacts, and legal documentation"
+    },
+    "clients/{id}": {
+      "schema": "client",
+      "description": "Stores client details, corporate classifications, CR numbers, and CRM fields"
+    }
+  }
+}
