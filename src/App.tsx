@@ -233,6 +233,8 @@ export default function App() {
     birthDate: "1995-01-01",
     dateOfJoining: "2024-01-01",
     contractExpiry: "2027-01-01",
+    iqamaExpiryDate: "2027-01-01",
+    passportExpiryDate: "2029-01-01",
     department: "Neon Fabrication",
   });
 
@@ -518,28 +520,31 @@ export default function App() {
       setUser(matched);
 
       // Auto assign tabs based on roles/permissions
-      if (hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main')) {
+      const isTopLevel = 
+        hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
+        matched.username?.toUpperCase() === "FERAS" ||
+        matched.username?.toUpperCase() === "فراس" ||
+        matched.username?.toUpperCase() === "ADMIN" ||
+        matched.role === "الادارة العليا" ||
+        matched.role === "الإدارة العليا" ||
+        matched.role === "top_management" ||
+        matched.role === "Super Admin" ||
+        matched.role === "Admin";
+
+      if (isTopLevel) {
         setActiveTab("dashboard");
       } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
         setActiveTab("production");
         setActiveProductionSubTab("prod_dashboard");
       } else if (canAccessModule(matched, 'procurement')) {
         setActiveTab("warehouse");
-        if (hasAdvancedPermission(matched, 'procurement', 'dashboard', 'view_dashboard')) {
-          setActiveWarehouseSubTab("warehouse_dashboard");
-        } else {
-          setActiveWarehouseSubTab("warehouse_items");
-        }
+        setActiveWarehouseSubTab("warehouse_dashboard");
       } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
         setActiveTab("sales");
         setActiveSalesSubTab("sales_dashboard");
       } else if (canAccessModule(matched, 'hr')) {
         setActiveTab("hr");
-        if (hasAdvancedPermission(matched, 'hr', 'dashboard', 'view_hr_dashboard')) {
-          setActiveHrSubTab("dashboard");
-        } else {
-          setActiveHrSubTab("ess_dashboard");
-        }
+        setActiveHrSubTab("dashboard");
       } else {
         setActiveTab("dashboard");
       }
@@ -3081,6 +3086,63 @@ export default function App() {
                                           })
                                     }
                                     className="w-full px-3 py-2 border rounded-xl"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block mb-1 font-bold text-slate-500">
+                                    {lang === "ar"
+                                      ? "تاريخ انتهاء الإقامة (Iqama)"
+                                      : "Iqama Expiry Date"}
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={
+                                      editingEmp
+                                        ? (editingEmp.iqamaExpiryDate || "")
+                                        : (newEmp.iqamaExpiryDate || "")
+                                    }
+                                    onChange={(e) =>
+                                      editingEmp
+                                        ? setEditingEmp({
+                                            ...editingEmp,
+                                            iqamaExpiryDate: e.target.value,
+                                          })
+                                        : setNewEmp({
+                                            ...newEmp,
+                                            iqamaExpiryDate: e.target.value,
+                                          })
+                                    }
+                                    className="w-full px-3 py-2 border rounded-xl font-mono"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block mb-1 font-bold text-slate-500">
+                                    {lang === "ar"
+                                      ? "تاريخ انتهاء جواز السفر"
+                                      : "Passport Expiry Date"}
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={
+                                      editingEmp
+                                        ? (editingEmp.passportExpiryDate || "")
+                                        : (newEmp.passportExpiryDate || "")
+                                    }
+                                    onChange={(e) =>
+                                      editingEmp
+                                        ? setEditingEmp({
+                                            ...editingEmp,
+                                            passportExpiryDate: e.target.value,
+                                          })
+                                        : setNewEmp({
+                                            ...newEmp,
+                                            passportExpiryDate: e.target.value,
+                                          })
+                                    }
+                                    className="w-full px-3 py-2 border rounded-xl font-mono"
                                   />
                                 </div>
                               </div>

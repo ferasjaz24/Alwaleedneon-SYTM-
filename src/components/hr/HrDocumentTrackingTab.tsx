@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   FileText, Calendar, PlusCircle, Search, Trash2, Edit2, Eye, 
   AlertTriangle, CheckCircle2, Truck, User, FileCheck, RefreshCw, 
-  SlidersHorizontal, Download, Printer, Clock, FileSpreadsheet, X, HelpCircle
+  SlidersHorizontal, Download, Printer, Clock, FileSpreadsheet, X, HelpCircle,
+  Upload, Paperclip
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Employee, EmployeeDoc, VehicleDoc, DocActivityLog, User as SystemUser } from '../../types';
@@ -22,6 +23,63 @@ export default function HrDocumentTrackingTab({
   setActiveHRSubTab
 }: HrDocumentTrackingTabProps) {
   const isAr = lang === 'ar';
+
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
+  
+  const showToastMsg = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // View Document Modal States
+  const [isViewDocOpen, setIsViewDocOpen] = useState(false);
+  const [selectedViewDoc, setSelectedViewDoc] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper to convert uploaded files to compressed base64
+  const handleFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        reader.onload = (ev) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_DIM = 1000;
+            if (width > height && width > MAX_DIM) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else if (height > MAX_DIM) {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+              resolve(dataUrl);
+            } else {
+              resolve(ev.target?.result as string);
+            }
+          };
+          img.src = ev.target?.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      } else {
+        reader.onload = (ev) => {
+          resolve(ev.target?.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }
+    });
+  };
 
   // State lists
   const [employeeDocs, setEmployeeDocs] = useState<EmployeeDoc[]>([]);
@@ -72,6 +130,7 @@ export default function HrDocumentTrackingTab({
     issueDate: '',
     expiryDate: '',
     docUrl: '',
+    docFile: '',
     notes: '',
     alertDays: 30
   });
@@ -87,6 +146,7 @@ export default function HrDocumentTrackingTab({
     issueDate: '',
     expiryDate: '',
     docUrl: '',
+    docFile: '',
     notes: '',
     alertDays: 30
   });
@@ -266,6 +326,8 @@ export default function HrDocumentTrackingTab({
   // Add Employee Doc Submit
   const handleAddEmployeeDoc = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!addEmpForm.employeeName || !addEmpForm.employeeId) {
       alert(isAr ? 'الرجاء كتابة اسم المنشأة والرقم الموحد!' : 'Please specify Establishment name and Registration ID!');
       return;
@@ -277,6 +339,24 @@ export default function HrDocumentTrackingTab({
       return;
     }
 
+    // Check duplicate
+    const isDuplicate = employeeDocs.some(d => 
+      (d.employeeId.trim().toLowerCase() === addEmpForm.employeeId.trim().toLowerCase() && 
+       d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+      (addEmpForm.docNumber && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === addEmpForm.docNumber.trim().toLowerCase())
+    );
+
+    if (isDuplicate) {
+      showToastMsg(
+        isAr 
+          ? '⚠️ خطأ: هذه الوثيقة مسجلة مسبقاً بنفس رقم السجل والنوع أو نفس رقم الوثيقة!' 
+          : '⚠️ Error: This document is already registered with the same registration number & type or document number!',
+        'error'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
     const docStatus = getDocStatus(addEmpForm.expiryDate).textAr;
 
     const payload: Omit<EmployeeDoc, 'id'> = {
@@ -290,6 +370,7 @@ export default function HrDocumentTrackingTab({
       issueDate: addEmpForm.issueDate || undefined,
       expiryDate: addEmpForm.expiryDate,
       docUrl: addEmpForm.docUrl,
+      docFile: addEmpForm.docFile || '',
       notes: addEmpForm.notes,
       status: docStatus,
       alertDays: Number(addEmpForm.alertDays) || 30,
@@ -318,25 +399,52 @@ export default function HrDocumentTrackingTab({
           issueDate: '',
           expiryDate: '',
           docUrl: '',
+          docFile: '',
           notes: '',
           alertDays: 30
         });
+        showToastMsg(
+          isAr ? '🎉 تم إضافة الوثيقة والملف بنجاح!' : '🎉 Document and file added successfully!',
+          'success'
+        );
         fetchData();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Add Vehicle Doc Submit
   const handleAddVehicleDoc = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const finalType = addVehForm.docType === 'وثيقة أخرى' ? addVehForm.customDocType : addVehForm.docType;
     if (!finalType) {
       alert(isAr ? 'الرجاء اختيار أو كتابة نوع الوثيقة!' : 'Please specify document type!');
       return;
     }
 
+    // Check duplicate
+    const isDuplicate = vehicleDocs.some(d => 
+      (d.plateNumber.trim().toLowerCase() === addVehForm.plateNumber.trim().toLowerCase() && 
+       d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+      (addVehForm.docNumber && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === addVehForm.docNumber.trim().toLowerCase())
+    );
+
+    if (isDuplicate) {
+      showToastMsg(
+        isAr 
+          ? '⚠️ خطأ: هذه الوثيقة مسجلة مسبقاً بنفس رقم اللوحة والنوع أو نفس رقم الوثيقة!' 
+          : '⚠️ Error: This document already exists with the same plate number & type or document number!',
+        'error'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
     const docStatus = getDocStatus(addVehForm.expiryDate).textAr;
 
     const payload: Omit<VehicleDoc, 'id'> = {
@@ -349,6 +457,7 @@ export default function HrDocumentTrackingTab({
       issueDate: addVehForm.issueDate || undefined,
       expiryDate: addVehForm.expiryDate,
       docUrl: addVehForm.docUrl,
+      docFile: addVehForm.docFile || '',
       notes: addVehForm.notes,
       status: docStatus,
       alertDays: Number(addVehForm.alertDays) || 30,
@@ -377,13 +486,20 @@ export default function HrDocumentTrackingTab({
           issueDate: '',
           expiryDate: '',
           docUrl: '',
+          docFile: '',
           notes: '',
           alertDays: 30
         });
+        showToastMsg(
+          isAr ? '🎉 تم إضافة وثيقة المركبة بنجاح!' : '🎉 Vehicle document added successfully!',
+          'success'
+        );
         fetchData();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -510,6 +626,8 @@ export default function HrDocumentTrackingTab({
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const isEmployee = activePortal === 'employee';
     const activeDoc = isEmployee ? selectedEmpDoc : selectedVehicleDoc;
     if (!activeDoc) return;
@@ -518,6 +636,33 @@ export default function HrDocumentTrackingTab({
     const finalExpiry = updatedFields.expiryDate || activeDoc.expiryDate;
     const docStatus = getDocStatus(finalExpiry).textAr;
 
+    const finalType = updatedFields.docType || activeDoc.docType;
+    const finalDocNo = updatedFields.docNumber || activeDoc.docNumber;
+
+    // Check duplicate excluding the current document being edited
+    const isDuplicate = isEmployee
+      ? employeeDocs.some(d => d.id !== activeDoc.id && (
+          (d.employeeId.trim().toLowerCase() === (editEmpForm.employeeId || (activeDoc as EmployeeDoc).employeeId || '').trim().toLowerCase() && 
+           d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+          (finalDocNo && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === finalDocNo.trim().toLowerCase())
+        ))
+      : vehicleDocs.some(d => d.id !== activeDoc.id && (
+          (d.plateNumber.trim().toLowerCase() === (editVehForm.plateNumber || (activeDoc as VehicleDoc).plateNumber || '').trim().toLowerCase() && 
+           d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+          (finalDocNo && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === finalDocNo.trim().toLowerCase())
+        ));
+
+    if (isDuplicate) {
+      showToastMsg(
+        isAr 
+          ? '⚠️ تعديل مرفوض! هذه الوثيقة مكررة مع سجل آخر موجود بالفعل.' 
+          : '⚠️ Edit rejected! This document is a duplicate of an existing record.',
+        'error'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
     const updatedData = {
       ...activeDoc,
       ...updatedFields,
@@ -547,6 +692,78 @@ export default function HrDocumentTrackingTab({
           JSON.stringify(updatedData)
         );
         setIsEditDocOpen(false);
+        showToastMsg(
+          isAr ? '🎉 تم حفظ وتعديل البيانات بنجاح!' : '🎉 Document details modified successfully!',
+          'success'
+        );
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateFileFromView = async (newFileBase64: string) => {
+    if (!selectedViewDoc) return;
+    const isEmployee = activePortal === 'employee';
+    const updatedData = {
+      ...selectedViewDoc,
+      docFile: newFileBase64,
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.username || 'HR_ADMIN'
+    };
+
+    const endpoint = isEmployee 
+      ? `/api/employee-docs/${selectedViewDoc.id}`
+      : `/api/vehicle-docs/${selectedViewDoc.id}`;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+      if (res.ok) {
+        setSelectedViewDoc(updatedData);
+        showToastMsg(
+          isAr ? '🎉 تم تحديث مستند الوثيقة المرفق بنجاح!' : '🎉 Document scan updated successfully!',
+          'success'
+        );
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRemoveFileFromView = async () => {
+    if (!selectedViewDoc) return;
+    const isEmployee = activePortal === 'employee';
+    const updatedData = {
+      ...selectedViewDoc,
+      docFile: '',
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.username || 'HR_ADMIN'
+    };
+
+    const endpoint = isEmployee 
+      ? `/api/employee-docs/${selectedViewDoc.id}`
+      : `/api/vehicle-docs/${selectedViewDoc.id}`;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+      if (res.ok) {
+        setSelectedViewDoc(updatedData);
+        showToastMsg(
+          isAr ? '❌ تم إزالة المستند المرفق بنجاح!' : '❌ Attached document removed successfully!',
+          'success'
+        );
         fetchData();
       }
     } catch (err) {
@@ -817,6 +1034,17 @@ export default function HrDocumentTrackingTab({
   return (
     <div id="hr-document-tracking-tab" className="space-y-6 text-right" dir="rtl">
       
+      {/* FLOATING TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 p-4 bg-slate-900 border border-slate-800 text-white rounded-2xl shadow-2xl animate-fade-in">
+          <div className={`w-3 h-3 rounded-full ${toast.type === 'success' ? 'bg-emerald-500 animate-pulse' : toast.type === 'error' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+          <span className="text-xs font-black">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white mr-2">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      
       {/* Header & Launcher banner */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-l from-slate-900 via-blue-950 to-slate-900 p-6 rounded-3xl border border-white/10 text-white shadow-xl">
         <div className="space-y-1">
@@ -847,6 +1075,7 @@ export default function HrDocumentTrackingTab({
                 issueDate: '',
                 expiryDate: new Date(Date.now() + 365 * 24 * 3600000).toISOString().split('T')[0],
                 docUrl: '',
+                docFile: '',
                 notes: '',
                 alertDays: 30
               });
@@ -861,6 +1090,7 @@ export default function HrDocumentTrackingTab({
                 issueDate: '',
                 expiryDate: new Date(Date.now() + 365 * 24 * 3600000).toISOString().split('T')[0],
                 docUrl: '',
+                docFile: '',
                 notes: '',
                 alertDays: 30
               });
@@ -1353,26 +1583,17 @@ export default function HrDocumentTrackingTab({
                         <div className="flex items-center justify-center gap-1">
                           
                           {/* 1. View document */}
-                          {docObj.docUrl ? (
-                            <a
-                              href={docObj.docUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={() => logActivity('VIEW_LINK', activePortal, docObj.docType, docObj.docNumber, activePortal === 'employee' ? (docObj as EmployeeDoc).employeeName : `${(docObj as VehicleDoc).vehicleName} (${(docObj as VehicleDoc).plateNumber})`)}
-                              className="p-1.5 bg-blue-50 text-blue-600 hover:bg-[#0072BC] hover:text-white rounded-lg transition-all"
-                              title={isAr ? 'عرض مستند الوثيقة' : 'View attachment'}
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <button
-                              disabled
-                              className="p-1.5 bg-slate-50 text-slate-300 rounded-lg cursor-not-allowed"
-                              title={isAr ? 'لا يوجد مستند مرفق' : 'No attachment'}
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => {
+                              setSelectedViewDoc(docObj);
+                              setIsViewDocOpen(true);
+                              logActivity('VIEW_LINK', activePortal, docObj.docType, docObj.docNumber, activePortal === 'employee' ? (docObj as EmployeeDoc).employeeName : `${(docObj as VehicleDoc).vehicleName} (${(docObj as VehicleDoc).plateNumber})`);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${docObj.docFile || docObj.docUrl ? 'bg-blue-50 text-blue-600 hover:bg-[#0072BC] hover:text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                            title={isAr ? 'عرض ومعاينة المستند' : 'View & preview document'}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
 
                           {/* 2. Quick update expiry */}
                           <button
@@ -1602,6 +1823,69 @@ export default function HrDocumentTrackingTab({
                   />
                 </div>
 
+                {/* File Upload Field */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2 text-right">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-slate-700">{isAr ? 'إرفاق ملف/صورة الوثيقة الكترونياً' : 'Upload Digital Document File'}</span>
+                    {addEmpForm.docFile && (
+                      <button
+                        type="button"
+                        onClick={() => setAddEmpForm({ ...addEmpForm, docFile: '' })}
+                        className="text-[10px] text-rose-500 font-bold hover:underline"
+                      >
+                        {isAr ? 'إزالة الملف ❌' : 'Remove File ❌'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {addEmpForm.docFile ? (
+                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-emerald-100">
+                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <Paperclip className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-right" dir="rtl">
+                        <p className="text-[11px] font-bold text-slate-800 truncate">{isAr ? 'تم إرفاق المستند بنجاح' : 'Document file attached successfully'}</p>
+                        <p className="text-[9px] text-slate-400 font-mono">base64 encoded data</p>
+                      </div>
+                      <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border">
+                        {addEmpForm.docFile.startsWith('data:image/') ? (
+                          <img src={addEmpForm.docFile} alt="preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-red-500">PDF</div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center py-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <Upload className="w-6 h-6 text-[#0072BC] mb-1 animate-pulse" />
+                      <span className="text-[10px] font-bold text-slate-600">{isAr ? 'اسحب الملف هنا أو انقر للتصفح' : 'Drag file here or click to browse'}</span>
+                      <span className="text-[8px] text-slate-400 mt-0.5">{isAr ? 'يدعم الصور و ملفات PDF (بحد أقصى 1MB)' : 'Supports Images & PDF (Max 1MB)'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 1.2 * 1024 * 1024) {
+                              alert(isAr ? 'حجم الملف كبير جداً! الحد الأقصى هو 1MB لضمان الحفظ في قاعدة البيانات.' : 'File is too large! Max allowed is 1MB to preserve database space.');
+                              return;
+                            }
+                            try {
+                              const b64 = await handleFileToBase64(file);
+                              setAddEmpForm({ ...addEmpForm, docFile: b64 });
+                              showToastMsg(isAr ? 'تم تحميل الملف بنجاح!' : 'File loaded successfully!', 'success');
+                            } catch (err) {
+                              console.error(err);
+                              alert(isAr ? 'فشل تحميل الملف' : 'Failed to load file');
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">{isAr ? 'ملاحظات وتفاصيل إضافية' : 'Notes'}</label>
                   <textarea
@@ -1616,14 +1900,27 @@ export default function HrDocumentTrackingTab({
                 <div className="flex gap-2 justify-end pt-3">
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#0072BC] hover:bg-blue-800 text-white font-black text-xs rounded-xl shadow transition-all"
+                    disabled={isSubmitting}
+                    className={`px-5 py-2 text-white font-black text-xs rounded-xl shadow transition-all flex items-center gap-2 ${
+                      isSubmitting 
+                        ? 'bg-slate-400 cursor-not-allowed opacity-80' 
+                        : 'bg-[#0072BC] hover:bg-blue-800'
+                    }`}
                   >
-                    {isAr ? 'حفظ وإدراج الوثيقة' : 'Confirm & Save'}
+                    {isSubmitting ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>{isAr ? 'جاري الحفظ...' : 'Saving...'}</span>
+                      </>
+                    ) : (
+                      <span>{isAr ? 'حفظ وإدراج الوثيقة' : 'Confirm & Save'}</span>
+                    )}
                   </button>
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => setIsAddDocOpen(false)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
                   >
                     {isAr ? 'إلغاء' : 'Cancel'}
                   </button>
@@ -1769,6 +2066,69 @@ export default function HrDocumentTrackingTab({
                   />
                 </div>
 
+                {/* File Upload Field for Vehicle */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2 text-right">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-slate-700">{isAr ? 'إرفاق ملف/صورة الوثيقة الكترونياً' : 'Upload Digital Document File'}</span>
+                    {addVehForm.docFile && (
+                      <button
+                        type="button"
+                        onClick={() => setAddVehForm({ ...addVehForm, docFile: '' })}
+                        className="text-[10px] text-rose-500 font-bold hover:underline"
+                      >
+                        {isAr ? 'إزالة الملف ❌' : 'Remove File ❌'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {addVehForm.docFile ? (
+                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-emerald-100">
+                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <Paperclip className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-right" dir="rtl">
+                        <p className="text-[11px] font-bold text-slate-800 truncate">{isAr ? 'تم إرفاق المستند بنجاح' : 'Document file attached successfully'}</p>
+                        <p className="text-[9px] text-slate-400 font-mono">base64 encoded data</p>
+                      </div>
+                      <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border">
+                        {addVehForm.docFile.startsWith('data:image/') ? (
+                          <img src={addVehForm.docFile} alt="preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-red-500">PDF</div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center py-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <Upload className="w-6 h-6 text-[#0072BC] mb-1 animate-pulse" />
+                      <span className="text-[10px] font-bold text-slate-600">{isAr ? 'اسحب الملف هنا أو انقر للتصفح' : 'Drag file here or click to browse'}</span>
+                      <span className="text-[8px] text-slate-400 mt-0.5">{isAr ? 'يدعم الصور و ملفات PDF (بحد أقصى 1MB)' : 'Supports Images & PDF (Max 1MB)'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 1.2 * 1024 * 1024) {
+                              alert(isAr ? 'حجم الملف كبير جداً! الحد الأقصى هو 1MB لضمان الحفظ في قاعدة البيانات.' : 'File is too large! Max allowed is 1MB to preserve database space.');
+                              return;
+                            }
+                            try {
+                              const b64 = await handleFileToBase64(file);
+                              setAddVehForm({ ...addVehForm, docFile: b64 });
+                              showToastMsg(isAr ? 'تم تحميل الملف بنجاح!' : 'File loaded successfully!', 'success');
+                            } catch (err) {
+                              console.error(err);
+                              alert(isAr ? 'فشل تحميل الملف' : 'Failed to load file');
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">{isAr ? 'ملاحظات وتفاصيل إضافية' : 'Notes'}</label>
                   <textarea
@@ -1783,14 +2143,27 @@ export default function HrDocumentTrackingTab({
                 <div className="flex gap-2 justify-end pt-3">
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#0072BC] hover:bg-blue-800 text-white font-black text-xs rounded-xl shadow transition-all"
+                    disabled={isSubmitting}
+                    className={`px-5 py-2 text-white font-black text-xs rounded-xl shadow transition-all flex items-center gap-2 ${
+                      isSubmitting 
+                        ? 'bg-slate-400 cursor-not-allowed opacity-80' 
+                        : 'bg-[#0072BC] hover:bg-blue-800'
+                    }`}
                   >
-                    {isAr ? 'حفظ وإدراج الوثيقة' : 'Confirm & Save'}
+                    {isSubmitting ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>{isAr ? 'جاري الحفظ...' : 'Saving...'}</span>
+                      </>
+                    ) : (
+                      <span>{isAr ? 'حفظ وإدراج الوثيقة' : 'Confirm & Save'}</span>
+                    )}
                   </button>
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => setIsAddDocOpen(false)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
                   >
                     {isAr ? 'إلغاء' : 'Cancel'}
                   </button>
@@ -2022,6 +2395,69 @@ export default function HrDocumentTrackingTab({
                     />
                   </div>
 
+                  {/* File Upload Field for Edit Employee */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2 text-right">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-slate-700">{isAr ? 'تحديث ملف/صورة الوثيقة الكترونياً' : 'Update Digital Document File'}</span>
+                      {editEmpForm.docFile && (
+                        <button
+                          type="button"
+                          onClick={() => setEditEmpForm({ ...editEmpForm, docFile: '' })}
+                          className="text-[10px] text-rose-500 font-bold hover:underline"
+                        >
+                          {isAr ? 'إزالة الملف ❌' : 'Remove File ❌'}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {editEmpForm.docFile ? (
+                      <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-emerald-100">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                          <Paperclip className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-right" dir="rtl">
+                          <p className="text-[11px] font-bold text-slate-800 truncate">{isAr ? 'تم إرفاق المستند بنجاح' : 'Document file attached successfully'}</p>
+                          <p className="text-[9px] text-slate-400 font-mono">base64 encoded data</p>
+                        </div>
+                        <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border">
+                          {editEmpForm.docFile.startsWith('data:image/') ? (
+                            <img src={editEmpForm.docFile} alt="preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-red-500">PDF</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center py-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <Upload className="w-6 h-6 text-[#0072BC] mb-1 animate-pulse" />
+                        <span className="text-[10px] font-bold text-slate-600">{isAr ? 'اسحب الملف هنا أو انقر للتصفح' : 'Drag file here or click to browse'}</span>
+                        <span className="text-[8px] text-slate-400 mt-0.5">{isAr ? 'يدعم الصور و ملفات PDF (بحد أقصى 1MB)' : 'Supports Images & PDF (Max 1MB)'}</span>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 1.2 * 1024 * 1024) {
+                                alert(isAr ? 'حجم الملف كبير جداً! الحد الأقصى هو 1MB لضمان الحفظ في قاعدة البيانات.' : 'File is too large! Max allowed is 1MB to preserve database space.');
+                                return;
+                              }
+                              try {
+                                const b64 = await handleFileToBase64(file);
+                                setEditEmpForm({ ...editEmpForm, docFile: b64 });
+                                showToastMsg(isAr ? 'تم تحميل الملف بنجاح!' : 'File loaded successfully!', 'success');
+                              } catch (err) {
+                                console.error(err);
+                                alert(isAr ? 'فشل تحميل الملف' : 'Failed to load file');
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">{isAr ? 'ملاحظات وتفاصيل إضافية' : 'Notes'}</label>
                     <textarea
@@ -2137,6 +2573,69 @@ export default function HrDocumentTrackingTab({
                     />
                   </div>
 
+                  {/* File Upload Field for Edit Vehicle */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2 text-right">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-slate-700">{isAr ? 'تحديث ملف/صورة الوثيقة الكترونياً' : 'Update Digital Document File'}</span>
+                      {editVehForm.docFile && (
+                        <button
+                          type="button"
+                          onClick={() => setEditVehForm({ ...editVehForm, docFile: '' })}
+                          className="text-[10px] text-rose-500 font-bold hover:underline"
+                        >
+                          {isAr ? 'إزالة الملف ❌' : 'Remove File ❌'}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {editVehForm.docFile ? (
+                      <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-emerald-100">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                          <Paperclip className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-right" dir="rtl">
+                          <p className="text-[11px] font-bold text-slate-800 truncate">{isAr ? 'تم إرفاق المستند بنجاح' : 'Document file attached successfully'}</p>
+                          <p className="text-[9px] text-slate-400 font-mono">base64 encoded data</p>
+                        </div>
+                        <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border">
+                          {editVehForm.docFile.startsWith('data:image/') ? (
+                            <img src={editVehForm.docFile} alt="preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-red-500">PDF</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center py-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <Upload className="w-6 h-6 text-[#0072BC] mb-1 animate-pulse" />
+                        <span className="text-[10px] font-bold text-slate-600">{isAr ? 'اسحب الملف هنا أو انقر للتصفح' : 'Drag file here or click to browse'}</span>
+                        <span className="text-[8px] text-slate-400 mt-0.5">{isAr ? 'يدعم الصور و ملفات PDF (بحد أقصى 1MB)' : 'Supports Images & PDF (Max 1MB)'}</span>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 1.2 * 1024 * 1024) {
+                                alert(isAr ? 'حجم الملف كبير جداً! الحد الأقصى هو 1MB لضمان الحفظ في قاعدة البيانات.' : 'File is too large! Max allowed is 1MB to preserve database space.');
+                                return;
+                              }
+                              try {
+                                const b64 = await handleFileToBase64(file);
+                                setEditVehForm({ ...editVehForm, docFile: b64 });
+                                showToastMsg(isAr ? 'تم تحميل الملف بنجاح!' : 'File loaded successfully!', 'success');
+                              } catch (err) {
+                                console.error(err);
+                                alert(isAr ? 'فشل تحميل الملف' : 'Failed to load file');
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">{isAr ? 'ملاحظات وتفاصيل إضافية' : 'Notes'}</label>
                     <textarea
@@ -2152,14 +2651,27 @@ export default function HrDocumentTrackingTab({
               <div className="flex gap-2 justify-end pt-3">
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#0072BC] hover:bg-blue-800 text-white font-black text-xs rounded-xl shadow transition-all"
+                  disabled={isSubmitting}
+                  className={`px-5 py-2 text-white font-black text-xs rounded-xl shadow transition-all flex items-center gap-2 ${
+                    isSubmitting 
+                      ? 'bg-slate-400 cursor-not-allowed opacity-80' 
+                      : 'bg-[#0072BC] hover:bg-blue-800'
+                  }`}
                 >
-                  {isAr ? 'حفظ التعديلات' : 'Save Changes'}
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>{isAr ? 'جاري حفظ التعديلات...' : 'Saving changes...'}</span>
+                    </>
+                  ) : (
+                    <span>{isAr ? 'حفظ التعديلات' : 'Save Changes'}</span>
+                  )}
                 </button>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setIsEditDocOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
                 >
                   {isAr ? 'إلغاء' : 'Cancel'}
                 </button>
@@ -2207,6 +2719,226 @@ export default function HrDocumentTrackingTab({
                 {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: DETAILED DOCUMENT VIEW & LIVE PREVIEW */}
+      {isViewDocOpen && selectedViewDoc && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-4xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-6 text-right">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-3 border-b">
+              <h3 className="text-base font-black text-[#0072BC] flex items-center gap-1.5">
+                <FileText className="w-5 h-5 text-[#00AEEF]" />
+                <span>{isAr ? 'عرض ومعاينة المستند والامتثال' : 'View Document Compliance & Live Preview'}</span>
+              </h3>
+              <button onClick={() => { setIsViewDocOpen(false); setSelectedViewDoc(null); }} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Bento-style Grid Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'نوع الوثيقة' : 'Document Type'}</span>
+                <span className="text-xs font-black text-slate-800">{selectedViewDoc.docType}</span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'رقم الوثيقة' : 'Document Number'}</span>
+                <span className="text-xs font-mono font-bold text-slate-800">{selectedViewDoc.docNumber || '—'}</span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'تاريخ الانتهاء' : 'Expiry Date'}</span>
+                <span className="text-xs font-mono font-black text-rose-600">{selectedViewDoc.expiryDate}</span>
+              </div>
+              
+              {activePortal === 'employee' ? (
+                <>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'اسم المنشأة / الكيان' : 'Establishment Name'}</span>
+                    <span className="text-xs font-black text-[#0072BC]">{selectedViewDoc.employeeName}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'الرقم الموحد / رقم السجل' : 'Unified ID / CR Number'}</span>
+                    <span className="text-xs font-mono font-bold text-slate-800">{selectedViewDoc.employeeId}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'الفرع / النشاط' : 'Branch / Active Sector'}</span>
+                    <span className="text-xs font-bold text-slate-600">{selectedViewDoc.department}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'رقم لوحة المركبة' : 'Plate Number'}</span>
+                    <span className="text-xs font-mono font-black text-slate-800">{selectedViewDoc.plateNumber}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'المركبة' : 'Vehicle'}</span>
+                    <span className="text-xs font-bold text-slate-800">{selectedViewDoc.vehicleName}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 block font-bold">{isAr ? 'الموديل والسائق' : 'Model & Driver'}</span>
+                    <span className="text-xs font-bold text-slate-600">{selectedViewDoc.model} - {selectedViewDoc.driverName || '—'}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Document Image & PDF Visualizer Card */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-slate-700 flex items-center justify-between">
+                <span>{isAr ? '🖼️ الصورة أو الملف الرقمي للوثيقة' : '🖼️ Digital Scan & Document Card'}</span>
+                
+                {selectedViewDoc.docFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = selectedViewDoc.docFile;
+                      link.download = `document_${selectedViewDoc.docType}_${selectedViewDoc.docNumber || 'scan'}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      showToastMsg(isAr ? 'جاري تنزيل المستند المرفق...' : 'Downloading attached scan file...', 'success');
+                    }}
+                    className="text-[10px] bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-2.5 py-1 rounded-lg border border-emerald-200 transition-all flex items-center gap-1 font-bold"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isAr ? 'تحميل وحفظ على جهازي' : 'Download file'}</span>
+                  </button>
+                )}
+              </h4>
+
+              {selectedViewDoc.docFile ? (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-100 flex flex-col items-center justify-center p-4 min-h-[300px] shadow-inner relative group">
+                  {selectedViewDoc.docFile.startsWith('data:image/') ? (
+                    <img 
+                      src={selectedViewDoc.docFile} 
+                      alt="Compliance Doc Scan" 
+                      className="max-h-[500px] max-w-full rounded-lg shadow border object-contain bg-white animate-fade-in"
+                    />
+                  ) : selectedViewDoc.docFile.startsWith('data:application/pdf') ? (
+                    <div className="w-full h-[500px] bg-white rounded-xl border p-2">
+                      <embed src={selectedViewDoc.docFile} type="application/pdf" className="w-full h-full rounded" />
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-white rounded-2xl border max-w-sm">
+                      <Paperclip className="w-12 h-12 text-[#0072BC] mx-auto mb-2 animate-bounce" />
+                      <p className="text-xs font-bold text-slate-800">{isAr ? 'تم تحميل مستند PDF بنجاح' : 'PDF Document Loaded successfully'}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{isAr ? 'يمكنك تنزيله على جهازك لمشاهدته بشكل كامل.' : 'You can download it to view it fully.'}</p>
+                    </div>
+                  )}
+
+                  {/* Actions overlay for changing / removing the file */}
+                  <div className="mt-4 flex gap-2 justify-center w-full">
+                    <label className="text-[11px] bg-blue-50 text-blue-700 hover:bg-[#0072BC] hover:text-white px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer transition-all font-bold flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isAr ? 'تغيير أو تحديث الملف المرفق' : 'Change attached file'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,application/pdf" 
+                        className="hidden" 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 1.2 * 1024 * 1024) {
+                              alert(isAr ? 'حجم الملف كبير جداً! الأقصى 1MB' : 'File is too large! Max 1MB');
+                              return;
+                            }
+                            try {
+                              const b64 = await handleFileToBase64(file);
+                              await handleUpdateFileFromView(b64);
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={handleRemoveFileFromView}
+                      className="text-[11px] bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-xl border border-rose-200 transition-all font-bold flex items-center gap-1"
+                    >
+                      <span>❌ {isAr ? 'إزالة الملف المرفق' : 'Remove file'}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center bg-slate-50 flex flex-col items-center justify-center gap-2">
+                  <Upload className="w-10 h-10 text-slate-300 animate-pulse" />
+                  <p className="text-xs font-bold text-slate-700">{isAr ? 'لا يوجد ملف مرفق الكترونياً لهذه الوثيقة حالياً!' : 'No attached scan file found!'}</p>
+                  <p className="text-[10px] text-slate-400 max-w-md">{isAr ? 'يمكنك رفع صورة للوثيقة أو ملف PDF هنا لحفظه مباشرة في السجل وعرضه وتنزيله في أي وقت.' : 'Upload a scan/photo of the document or PDF here to save directly.'}</p>
+                  
+                  <label className="mt-2 text-xs bg-[#0072BC] hover:bg-blue-800 text-white font-black px-4 py-2 rounded-xl shadow cursor-pointer transition-all flex items-center gap-1.5">
+                    <Upload className="w-4 h-4" />
+                    <span>{isAr ? 'اختر ملف الوثيقة لرفعه الآن' : 'Upload file now'}</span>
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf" 
+                      className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 1.2 * 1024 * 1024) {
+                            alert(isAr ? 'حجم الملف كبير جداً! الأقصى 1MB' : 'File too large! Max 1MB');
+                            return;
+                          }
+                          try {
+                            const b64 = await handleFileToBase64(file);
+                            await handleUpdateFileFromView(b64);
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* Document external link url preview */}
+              {selectedViewDoc.docUrl && (
+                <div className="bg-slate-50 p-3 rounded-2xl border flex items-center justify-between text-xs">
+                  <div className="text-right">
+                    <span className="font-bold text-slate-500 block text-[10px]">{isAr ? 'الرابط الرقمي الخارجي المربوط:' : 'Linked External URL:'}</span>
+                    <a href={selectedViewDoc.docUrl} target="_blank" rel="noreferrer" className="text-[#0072BC] underline font-mono break-all">{selectedViewDoc.docUrl}</a>
+                  </div>
+                  <a 
+                    href={selectedViewDoc.docUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="p-2 bg-[#0072BC]/10 text-[#0072BC] hover:bg-[#0072BC] hover:text-white rounded-xl transition-all font-bold text-[10px]"
+                  >
+                    {isAr ? 'فتح في علامة تبويب جديدة 🌐' : 'Open Link 🌐'}
+                  </a>
+                </div>
+              )}
+
+              {selectedViewDoc.notes && (
+                <div className="bg-slate-50 p-3 rounded-2xl border text-xs text-right">
+                  <span className="font-bold text-slate-500 block text-[10px]">{isAr ? 'تفاصيل وملاحظات إضافية:' : 'Notes / Additional Details:'}</span>
+                  <p className="text-slate-700 font-bold mt-1 leading-relaxed">{selectedViewDoc.notes}</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex gap-2 justify-end border-t pt-4">
+              <button
+                type="button"
+                onClick={() => { setIsViewDocOpen(false); setSelectedViewDoc(null); }}
+                className="px-5 py-2.5 bg-slate-900 text-white font-black text-xs rounded-xl shadow-md hover:bg-slate-800 transition-all"
+              >
+                {isAr ? 'إغلاق المعاينة' : 'Close Preview'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}

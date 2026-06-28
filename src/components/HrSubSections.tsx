@@ -93,9 +93,10 @@ export default function HrSubSections({
       homeAddress: newEmp.homeAddress || '',
       custody: newEmp.custody || {},
       birthDate: newEmp.birthDate || '',
-      dateOfJoining: new Date().toISOString().slice(0, 10),
+      dateOfJoining: newEmp.dateOfJoining || new Date().toISOString().slice(0, 10),
       contractExpiry: newEmp.contractExpiry || '',
-      department: newEmp.department || 'Production'
+      department: newEmp.department || 'Production',
+      ...newEmp // Spread all other fields to preserve them
     };
 
     setLocalEmployees(prev => [...prev, fullEmp]);

@@ -77,6 +77,8 @@ function mapEmployeeFromDB(row: any): any {
     classification: row.classification || "",
     contractUrl: row.contractUrl || row.contract_url || "",
     contractQiwaNumber: row.contractQiwaNumber || row.contract_qiwa_number || "",
+    iqamaExpiryDate: row.iqamaExpiryDate || row.iqama_expiry_date || "",
+    passportExpiryDate: row.passportExpiryDate || row.passport_expiry_date || "",
     insurancePolicyNumber: row.insurancePolicyNumber || row.insurance_policy_number || "",
     insuranceCompany: row.insuranceCompany || row.insurance_company || "",
     insuranceClass: row.insuranceClass || row.insurance_class || "",
@@ -84,7 +86,10 @@ function mapEmployeeFromDB(row: any): any {
     custodyAssets: row.custodyAssets || row.custody_assets || [],
     vacationBalance: row.vacationBalance || row.vacation_balance,
     vacationUsed: row.vacationUsed || row.vacation_used,
-    sickUsed: row.sickUsed || row.sick_used
+    sickUsed: row.sickUsed || row.sick_used,
+    personalPhoto: row.personalPhoto || "",
+    iqamaPhoto: row.iqamaPhoto || "",
+    passportPhoto: row.passportPhoto || ""
   };
 }
 

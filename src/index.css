@@ -158,10 +158,10 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 210mm; /* A4 size */
-    height: 297mm;
+    width: 100%;
+    height: auto;
     margin: 0;
-    padding: 20mm;
+    padding: 0;
     box-shadow: none !important;
     border: none !important;
     background: white !important;

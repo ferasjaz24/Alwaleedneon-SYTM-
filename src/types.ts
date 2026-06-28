@@ -102,6 +102,10 @@ export interface Employee {
   vacationBalance?: number;
   vacationUsed?: number;
   sickUsed?: number;
+  personalPhoto?: string;
+  iqamaPhoto?: string;
+  passportPhoto?: string;
+  religion?: string;
 }
 
 export interface SignageItem {
@@ -300,6 +304,7 @@ export interface EmployeeDoc {
   issueDate?: string;
   expiryDate: string;
   docUrl: string;
+  docFile?: string;
   notes: string;
   status: string; // سارية, قريبة من الانتهاء, تحتاج متابعة, حرجة, تنتهي اليوم, منتهية
   alertDays?: number;
@@ -318,6 +323,7 @@ export interface VehicleDoc {
   issueDate?: string;
   expiryDate: string;
   docUrl: string;
+  docFile?: string;
   notes: string;
   status: string;
   alertDays?: number;
