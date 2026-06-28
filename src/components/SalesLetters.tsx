@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Printer, Save, PenTool, Search } from 'lucide-react';
 import { User } from '../types';
 import { DocumentHeader, DocumentFooter } from '../utils/PrintSharedComponents';
+import { sharedPrintHeader, sharedPrintFooter } from '../utils/PrintShared';
 import RichTextToolbar from './RichTextToolbar';
 import { getAdvancedPermissionScope } from '../lib/permissions';
 
@@ -224,6 +225,18 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0 auto;
                 padding: 0;
               }
+              .doc-container > div, #printable-sales-letter, #printable-sales-letter-page2 {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 100% !important;
+                box-sizing: border-box !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+              }
               .action-btns { 
                 text-align: center; 
                 margin: 20px 0;
@@ -441,6 +454,18 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0 auto;
                 padding: 0;
               }
+              .doc-container > div, #printable-sales-letter, #printable-sales-letter-page2 {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 100% !important;
+                box-sizing: border-box !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+              }
               .action-btns { 
                 text-align: center; 
                 margin: 20px 0;
@@ -474,13 +499,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
             <div class="doc-container">
               <div style="width: 210mm; height: 297mm; padding: 3cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white;">
                 <!-- Header -->
-                <div style="border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                  <div style="text-align: right;">
-                    <h1 style="color: #0072BC; font-size: 18px; font-weight: 900; margin: 0;">شركة فنون الوليد للصناعة</h1>
-                    <p style="color: #64748b; font-size: 11px; margin: 2px 0 0 0; font-weight: bold;">مملوكة لمؤسسة الوليد التجارية | ترخيص صناعي رقم 44110511855</p>
-                  </div>
-                  <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" style="height: 50px; object-fit: contain;" alt="Logo" />
-                </div>
+                ${sharedPrintHeader}
 
                 <!-- Content -->
                 <div style="flex-grow: 1; outline: none; white-space: pre-wrap; font-family: sans-serif; font-size: 14px; line-height: 1.8; color: #1c1917;">
@@ -496,25 +515,14 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 ` : ''}
 
                 <!-- Footer -->
-                <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: auto; font-size: 10px; color: #64748b; font-weight: bold;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <p style="margin:0;">الرياض، المملكة العربية السعودية | جوال: 0555234509 </p>
-                    <p style="margin:0;">Al Waleed Industrial Arts Co.</p>
-                  </div>
-                </div>
+                ${sharedPrintFooter}
               </div>
 
               <!-- Page 2 for bank details if needed -->
               ${logItem.title.includes('دفعة') || logItem.title.includes('سداد') || logItem.title.includes('مالي') || logItem.title.includes('مطالبة') ? `
                 <div class="page-break" style="page-break-before: always; width: 210mm; height: 297mm; padding: 3cm; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: white; margin-top: 20px;">
                   <!-- Header -->
-                  <div style="border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div style="text-align: right;">
-                      <h1 style="color: #0072BC; font-size: 18px; font-weight: 900; margin: 0;">شركة فنون الوليد للصناعة</h1>
-                      <p style="color: #64748b; font-size: 11px; margin: 2px 0 0 0; font-weight: bold;">مملوكة لمؤسسة الوليد التجارية | ترخيص صناعي رقم 44110511855</p>
-                    </div>
-                    <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" style="height: 50px; object-fit: contain;" alt="Logo" />
-                  </div>
+                  ${sharedPrintHeader}
 
                   <!-- Bank Image Centered -->
                   <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 40px;">
@@ -523,12 +531,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                   </div>
 
                   <!-- Footer -->
-                  <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: auto; font-size: 10px; color: #64748b; font-weight: bold;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                      <p style="margin:0;">الرياض، المملكة العربية السعودية | جوال: 0555234509 </p>
-                      <p style="margin:0;">Al Waleed Industrial Arts Co.</p>
-                    </div>
-                  </div>
+                  ${sharedPrintFooter}
                 </div>
               ` : ''}
             </div>

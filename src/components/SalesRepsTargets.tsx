@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Quotation, Employee } from '../types';
 import { Trash2, Search, PlusCircle, Printer, Target, TrendingUp, DollarSign, Activity, Users, CheckCircle, Clock, Sparkles } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip, XAxis, CartesianGrid, Legend } from 'recharts';
+import { sharedPrintHeader, sharedPrintFooter } from '../utils/PrintShared';
 
 interface Props {
   lang: 'ar' | 'en';
@@ -364,12 +365,6 @@ export default function SalesRepsTargets({ lang, user }: Props) {
               @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
               @page { size: A4; margin: 20mm; }
               body { font-family: 'Tajawal', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
-              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px; margin-bottom: 15px; }
-              .header-logo { width: 70px; height: 70px; object-fit: contain; }
-              .header-text { text-align: right; display: flex; flex-direction: column; justify-content: center;}
-              .header-text h2 { font-size: 18px; font-weight: 900; color: #374151; margin: 0; }
-              .header-text h3 { font-size: 9px; font-weight: bold; color: #6b7280; margin-top: 2px; letter-spacing: 0.1em; }
-              .footer { margin-top: auto; border-top: 2px solid #0072BC; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; color: #4b5563; align-items: flex-start; min-height: 40px; }
               .stat-box { border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 8px; background: #f8fafc; }
               .stat-box-label { color: #64748b; margin-bottom: 2px; font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
               .stat-box-value { font-size: 14px; font-weight: 900; color: #0f172a; white-space: nowrap; }
@@ -379,15 +374,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
         </head>
         <body style="height: 100vh; display: flex; flex-direction: column;">
           
-          <div class="header">
-            <div class="header-text" dir="rtl">
-              <h2>شركة فنون الوليد للصناعة</h2>
-              <h3 style="font-family: sans-serif;">FONOUN ALWALEED INDUSTRIAL CO.</h3>
-            </div>
-            <div>
-              <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" class="header-logo" />
-            </div>
-          </div>
+          ${sharedPrintHeader}
 
           <h1 class="text-xl font-black mb-3 text-center text-slate-800">تقرير مؤشرات أداء وتشغيل: ${repName} - <span class="text-slate-500 text-base font-bold">عن شهر: ${selectedMonth}</span></h1>
           
@@ -463,16 +450,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
             ${dailyChartHTML}
           </div>
 
-          <div class="footer" dir="ltr">
-            <div style="text-align: left; line-height: 1.6;">
-              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
-              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
-            </div>
-            <div style="text-align: right; line-height: 1.6;">
-              <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
-              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
-            </div>
-          </div>
+          ${sharedPrintFooter}
 
           <script>
             window.onload = function() {

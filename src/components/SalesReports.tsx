@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FileBarChart, Printer, Search, Calendar, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { sharedPrintHeader, sharedPrintFooter } from '../utils/PrintShared';
 
 export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: any }) {
   const [clients, setClients] = useState<any[]>([]);
@@ -736,13 +737,6 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           @page { size: A4; margin: 20mm; }
           body { font-family: 'Tajawal', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
           
-          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 15px; margin-bottom: 25px; }
-          .header-logo { width: 80px; object-fit: contain; }
-          .header-text { text-align: right; display: flex; flex-direction: column; justify-content: center;}
-          .header-text h2 { font-size: 20px; font-weight: 900; color: #374151; margin: 0; }
-          .header-text h3 { font-size: 10px; font-weight: bold; color: #6b7280; margin-top: 3px; letter-spacing: 0.1em; }
-          .footer { margin-top: auto; border-top: 2px solid #0072BC; padding-top: 15px; display: flex; justify-content: space-between; font-size: 10px; color: #4b5563; align-items: flex-start; }
-          
           .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 30px; color: #0072BC; border-bottom: 2px dashed #e2e8f0; padding-bottom: 15px;}
           .section-title { font-size: 18px; font-weight: bold; color: #334155; margin-top: 30px; margin-bottom: 15px; background: #f1f5f9; padding: 10px 15px; border-right: 4px solid #0072BC; border-radius: 4px;}
           .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;}
@@ -756,28 +750,13 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
         </style>
       </head>
       <body>
-          <div class="header">
-            <div class="header-text">
-              <h2>شركة فنون الوليد للصناعة</h2>
-              <h3 style="font-family: sans-serif;">FONOUN ALWALEED INDUSTRIAL CO.</h3>
-            </div>
-            <img src="https://i.postimg.cc/HHxYjFfT/Alwaleed-Logo-Vertical-Blue.png" alt="Company Logo" class="header-logo" />
-          </div>
+          ${sharedPrintHeader}
 
          <div style="flex: 1;">
            ${contentHtml}
          </div>
 
-          <div class="footer">
-            <div>
-              <strong>العنوان:</strong> المدينة الصناعية، الرياض، المملكة العربية السعودية<br/>
-              <strong>الرقم الضريبي:</strong> 311029279500003
-            </div>
-            <div style="text-align: left;" dir="ltr">
-              <strong>Email:</strong> info@fawalweed.com<br/>
-              <strong>Website:</strong> www.fawalweed.com
-            </div>
-          </div>
+          ${sharedPrintFooter}
          <script>
             window.onload = function() {
               setTimeout(function(){ window.print(); }, 800);

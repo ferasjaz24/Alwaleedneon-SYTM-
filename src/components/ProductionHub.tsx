@@ -1059,6 +1059,245 @@ export default function ProductionHub({
     }, 250);
   };
 
+  const handlePrintSingleInbound = (item: any) => {
+    const associatedProc = procurementRequests.find(
+      (p) =>
+        p.projectId === item.id ||
+        p.quotationNumber === item.quotationNumber,
+    );
+    const itemWithProcurement = { ...item, associatedProc };
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) return;
+
+    const title = lang === "ar" ? "تفاصيل الطلب / المشروع" : "Project / Order Details";
+
+    const durationHTML = (() => {
+      if (item.orderedAt && item.completedAt) {
+        const diffMs = new Date(item.completedAt).getTime() - new Date(item.orderedAt).getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        let durationStr = '';
+        if (lang === 'ar') {
+          if (diffDays > 0) {
+            const remainingHours = diffHours % 24;
+            durationStr = `${diffDays} يوم و ${remainingHours} ساعة`;
+          } else if (diffHours > 0) {
+            const remainingMins = diffMins % 60;
+            durationStr = `${diffHours} ساعة و ${remainingMins} دقيقة`;
+          } else {
+            durationStr = `${diffMins} دقيقة`;
+          }
+        } else {
+          if (diffDays > 0) {
+            const remainingHours = diffHours % 24;
+            durationStr = `${diffDays} days, ${remainingHours} hours`;
+          } else if (diffHours > 0) {
+            const remainingMins = diffMins % 60;
+            durationStr = `${diffHours} hours, ${remainingMins} mins`;
+          } else {
+            durationStr = `${diffMins} mins`;
+          }
+        }
+        
+        return `
+        <div class="field">
+          <div class="label">${lang === 'ar' ? 'الوقت المستغرق للتركيب' : 'Installation Duration'}</div>
+          <div class="value" style="color: #059669; font-weight: bold;">${durationStr}</div>
+        </div>`;
+      }
+      return '';
+    })();
+
+    const htmlContent = `
+      <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
+        <head>
+          <title>${title}</title>
+          <style>
+            ${sharedPrintStyles}
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; }
+            h1 { text-align: center; color: #0f172a; margin-bottom: 30px; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+            .item-card { border: 2px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 25px; page-break-inside: avoid; }
+            .item-header { display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
+            .item-title { font-size: 18px; font-weight: bold; color: #334155; }
+            .item-id { font-size: 14px; color: #64748b; font-family: monospace; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .field { margin-bottom: 10px; }
+            .label { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+            .value { font-size: 14px; color: #0f172a; font-weight: 600; }
+            .table-container { margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+            table { border-collapse: collapse; width: 100%; text-align: ${lang === 'ar' ? 'right' : 'left'}; font-size: 12px; }
+            th { background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: bold; }
+            td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+            tr:last-child td { border-bottom: none; }
+            @media print {
+              body { padding: 0; }
+              .item-card { border-color: #94a3b8; box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${sharedPrintHeader}
+          <h1>${title}</h1>
+          <div class="item-card">
+            <div class="item-header">
+              <div class="item-title">${item.projectName || item.name || 'N/A'}</div>
+              <div class="item-id">#${item.requestNumber || item.orderNumber || item.projectNumber || item.id.substring(0, 8).toUpperCase()}</div>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'الحالة' : 'Status'}</div>
+                <div class="value">${item.status || item.installationStatus || 'N/A'}</div>
+              </div>
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'العميل' : 'Client'}</div>
+                <div class="value">${item.clientName || 'N/A'}</div>
+              </div>
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'تاريخ البدء/الإنشاء' : 'Start/Creation Date'}</div>
+                <div class="value">${new Date(item.requestDate || item.createdAt || item.startDate || Date.now()).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+              </div>
+              ${item.endDate ? `
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'تاريخ الانتهاء المتوقع' : 'Target End Date'}</div>
+                <div class="value">${new Date(item.endDate).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+              </div>` : ''}
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'المندوب' : 'Sales Rep'}</div>
+                <div class="value">${item.salesRep || item.createdBy || 'N/A'}</div>
+              </div>
+              ${item.quotationNumber ? `
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'رقم عرض السعر' : 'Quotation No.'}</div>
+                <div class="value">${item.quotationNumber}</div>
+              </div>` : ''}
+              ${item.googleMapsLink ? `
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'رابط الموقع' : 'Location Link'}</div>
+                <div class="value"><a href="${item.googleMapsLink}" target="_blank">${lang === 'ar' ? 'عرض الخريطة' : 'View Map'}</a></div>
+              </div>` : ''}
+              ${item.orderedAt ? `
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'تاريخ التوجيه للتركيب' : 'Installation Order Date'}</div>
+                <div class="value">${new Date(item.orderedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+              </div>` : ''}
+              ${item.completedAt ? `
+              <div class="field">
+                <div class="label">${lang === 'ar' ? 'تاريخ إتمام التركيب' : 'Installation Completed At'}</div>
+                <div class="value">${new Date(item.completedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+              </div>` : ''}
+              ${durationHTML}
+            </div>
+
+            ${item.crew && Array.isArray(item.crew) && item.crew.length > 0 ? `
+              <div style="margin-top: 15px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                <div class="label" style="font-weight: bold;">${lang === 'ar' ? 'فريق التركيب المكلف بالمهمة' : 'Assigned Installation Team'}</div>
+                <div class="value" style="font-weight: bold; color: #0072BC;">${item.crew.map((c: any) => c.name || c).join('، ')}</div>
+              </div>
+            ` : ''}
+
+            ${item.tasks && Array.isArray(item.tasks) && item.tasks.length > 0 ? `
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>${lang === 'ar' ? 'المهمة' : 'Task'}</th>
+                      <th>${lang === 'ar' ? 'الكمية/الوصف' : 'Qty/Desc'}</th>
+                      <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${item.tasks.map((t: any) => `
+                      <tr>
+                        <td>${t.description || t.taskName || t.name || '-'}</td>
+                        <td>${t.quantity || t.qty || '-'}</td>
+                        <td>${t.status || t.isCompleted ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'قيد التنفيذ' : 'Pending')}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+
+            ${item.items && Array.isArray(item.items) && item.items.length > 0 ? `
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>${lang === 'ar' ? 'الصنف' : 'Item'}</th>
+                      <th>${lang === 'ar' ? 'الكمية' : 'Qty'}</th>
+                      <th>${lang === 'ar' ? 'الملاحظات' : 'Notes'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${item.items.map((i: any) => `
+                      <tr>
+                        <td>${i.name || '-'}</td>
+                        <td>${i.quantity || i.qty || 1}</td>
+                        <td>${i.notes || '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+            
+            ${itemWithProcurement.associatedProc && itemWithProcurement.associatedProc.items && itemWithProcurement.associatedProc.items.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="label">${lang === 'ar' ? 'المواد المطلوبة للمشروع (طلب شراء/صرف)' : 'Requested Materials'}</div>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>${lang === 'ar' ? 'الصنف' : 'Item'}</th>
+                      <th>${lang === 'ar' ? 'الكمية' : 'Qty'}</th>
+                      <th>${lang === 'ar' ? 'حالة الطلب' : 'Status'}</th>
+                      <th>${lang === 'ar' ? 'ملاحظات' : 'Notes'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemWithProcurement.associatedProc.items.map((pi: any) => `
+                      <tr>
+                        <td>${pi.name || '-'}</td>
+                        <td>${pi.quantity || pi.qty || 1}</td>
+                        <td>${pi.status || itemWithProcurement.associatedProc.status || '-'}</td>
+                        <td>${pi.notes || '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+
+            ${item.notes || item.reason ? `
+              <div class="field" style="margin-top: 15px;">
+                <div class="label">${lang === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}</div>
+                <div class="value" style="font-weight: normal;">${item.notes || item.reason}</div>
+              </div>
+            ` : ''}
+          </div>
+          ${sharedPrintFooter}
+          <script>
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWin.document.open();
+    printWin.document.write(htmlContent);
+    printWin.document.close();
+    
+    setTimeout(() => {
+      printWin.print();
+    }, 250);
+  };
+
   const handleCreateProductionOrder = async () => {
     if (!selectedInbound) return;
 
@@ -4872,7 +5111,7 @@ export default function ProductionHub({
                 )}
 
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => handlePrintSingleInbound(selectedInbound)}
                   className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-xs cursor-pointer w-full sm:w-auto shadow"
                 >
                   🖨️ {lang === "ar" ? "طباعة" : "Print"}

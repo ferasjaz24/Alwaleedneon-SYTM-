@@ -241,7 +241,7 @@ export default function SalesQuotations({ lang, user }: Props) {
   const getPrintStyles = () => `
 @page {
   size: A4 portrait;
-  margin: 20mm;
+  margin: 10mm 15mm 15mm 15mm;
 }
 html,
 body {
@@ -571,11 +571,11 @@ body {
     background: #ffffff !important;
   }
   .quotation-print-page {
-    width: 210mm;
-    min-height: 297mm;
-    margin: 0 auto;
-    padding: 4mm 6mm 8mm 6mm;
-    box-shadow: none;
+    width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
     page-break-after: always;
   }
   
@@ -596,14 +596,37 @@ body {
   }
 }
   `;
-  const generateSingleHTML = (sq, matchingClient, totalRounded, subtotal, vat, total, formattedTermsText) => `
+  const generateSingleHTML = (sq, matchingClient, totalRounded, subtotal, vat, total, formattedTermsText) => {
+    const statusText = sq.status || "مسودة";
+    const statusColor = statusText === 'معتمد' ? '#10b981' : '#f59e0b';
+    const statusBg = statusText === 'معتمد' ? '#ecfdf5' : '#fffbeb';
+
+    return `
             <div class="quotation-print-page">
-              <!-- الحالة -->
-              <div class="quotation-status">
-                ${sq.status || "مسودة"}
+              <!-- رأس الصفحة المدمج مع الحالة في المنتصف -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 8px; margin-bottom: 20px; user-select: none; direction: ltr;">
+                <!-- معلومات الشركة -->
+                <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
+                  <h2 style="font-size: 20px; font-weight: 900; color: #374151; margin: 0; font-family: 'Tajawal', sans-serif;" dir="rtl">
+                    شركة فنون الوليد للصناعة
+                  </h2>
+                  <h3 style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
+                    FONOUN ALWALEED INDUSTRIAL CO.
+                  </h3>
+                </div>
+                
+                <!-- الحالة في منتصف رأس الصفحة -->
+                <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
+                  <span style="font-size: 15px; font-weight: 800; padding: 4px 14px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'Cairo', 'Tajawal', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
+                    ${statusText}
+                  </span>
+                </div>
+
+                <!-- الشعار -->
+                <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
+                  <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 70px; height: 70px; object-fit: contain;" />
+                </div>
               </div>
-              <!-- رأس الصفحة -->
-              ${sharedPrintHeader}
               
               <div style="justify-content: space-between; display: flex; align-items: flex-end; margin-bottom: 3mm; direction: rtl;">
                 <!-- Title "عروض أسعار" on the right -->
@@ -723,6 +746,7 @@ body {
               ${sharedPrintFooter}
             </div>
   `;
+  };
   const processQuotationContext = (sq) => {
      const subtotal = calculateAmountWithoutTax(sq.items);
      const vat = subtotal * 0.15;

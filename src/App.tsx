@@ -32,6 +32,8 @@ import {
   Lock,
   Database,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import HrSubSections from "./components/HrSubSections";
@@ -177,6 +179,8 @@ export default function App() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loginLogs, setLoginLogs] = useState<any[]>([]);
+  const [logPage, setLogPage] = useState(1);
+  const [logPerPage, setLogPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
 
   // Active module tab
@@ -620,7 +624,7 @@ export default function App() {
   const handleF24Login = (e: React.FormEvent) => {
     e.preventDefault();
     setF24Error("");
-    if (f24User.toUpperCase() === "FERAS" && f24Pass === "2424") {
+    if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
       const superAdmin: User = {
         username: "FERAS",
         role: "Super Admin",
@@ -628,7 +632,7 @@ export default function App() {
         dateCreated: "2026-01-01",
       };
       setUser(superAdmin);
-      logLoginEvent("FERAS (FM5 M)");
+      logLoginEvent("FERAS");
       setShowF24Modal(false);
       setActiveTab("dashboard");
     } else {
@@ -1167,10 +1171,8 @@ export default function App() {
                   setF24ClickCount(newCount);
                 }
               }}
-              className="absolute top-4 right-4 w-12 h-12 opacity-0 cursor-default select-none z-50 bg-white/5 rounded-full"
-              title="SYSTEM_RESET_INDICATOR"
+              className="absolute top-4 right-4 w-12 h-12 opacity-0 cursor-default select-none z-50 bg-transparent rounded-full"
             >
-              F24
             </button>
 
             {/* Logo details inside card */}
@@ -1258,9 +1260,6 @@ export default function App() {
                   <span className="inline-block p-3 bg-[#0072BC]/20 text-[#00AEEF] rounded-2xl mb-2">
                     <Shield className="w-8 h-8" />
                   </span>
-                  <h3 className="text-lg font-black text-white">
-                    FM5 M
-                  </h3>
                   <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                     {lang === "ar"
                       ? "الدخول المباشر المعلم فراس"
@@ -2374,56 +2373,135 @@ export default function App() {
                     </div>
 
                     <div className="overflow-x-auto">
-                      {loginLogs.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 text-xs">
-                          {lang === "ar" ? "لا توجد سجلات دخول حتى الآن" : "No login records registered yet."}
-                        </div>
-                      ) : (
-                        <table className="w-full text-right text-xs">
-                          <thead>
-                            <tr className="border-b border-slate-100 text-slate-400">
-                              <th className="py-3 px-2 text-right">
-                                {lang === "ar" ? "المستخدم" : "User Account"}
-                              </th>
-                              <th className="py-3 px-2 text-right">
-                                {lang === "ar" ? "عنوان IP للجهاز" : "Device IP Address"}
-                              </th>
-                              <th className="py-3 px-2 text-right">
-                                {lang === "ar" ? "التاريخ" : "Date"}
-                              </th>
-                              <th className="py-3 px-2 text-right">
-                                {lang === "ar" ? "الوقت" : "Time"}
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {loginLogs.map((logItem) => (
-                              <tr
-                                key={logItem.id}
-                                className="border-b border-slate-50 hover:bg-slate-50/50 transition-all font-mono"
-                              >
-                                <td className="py-3 px-2 font-sans font-bold text-slate-800">
+                      {(() => {
+                        const totalLogs = loginLogs.length;
+                        const totalLogPages = Math.ceil(totalLogs / logPerPage) || 1;
+                        const currentLogPage = Math.min(logPage, totalLogPages);
+                        const startIndex = (currentLogPage - 1) * logPerPage;
+                        const paginatedLogs = loginLogs.slice(startIndex, startIndex + logPerPage);
+
+                        return (
+                          <>
+                            {totalLogs === 0 ? (
+                              <div className="p-8 text-center text-slate-400 text-xs">
+                                {lang === "ar" ? "لا توجد سجلات دخول حتى الآن" : "No login records registered yet."}
+                              </div>
+                            ) : (
+                              <>
+                                <table className="w-full text-right text-xs">
+                                  <thead>
+                                    <tr className="border-b border-slate-100 text-slate-400">
+                                      <th className="py-3 px-2 text-right">
+                                        {lang === "ar" ? "المستخدم" : "User Account"}
+                                      </th>
+                                      <th className="py-3 px-2 text-right">
+                                        {lang === "ar" ? "عنوان IP للجهاز" : "Device IP Address"}
+                                      </th>
+                                      <th className="py-3 px-2 text-right">
+                                        {lang === "ar" ? "التاريخ" : "Date"}
+                                      </th>
+                                      <th className="py-3 px-2 text-right">
+                                        {lang === "ar" ? "الوقت" : "Time"}
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {paginatedLogs.map((logItem) => {
+                                      const cleanedUsername = logItem.username ? logItem.username.replace(/\s*\(.*\)\s*/g, "").trim() : "Unknown";
+                                      const logDate = logItem.date || (logItem.timestamp ? new Date(logItem.timestamp).toLocaleDateString('en-CA') : "-");
+                                      const logTime = logItem.time || (logItem.timestamp ? new Date(logItem.timestamp).toLocaleTimeString('en-US', { hour12: false }) : "-");
+                                      return (
+                                        <tr
+                                          key={logItem.id}
+                                          className="border-b border-slate-50 hover:bg-slate-50/50 transition-all font-mono"
+                                        >
+                                          <td className="py-3 px-2 font-sans font-bold text-slate-800">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                              <span>{cleanedUsername}</span>
+                                            </div>
+                                          </td>
+                                          <td className="py-3 px-2">
+                                            <span className="px-2 py-1 bg-sky-50 text-sky-700 font-bold rounded-lg border border-sky-100 text-[10px]">
+                                              🌐 {logItem.ipAddress}
+                                            </span>
+                                          </td>
+                                          <td className="py-3 px-2 text-slate-600">
+                                            {logDate}
+                                          </td>
+                                          <td className="py-3 px-2 text-indigo-600 font-semibold">
+                                            {logTime}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+
+                                {/* Pagination Controls */}
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    <span>{logItem.username}</span>
+                                    <span>{lang === "ar" ? "عدد السجلات المعروضة:" : "Rows per page:"}</span>
+                                    <div className="flex items-center gap-1 bg-slate-50 p-0.5 rounded-lg border border-slate-200">
+                                      {[5, 20, 50, 100].map((size) => (
+                                        <button
+                                          key={size}
+                                          type="button"
+                                          onClick={() => {
+                                            setLogPerPage(size);
+                                            setLogPage(1);
+                                          }}
+                                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
+                                            logPerPage === size
+                                              ? "bg-[#0072BC] text-white shadow-sm"
+                                              : "text-slate-600 hover:bg-slate-200/50"
+                                          }`}
+                                        >
+                                          {size}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
-                                </td>
-                                <td className="py-3 px-2">
-                                  <span className="px-2 py-1 bg-sky-50 text-sky-700 font-bold rounded-lg border border-sky-100 text-[10px]">
-                                    🌐 {logItem.ipAddress}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-2 text-slate-600">
-                                  {logItem.date}
-                                </td>
-                                <td className="py-3 px-2 text-indigo-600 font-semibold">
-                                  {logItem.time}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
+
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      type="button"
+                                      disabled={currentLogPage === 1}
+                                      onClick={() => setLogPage((prev) => Math.max(prev - 1, 1))}
+                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-600 transition"
+                                    >
+                                      {lang === "ar" ? (
+                                        <ChevronRight className="w-4 h-4" />
+                                      ) : (
+                                        <ChevronLeft className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                    
+                                    <span className="font-mono">
+                                      {lang === "ar"
+                                        ? `الصفحة ${currentLogPage} من ${totalLogPages}`
+                                        : `Page ${currentLogPage} of ${totalLogPages}`}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      disabled={currentLogPage === totalLogPages}
+                                      onClick={() => setLogPage((prev) => Math.min(prev + 1, totalLogPages))}
+                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-600 transition"
+                                    >
+                                      {lang === "ar" ? (
+                                        <ChevronLeft className="w-4 h-4" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
