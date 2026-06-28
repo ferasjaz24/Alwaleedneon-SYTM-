@@ -38,6 +38,7 @@ import SalesHub from "./components/SalesHub";
 import SalesQuotations from "./components/SalesQuotations";
 import FinancialCollections from "./components/FinancialCollections";
 import SalesProductionRequests from "./components/SalesProductionRequests";
+import AIAssistant from "./components/AIAssistant";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from './utils/PrintShared';
 import SalesLetters from "./components/SalesLetters";
 import SalesRepsTargets from "./components/SalesRepsTargets";
@@ -516,37 +517,29 @@ export default function App() {
       }
       setUser(matched);
 
-      // Auto assign tabs based on roles
-      const role = matched.role || "";
-      if (role === "HR Manager" || role === "HR" || role === "موارد بشرية") {
-        setActiveTab("hr");
-        setActiveHrSubTab("dashboard");
-      } else if (
-        role === "Sales Rep" ||
-        role === "Sales" ||
-        role === "مبيعات"
-      ) {
-        setActiveTab("sales");
-        setActiveSalesSubTab("sales_dashboard");
-      } else if (
-        role === "Employee (Inquiries)" ||
-        role === "موظف - استعلامات"
-      ) {
-        setActiveTab("hr");
-        setActiveHrSubTab("ess_dashboard");
-      } else if (role === "Purchasing" || role === "مشتريات") {
-        setActiveTab("production");
-        setActiveProductionSubTab("prod_procurement");
-      } else if (role === "Production" || role === "انتاج") {
+      // Auto assign tabs based on roles/permissions
+      if (hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main')) {
+        setActiveTab("dashboard");
+      } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
         setActiveTab("production");
         setActiveProductionSubTab("prod_dashboard");
-      } else if (
-        role === "Super Admin" ||
-        role === "Admin" ||
-        role === "Senior Management" ||
-        role === "الادارة العليا"
-      ) {
-        setActiveTab("dashboard");
+      } else if (canAccessModule(matched, 'procurement')) {
+        setActiveTab("warehouse");
+        if (hasAdvancedPermission(matched, 'procurement', 'dashboard', 'view_dashboard')) {
+          setActiveWarehouseSubTab("warehouse_dashboard");
+        } else {
+          setActiveWarehouseSubTab("warehouse_items");
+        }
+      } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
+        setActiveTab("sales");
+        setActiveSalesSubTab("sales_dashboard");
+      } else if (canAccessModule(matched, 'hr')) {
+        setActiveTab("hr");
+        if (hasAdvancedPermission(matched, 'hr', 'dashboard', 'view_hr_dashboard')) {
+          setActiveHrSubTab("dashboard");
+        } else {
+          setActiveHrSubTab("ess_dashboard");
+        }
       } else {
         setActiveTab("dashboard");
       }
@@ -4146,6 +4139,7 @@ export default function App() {
         </p>
       </footer>
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: sharedPrintFooter }} />
+      {user && <AIAssistant lang={lang} />}
     </div>
   );
 }

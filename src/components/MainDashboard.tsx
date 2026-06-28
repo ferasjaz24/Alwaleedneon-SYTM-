@@ -495,14 +495,16 @@ export default function MainDashboard({
   }
 
   const isTopManagement =
-    user &&
-    (user.username?.toUpperCase() === "FERAS" ||
-      user.username?.toUpperCase() === "فراس" ||
-      user.role === "الادارة العليا" ||
-      user.role === "الإدارة العليا" ||
-      user.role === "top_management" ||
-      user.role === "Super Admin" ||
-      user.role === "Admin");
+    hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_main') ||
+    (user &&
+      (user.username?.toUpperCase() === "FERAS" ||
+        user.username?.toUpperCase() === "فراس" ||
+        user.username?.toUpperCase() === "ADMIN" ||
+        user.role === "الادارة العليا" ||
+        user.role === "الإدارة العليا" ||
+        user.role === "top_management" ||
+        user.role === "Super Admin" ||
+        user.role === "Admin"));
 
   if (!isTopManagement) {
     return (
