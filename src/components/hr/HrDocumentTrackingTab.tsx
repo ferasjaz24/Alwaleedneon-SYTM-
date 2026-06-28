@@ -9,6 +9,37 @@ import * as XLSX from 'xlsx';
 import { Employee, EmployeeDoc, VehicleDoc, DocActivityLog, User as SystemUser } from '../../types';
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from '../../utils/PrintShared';
 
+// Helper to convert base64 PDF to a local Blob URL for reliable iframe preview
+function base64ToBlobUrl(base64Data: string, contentType: string = 'application/pdf'): string {
+  try {
+    const sliceSize = 512;
+    let b64Data = base64Data;
+    const commaIndex = base64Data.indexOf(',');
+    if (commaIndex !== -1) {
+      b64Data = base64Data.substring(commaIndex + 1);
+    }
+    
+    const byteCharacters = atob(b64Data);
+    const byteArrays: Uint8Array[] = [];
+
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+
+    const blob = new Blob(byteArrays, { type: contentType });
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Failed to convert base64 to blob URL:", error);
+    return base64Data; // Fallback to original
+  }
+}
+
 interface HrDocumentTrackingTabProps {
   lang: 'ar' | 'en';
   employees: Employee[];
@@ -36,6 +67,24 @@ export default function HrDocumentTrackingTab({
   const [isViewDocOpen, setIsViewDocOpen] = useState(false);
   const [selectedViewDoc, setSelectedViewDoc] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedViewDoc && selectedViewDoc.docFile && selectedViewDoc.docFile.startsWith('data:application/pdf')) {
+      const url = base64ToBlobUrl(selectedViewDoc.docFile, 'application/pdf');
+      setPdfBlobUrl(url);
+    } else {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+        setPdfBlobUrl(null);
+      }
+    }
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [selectedViewDoc]);
 
   // Helper to convert uploaded files to compressed base64
   const handleFileToBase64 = (file: File): Promise<string> => {
@@ -2821,8 +2870,31 @@ export default function HrDocumentTrackingTab({
                       className="max-h-[500px] max-w-full rounded-lg shadow border object-contain bg-white animate-fade-in"
                     />
                   ) : selectedViewDoc.docFile.startsWith('data:application/pdf') ? (
-                    <div className="w-full h-[500px] bg-white rounded-xl border p-2">
-                      <embed src={selectedViewDoc.docFile} type="application/pdf" className="w-full h-full rounded" />
+                    <div className="w-full h-[600px] bg-white rounded-xl border p-1 shadow-lg flex flex-col">
+                      <div className="flex justify-between items-center bg-slate-100 p-2 rounded-t-lg border-b text-xs font-bold text-slate-700">
+                        {pdfBlobUrl && (
+                          <a 
+                            href={pdfBlobUrl} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-black text-[10px]"
+                          >
+                            {isAr ? 'فتح في علامة تبويب جديدة ↗' : 'Open in New Tab ↗'}
+                          </a>
+                        )}
+                        <span>{isAr ? '📄 معاين ملف PDF المباشر' : '📄 Live PDF Viewer'}</span>
+                      </div>
+                      {pdfBlobUrl ? (
+                        <iframe 
+                          src={pdfBlobUrl} 
+                          title="PDF Preview"
+                          className="w-full flex-1 rounded-b-lg border-0" 
+                        />
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center text-slate-400 text-xs">
+                          {isAr ? 'جاري تهيئة الملف...' : 'Initializing preview...'}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="p-8 text-center bg-white rounded-2xl border max-w-sm">

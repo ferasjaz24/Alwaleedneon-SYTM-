@@ -31,6 +31,7 @@ import {
   Settings,
   Lock,
   Database,
+  RefreshCw,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import HrSubSections from "./components/HrSubSections";
@@ -175,6 +176,7 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [loginLogs, setLoginLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Active module tab
@@ -439,14 +441,16 @@ export default function App() {
     async function loadData() {
       try {
         setLoading(true);
-        const [uRes, eRes, qRes] = await Promise.all([
+        const [uRes, eRes, qRes, lLogsRes] = await Promise.all([
           fetch("/api/users"),
           fetch("/api/employees"),
           fetch("/api/quotations"),
+          fetch("/api/login-logs").catch(() => null),
         ]);
         if (uRes.ok) setUsers(await uRes.json());
         if (eRes.ok) setEmployees(await eRes.json());
         if (qRes.ok) setQuotations(await qRes.json());
+        if (lLogsRes && lLogsRes.ok) setLoginLogs(await lLogsRes.json());
 
         // Load initial live telemetry indices
         await handleReloadMetrics();
@@ -475,6 +479,17 @@ export default function App() {
   }, [activeTab]);
 
   // Update list functions
+  const handleReloadLoginLogs = async () => {
+    try {
+      const res = await fetch("/api/login-logs");
+      if (res.ok) {
+        setLoginLogs(await res.json());
+      }
+    } catch (e) {
+      console.error("Failed to load login logs:", e);
+    }
+  };
+
   const handleReloadUsers = async () => {
     const res = await fetch("/api/users");
     if (res.ok) {
@@ -494,6 +509,49 @@ export default function App() {
     const res = await fetch("/api/quotations");
     if (res.ok) {
       setQuotations(await res.json());
+    }
+  };
+
+  // Log login event to database
+  const logLoginEvent = async (username: string) => {
+    try {
+      let ipAddress = "";
+      try {
+        // Try IPv4/IPv6 resolver first
+        const ipRes = await fetch("https://api64.ipify.org?format=json");
+        if (ipRes.ok) {
+          const ipData = await ipRes.json();
+          ipAddress = ipData.ip;
+        } else {
+          // Fallback 1: ipapi
+          const ipResAlt = await fetch("https://ipapi.co/json/");
+          if (ipResAlt.ok) {
+            const ipDataAlt = await ipResAlt.json();
+            ipAddress = ipDataAlt.ip;
+          }
+        }
+      } catch (err) {
+        console.warn("Client IP fetch bypassed or failed, server will fallback:", err);
+      }
+
+      const now = new Date();
+      // Format exact device-side client date and time
+      const clientDate = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const clientTime = now.toLocaleTimeString('en-US', { hour12: false }); // HH:MM:SS
+
+      await fetch("/api/login-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username, 
+          ipAddress,
+          clientDate,
+          clientTime
+        }),
+      });
+      handleReloadLoginLogs();
+    } catch (e) {
+      console.error("Failed to log login:", e);
     }
   };
 
@@ -518,6 +576,7 @@ export default function App() {
         return;
       }
       setUser(matched);
+      logLoginEvent(matched.username);
 
       // Auto assign tabs based on roles/permissions
       const isTopLevel = 
@@ -569,6 +628,7 @@ export default function App() {
         dateCreated: "2026-01-01",
       };
       setUser(superAdmin);
+      logLoginEvent("FERAS (FM5 M)");
       setShowF24Modal(false);
       setActiveTab("dashboard");
     } else {
@@ -1199,13 +1259,11 @@ export default function App() {
                     <Shield className="w-8 h-8" />
                   </span>
                   <h3 className="text-lg font-black text-white">
-                    {lang === "ar"
-                      ? "وحدة المبرمج والمشرف الأعلى (F24)"
-                      : "Super Admin Override (F24)"}
+                    FM5 M
                   </h3>
                   <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                     {lang === "ar"
-                      ? "الدخول المباشر المعلم فراس "
+                      ? "الدخول المباشر المعلم فراس"
                       : "RESTRICTED MASTER BYPASS"}
                   </p>
                 </div>
@@ -1213,14 +1271,14 @@ export default function App() {
                 <form onSubmit={handleF24Login} className="space-y-4">
                   <div>
                     <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-                      {lang === "ar" ? "المعرف الفيدرالي" : "Master Code"}
+                      user
                     </label>
                     <input
                       id="f24-user-input"
                       type="text"
                       value={f24User}
                       onChange={(e) => setF24User(e.target.value)}
-                      placeholder="••••••"
+                      placeholder="••••••••••••••••"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#00AEEF]"
                       required
                     />
@@ -1228,14 +1286,14 @@ export default function App() {
 
                   <div>
                     <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-                      {lang === "ar" ? "كلمة السر العليا" : "Master Key"}
+                      password
                     </label>
                     <input
                       id="f24-pass-input"
                       type="password"
                       value={f24Pass}
                       onChange={(e) => setF24Pass(e.target.value)}
-                      placeholder="••••"
+                      placeholder="••••••••••••••••"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#0072BC]"
                       required
                     />
@@ -2289,6 +2347,83 @@ export default function App() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+
+                  {/* Real-time Login Logs Card */}
+                  <div className="lg:col-span-3 glass-panel rounded-3xl p-6 bg-white shadow-xl border border-slate-100 flex flex-col gap-4">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                          <span>📋 {lang === "ar" ? "سجل حركة تسجيل الدخول والأمن" : "Active Security Login Logs"}</span>
+                        </h3>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          {lang === "ar"
+                            ? "مراقبة فورية لجميع عمليات الدخول باسم المستخدم، عنوان الـ IP، والوقت الدقيق."
+                            : "Real-time monitoring of all successful console login entries with source IP."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleReloadLoginLogs}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-xl font-bold transition flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>{lang === "ar" ? "تحديث السجل" : "Refresh Logs"}</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      {loginLogs.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs">
+                          {lang === "ar" ? "لا توجد سجلات دخول حتى الآن" : "No login records registered yet."}
+                        </div>
+                      ) : (
+                        <table className="w-full text-right text-xs">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-slate-400">
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "المستخدم" : "User Account"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "عنوان IP للجهاز" : "Device IP Address"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "التاريخ" : "Date"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "الوقت" : "Time"}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {loginLogs.map((logItem) => (
+                              <tr
+                                key={logItem.id}
+                                className="border-b border-slate-50 hover:bg-slate-50/50 transition-all font-mono"
+                              >
+                                <td className="py-3 px-2 font-sans font-bold text-slate-800">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span>{logItem.username}</span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-2">
+                                  <span className="px-2 py-1 bg-sky-50 text-sky-700 font-bold rounded-lg border border-sky-100 text-[10px]">
+                                    🌐 {logItem.ipAddress}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-2 text-slate-600">
+                                  {logItem.date}
+                                </td>
+                                <td className="py-3 px-2 text-indigo-600 font-semibold">
+                                  {logItem.time}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
                     </div>
                   </div>
                 </div>

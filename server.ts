@@ -477,6 +477,58 @@ export async function startServer() {
     res.json(await getCollectionDocs("users"));
   });
 
+  app.get("/api/login-logs", async (req, res) => {
+    try {
+      const logs = await getCollectionDocs("login_logs");
+      // Sort descending by timestamp or ID
+      logs.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+      res.json(logs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/login-logs", async (req, res) => {
+    try {
+      const { username, ipAddress, clientDate, clientTime } = req.body;
+      const now = new Date();
+      // Date in YYYY-MM-DD and time in HH:MM:SS
+      const dateStr = clientDate || now.toLocaleDateString('en-CA');
+      const timeStr = clientTime || now.toLocaleTimeString('en-US', { hour12: false });
+      
+      const logId = `LL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      
+      // Get IP on backend if not supplied by client
+      let clientIp = ipAddress;
+      if (!clientIp) {
+        const xForwardedFor = req.headers["x-forwarded-for"];
+        if (xForwardedFor) {
+          clientIp = Array.isArray(xForwardedFor) ? xForwardedFor[0] : xForwardedFor.split(',')[0].trim();
+        } else {
+          clientIp = req.socket.remoteAddress || "127.0.0.1";
+        }
+      }
+
+      if (clientIp === "::1" || clientIp === "::ffff:127.0.0.1") {
+        clientIp = "127.0.0.1";
+      }
+
+      const logData = {
+        id: logId,
+        username: username || "Unknown",
+        ipAddress: clientIp,
+        date: dateStr,
+        time: timeStr,
+        timestamp: Date.now()
+      };
+      
+      await setDoc(doc(db, "login_logs", logId), logData);
+      res.json({ success: true, log: logData });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.post("/api/users", async (req, res) => {
     const newUser = req.body;
     if (!newUser.username) {
