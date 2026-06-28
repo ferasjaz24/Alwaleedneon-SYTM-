@@ -82,6 +82,37 @@ function CountrySelect({ value, onChange, lang }: { value: string, onChange: (va
   );
 }
 
+// Helper to convert base64 PDF to a local Blob URL for reliable iframe preview
+function base64ToBlobUrl(base64Data: string, contentType: string = 'application/pdf'): string {
+  try {
+    const sliceSize = 512;
+    let b64Data = base64Data;
+    const commaIndex = base64Data.indexOf(',');
+    if (commaIndex !== -1) {
+      b64Data = base64Data.substring(commaIndex + 1);
+    }
+    
+    const byteCharacters = atob(b64Data);
+    const byteArrays: Uint8Array[] = [];
+
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+
+    const blob = new Blob(byteArrays, { type: contentType });
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Failed to convert base64 to blob URL:", error);
+    return base64Data; // Fallback to original
+  }
+}
+
 interface HrEmployeeDirectoryTabProps {
   lang: 'ar' | 'en';
   employees: Employee[];
@@ -94,28 +125,14 @@ interface HrEmployeeDirectoryTabProps {
 }
 
 export function getInsuranceStatus(expiryDateStr?: string, lang: 'ar' | 'en' = 'ar') {
-  if (!expiryDateStr) {
-    return {
-      status: lang === 'ar' ? 'غير مسجل' : 'Not Registered',
-      daysLeft: 0,
-      badgeClass: 'bg-slate-50 text-slate-500 border border-slate-200'
-    };
-  }
-  const expiry = new Date(expiryDateStr);
-  const now = new Date();
-  const diffTime = expiry.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 0) {
-    return { status: lang === 'ar' ? 'منتهي الصلاحية' : 'Expired', daysLeft: 0, badgeClass: 'bg-rose-500 text-white' };
-  } else if (diffDays <= 30) {
-    return { status: lang === 'ar' ? 'ينتهي قريباً' : 'Expiring Soon', daysLeft: diffDays, badgeClass: 'bg-orange-500 text-white' };
-  } else {
-    return { status: lang === 'ar' ? 'ساري' : 'Valid', daysLeft: diffDays, badgeClass: 'bg-emerald-500 text-white' };
-  }
+  return getIqamaStatus(expiryDateStr, lang, 'insurance');
 }
 
-export function getIqamaStatus(expiryDateStr?: string, lang: 'ar' | 'en' = 'ar') {
+export function getIqamaStatus(
+  expiryDateStr?: string, 
+  lang: 'ar' | 'en' = 'ar', 
+  docType: 'iqama' | 'passport' | 'insurance' | 'contract' = 'iqama'
+) {
   if (!expiryDateStr) {
     return {
       status: lang === 'ar' ? 'غير محدد' : 'Not Set',
@@ -133,27 +150,56 @@ export function getIqamaStatus(expiryDateStr?: string, lang: 'ar' | 'en' = 'ar')
   const diffTime = expiry.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+  const names = {
+    iqama: {
+      expired: { ar: 'انتهت صلاحية الإقامة', en: 'Iqama Expired' },
+      soon: { ar: 'أوشكت الإقامة على الانتهاء', en: 'Iqama Expiring Soon' },
+      valid: { ar: 'إقامة صالحة', en: 'Valid Iqama' },
+      active: { ar: 'إقامة سارية', en: 'Active Iqama' },
+    },
+    passport: {
+      expired: { ar: 'انتهت صلاحية الجواز', en: 'Passport Expired' },
+      soon: { ar: 'أوشك الجواز على الانتهاء', en: 'Passport Expiring Soon' },
+      valid: { ar: 'جواز سفر صالح', en: 'Valid Passport' },
+      active: { ar: 'جواز سفر ساري', en: 'Active Passport' },
+    },
+    insurance: {
+      expired: { ar: 'انتهى التأمين الطبي', en: 'Insurance Expired' },
+      soon: { ar: 'أوشك التأمين على الانتهاء', en: 'Insurance Expiring Soon' },
+      valid: { ar: 'تأمين صالح', en: 'Valid Insurance' },
+      active: { ar: 'تأمين ساري', en: 'Active Insurance' },
+    },
+    contract: {
+      expired: { ar: 'انتهى عقد العمل', en: 'Contract Expired' },
+      soon: { ar: 'أوشك العقد على الانتهاء', en: 'Contract Expiring Soon' },
+      valid: { ar: 'عقد عمل صالح', en: 'Valid Contract' },
+      active: { ar: 'عقد عمل ساري', en: 'Active Contract' },
+    }
+  };
+
+  const docNames = names[docType] || names.iqama;
+
   if (diffDays < 0) {
     return {
-      status: lang === 'ar' ? 'انتهت صلاحية الإقامة' : 'Iqama Expired',
+      status: lang === 'ar' ? docNames.expired.ar : docNames.expired.en,
       daysLeft: diffDays,
       badgeClass: 'bg-rose-50 text-rose-600 border border-rose-200 font-extrabold'
     };
   } else if (diffDays <= 30) {
     return {
-      status: lang === 'ar' ? 'أوشكت الإقامة على الانتهاء' : 'Iqama Expiring Soon',
+      status: lang === 'ar' ? docNames.soon.ar : docNames.soon.en,
       daysLeft: diffDays,
       badgeClass: 'bg-amber-50 text-amber-600 border border-amber-300 font-extrabold animate-pulse'
     };
   } else if (diffDays > 330) {
     return {
-      status: lang === 'ar' ? 'إقامة صالحة' : 'Valid Iqama',
+      status: lang === 'ar' ? docNames.valid.ar : docNames.valid.en,
       daysLeft: diffDays,
       badgeClass: 'bg-emerald-50 text-emerald-600 border border-emerald-200'
     };
   } else {
     return {
-      status: lang === 'ar' ? 'إقامة سارية' : 'Active Iqama',
+      status: lang === 'ar' ? docNames.active.ar : docNames.active.en,
       daysLeft: diffDays,
       badgeClass: 'bg-blue-50/50 text-[#0072BC] border border-blue-100'
     };
@@ -357,6 +403,36 @@ export default function HrEmployeeDirectoryTab({
     contractUrl: '',
     contractExpiry: ''
   });
+
+  const [isPreviewingContract, setIsPreviewingContract] = useState(false);
+  const [contractPdfBlobUrl, setContractPdfBlobUrl] = useState<string | null>(null);
+
+  // Helper to convert uploaded files to compressed base64
+  const handleFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  useEffect(() => {
+    if (selectedEmp && selectedEmp.contractUrl && selectedEmp.contractUrl.startsWith('data:application/pdf')) {
+      const url = base64ToBlobUrl(selectedEmp.contractUrl, 'application/pdf');
+      setContractPdfBlobUrl(url);
+    } else {
+      if (contractPdfBlobUrl) {
+        URL.revokeObjectURL(contractPdfBlobUrl);
+        setContractPdfBlobUrl(null);
+      }
+    }
+    return () => {
+      if (contractPdfBlobUrl) {
+        URL.revokeObjectURL(contractPdfBlobUrl);
+      }
+    };
+  }, [selectedEmp, selectedEmp?.contractUrl]);
 
   // New manual custody asset state (for "العهد المسجلة لدى الموظف" تكتب يدوياً)
   const [newAsset, setNewAsset] = useState({
@@ -1057,7 +1133,7 @@ export default function HrEmployeeDirectoryTab({
                   <td className="p-4">
                     <div className="flex flex-col gap-1.5 items-start min-w-[180px]">
                       {emp.iqamaExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.iqamaExpiryDate, lang);
+                        const statusObj = getIqamaStatus(emp.iqamaExpiryDate, lang, 'iqama');
                         return (
                           <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
                             <div className="flex items-center gap-1">
@@ -1071,7 +1147,7 @@ export default function HrEmployeeDirectoryTab({
                         );
                       })()}
                       {emp.passportExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.passportExpiryDate, lang);
+                        const statusObj = getIqamaStatus(emp.passportExpiryDate, lang, 'passport');
                         return (
                           <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
                             <div className="flex items-center gap-1">
@@ -1085,7 +1161,7 @@ export default function HrEmployeeDirectoryTab({
                         );
                       })()}
                       {emp.insuranceExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.insuranceExpiryDate, lang);
+                        const statusObj = getIqamaStatus(emp.insuranceExpiryDate, lang, 'insurance');
                         return (
                           <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
                             <div className="flex items-center gap-1">
@@ -1099,7 +1175,7 @@ export default function HrEmployeeDirectoryTab({
                         );
                       })()}
                       {emp.contractExpiry && (() => {
-                        const statusObj = getIqamaStatus(emp.contractExpiry, lang);
+                        const statusObj = getIqamaStatus(emp.contractExpiry, lang, 'contract');
                         return (
                           <div className="flex items-center gap-2 w-full justify-between">
                             <div className="flex items-center gap-1">
@@ -1461,7 +1537,7 @@ export default function HrEmployeeDirectoryTab({
                       <div className="flex flex-col gap-1 items-start mt-0.5">
                         <span className="font-mono font-bold text-slate-800">{selectedEmp.iqamaExpiryDate || (lang === 'ar' ? 'غير محدد' : 'Not Specified')}</span>
                         {selectedEmp.iqamaExpiryDate && (() => {
-                          const statusObj = getIqamaStatus(selectedEmp.iqamaExpiryDate, lang);
+                          const statusObj = getIqamaStatus(selectedEmp.iqamaExpiryDate, lang, 'iqama');
                           return (
                             <span className={`px-2 py-0.5 text-[9.5px] font-black rounded border ${statusObj.badgeClass}`}>
                               {statusObj.status} {statusObj.daysLeft > 0 ? `(${statusObj.daysLeft} ${lang === 'ar' ? 'يوم' : 'days'})` : ''}
@@ -1707,15 +1783,87 @@ export default function HrEmployeeDirectoryTab({
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 mt-2 text-right">
-                        <label className="block text-slate-400 font-bold text-[10px]">{lang === 'ar' ? 'رابط ملف العقد / المستند' : 'Contract Document URL'}</label>
-                        <input 
-                          type="url"
-                          placeholder="https://example.com/contract.pdf"
-                          value={salaryContractForm.contractUrl}
-                          onChange={e => setSalaryContractForm({ ...salaryContractForm, contractUrl: e.target.value })}
-                          className="w-full text-[11px] p-2.5 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
-                        />
+                      <div className="space-y-2 mt-2 text-right">
+                        <label className="block text-slate-400 font-bold text-[10px]">
+                          {lang === 'ar' ? 'ملف أو رابط العقد / المستند' : 'Contract Document File or URL'}
+                        </label>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                          {/* Option 1: URL input */}
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-bold text-slate-400">
+                              {lang === 'ar' ? 'خيار أ: إدخال رابط العقد يدوياً' : 'Option A: Enter Contract Web URL'}
+                            </span>
+                            <input 
+                              type="url"
+                              placeholder="https://example.com/contract.pdf"
+                              value={salaryContractForm.contractUrl?.startsWith('data:') ? '' : salaryContractForm.contractUrl}
+                              onChange={e => setSalaryContractForm({ ...salaryContractForm, contractUrl: e.target.value })}
+                              className="w-full text-[11px] p-2.5 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
+                            />
+                          </div>
+
+                          {/* Option 2: File Upload area */}
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-bold text-slate-400">
+                              {lang === 'ar' ? 'خيار ب: رفع ملف عقد جديد (PDF أو صورة)' : 'Option B: Upload New Contract (PDF or Image)'}
+                            </span>
+                            
+                            <div className="relative border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-300 transition bg-white p-2 text-center cursor-pointer">
+                              <input 
+                                type="file"
+                                accept="application/pdf,image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      showToast(lang === 'ar' ? 'جاري تحويل ومعالجة الملف...' : 'Processing file...', 'info');
+                                      const base64 = await handleFileToBase64(file);
+                                      setSalaryContractForm({ ...salaryContractForm, contractUrl: base64 });
+                                      showToast(lang === 'ar' ? '✓ تم رفع وتجهيز الملف للقرص بنجاح!' : '✓ File prepared successfully!', 'success');
+                                    } catch (err) {
+                                      showToast(lang === 'ar' ? 'فشل معالجة الملف' : 'File processing failed', 'error');
+                                    }
+                                  }
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              />
+                              <div className="flex flex-col items-center justify-center py-1">
+                                <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                                <span className="text-[10px] font-bold text-slate-600 block">
+                                  {lang === 'ar' ? 'اسحب وأفلت أو تصفح الملفات' : 'Drag & drop or browse'}
+                                </span>
+                                <span className="text-[8px] text-slate-400 font-bold block mt-0.5">
+                                  PDF / PNG / JPG
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Uploaded File Status badge / Action */}
+                        {salaryContractForm.contractUrl && (
+                          <div className="flex justify-between items-center bg-sky-50 text-sky-850 px-3 py-1.5 rounded-lg text-[10px] border border-sky-100/50 mt-1.5 font-bold">
+                            <span className="flex items-center gap-1">
+                              <span>📎</span>
+                              <span>
+                                {salaryContractForm.contractUrl.startsWith('data:application/pdf') 
+                                  ? (lang === 'ar' ? 'ملف مستند PDF مجهز للتعاقد' : 'PDF Document Ready')
+                                  : salaryContractForm.contractUrl.startsWith('data:image/')
+                                    ? (lang === 'ar' ? 'صورة العقد مجهزة' : 'Image Document Ready')
+                                    : (lang === 'ar' ? 'رابط ويب خارجي مدخل' : 'External Web URL Entered')
+                                }
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSalaryContractForm({ ...salaryContractForm, contractUrl: '' })}
+                              className="text-rose-600 hover:text-rose-850 px-2 py-0.5 rounded-md hover:bg-rose-100/40 transition font-black"
+                            >
+                              {lang === 'ar' ? 'حذف الملف' : 'Clear File'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1866,38 +2014,152 @@ export default function HrEmployeeDirectoryTab({
                       })()}
 
                       {/* Displaying / Opening Contract Link URL */}
-                      <div className="flex flex-col sm:flex-row gap-2 pt-2.5 border-t border-slate-100">
+                      <div className="space-y-3 pt-2.5 border-t border-slate-100">
                         {selectedEmp.contractUrl ? (
                           <>
-                            <a 
-                              href={selectedEmp.contractUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex-1 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-750 font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                            >
-                              <span>📂 {lang === 'ar' ? 'عرض ملف العقد Web' : 'View Contract File'}</span>
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSalaryContractForm({
-                                  basicSalary: selectedEmp.basicSalary || 0,
-                                  housing: selectedEmp.allowances?.housing || 0,
-                                  transport: selectedEmp.allowances?.transport || 0,
-                                  food: (selectedEmp.allowances as any)?.food || 0,
-                                  loans: selectedEmp.allowances?.loans || 0,
-                                  deductions: selectedEmp.allowances?.deductions || 0,
-                                  status: selectedEmp.allowances?.status || 'Active',
-                                  contractQiwaNumber: selectedEmp.contractQiwaNumber || '',
-                                  contractUrl: selectedEmp.contractUrl || '',
-                                  contractExpiry: selectedEmp.contractExpiry || ''
-                                });
-                                setIsEditingSalaryContract(true);
-                              }}
-                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-650 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
-                            >
-                              <span>✏️ {lang === 'ar' ? 'تعديل ملف العقد' : 'Edit Contract Link'}</span>
-                            </button>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {/* 1. Preview button */}
+                              <button
+                                type="button"
+                                onClick={() => setIsPreviewingContract(!isPreviewingContract)}
+                                className={`py-2 px-3 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                                  isPreviewingContract 
+                                    ? 'bg-[#0072BC] text-white' 
+                                    : 'bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC]'
+                                }`}
+                              >
+                                <span>👁️ {lang === 'ar' ? 'معاينة داخل النظام' : 'System Preview'}</span>
+                              </button>
+
+                              {/* 2. Download / Open button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const dataUrl = selectedEmp.contractUrl;
+                                  if (!dataUrl) return;
+                                  if (dataUrl.startsWith('data:')) {
+                                    const link = document.createElement('a');
+                                    link.href = dataUrl;
+                                    const isPdf = dataUrl.startsWith('data:application/pdf');
+                                    link.download = `contract_${selectedEmp.arabicName || selectedEmp.englishName || 'document'}.${isPdf ? 'pdf' : 'png'}`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  } else {
+                                    window.open(dataUrl, '_blank');
+                                  }
+                                }}
+                                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-750 font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                              >
+                                <span>📥 {lang === 'ar' ? 'تحميل المستند' : 'Download File'}</span>
+                              </button>
+
+                              {/* 3. Edit / Replace button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSalaryContractForm({
+                                    basicSalary: selectedEmp.basicSalary || 0,
+                                    housing: selectedEmp.allowances?.housing || 0,
+                                    transport: selectedEmp.allowances?.transport || 0,
+                                    food: (selectedEmp.allowances as any)?.food || 0,
+                                    loans: selectedEmp.allowances?.loans || 0,
+                                    deductions: selectedEmp.allowances?.deductions || 0,
+                                    status: selectedEmp.allowances?.status || 'Active',
+                                    contractQiwaNumber: selectedEmp.contractQiwaNumber || '',
+                                    contractUrl: selectedEmp.contractUrl || '',
+                                    contractExpiry: selectedEmp.contractExpiry || ''
+                                  });
+                                  setIsEditingSalaryContract(true);
+                                }}
+                                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-650 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer text-center"
+                              >
+                                <span>✏️ {lang === 'ar' ? 'تعديل / استبدال' : 'Edit / Replace'}</span>
+                              </button>
+
+                              {/* 4. Delete contract file button */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (window.confirm(lang === 'ar' ? 'هل أنت متأكد من رغبتك في حذف مستند العقد بشكل نهائي؟' : 'Are you sure you want to delete the contract document permanently?')) {
+                                    try {
+                                      const updatedFields: Partial<Employee> = { contractUrl: '' };
+                                      onUpdateEmployeeFields(selectedEmp.id, updatedFields);
+                                      setSelectedEmp(prev => prev ? { ...prev, ...updatedFields } : null);
+                                      if (onReloadEmployees) {
+                                        await onReloadEmployees();
+                                      }
+                                      setIsPreviewingContract(false);
+                                      showToast(lang === 'ar' ? '✓ تم حذف ملف العقد بنجاح!' : '✓ Contract file deleted successfully!', 'success');
+                                    } catch (err) {
+                                      showToast(lang === 'ar' ? 'فشل حذف الملف' : 'Failed to delete file', 'error');
+                                    }
+                                  }
+                                }}
+                                className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                              >
+                                <span>🗑️ {lang === 'ar' ? 'حذف العقد' : 'Delete File'}</span>
+                              </button>
+                            </div>
+
+                            {/* Inline system viewer container */}
+                            {isPreviewingContract && (
+                              <div className="mt-3 border border-slate-150 rounded-2xl overflow-hidden bg-slate-50/50 p-2 shadow-inner space-y-2 animate-fade-in">
+                                <div className="flex justify-between items-center bg-slate-100 p-2 rounded-xl text-xs font-bold text-slate-700">
+                                  <span className="flex items-center gap-1.5">
+                                    <span>📄</span>
+                                    <span>{lang === 'ar' ? 'معاينة مستند عقد العمل داخل النظام' : 'In-System Employment Contract Preview'}</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsPreviewingContract(false)}
+                                    className="text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded-md hover:bg-slate-200 transition font-black"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                
+                                <div className="w-full flex justify-center bg-white rounded-xl border p-1 overflow-hidden min-h-[300px]">
+                                  {selectedEmp.contractUrl.startsWith('data:application/pdf') ? (
+                                    <div className="w-full h-[550px] flex flex-col">
+                                      {contractPdfBlobUrl ? (
+                                        <iframe 
+                                          src={contractPdfBlobUrl} 
+                                          title="Contract PDF Preview"
+                                          className="w-full flex-1 rounded-lg border-0" 
+                                        />
+                                      ) : (
+                                        <div className="p-8 text-center text-slate-400 text-xs">
+                                          {lang === 'ar' ? 'جاري تهيئة معاينة ملف الـ PDF...' : 'Preparing PDF preview...'}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : selectedEmp.contractUrl.startsWith('data:image/') ? (
+                                    <div className="p-2 flex justify-center items-center w-full bg-slate-50/25">
+                                      <img 
+                                        src={selectedEmp.contractUrl} 
+                                        alt="Contract Scan" 
+                                        className="max-h-[550px] max-w-full rounded-lg object-contain shadow-md"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-full p-6 text-center text-slate-500 text-xs space-y-3 flex flex-col justify-center items-center">
+                                      <p className="font-extrabold text-slate-600">
+                                        {lang === 'ar' ? 'المستند الحالي مخزن كرابط ويب خارجي ولا يمكن معاينته مباشرة هنا.' : 'The current document is stored as a web URL and cannot be displayed inline.'}
+                                      </p>
+                                      <a 
+                                        href={selectedEmp.contractUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
+                                      >
+                                        {lang === 'ar' ? 'فتح الرابط في نافذة جديدة ↗' : 'Open External URL ↗'}
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </>
                         ) : (
                           <button
@@ -1917,9 +2179,9 @@ export default function HrEmployeeDirectoryTab({
                               });
                               setIsEditingSalaryContract(true);
                             }}
-                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer col-span-2"
+                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-550 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                           >
-                            <span>⚠️ {lang === 'ar' ? 'لم يتم حفظ ملف العقد (اضغط لتعديل وإدراج الرابط)' : 'No Contract File Uploaded (Click to Insert URL)'}</span>
+                            <span>⚠️ {lang === 'ar' ? 'لم يتم رفع مستند العقد بعد (اضغط لتعديل ورفع ملف PDF أو صورة)' : 'No Contract Document Uploaded Yet (Click to Upload)'}</span>
                           </button>
                         )}
                       </div>
