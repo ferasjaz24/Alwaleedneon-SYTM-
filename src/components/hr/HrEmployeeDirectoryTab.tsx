@@ -1,21 +1,50 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Users, Plus, Trash2, Edit2, Check, X, Search, FileText, Gift, Calendar, 
-  MapPin, Shield, Tag, HelpCircle, Briefcase, Info, RefreshCw, Eye, Download, Upload
-} from 'lucide-react';
-import * as XLSX from 'xlsx';
-import { Employee, CustodyAsset, User } from '../../types';
-import { countries, getNationalityCode } from '../../utils/countries';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Users,
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  Search,
+  FileText,
+  Gift,
+  Calendar,
+  MapPin,
+  Shield,
+  Tag,
+  HelpCircle,
+  Briefcase,
+  Info,
+  RefreshCw,
+  Eye,
+  Download,
+  Upload,
+} from "lucide-react";
+import * as XLSX from "xlsx";
+import { Employee, CustodyAsset, User } from "../../types";
+import { countries, getNationalityCode } from "../../utils/countries";
 
 // Custom Country Select Component
-function CountrySelect({ value, onChange, lang }: { value: string, onChange: (val: string) => void, lang: 'ar' | 'en' }) {
+function CountrySelect({
+  value,
+  onChange,
+  lang,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  lang: "ar" | "en";
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -23,57 +52,77 @@ function CountrySelect({ value, onChange, lang }: { value: string, onChange: (va
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredCountries = countries.filter(c => 
-    c.ar.toLowerCase().includes(search.toLowerCase()) || 
-    c.en.toLowerCase().includes(search.toLowerCase())
+  const filteredCountries = countries.filter(
+    (c) =>
+      c.ar.toLowerCase().includes(search.toLowerCase()) ||
+      c.en.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const displayCode = getNationalityCode(value) !== 'un' ? getNationalityCode(value) : 'sa';
-  const displayVal = value || (lang === 'ar' ? 'سعودي' : 'Saudi Arabia');
+  const displayCode =
+    getNationalityCode(value) !== "un" ? getNationalityCode(value) : "sa";
+  const displayVal = value || (lang === "ar" ? "سعودي" : "Saudi Arabia");
 
   return (
-    <div ref={wrapperRef} className="relative w-full text-right" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div 
+    <div
+      ref={wrapperRef}
+      className="relative w-full text-right"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
+      <div
         className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold cursor-pointer flex items-center justify-between"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="flex items-center gap-2">
-          <img src={`https://flagcdn.com/w20/${displayCode}.png`} alt="" width="20" className="rounded-sm" />
+          <img
+            src={`https://flagcdn.com/w20/${displayCode}.png`}
+            alt=""
+            width="20"
+            className="rounded-sm"
+          />
           {displayVal}
         </span>
         <span className="text-slate-400 text-xs">▼</span>
       </div>
-      
+
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-hidden flex flex-col">
           <div className="p-2 border-b border-slate-100">
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right"
-              placeholder={lang === 'ar' ? 'ابحث عن دولة...' : 'Search country...'}
+              placeholder={
+                lang === "ar" ? "ابحث عن دولة..." : "Search country..."
+              }
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              onClick={e => e.stopPropagation()}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               autoFocus
             />
           </div>
           <div className="overflow-y-auto bg-white">
-            {filteredCountries.map(c => (
-              <div 
-                key={c.code} 
+            {filteredCountries.map((c) => (
+              <div
+                key={c.code}
                 className="p-2.5 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-sm border-b border-slate-50 last:border-0"
                 onClick={() => {
-                  onChange(lang === 'ar' ? c.ar : c.en);
+                  onChange(lang === "ar" ? c.ar : c.en);
                   setIsOpen(false);
-                  setSearch('');
+                  setSearch("");
                 }}
               >
-                <img src={`https://flagcdn.com/w20/${c.code}.png`} alt="" width="20" className="rounded-sm" />
-                <span>{lang === 'ar' ? c.ar : c.en}</span>
+                <img
+                  src={`https://flagcdn.com/w20/${c.code}.png`}
+                  alt=""
+                  width="20"
+                  className="rounded-sm"
+                />
+                <span>{lang === "ar" ? c.ar : c.en}</span>
               </div>
             ))}
             {filteredCountries.length === 0 && (
-              <div className="p-4 text-center text-slate-500 text-sm">{lang === 'ar' ? 'لا توجد نتائج' : 'No results found'}</div>
+              <div className="p-4 text-center text-slate-500 text-sm">
+                {lang === "ar" ? "لا توجد نتائج" : "No results found"}
+              </div>
             )}
           </div>
         </div>
@@ -83,15 +132,18 @@ function CountrySelect({ value, onChange, lang }: { value: string, onChange: (va
 }
 
 // Helper to convert base64 PDF to a local Blob URL for reliable iframe preview
-function base64ToBlobUrl(base64Data: string, contentType: string = 'application/pdf'): string {
+function base64ToBlobUrl(
+  base64Data: string,
+  contentType: string = "application/pdf",
+): string {
   try {
     const sliceSize = 512;
     let b64Data = base64Data;
-    const commaIndex = base64Data.indexOf(',');
+    const commaIndex = base64Data.indexOf(",");
     if (commaIndex !== -1) {
       b64Data = base64Data.substring(commaIndex + 1);
     }
-    
+
     const byteCharacters = atob(b64Data);
     const byteArrays: Uint8Array[] = [];
 
@@ -114,9 +166,12 @@ function base64ToBlobUrl(base64Data: string, contentType: string = 'application/
 }
 
 interface HrEmployeeDirectoryTabProps {
-  lang: 'ar' | 'en';
+  lang: "ar" | "en";
   employees: Employee[];
-  onUpdateEmployeeFields: (empId: string, updatedFields: Partial<Employee>) => void;
+  onUpdateEmployeeFields: (
+    empId: string,
+    updatedFields: Partial<Employee>,
+  ) => void;
   onInitializeClearance?: (emp: Employee) => void;
   onReloadEmployees?: () => Promise<void> | void;
   onAddEmployee?: (newEmp: Partial<Employee>) => void;
@@ -124,183 +179,239 @@ interface HrEmployeeDirectoryTabProps {
   user?: User | null;
 }
 
-export function getInsuranceStatus(expiryDateStr?: string, lang: 'ar' | 'en' = 'ar') {
-  return getIqamaStatus(expiryDateStr, lang, 'insurance');
+export function getInsuranceStatus(
+  expiryDateStr?: string,
+  lang: "ar" | "en" = "ar",
+) {
+  return getIqamaStatus(expiryDateStr, lang, "insurance");
 }
 
 export function getIqamaStatus(
-  expiryDateStr?: string, 
-  lang: 'ar' | 'en' = 'ar', 
-  docType: 'iqama' | 'passport' | 'insurance' | 'contract' = 'iqama'
+  expiryDateStr?: string,
+  lang: "ar" | "en" = "ar",
+  docType: "iqama" | "passport" | "insurance" | "contract" = "iqama",
 ) {
   if (!expiryDateStr) {
     return {
-      status: lang === 'ar' ? 'غير محدد' : 'Not Set',
+      status: lang === "ar" ? "غير محدد" : "Not Set",
       daysLeft: 0,
-      badgeClass: 'bg-slate-50 text-slate-500 border border-slate-200'
+      badgeClass: "bg-slate-50 text-slate-500 border border-slate-200",
     };
   }
 
   const expiry = new Date(expiryDateStr);
   const today = new Date();
-  
+
   expiry.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
-  
+
   const diffTime = expiry.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   const names = {
     iqama: {
-      expired: { ar: 'انتهت صلاحية الإقامة', en: 'Iqama Expired' },
-      soon: { ar: 'أوشكت الإقامة على الانتهاء', en: 'Iqama Expiring Soon' },
-      valid: { ar: 'إقامة صالحة', en: 'Valid Iqama' },
-      active: { ar: 'إقامة سارية', en: 'Active Iqama' },
+      expired: { ar: "انتهت صلاحية الإقامة", en: "Iqama Expired" },
+      soon: { ar: "أوشكت الإقامة على الانتهاء", en: "Iqama Expiring Soon" },
+      valid: { ar: "إقامة صالحة", en: "Valid Iqama" },
+      active: { ar: "إقامة سارية", en: "Active Iqama" },
     },
     passport: {
-      expired: { ar: 'انتهت صلاحية الجواز', en: 'Passport Expired' },
-      soon: { ar: 'أوشك الجواز على الانتهاء', en: 'Passport Expiring Soon' },
-      valid: { ar: 'جواز سفر صالح', en: 'Valid Passport' },
-      active: { ar: 'جواز سفر ساري', en: 'Active Passport' },
+      expired: { ar: "انتهت صلاحية الجواز", en: "Passport Expired" },
+      soon: { ar: "أوشك الجواز على الانتهاء", en: "Passport Expiring Soon" },
+      valid: { ar: "جواز سفر صالح", en: "Valid Passport" },
+      active: { ar: "جواز سفر ساري", en: "Active Passport" },
     },
     insurance: {
-      expired: { ar: 'انتهى التأمين الطبي', en: 'Insurance Expired' },
-      soon: { ar: 'أوشك التأمين على الانتهاء', en: 'Insurance Expiring Soon' },
-      valid: { ar: 'تأمين صالح', en: 'Valid Insurance' },
-      active: { ar: 'تأمين ساري', en: 'Active Insurance' },
+      expired: { ar: "انتهى التأمين الطبي", en: "Insurance Expired" },
+      soon: { ar: "أوشك التأمين على الانتهاء", en: "Insurance Expiring Soon" },
+      valid: { ar: "تأمين صالح", en: "Valid Insurance" },
+      active: { ar: "تأمين ساري", en: "Active Insurance" },
     },
     contract: {
-      expired: { ar: 'انتهى عقد العمل', en: 'Contract Expired' },
-      soon: { ar: 'أوشك العقد على الانتهاء', en: 'Contract Expiring Soon' },
-      valid: { ar: 'عقد عمل صالح', en: 'Valid Contract' },
-      active: { ar: 'عقد عمل ساري', en: 'Active Contract' },
-    }
+      expired: { ar: "انتهى عقد العمل", en: "Contract Expired" },
+      soon: { ar: "أوشك العقد على الانتهاء", en: "Contract Expiring Soon" },
+      valid: { ar: "عقد عمل صالح", en: "Valid Contract" },
+      active: { ar: "عقد عمل ساري", en: "Active Contract" },
+    },
   };
 
   const docNames = names[docType] || names.iqama;
 
   if (diffDays < 0) {
     return {
-      status: lang === 'ar' ? docNames.expired.ar : docNames.expired.en,
+      status: lang === "ar" ? docNames.expired.ar : docNames.expired.en,
       daysLeft: diffDays,
-      badgeClass: 'bg-rose-50 text-rose-600 border border-rose-200 font-extrabold'
+      badgeClass:
+        "bg-rose-50 text-rose-600 border border-rose-200 font-extrabold",
     };
   } else if (diffDays <= 30) {
     return {
-      status: lang === 'ar' ? docNames.soon.ar : docNames.soon.en,
+      status: lang === "ar" ? docNames.soon.ar : docNames.soon.en,
       daysLeft: diffDays,
-      badgeClass: 'bg-amber-50 text-amber-600 border border-amber-300 font-extrabold animate-pulse'
+      badgeClass:
+        "bg-amber-50 text-amber-600 border border-amber-300 font-extrabold animate-pulse",
     };
   } else if (diffDays > 330) {
     return {
-      status: lang === 'ar' ? docNames.valid.ar : docNames.valid.en,
+      status: lang === "ar" ? docNames.valid.ar : docNames.valid.en,
       daysLeft: diffDays,
-      badgeClass: 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+      badgeClass: "bg-emerald-50 text-emerald-600 border border-emerald-200",
     };
   } else {
     return {
-      status: lang === 'ar' ? docNames.active.ar : docNames.active.en,
+      status: lang === "ar" ? docNames.active.ar : docNames.active.en,
       daysLeft: diffDays,
-      badgeClass: 'bg-blue-50/50 text-[#0072BC] border border-blue-100'
+      badgeClass: "bg-blue-50/50 text-[#0072BC] border border-blue-100",
     };
   }
 }
 
-function EmployeeAttachmentsPanel({ lang, emp, onUpdate, showToast }: { lang: 'ar'|'en', emp: any, onUpdate: (f: any) => void, showToast: (msg: string, type?: 'success'|'error') => void }) {
-  const handleFileUpload = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+function EmployeeAttachmentsPanel({
+  lang,
+  emp,
+  onUpdate,
+  showToast,
+}: {
+  lang: "ar" | "en";
+  emp: any;
+  onUpdate: (f: any) => void;
+  showToast: (msg: string, type?: "success" | "error") => void;
+}) {
+  const handleFileUpload =
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (file.type.startsWith('image/')) {
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          // Max dimension 800px to ensure it safely fits in Firestore 1MB limit
-          const MAX_DIM = 800;
-          if (width > height && width > MAX_DIM) {
-            height *= MAX_DIM / width;
-            width = MAX_DIM;
-          } else if (height > MAX_DIM) {
-            width *= MAX_DIM / height;
-            height = MAX_DIM;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      if (file.type.startsWith("image/")) {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+
+            // Max dimension 800px to ensure it safely fits in Firestore 1MB limit
+            const MAX_DIM = 800;
+            if (width > height && width > MAX_DIM) {
+              height *= MAX_DIM / width;
+              width = MAX_DIM;
+            } else if (height > MAX_DIM) {
+              width *= MAX_DIM / height;
+              height = MAX_DIM;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+            try {
+              onUpdate({ [field]: compressedDataUrl });
+            } catch (err) {
+              showToast(
+                lang === "ar"
+                  ? "الصورة كبيرة جداً، يرجى اختيار صورة أصغر."
+                  : "Image is too large, please select a smaller one.",
+                "error",
+              );
+            }
+          };
+          img.src = ev.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For PDFs or other non-images
+        if (file.size > 800 * 1024) {
+          // 800KB limit
+          showToast(
+            lang === "ar"
+              ? "حجم الملف يجب أن يكون أقل من 800 كيلوبايت"
+              : "File size must be less than 800KB",
+            "error",
+          );
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
           try {
-            onUpdate({ [field]: compressedDataUrl });
+            onUpdate({ [field]: ev.target?.result });
           } catch (err) {
-            showToast(lang === 'ar' ? 'الصورة كبيرة جداً، يرجى اختيار صورة أصغر.' : 'Image is too large, please select a smaller one.', 'error');
+            showToast(
+              lang === "ar" ? "الملف كبير جداً." : "File is too large.",
+              "error",
+            );
           }
         };
-        img.src = ev.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      // For PDFs or other non-images
-      if (file.size > 800 * 1024) { // 800KB limit
-         showToast(lang === 'ar' ? 'حجم الملف يجب أن يكون أقل من 800 كيلوبايت' : 'File size must be less than 800KB', 'error');
-         return;
+        reader.readAsDataURL(file);
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          onUpdate({ [field]: ev.target?.result });
-        } catch (err) {
-          showToast(lang === 'ar' ? 'الملف كبير جداً.' : 'File is too large.', 'error');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    };
 
-  const AttachmentCard = ({ title, field }: { title: string, field: string }) => {
+  const AttachmentCard = ({
+    title,
+    field,
+  }: {
+    title: string;
+    field: string;
+  }) => {
     const fileData = emp[field];
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
         <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
           <span className="font-extrabold text-slate-800 text-sm">{title}</span>
           {fileData && (
-            <a 
-              href={fileData} 
-              download={`${emp.englishName || emp.arabicName || 'Employee'}_${field}`}
+            <a
+              href={fileData}
+              download={`${emp.englishName || emp.arabicName || "Employee"}_${field}`}
               className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
-              title={lang === 'ar' ? 'تنزيل' : 'Download'}
+              title={lang === "ar" ? "تنزيل" : "Download"}
             >
               <Download className="w-4 h-4" />
             </a>
           )}
         </div>
-        
+
         {fileData ? (
           <div className="relative w-full bg-slate-100 flex items-center justify-center p-6 min-h-[16rem]">
-            {fileData.startsWith('data:image/') ? (
-               <img src={fileData} alt={title} className="max-w-full max-h-[350px] object-contain rounded-xl shadow-sm border border-slate-200 bg-white" />
+            {fileData.startsWith("data:image/") ? (
+              <img
+                src={fileData}
+                alt={title}
+                className="max-w-full max-h-[350px] object-contain rounded-xl shadow-sm border border-slate-200 bg-white"
+              />
             ) : (
-               <div className="text-slate-400 text-xs flex flex-col items-center py-20">
-                  <FileText className="w-10 h-10 mb-2 opacity-50" />
-                  <span>{lang === 'ar' ? 'مستند مرفق' : 'Document Attached'}</span>
-               </div>
+              <div className="text-slate-400 text-xs flex flex-col items-center py-20">
+                <FileText className="w-10 h-10 mb-2 opacity-50" />
+                <span>
+                  {lang === "ar" ? "مستند مرفق" : "Document Attached"}
+                </span>
+              </div>
             )}
             <label className="absolute bottom-4 left-4 p-2.5 bg-white/90 backdrop-blur shadow-lg rounded-xl cursor-pointer hover:bg-white text-slate-800 transition-all border border-slate-200">
-              <input type="file" className="hidden" onChange={handleFileUpload(field)} accept="image/*,.pdf" />
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload(field)}
+                accept="image/*,.pdf"
+              />
               <Upload className="w-4 h-4" />
             </label>
           </div>
         ) : (
           <label className="w-full min-h-[16rem] bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:bg-[#0072BC]/5 hover:text-[#0072BC] transition-colors cursor-pointer p-8">
-             <Upload className="w-8 h-8 mb-3" />
-             <span className="text-sm font-bold">{lang === 'ar' ? 'انقر لرفع ملف (صورة أو PDF)' : 'Click to upload (Image or PDF)'}</span>
-             <input type="file" className="hidden" onChange={handleFileUpload(field)} accept="image/*,.pdf" />
+            <Upload className="w-8 h-8 mb-3" />
+            <span className="text-sm font-bold">
+              {lang === "ar"
+                ? "انقر لرفع ملف (صورة أو PDF)"
+                : "Click to upload (Image or PDF)"}
+            </span>
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload(field)}
+              accept="image/*,.pdf"
+            />
           </label>
         )}
       </div>
@@ -309,9 +420,18 @@ function EmployeeAttachmentsPanel({ lang, emp, onUpdate, showToast }: { lang: 'a
 
   return (
     <div className="space-y-4">
-      <AttachmentCard title={lang === 'ar' ? 'الصورة الشخصية' : 'Personal Photo'} field="personalPhoto" />
-      <AttachmentCard title={lang === 'ar' ? 'صورة الإقامة' : 'Iqama Photo'} field="iqamaPhoto" />
-      <AttachmentCard title={lang === 'ar' ? 'صورة الجواز' : 'Passport Photo'} field="passportPhoto" />
+      <AttachmentCard
+        title={lang === "ar" ? "الصورة الشخصية" : "Personal Photo"}
+        field="personalPhoto"
+      />
+      <AttachmentCard
+        title={lang === "ar" ? "صورة الإقامة" : "Iqama Photo"}
+        field="iqamaPhoto"
+      />
+      <AttachmentCard
+        title={lang === "ar" ? "صورة الجواز" : "Passport Photo"}
+        field="passportPhoto"
+      />
     </div>
   );
 }
@@ -324,13 +444,19 @@ export default function HrEmployeeDirectoryTab({
   onReloadEmployees,
   onAddEmployee,
   onDeleteEmployee,
-  user
+  user,
 }: HrEmployeeDirectoryTabProps) {
   // Search query state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "success",
+  ) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
@@ -343,7 +469,7 @@ export default function HrEmployeeDirectoryTab({
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAiImportOpen, setIsAiImportOpen] = useState(false);
   const [aiImportLoading, setAiImportLoading] = useState(false);
-  const [aiImportText, setAiImportText] = useState('');
+  const [aiImportText, setAiImportText] = useState("");
   const [aiImportFile, setAiImportFile] = useState<File | null>(null);
 
   // Deletion state & 4-second countdown
@@ -362,28 +488,28 @@ export default function HrEmployeeDirectoryTab({
   }, [empToDelete, deleteCountdown]);
 
   const [newEmpForm, setNewEmpForm] = useState({
-    arabicName: '',
-    englishName: '',
-    mobile: '',
-    birthDate: '',
-    dateOfJoining: '',
-    nationality: 'سعودي',
-    passportDetails: '',
-    iqamaId: '',
-    iqamaExpiryDate: '',
-        insurancePolicyNumber: '',
-        insuranceCompany: '',
-        insuranceClass: 'C',
-        insuranceExpiryDate: '',
-    passportExpiryDate: '',
-    jobTitle: '',
-    classification: 'موظف',
-    grade: 'Grade 1',
+    arabicName: "",
+    englishName: "",
+    mobile: "",
+    birthDate: "",
+    dateOfJoining: "",
+    nationality: "سعودي",
+    passportDetails: "",
+    iqamaId: "",
+    iqamaExpiryDate: "",
+    insurancePolicyNumber: "",
+    insuranceCompany: "",
+    insuranceClass: "C",
+    insuranceExpiryDate: "",
+    passportExpiryDate: "",
+    jobTitle: "",
+    classification: "موظف",
+    grade: "Grade 1",
     basicSalary: 6000,
-    allowances: { housing: 1500, transport: 500, phone: 200 },
-    homeAddress: 'الرياض، المملكة العربية السعودية',
-    department: 'Neon Fabrication',
-    contractExpiry: ''
+    allowances: { housing: 1500, transport: 500, phone: 0 },
+    homeAddress: "الرياض، المملكة العربية السعودية",
+    department: "Neon Fabrication",
+    contractExpiry: "",
   });
 
   // Edit states for biography
@@ -398,14 +524,16 @@ export default function HrEmployeeDirectoryTab({
     food: 0,
     loans: 0,
     deductions: 0,
-    status: 'Active',
-    contractQiwaNumber: '',
-    contractUrl: '',
-    contractExpiry: ''
+    status: "Active",
+    contractQiwaNumber: "",
+    contractUrl: "",
+    contractExpiry: "",
   });
 
   const [isPreviewingContract, setIsPreviewingContract] = useState(false);
-  const [contractPdfBlobUrl, setContractPdfBlobUrl] = useState<string | null>(null);
+  const [contractPdfBlobUrl, setContractPdfBlobUrl] = useState<string | null>(
+    null,
+  );
 
   // Helper to convert uploaded files to compressed base64
   const handleFileToBase64 = (file: File): Promise<string> => {
@@ -418,8 +546,12 @@ export default function HrEmployeeDirectoryTab({
   };
 
   useEffect(() => {
-    if (selectedEmp && selectedEmp.contractUrl && selectedEmp.contractUrl.startsWith('data:application/pdf')) {
-      const url = base64ToBlobUrl(selectedEmp.contractUrl, 'application/pdf');
+    if (
+      selectedEmp &&
+      selectedEmp.contractUrl &&
+      selectedEmp.contractUrl.startsWith("data:application/pdf")
+    ) {
+      const url = base64ToBlobUrl(selectedEmp.contractUrl, "application/pdf");
       setContractPdfBlobUrl(url);
     } else {
       if (contractPdfBlobUrl) {
@@ -436,10 +568,10 @@ export default function HrEmployeeDirectoryTab({
 
   // New manual custody asset state (for "العهد المسجلة لدى الموظف" تكتب يدوياً)
   const [newAsset, setNewAsset] = useState({
-    name: '',
-    receivedDate: '',
-    category: 'أجهزة ومعدات',
-    additionalInfo: ''
+    name: "",
+    receivedDate: "",
+    category: "أجهزة ومعدات",
+    additionalInfo: "",
   });
 
   // Dynamic calculation of experience based on joining date to today
@@ -447,40 +579,43 @@ export default function HrEmployeeDirectoryTab({
     if (!joiningDateStr) return 0;
     const joinDate = new Date(joiningDateStr);
     const today = new Date();
-    
+
     let years = today.getFullYear() - joinDate.getFullYear();
     const monthDiff = today.getMonth() - joinDate.getMonth();
-    
+
     // Adjust year if today is before the joining anniversary month/day
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < joinDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < joinDate.getDate())
+    ) {
       years--;
     }
-    
+
     return years < 0 ? 0 : years;
   };
 
   // Handle Search and Filter
-  const filteredEmployees = employees.filter(emp => {
+  const filteredEmployees = employees.filter((emp) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      (emp.arabicName || '').toLowerCase().includes(q) ||
-      (emp.englishName || '').toLowerCase().includes(q) ||
-      (emp.mobile || '').toLowerCase().includes(q) ||
-      (emp.jobTitle || '').toLowerCase().includes(q) ||
-      (emp.iqamaId || '').toLowerCase().includes(q)
+      (emp.arabicName || "").toLowerCase().includes(q) ||
+      (emp.englishName || "").toLowerCase().includes(q) ||
+      (emp.mobile || "").toLowerCase().includes(q) ||
+      (emp.jobTitle || "").toLowerCase().includes(q) ||
+      (emp.iqamaId || "").toLowerCase().includes(q)
     );
   });
 
   // Open "View More" modal
   const [isContractEditingUrl, setIsContractEditingUrl] = useState(false);
-  const [modalTab, setModalTab] = useState<'info'|'attachments'>('info');
+  const [modalTab, setModalTab] = useState<"info" | "attachments">("info");
 
   const handleOpenViewMore = (emp: Employee) => {
     setSelectedEmp(emp);
     setEditForm({ ...emp });
     setIsEditing(false);
-    setModalTab('info');
+    setModalTab("info");
     setIsEditingSalaryContract(false);
     setIsContractEditingUrl(!emp.contractUrl);
     setSalaryContractForm({
@@ -490,10 +625,10 @@ export default function HrEmployeeDirectoryTab({
       food: emp.allowances?.food || 0,
       loans: emp.allowances?.loans || 0,
       deductions: emp.allowances?.deductions || 0,
-      status: emp.allowances?.status || 'Active',
-      contractQiwaNumber: emp.contractQiwaNumber || '',
-      contractUrl: emp.contractUrl || '',
-      contractExpiry: emp.contractExpiry || ''
+      status: emp.allowances?.status || "Active",
+      contractQiwaNumber: emp.contractQiwaNumber || "",
+      contractUrl: emp.contractUrl || "",
+      contractExpiry: emp.contractExpiry || "",
     });
   };
 
@@ -510,17 +645,22 @@ export default function HrEmployeeDirectoryTab({
 
     // Trigger update callback
     onUpdateEmployeeFields(selectedEmp.id, editForm);
-    
+
     // Update currently viewed employee in local state
-    setSelectedEmp(prev => prev ? { ...prev, ...editForm } : null);
+    setSelectedEmp((prev) => (prev ? { ...prev, ...editForm } : null));
     setIsEditing(false);
-    
-    showToast(lang === 'ar' ? '✓ تم حفظ تعديل البيانات بنجاح!' : '✓ Employee files updated successfully!', 'success');
+
+    showToast(
+      lang === "ar"
+        ? "✓ تم حفظ تعديل البيانات بنجاح!"
+        : "✓ Employee files updated successfully!",
+      "success",
+    );
   };
 
   // Handle deleting employee (إزالة الموظف من الجدول)
   const handleDeleteEmployee = (empId: string) => {
-    const emp = employees.find(e => e.id === empId);
+    const emp = employees.find((e) => e.id === empId);
     if (emp) {
       setEmpToDelete(emp);
       setDeleteCountdown(4);
@@ -543,16 +683,22 @@ export default function HrEmployeeDirectoryTab({
     if (!selectedEmp) return;
 
     if (!newAsset.name.trim()) {
-      showToast(lang === 'ar' ? 'يرجى إدخال اسم العهدة أولاً!' : 'Please enter asset name!', 'error');
+      showToast(
+        lang === "ar"
+          ? "يرجى إدخال اسم العهدة أولاً!"
+          : "Please enter asset name!",
+        "error",
+      );
       return;
     }
 
-    const recDate = newAsset.receivedDate || new Date().toISOString().split('T')[0];
+    const recDate =
+      newAsset.receivedDate || new Date().toISOString().split("T")[0];
     const assetRecord: CustodyAsset = {
       name: newAsset.name,
       receivedDate: recDate,
       category: newAsset.category,
-      additionalInfo: newAsset.additionalInfo
+      additionalInfo: newAsset.additionalInfo,
     };
 
     const currentAssets = selectedEmp.custodyAssets || [];
@@ -560,18 +706,20 @@ export default function HrEmployeeDirectoryTab({
 
     // Trigger update on backend
     onUpdateEmployeeFields(selectedEmp.id, {
-      custodyAssets: updatedAssets
+      custodyAssets: updatedAssets,
     });
 
     // Sync state visual
-    setSelectedEmp(prev => prev ? { ...prev, custodyAssets: updatedAssets } : null);
-    
+    setSelectedEmp((prev) =>
+      prev ? { ...prev, custodyAssets: updatedAssets } : null,
+    );
+
     // Reset inputs
     setNewAsset({
-      name: '',
-      receivedDate: '',
-      category: 'أجهزة ومعدات',
-      additionalInfo: ''
+      name: "",
+      receivedDate: "",
+      category: "أجهزة ومعدات",
+      additionalInfo: "",
     });
 
     if (onReloadEmployees) {
@@ -588,7 +736,9 @@ export default function HrEmployeeDirectoryTab({
 
     // Save
     onUpdateEmployeeFields(selectedEmp.id, { custodyAssets: updatedAssets });
-    setSelectedEmp(prev => prev ? { ...prev, custodyAssets: updatedAssets } : null);
+    setSelectedEmp((prev) =>
+      prev ? { ...prev, custodyAssets: updatedAssets } : null,
+    );
 
     if (onReloadEmployees) {
       onReloadEmployees();
@@ -598,7 +748,12 @@ export default function HrEmployeeDirectoryTab({
   // Handle AI Import Submission
   const handleAiImportSubmit = async () => {
     if (!aiImportText.trim() && !aiImportFile) {
-      showToast(lang === 'ar' ? 'يرجى إدخال النص أو رفع ملف' : 'Please provide text or a file', 'error');
+      showToast(
+        lang === "ar"
+          ? "يرجى إدخال النص أو رفع ملف"
+          : "Please provide text or a file",
+        "error",
+      );
       return;
     }
 
@@ -607,25 +762,31 @@ export default function HrEmployeeDirectoryTab({
       let importedEmployees: any[] = [];
 
       // Check if it's an Excel file
-      if (aiImportFile && (aiImportFile.name.endsWith('.xlsx') || aiImportFile.name.endsWith('.xls') || aiImportFile.name.endsWith('.csv'))) {
+      if (
+        aiImportFile &&
+        (aiImportFile.name.endsWith(".xlsx") ||
+          aiImportFile.name.endsWith(".xls") ||
+          aiImportFile.name.endsWith(".csv"))
+      ) {
         const data = await aiImportFile.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const json = XLSX.utils.sheet_to_json(worksheet);
-        
+
         // Transform JSON if needed or send to AI to transform
         // For robustness, let's ask Gemini to transform the raw JSON into proper Employee array format
-        const res = await fetch('/api/gemini/parse-employee', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/gemini/parse-employee", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: `Please convert this Excel JSON data into the requested employees array format: ${JSON.stringify(json)}`,
           }),
         });
 
         const resData = await res.json();
-        if (!res.ok) throw new Error(resData.error || 'Failed to parse Excel data via AI');
+        if (!res.ok)
+          throw new Error(resData.error || "Failed to parse Excel data via AI");
         if (resData.employees && Array.isArray(resData.employees)) {
           importedEmployees = resData.employees;
         } else if (Array.isArray(resData)) {
@@ -639,15 +800,15 @@ export default function HrEmployeeDirectoryTab({
         if (aiImportFile) {
           const reader = new FileReader();
           fileBase64 = await new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result?.toString() || '');
+            reader.onload = () => resolve(reader.result?.toString() || "");
             reader.onerror = reject;
             reader.readAsDataURL(aiImportFile);
           });
         }
 
-        const res = await fetch('/api/gemini/parse-employee', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/gemini/parse-employee", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: aiImportText,
             fileBase64: fileBase64,
@@ -655,8 +816,8 @@ export default function HrEmployeeDirectoryTab({
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to parse AI data');
-        
+        if (!res.ok) throw new Error(data.error || "Failed to parse AI data");
+
         if (data.employees && Array.isArray(data.employees)) {
           importedEmployees = data.employees;
         } else if (Array.isArray(data)) {
@@ -667,7 +828,11 @@ export default function HrEmployeeDirectoryTab({
       }
 
       if (importedEmployees.length === 0) {
-        throw new Error(lang === 'ar' ? 'لم يتم العثور على بيانات موظفين صالحة.' : 'No valid employee data found.');
+        throw new Error(
+          lang === "ar"
+            ? "لم يتم العثور على بيانات موظفين صالحة."
+            : "No valid employee data found.",
+        );
       }
 
       // Automatically add them directly to the database without stopping for confirmation
@@ -676,7 +841,7 @@ export default function HrEmployeeDirectoryTab({
 
       for (const empData of importedEmployees) {
         if (!empData.arabicName && !empData.englishName) continue; // Skip empty row
-        
+
         index++;
         // Generate a completely unique, non-colliding ID based on timestamp and a random suffix
         const uniqueId = `EMP-${Date.now()}-${Math.floor(Math.random() * 10000)}-${index}`;
@@ -684,34 +849,34 @@ export default function HrEmployeeDirectoryTab({
         if (onAddEmployee) {
           const promise = (onAddEmployee as any)({
             id: uniqueId,
-            arabicName: empData.arabicName || '',
-            englishName: empData.englishName || empData.arabicName || '',
-            iqamaId: empData.iqamaId || '',
-            iqamaExpiryDate: empData.iqamaExpiryDate || '',
-            passportDetails: empData.passportDetails || '',
-            passportExpiryDate: empData.passportExpiryDate || '',
-            jobTitle: empData.jobTitle || 'موظف',
-            department: empData.department || 'عام',
+            arabicName: empData.arabicName || "",
+            englishName: empData.englishName || empData.arabicName || "",
+            iqamaId: empData.iqamaId || "",
+            iqamaExpiryDate: empData.iqamaExpiryDate || "",
+            passportDetails: empData.passportDetails || "",
+            passportExpiryDate: empData.passportExpiryDate || "",
+            jobTitle: empData.jobTitle || "موظف",
+            department: empData.department || "عام",
             basicSalary: Number(empData.basicSalary) || 0,
             allowances: {
               housing: Number(empData.housing) || 0,
               transport: Number(empData.transport) || 0,
               food: 0,
               phone: 0,
-              status: 'Active'
+              status: "Active",
             },
-            birthDate: empData.birthDate || '',
-            dateOfJoining: new Date().toISOString().split('T')[0],
-            contractExpiry: empData.iqamaExpiryDate || '',
-            nationality: empData.nationality || '',
+            birthDate: empData.birthDate || "",
+            dateOfJoining: new Date().toISOString().split("T")[0],
+            contractExpiry: empData.iqamaExpiryDate || "",
+            nationality: empData.nationality || "",
             custody: { items: [], lastUpdated: new Date().toISOString() },
-            grade: 'Staff',
-            homeAddress: '',
-            mobile: ''
+            grade: "Staff",
+            homeAddress: "",
+            mobile: "",
           });
 
           // If onAddEmployee returns a promise, await it sequentially to prevent state/API race conditions
-          if (promise && typeof promise.then === 'function') {
+          if (promise && typeof promise.then === "function") {
             await promise;
           }
           addedCount++;
@@ -720,16 +885,23 @@ export default function HrEmployeeDirectoryTab({
 
       // reset and close modal
       setIsAiImportOpen(false);
-      setAiImportText('');
+      setAiImportText("");
       setAiImportFile(null);
-      
-      showToast(lang === 'ar' 
-        ? `تم الاستيراد بنجاح! تمت إضافة ${addedCount} موظف بنجاح.`
-        : `Import successful! Added ${addedCount} employees successfully.`, 'success');
-        
+
+      showToast(
+        lang === "ar"
+          ? `تم الاستيراد بنجاح! تمت إضافة ${addedCount} موظف بنجاح.`
+          : `Import successful! Added ${addedCount} employees successfully.`,
+        "success",
+      );
     } catch (err: any) {
       console.error(err);
-      showToast(lang === 'ar' ? 'حدث خطأ أثناء الاستيراد: ' + err.message : 'Error during import: ' + err.message, 'error');
+      showToast(
+        lang === "ar"
+          ? "حدث خطأ أثناء الاستيراد: " + err.message
+          : "Error during import: " + err.message,
+        "error",
+      );
     } finally {
       setAiImportLoading(false);
     }
@@ -738,8 +910,17 @@ export default function HrEmployeeDirectoryTab({
   // Handle addition of a new employee
   const handleCreateNewEmployeeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmpForm.arabicName.trim() || !newEmpForm.jobTitle.trim() || !newEmpForm.iqamaId.trim()) {
-      showToast(lang === 'ar' ? 'يرجى تعبئة الحقول الأساسية: الاسم، المسمى، ورقم الهوية!' : 'Fields required: Name, Job Title, and Iqama ID!', 'error');
+    if (
+      !newEmpForm.arabicName.trim() ||
+      !newEmpForm.jobTitle.trim() ||
+      !newEmpForm.iqamaId.trim()
+    ) {
+      showToast(
+        lang === "ar"
+          ? "يرجى تعبئة الحقول الأساسية: الاسم، المسمى، ورقم الهوية!"
+          : "Fields required: Name, Job Title, and Iqama ID!",
+        "error",
+      );
       return;
     }
 
@@ -747,7 +928,7 @@ export default function HrEmployeeDirectoryTab({
     const completeEmpForm = {
       ...newEmpForm,
       englishName: newEmpForm.englishName || newEmpForm.arabicName,
-      contractExpiry: newEmpForm.iqamaExpiryDate // Sync for standard metrics
+      contractExpiry: newEmpForm.iqamaExpiryDate, // Sync for standard metrics
     };
 
     if (onAddEmployee) {
@@ -755,30 +936,35 @@ export default function HrEmployeeDirectoryTab({
       setIsAddOpen(false);
       // Reset form
       setNewEmpForm({
-        arabicName: '',
-        englishName: '',
-        birthDate: '',
-        dateOfJoining: '',
-        nationality: 'سعودي',
-        passportDetails: '',
-        iqamaId: '',
-        iqamaExpiryDate: '',
-        insurancePolicyNumber: '',
-        insuranceCompany: '',
-        insuranceClass: 'C',
-        insuranceExpiryDate: '',
-        mobile: '',
-        passportExpiryDate: '',
-        jobTitle: '',
-        classification: 'موظف',
-        grade: 'Grade 1',
+        arabicName: "",
+        englishName: "",
+        birthDate: "",
+        dateOfJoining: "",
+        nationality: "سعودي",
+        passportDetails: "",
+        iqamaId: "",
+        iqamaExpiryDate: "",
+        insurancePolicyNumber: "",
+        insuranceCompany: "",
+        insuranceClass: "C",
+        insuranceExpiryDate: "",
+        mobile: "",
+        passportExpiryDate: "",
+        jobTitle: "",
+        classification: "موظف",
+        grade: "Grade 1",
         basicSalary: 6000,
-        allowances: { housing: 1500, transport: 500, phone: 200 },
-        homeAddress: 'الرياض، المملكة العربية السعودية',
-        department: 'Neon Fabrication',
-        contractExpiry: ''
+        allowances: { housing: 1500, transport: 500, phone: 0 },
+        homeAddress: "الرياض، المملكة العربية السعودية",
+        department: "Neon Fabrication",
+        contractExpiry: "",
       });
-      showToast(lang === 'ar' ? '✓ تم تعيين وإلحاق الموظف الجديد بنجاح!' : '✓ New employee registered and dispatched successfully!', 'success');
+      showToast(
+        lang === "ar"
+          ? "✓ تم تعيين وإلحاق الموظف الجديد بنجاح!"
+          : "✓ New employee registered and dispatched successfully!",
+        "success",
+      );
       if (onReloadEmployees) {
         setTimeout(() => onReloadEmployees(), 400);
       }
@@ -789,14 +975,22 @@ export default function HrEmployeeDirectoryTab({
     if (!selectedEmp) return;
 
     try {
-      const newWindow = window.open('', '_blank');
+      const newWindow = window.open("", "_blank");
       if (!newWindow) {
-        showToast(lang === 'ar' ? 'يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة.' : 'Please allow pop-ups to print.', 'error');
+        showToast(
+          lang === "ar"
+            ? "يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة."
+            : "Please allow pop-ups to print.",
+          "error",
+        );
         return;
       }
 
-      const totalAllowances = selectedEmp.allowances 
-        ? Object.values(selectedEmp.allowances).reduce((a: any, b: any) => Number(a) + Number(b), 0)
+      const totalAllowances = selectedEmp.allowances
+        ? Object.values(selectedEmp.allowances).reduce(
+            (a: any, b: any) => Number(a) + Number(b),
+            0,
+          )
         : 0;
 
       const printHTML = `
@@ -815,11 +1009,15 @@ export default function HrEmployeeDirectoryTab({
           <h1 style="text-align: center; color: #0072BC; margin-bottom: 20px; font-size: 20px;">سجل الموظف الشامل | Employee Profile Record</h1>
           
           <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-            ${selectedEmp.personalPhoto ? `
+            ${
+              selectedEmp.personalPhoto
+                ? `
             <div style="width: 140px; flex-shrink: 0;">
               <img src="${selectedEmp.personalPhoto}" style="width: 140px; height: 160px; object-fit: cover; border-radius: 12px; border: 2px solid #f3f4f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" />
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             <div style="flex-grow: 1;">
               <div style="margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">
                 <span style="color: #6b7280; font-size: 12px; display: inline-block; width: 100px;">الاسم (عربي)</span>
@@ -827,7 +1025,7 @@ export default function HrEmployeeDirectoryTab({
               </div>
               <div style="margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">
                 <span style="color: #6b7280; font-size: 12px; display: inline-block; width: 100px;">Name (En)</span>
-                <strong style="font-size: 16px; color: #374151;">${selectedEmp.englishName || '-'}</strong>
+                <strong style="font-size: 16px; color: #374151;">${selectedEmp.englishName || "-"}</strong>
               </div>
               <div style="display: flex; gap: 24px; margin-bottom: 12px;">
                 <div style="flex: 1; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">
@@ -848,43 +1046,43 @@ export default function HrEmployeeDirectoryTab({
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; margin-bottom: 24px; font-size: 14px;">
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">رقم الإقامة/الهوية:</span>
-               <strong>${selectedEmp.iqamaId || '-'}</strong>
+               <strong>${selectedEmp.iqamaId || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">تاريخ انتهاء الإقامة:</span>
-               <strong>${selectedEmp.iqamaExpiryDate || '-'}</strong>
+               <strong>${selectedEmp.iqamaExpiryDate || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">رقم الجواز:</span>
-               <strong>${selectedEmp.passportDetails || '-'}</strong>
+               <strong>${selectedEmp.passportDetails || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">تاريخ انتهاء الجواز:</span>
-               <strong>${selectedEmp.passportExpiryDate || '-'}</strong>
+               <strong>${selectedEmp.passportExpiryDate || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">الجنسية:</span>
-               <strong>${selectedEmp.nationality || '-'}</strong>
+               <strong>${selectedEmp.nationality || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">الديانة:</span>
-               <strong>${selectedEmp.religion || '-'}</strong>
+               <strong>${selectedEmp.religion || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">تاريخ الميلاد:</span>
-               <strong>${selectedEmp.birthDate || '-'}</strong>
+               <strong>${selectedEmp.birthDate || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">القسم:</span>
-               <strong>${selectedEmp.department || '-'}</strong>
+               <strong>${selectedEmp.department || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">رقم الجوال:</span>
-               <strong dir="ltr">${selectedEmp.mobile || '-'}</strong>
+               <strong dir="ltr">${selectedEmp.mobile || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">العنوان:</span>
-               <strong>${selectedEmp.homeAddress || '-'}</strong>
+               <strong>${selectedEmp.homeAddress || "-"}</strong>
             </div>
           </div>
 
@@ -893,31 +1091,31 @@ export default function HrEmployeeDirectoryTab({
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; margin-bottom: 24px; font-size: 14px;">
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">تاريخ التعيين:</span>
-               <strong>${selectedEmp.dateOfJoining || '-'}</strong>
+               <strong>${selectedEmp.dateOfJoining || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">نهاية العقد:</span>
-               <strong>${selectedEmp.contractExpiry || '-'}</strong>
+               <strong>${selectedEmp.contractExpiry || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">التصنيف:</span>
-               <strong>${selectedEmp.classification || '-'}</strong>
+               <strong>${selectedEmp.classification || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">الدرجة الوظيفية:</span>
-               <strong>${selectedEmp.grade || '-'}</strong>
+               <strong>${selectedEmp.grade || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">فئة التأمين:</span>
-               <strong>${selectedEmp.insuranceClass || '-'}</strong>
+               <strong>${selectedEmp.insuranceClass || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">انتهاء التأمين:</span>
-               <strong>${selectedEmp.insuranceExpiryDate || '-'}</strong>
+               <strong>${selectedEmp.insuranceExpiryDate || "-"}</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">الراتب الأساسي:</span>
-               <strong>${selectedEmp.basicSalary || '-'} SAR</strong>
+               <strong>${selectedEmp.basicSalary || "-"} SAR</strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">إجمالي البدلات:</span>
@@ -926,45 +1124,65 @@ export default function HrEmployeeDirectoryTab({
           </div>
 
           <!-- Section: Custody Assets -->
-          ${selectedEmp.custodyAssets && selectedEmp.custodyAssets.length > 0 ? `
+          ${
+            selectedEmp.custodyAssets && selectedEmp.custodyAssets.length > 0
+              ? `
           <div style="page-break-inside: avoid;">
             <h3 style="color: #0072BC; font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid #0072BC; padding-bottom: 4px; display: inline-block;">العهد المسجلة Custody Assets</h3>
             <div style="margin-bottom: 24px;">
               <ul style="list-style-type: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                ${selectedEmp.custodyAssets.map((asset: any) => `
+                ${selectedEmp.custodyAssets
+                  .map(
+                    (asset: any) => `
                   <li style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: #f9fafb;">
                     <strong style="color: #111827; display: block; margin-bottom: 4px;">${asset.name}</strong>
                     <div style="color: #6b7280; font-size: 12px; display: flex; justify-content: space-between;">
                       <span>التصنيف: ${asset.category}</span>
                       <span>الاستلام: ${asset.receivedDate}</span>
                     </div>
-                    ${asset.additionalInfo ? `<div style="color: #6b7280; font-size: 12px; margin-top: 4px;">الملاحظات: ${asset.additionalInfo}</div>` : ''}
+                    ${asset.additionalInfo ? `<div style="color: #6b7280; font-size: 12px; margin-top: 4px;">الملاحظات: ${asset.additionalInfo}</div>` : ""}
                   </li>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
               </ul>
             </div>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           <!-- Attachments (Images) -->
-          ${(selectedEmp.iqamaPhoto || selectedEmp.passportPhoto) ? `
+          ${
+            selectedEmp.iqamaPhoto || selectedEmp.passportPhoto
+              ? `
           <div style="page-break-inside: avoid;">
             <h3 style="color: #0072BC; font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid #0072BC; padding-bottom: 4px; display: inline-block;">الإثباتات المرفقة Attached Documents</h3>
             <div style="display: flex; gap: 20px; justify-content: start; margin-bottom: 16px;">
-               ${selectedEmp.iqamaPhoto ? `
+               ${
+                 selectedEmp.iqamaPhoto
+                   ? `
                <div style="flex: 1; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; background: #f9fafb; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                  <h4 style="margin: 0 0 8px 0; color: #4b5563; font-size: 13px;">صورة الإقامة Iqama</h4>
                  <img src="${selectedEmp.iqamaPhoto}" style="max-width: 100%; max-height: 180px; height: auto; object-fit: contain; border-radius: 8px; border: 1px solid #d1d5db; background: white;" />
-               </div>` : ''}
+               </div>`
+                   : ""
+               }
 
-               ${selectedEmp.passportPhoto ? `
+               ${
+                 selectedEmp.passportPhoto
+                   ? `
                <div style="flex: 1; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; background: #f9fafb; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                  <h4 style="margin: 0 0 8px 0; color: #4b5563; font-size: 13px;">صورة الجواز Passport</h4>
                  <img src="${selectedEmp.passportPhoto}" style="max-width: 100%; max-height: 180px; height: auto; object-fit: contain; border-radius: 8px; border: 1px solid #d1d5db; background: white;" />
-               </div>` : ''}
+               </div>`
+                   : ""
+               }
             </div>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           <!-- Footer -->
           <div style="margin-top: 30px; border-top: 1px solid #0072BC; padding-top: 16px; display: flex; justify-content: space-between; font-size: 10px; color: #4b5563;" dir="ltr">
@@ -980,49 +1198,75 @@ export default function HrEmployeeDirectoryTab({
         </div>
       `;
 
-      newWindow.document.write('<html><head><title>' + (selectedEmp?.arabicName || 'Print') + '</title>');
-      newWindow.document.write('<style>@page { margin: 15px 20px 20px; }</style>');
-      newWindow.document.write('</head><body style="margin:0; padding:15px 20px; background:white;">');
+      newWindow.document.write(
+        "<html><head><title>" +
+          (selectedEmp?.arabicName || "Print") +
+          "</title>",
+      );
+      newWindow.document.write(
+        "<style>@page { margin: 15px 20px 20px; }</style>",
+      );
+      newWindow.document.write(
+        '</head><body style="margin:0; padding:15px 20px; background:white;">',
+      );
       newWindow.document.write(printHTML);
-      newWindow.document.write('</body></html>');
+      newWindow.document.write("</body></html>");
       newWindow.document.close();
 
       setTimeout(() => {
         newWindow.focus();
         newWindow.print();
       }, 500);
-    } catch(e) {
-      showToast(lang === 'ar' ? 'حدث خطأ أثناء محاولة الطباعة. يرجى التأكد من صلاحيات المتصفح.' : 'An error occurred while trying to print. Please check browser permissions.', 'error');
+    } catch (e) {
+      showToast(
+        lang === "ar"
+          ? "حدث خطأ أثناء محاولة الطباعة. يرجى التأكد من صلاحيات المتصفح."
+          : "An error occurred while trying to print. Please check browser permissions.",
+        "error",
+      );
     }
   };
 
   return (
     <div id="hr-employee-directory-tab" className="space-y-6">
-      
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[3000] w-full max-w-md px-4 animate-in slide-in-from-top duration-300">
-          <div className={`border text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 ${
-            toast.type === 'success' ? 'bg-emerald-600 border-emerald-500' : 
-            toast.type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-900 border-slate-800'
-          }`}>
-            <span className="text-xl">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
+          <div
+            className={`border text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 ${
+              toast.type === "success"
+                ? "bg-emerald-600 border-emerald-500"
+                : toast.type === "error"
+                  ? "bg-rose-600 border-rose-500"
+                  : "bg-slate-900 border-slate-800"
+            }`}
+          >
+            <span className="text-xl">
+              {toast.type === "success"
+                ? "✅"
+                : toast.type === "error"
+                  ? "❌"
+                  : "ℹ️"}
+            </span>
             <p className="text-sm font-bold leading-normal">{toast.message}</p>
           </div>
         </div>
       )}
 
       {/* 1. KEY METRICS HEADER BAR */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in" dir="rtl">
+      <div
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in"
+        dir="rtl"
+      >
         <div>
           <h2 className="text-xl font-black text-[#0072BC] flex items-center gap-2">
             <span>👥</span>
-            {lang === 'ar' ? 'بيانات الموظفين' : 'Employee Bureau Directory'}
+            {lang === "ar" ? "بيانات الموظفين" : "Employee Bureau Directory"}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            {lang === 'ar' 
-              ? 'تسيير ملفات العمالة وتوزيع بطاقات الهوية والعهد المسجلة وجدول خبراتهم بالتفصيل.' 
-              : 'Administer worker portfolios, custom manual custody registrations, and dynamic join age logs.'}
+            {lang === "ar"
+              ? "تسيير ملفات العمالة وتوزيع بطاقات الهوية والعهد المسجلة وجدول خبراتهم بالتفصيل."
+              : "Administer worker portfolios, custom manual custody registrations, and dynamic join age logs."}
           </p>
         </div>
 
@@ -1055,7 +1299,9 @@ export default function HrEmployeeDirectoryTab({
             className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl flex items-center gap-2 transition-all shadow-md select-none"
           >
             <span>🤖</span>
-            <span>{lang === 'ar' ? 'استيراد بالذكاء الاصطناعي' : 'AI Import'}</span>
+            <span>
+              {lang === "ar" ? "استيراد بالذكاء الاصطناعي" : "AI Import"}
+            </span>
           </button>
 
           <button
@@ -1063,7 +1309,9 @@ export default function HrEmployeeDirectoryTab({
             className="px-5 py-3 bg-[#0072BC] hover:bg-[#0072BC]/90 text-white font-extrabold text-xs rounded-2xl flex items-center gap-2 transition-all shadow-md select-none"
           >
             <Plus className="w-4.5 h-4.5 stroke-[3]" />
-            <span>{lang === 'ar' ? 'إضافة موظف جديد' : 'Enroll New Employee'}</span>
+            <span>
+              {lang === "ar" ? "إضافة موظف جديد" : "Enroll New Employee"}
+            </span>
           </button>
         </div>
       </div>
@@ -1073,9 +1321,13 @@ export default function HrEmployeeDirectoryTab({
         <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
           <Search className="w-4 h-4" />
         </div>
-        <input 
-          type="text" 
-          placeholder={lang === 'ar' ? 'ابحث هنا باسم الموظف، المسمى الوظيفي، أو رقم الإقامة / الهوية...' : 'Filter list by name, iqama, passport or role...'}
+        <input
+          type="text"
+          placeholder={
+            lang === "ar"
+              ? "ابحث هنا باسم الموظف، المسمى الوظيفي، أو رقم الإقامة / الهوية..."
+              : "Filter list by name, iqama, passport or role..."
+          }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-4 pr-11 py-3 text-xs bg-white/80 border border-slate-200 rounded-2xl text-right font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0072BC] transition-all"
@@ -1083,38 +1335,66 @@ export default function HrEmployeeDirectoryTab({
       </div>
 
       {/* 3. SIMPLIFIED DIRECTORY RASTER CARD */}
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-100 shadow-sm overflow-hidden" dir="rtl">
+      <div
+        className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+        dir="rtl"
+      >
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-right text-xs">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[10px] uppercase font-black tracking-wider">
-                <th className="p-4 pr-6 font-extrabold">{lang === 'ar' ? 'الاسم رباعي' : 'Arabic Name / Bio'}</th>
-                <th className="p-4 font-extrabold">{lang === 'ar' ? 'المسمى الوظيفي' : 'Job Title'}</th>
-                <th className="p-4 font-extrabold">{lang === 'ar' ? 'تواريخ الوثائق' : 'Document Dates'}</th>
-                <th className="p-4 font-extrabold">{lang === 'ar' ? 'رقم الإقامة / الهوية' : 'ID / Iqama ID'}</th>
-                <th className="p-4 pl-6 text-center font-extrabold">{lang === 'ar' ? 'ملفات الموظف' : 'Interventions'}</th>
+                <th className="p-4 pr-6 font-extrabold">
+                  {lang === "ar" ? "الاسم رباعي" : "Arabic Name / Bio"}
+                </th>
+                <th className="p-4 font-extrabold">
+                  {lang === "ar" ? "المسمى الوظيفي" : "Job Title"}
+                </th>
+                <th className="p-4 font-extrabold">
+                  {lang === "ar" ? "حالة الموظف" : "Employee Status"}
+                </th>
+                <th className="p-4 font-extrabold">
+                  {lang === "ar" ? "تواريخ الوثائق" : "Document Dates"}
+                </th>
+                <th className="p-4 font-extrabold">
+                  {lang === "ar" ? "رقم الإقامة / الهوية" : "ID / Iqama ID"}
+                </th>
+                <th className="p-4 pl-6 text-center font-extrabold">
+                  {lang === "ar" ? "ملفات الموظف" : "Interventions"}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredEmployees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-slate-50/30 transition-colors">
+                <tr
+                  key={emp.id}
+                  className="hover:bg-slate-50/30 transition-colors"
+                >
                   <td className="p-4 pr-6">
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-9 h-9 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0072BC] flex items-center justify-center font-black text-sm shadow-inner cursor-pointer transition-colors"
                         onClick={() => handleOpenViewMore(emp)}
                       >
-                        {emp.arabicName ? emp.arabicName[0] : 'U'}
+                        {emp.arabicName ? emp.arabicName[0] : "U"}
                       </div>
                       <div>
-                        <p 
+                        <p
                           className="font-extrabold text-slate-800 text-[13px] cursor-pointer hover:text-[#0072BC] hover:underline transition-all"
                           onClick={() => handleOpenViewMore(emp)}
                         >
                           {emp.arabicName}
                         </p>
-                        <p className="text-[10px] text-slate-450 font-mono mt-0.5">{emp.englishName || emp.id}</p>
-                        {emp.mobile && <p className="text-[10px] text-[#0072BC] font-mono font-bold mt-0.5" dir="ltr">{emp.mobile}</p>}
+                        <p className="text-[10px] text-slate-450 font-mono mt-0.5">
+                          {emp.englishName || emp.id}
+                        </p>
+                        {emp.mobile && (
+                          <p
+                            className="text-[10px] text-[#0072BC] font-mono font-bold mt-0.5"
+                            dir="ltr"
+                          >
+                            {emp.mobile}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -1131,82 +1411,157 @@ export default function HrEmployeeDirectoryTab({
                     </div>
                   </td>
                   <td className="p-4">
+                    <div className="flex items-start">
+                      <span
+                        className={`px-3 py-1 text-[10.5px] font-bold rounded-lg ${emp.allowances?.status === "On Leave" ? "bg-amber-100 text-amber-700" : emp.allowances?.status === "Suspended" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                      >
+                        {emp.allowances?.status === "On Leave"
+                          ? lang === "ar"
+                            ? "في إجازة"
+                            : "On Leave"
+                          : emp.allowances?.status === "Suspended"
+                            ? lang === "ar"
+                              ? "موقوف"
+                              : "Suspended"
+                            : lang === "ar"
+                              ? "على رأس العمل"
+                              : "Active"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4">
                     <div className="flex flex-col gap-1.5 items-start min-w-[180px]">
-                      {emp.iqamaExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.iqamaExpiryDate, lang, 'iqama');
-                        return (
-                          <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{lang === 'ar' ? 'الإقامة:' : 'Iqama:'}</span>
-                              <span className="text-[11px] font-mono font-bold text-slate-700">{emp.iqamaExpiryDate}</span>
+                      {emp.iqamaExpiryDate &&
+                        (() => {
+                          const statusObj = getIqamaStatus(
+                            emp.iqamaExpiryDate,
+                            lang,
+                            "iqama",
+                          );
+                          return (
+                            <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                                  {lang === "ar" ? "الإقامة:" : "Iqama:"}
+                                </span>
+                                <span className="text-[11px] font-mono font-bold text-slate-700">
+                                  {emp.iqamaExpiryDate}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}
+                              >
+                                {statusObj.status}
+                              </span>
                             </div>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}>
-                              {statusObj.status}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                      {emp.passportExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.passportExpiryDate, lang, 'passport');
-                        return (
-                          <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{lang === 'ar' ? 'الجواز:' : 'Passport:'}</span>
-                              <span className="text-[11px] font-mono font-bold text-slate-700">{emp.passportExpiryDate}</span>
+                          );
+                        })()}
+                      {emp.passportExpiryDate &&
+                        (() => {
+                          const statusObj = getIqamaStatus(
+                            emp.passportExpiryDate,
+                            lang,
+                            "passport",
+                          );
+                          return (
+                            <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                                  {lang === "ar" ? "الجواز:" : "Passport:"}
+                                </span>
+                                <span className="text-[11px] font-mono font-bold text-slate-700">
+                                  {emp.passportExpiryDate}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}
+                              >
+                                {statusObj.status}
+                              </span>
                             </div>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}>
-                              {statusObj.status}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                      {emp.insuranceExpiryDate && (() => {
-                        const statusObj = getIqamaStatus(emp.insuranceExpiryDate, lang, 'insurance');
-                        return (
-                          <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{lang === 'ar' ? 'التأمين:' : 'Insurance:'}</span>
-                              <span className="text-[11px] font-mono font-bold text-slate-700">{emp.insuranceExpiryDate}</span>
+                          );
+                        })()}
+                      {emp.insuranceExpiryDate &&
+                        (() => {
+                          const statusObj = getIqamaStatus(
+                            emp.insuranceExpiryDate,
+                            lang,
+                            "insurance",
+                          );
+                          return (
+                            <div className="flex items-center gap-2 w-full justify-between border-b border-slate-100 pb-1">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                                  {lang === "ar" ? "التأمين:" : "Insurance:"}
+                                </span>
+                                <span className="text-[11px] font-mono font-bold text-slate-700">
+                                  {emp.insuranceExpiryDate}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}
+                              >
+                                {statusObj.status}
+                              </span>
                             </div>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}>
-                              {statusObj.status}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                      {emp.contractExpiry && (() => {
-                        const statusObj = getIqamaStatus(emp.contractExpiry, lang, 'contract');
-                        return (
-                          <div className="flex items-center gap-2 w-full justify-between">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{lang === 'ar' ? 'العقد:' : 'Contract:'}</span>
-                              <span className="text-[11px] font-mono font-bold text-slate-700">{emp.contractExpiry}</span>
+                          );
+                        })()}
+                      {emp.contractExpiry &&
+                        (() => {
+                          const statusObj = getIqamaStatus(
+                            emp.contractExpiry,
+                            lang,
+                            "contract",
+                          );
+                          return (
+                            <div className="flex items-center gap-2 w-full justify-between">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                                  {lang === "ar" ? "العقد:" : "Contract:"}
+                                </span>
+                                <span className="text-[11px] font-mono font-bold text-slate-700">
+                                  {emp.contractExpiry}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}
+                              >
+                                {statusObj.status}
+                              </span>
                             </div>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-tight whitespace-nowrap ${statusObj.badgeClass}`}>
-                              {statusObj.status}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                      {!emp.iqamaExpiryDate && !emp.passportExpiryDate && !emp.insuranceExpiryDate && !emp.contractExpiry && (
-                         <span className="text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'لا توجد وثائق مسجلة' : 'No dates registered'}</span>
-                      )}
+                          );
+                        })()}
+                      {!emp.iqamaExpiryDate &&
+                        !emp.passportExpiryDate &&
+                        !emp.insuranceExpiryDate &&
+                        !emp.contractExpiry && (
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {lang === "ar"
+                              ? "لا توجد وثائق مسجلة"
+                              : "No dates registered"}
+                          </span>
+                        )}
                     </div>
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-1 items-start">
                       <div className="flex items-center gap-1.5" dir="ltr">
-                        {getNationalityCode(emp.nationality) !== 'un' ? (
-                          <img 
+                        {getNationalityCode(emp.nationality) !== "un" ? (
+                          <img
                             src={`https://flagcdn.com/w20/${getNationalityCode(emp.nationality)}.png`}
                             srcSet={`https://flagcdn.com/w40/${getNationalityCode(emp.nationality)}.png 2x`}
                             width="20"
-                            alt={emp.nationality || 'سعودي'}
-                            title={emp.nationality || 'سعودي'}
+                            alt={emp.nationality || "سعودي"}
+                            title={emp.nationality || "سعودي"}
                             className="rounded-sm"
                           />
                         ) : (
-                          <span className="text-lg leading-none" title={emp.nationality || 'سعودي'}>🌐</span>
+                          <span
+                            className="text-lg leading-none"
+                            title={emp.nationality || "سعودي"}
+                          >
+                            🌐
+                          </span>
                         )}
                         <span className="font-mono font-bold text-slate-800 text-xs">
                           {emp.iqamaId}
@@ -1219,10 +1574,16 @@ export default function HrEmployeeDirectoryTab({
                       <button
                         onClick={() => handleOpenViewMore(emp)}
                         className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-[#0072BC] font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                        title={lang === 'ar' ? 'عرض أكثر وتفصيل وتتبع' : 'View full Employee profile'}
+                        title={
+                          lang === "ar"
+                            ? "عرض أكثر وتفصيل وتتبع"
+                            : "View full Employee profile"
+                        }
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>{lang === 'ar' ? 'عرض المزيد' : 'View More'}</span>
+                        <span>
+                          {lang === "ar" ? "عرض المزيد" : "View More"}
+                        </span>
                       </button>
                     </div>
                   </td>
@@ -1231,8 +1592,13 @@ export default function HrEmployeeDirectoryTab({
 
               {filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-slate-400 font-semibold bg-slate-50/20">
-                    {lang === 'ar' ? '⚠️ لا توجد نتائج مطابقة لفلترة البحث.' : 'No matched staff records found.'}
+                  <td
+                    colSpan={4}
+                    className="text-center py-12 text-slate-400 font-semibold bg-slate-50/20"
+                  >
+                    {lang === "ar"
+                      ? "⚠️ لا توجد نتائج مطابقة لفلترة البحث."
+                      : "No matched staff records found."}
                   </td>
                 </tr>
               )}
@@ -1243,30 +1609,36 @@ export default function HrEmployeeDirectoryTab({
 
       {/* 4. MODAL DETAILED PRESENTATION HUB ("عرض المزيد" + تعديل + حذف + عهد يدوية) */}
       {selectedEmp && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:static print:inset-auto print:overflow-visible print:block" dir="rtl">
-          <div id="printable-certificate-area" className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-0 max-w-4xl w-full h-[90vh] flex flex-col overflow-hidden relative print:h-auto print:shadow-none print:border-none print:w-full print:overflow-visible">
-            
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:static print:inset-auto print:overflow-visible print:block"
+          dir="rtl"
+        >
+          <div
+            id="printable-certificate-area"
+            className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-0 max-w-4xl w-full h-[90vh] flex flex-col overflow-hidden relative print:h-auto print:shadow-none print:border-none print:w-full print:overflow-visible"
+          >
             {/* Modal Exit Trigger */}
-            <button 
+            <button
               onClick={handleCloseViewMore}
               className="absolute top-4 left-4 p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-all cursor-pointer z-10 print:hidden"
-              title={lang === 'ar' ? 'إغلاق نافذة التفاصيل' : 'Close Details'}
+              title={lang === "ar" ? "إغلاق نافذة التفاصيل" : "Close Details"}
             >
               <X className="w-4 h-4" />
             </button>
-
             {/* Print Trigger */}
-            <button 
+            <button
               onClick={handlePrint}
               className="absolute top-4 left-16 p-2 bg-[#0072BC] hover:bg-[#0072BC]/90 text-white rounded-xl transition-all cursor-pointer z-10 print:hidden"
-              title={lang === 'ar' ? 'طباعة كامل معلومات الموظف' : 'Print all employee details'}
+              title={
+                lang === "ar"
+                  ? "طباعة كامل معلومات الموظف"
+                  : "Print all employee details"
+              }
             >
               <FileText className="w-4 h-4" />
             </button>
-
             {/* Scrollable Content Wrapper */}
             <div className="w-full p-6 overflow-y-auto print:overflow-visible relative">
-              
               {/* Modal Header */}
               <div className="border-b border-slate-100 pb-4 ml-6 mb-4">
                 <span className="text-[9px] bg-[#0072BC]/10 text-[#0072BC] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
@@ -1275,1086 +1647,1921 @@ export default function HrEmployeeDirectoryTab({
                 <h3 className="text-lg font-black text-slate-900 mt-2">
                   {selectedEmp.arabicName}
                 </h3>
-                <p className="text-xs text-slate-450 font-bold tracking-wide mt-1">
-                  {selectedEmp.jobTitle} • {selectedEmp.nationality || 'سعودي'}
+                <p className="text-xs text-slate-450 font-bold tracking-wide mt-1 flex items-center justify-center gap-2">
+                  <span>
+                    {selectedEmp.jobTitle} •{" "}
+                    {selectedEmp.nationality || "سعودي"}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 text-[9px] font-bold rounded ${selectedEmp.allowances?.status === "On Leave" ? "bg-amber-100 text-amber-700" : selectedEmp.allowances?.status === "Suspended" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                  >
+                    {selectedEmp.allowances?.status === "On Leave"
+                      ? lang === "ar"
+                        ? "في إجازة"
+                        : "On Leave"
+                      : selectedEmp.allowances?.status === "Suspended"
+                        ? lang === "ar"
+                          ? "موقوف"
+                          : "Suspended"
+                        : lang === "ar"
+                          ? "على رأس العمل"
+                          : "Active"}
+                  </span>
                 </p>
               </div>
-
               {/* Tab Selector */}
               <div className="flex gap-2 mb-6 border-b border-slate-100 pb-2 print:hidden">
-                <button 
-                  onClick={() => setModalTab('info')} 
-                  className={`px-4 py-2 font-bold text-sm rounded-xl transition-all ${modalTab === 'info' ? 'bg-[#0072BC] text-white shadow' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                <button
+                  onClick={() => setModalTab("info")}
+                  className={`px-4 py-2 font-bold text-sm rounded-xl transition-all ${modalTab === "info" ? "bg-[#0072BC] text-white shadow" : "bg-slate-50 text-slate-500 hover:bg-slate-100"}`}
                 >
-                  {lang === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}
+                  {lang === "ar" ? "المعلومات الأساسية" : "Basic Info"}
                 </button>
-                <button 
-                  onClick={() => setModalTab('attachments')} 
-                  className={`px-4 py-2 font-bold text-sm rounded-xl transition-all ${modalTab === 'attachments' ? 'bg-[#0072BC] text-white shadow' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                <button
+                  onClick={() => setModalTab("attachments")}
+                  className={`px-4 py-2 font-bold text-sm rounded-xl transition-all ${modalTab === "attachments" ? "bg-[#0072BC] text-white shadow" : "bg-slate-50 text-slate-500 hover:bg-slate-100"}`}
                 >
-                  {lang === 'ar' ? 'المرفقات والمستندات' : 'Attachments & Documents'}
+                  {lang === "ar"
+                    ? "المرفقات والمستندات"
+                    : "Attachments & Documents"}
                 </button>
               </div>
-
               {/* TAB 1: INFO CONTENT */}
-              <div className={`space-y-6 text-xs text-slate-700 ${modalTab === 'info' ? 'block' : 'hidden'} print:block`}>
-
+              <div
+                className={`space-y-6 text-xs text-slate-700 ${modalTab === "info" ? "block" : "hidden"} print:block`}
+              >
                 <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-150/70">
                   <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-                  <h4 className="font-extrabold text-[#0072BC] text-xs flex items-center gap-1.5/5">
-                    <span>👤</span>
-                    {lang === 'ar' ? 'بيانات الموظف الشاملة:' : 'Biographical Employee Information:'}
-                  </h4>
-                  
-                  {/* Edit Activation button */}
-                  {!isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(true)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0072BC] font-extrabold rounded-lg flex items-center gap-1 transition-all"
-                    >
-                      <Edit2 className="w-3 h-3 text-[#0072BC]/80" />
-                      <span>{lang === 'ar' ? 'تعديل البيانات' : 'Edit File'}</span>
-                    </button>
-                  )}
-                </div>
+                    <h4 className="font-extrabold text-[#0072BC] text-xs flex items-center gap-1.5/5">
+                      <span>👤</span>
+                      {lang === "ar"
+                        ? "بيانات الموظف الشاملة:"
+                        : "Biographical Employee Information:"}
+                    </h4>
 
-                {isEditing ? (
-                  /* EDITING FORM PORTAL */
-                  <form onSubmit={handleSaveBio} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'اسمه (بالعربية)' : 'Arabic Name'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.arabicName || ''} 
-                          onChange={e => setEditForm({ ...editForm, arabicName: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
-                          required
-                        />
+                    {/* Edit Activation button */}
+                    {!isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0072BC] font-extrabold rounded-lg flex items-center gap-1 transition-all"
+                      >
+                        <Edit2 className="w-3 h-3 text-[#0072BC]/80" />
+                        <span>
+                          {lang === "ar" ? "تعديل البيانات" : "Edit File"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    /* EDITING FORM PORTAL */
+                    <form onSubmit={handleSaveBio} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "اسمه (بالعربية)" : "Arabic Name"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.arabicName || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                arabicName: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "الاسم بالإنجليزية"
+                              : "English Name"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.englishName || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                englishName: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "الجنسية" : "Nationality"}
+                          </label>
+                          <CountrySelect
+                            value={editForm.nationality || ""}
+                            onChange={(val) =>
+                              setEditForm({ ...editForm, nationality: val })
+                            }
+                            lang={lang}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "المسمى الوظيفي" : "Job Title"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.jobTitle || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                jobTitle: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "التصنيف الوظيفي"
+                              : "Job Classification"}
+                          </label>
+                          <select
+                            value={editForm.classification || "موظف"}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                classification: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
+                          >
+                            <option value="موظف">
+                              {lang === "ar" ? "موظف" : "Staff"}
+                            </option>
+                            <option value="عامل تصنيع">
+                              {lang === "ar"
+                                ? "عامل تصنيع"
+                                : "Manufacturing Worker"}
+                            </option>
+                            <option value="إداري">
+                              {lang === "ar" ? "إداري" : "Administrative"}
+                            </option>
+                            <option value="الإدارة العليا">
+                              {lang === "ar"
+                                ? "الإدارة العليا"
+                                : "Senior Management"}
+                            </option>
+                            <option value="فراس">
+                              {lang === "ar" ? "فراس" : "Firas"}
+                            </option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "حالة الموظف" : "Employee Status"}
+                          </label>
+                          <select
+                            value={editForm.allowances?.status || "Active"}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                allowances: {
+                                  ...(editForm.allowances || {
+                                    housing: 0,
+                                    transport: 0,
+                                    phone: 0,
+                                  }),
+                                  status: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
+                          >
+                            <option value="Active">
+                              {lang === "ar" ? "على رأس العمل" : "Active"}
+                            </option>
+                            <option value="On Leave">
+                              {lang === "ar" ? "في إجازة" : "On Leave"}
+                            </option>
+                            <option value="Suspended">
+                              {lang === "ar" ? "موقوف" : "Suspended"}
+                            </option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "رقم الإقامة / الهوية"
+                              : "ID / Iqama ID"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.iqamaId || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                iqamaId: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.mobile || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                mobile: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "رقم الجواز" : "Passport Number"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.passportDetails || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                passportDetails: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "تاريخ الميلاد" : "Date of Birth"}
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.birthDate || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                birthDate: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "تاريخ التحاقه بالعمل"
+                              : "Date of Joining"}
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.dateOfJoining || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                dateOfJoining: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "تاريخ انتهاء الإقامة"
+                              : "Iqama Expiry Date"}
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.iqamaExpiryDate || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                iqamaExpiryDate: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "تاريخ انتهاء الجواز"
+                              : "Passport Expiry Date"}
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.passportExpiryDate || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                passportExpiryDate: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'الاسم بالإنجليزية' : 'English Name'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.englishName || ''} 
-                          onChange={e => setEditForm({ ...editForm, englishName: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'الجنسية' : 'Nationality'}</label>
-                        <CountrySelect
-                          value={editForm.nationality || ''}
-                          onChange={val => setEditForm({ ...editForm, nationality: val })}
-                          lang={lang}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'المسمى الوظيفي' : 'Job Title'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.jobTitle || ''} 
-                          onChange={e => setEditForm({ ...editForm, jobTitle: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'التصنيف الوظيفي' : 'Job Classification'}</label>
-                        <select 
-                          value={editForm.classification || 'موظف'} 
-                          onChange={e => setEditForm({ ...editForm, classification: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
-                        >
-                          <option value="موظف">{lang === 'ar' ? 'موظف' : 'Staff'}</option>
-                          <option value="عامل تصنيع">{lang === 'ar' ? 'عامل تصنيع' : 'Manufacturing Worker'}</option>
-                          <option value="إداري">{lang === 'ar' ? 'إداري' : 'Administrative'}</option>
-                          <option value="الإدارة العليا">{lang === 'ar' ? 'الإدارة العليا' : 'Senior Management'}</option>
-                          <option value="فراس">{lang === 'ar' ? 'فراس' : 'Firas'}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'رقم الإقامة / الهوية' : 'ID / Iqama ID'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.iqamaId || ''} 
-                          onChange={e => setEditForm({ ...editForm, iqamaId: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'رقم الجوال' : 'Mobile Number'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.mobile || ''} 
-                          onChange={e => setEditForm({ ...editForm, mobile: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'رقم الجواز' : 'Passport Number'}</label>
-                        <input 
-                          type="text" 
-                          value={editForm.passportDetails || ''} 
-                          onChange={e => setEditForm({ ...editForm, passportDetails: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}</label>
-                        <input 
-                          type="date" 
-                          value={editForm.birthDate || ''} 
-                          onChange={e => setEditForm({ ...editForm, birthDate: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'تاريخ التحاقه بالعمل' : 'Date of Joining'}</label>
-                        <input 
-                          type="date" 
-                          value={editForm.dateOfJoining || ''} 
-                          onChange={e => setEditForm({ ...editForm, dateOfJoining: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'تاريخ انتهاء الإقامة' : 'Iqama Expiry Date'}</label>
-                        <input 
-                          type="date" 
-                          value={editForm.iqamaExpiryDate || ''} 
-                          onChange={e => setEditForm({ ...editForm, iqamaExpiryDate: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'تاريخ انتهاء الجواز' : 'Passport Expiry Date'}</label>
-                        <input 
-                          type="date" 
-                          value={editForm.passportExpiryDate || ''} 
-                          onChange={e => setEditForm({ ...editForm, passportExpiryDate: e.target.value })}
-                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                        />
-                      </div>
-                    </div>
 
                       <div className="col-span-1 md:col-span-2 border-t border-slate-100 pt-3 mt-1">
-                        <h4 className="text-xs font-black text-[#0072BC] mb-2">{lang === 'ar' ? 'التأمين الطبي' : 'Medical Insurance'}</h4>
+                        <h4 className="text-xs font-black text-[#0072BC] mb-2">
+                          {lang === "ar"
+                            ? "التأمين الطبي"
+                            : "Medical Insurance"}
+                        </h4>
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-2 col-span-1 md:col-span-2">
                         <div>
-                           <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'رقم البوليصة' : 'Policy Number'}</label>
-                           <input type="text" value={editForm.insurancePolicyNumber || ''} onChange={e => setEditForm({...editForm, insurancePolicyNumber: e.target.value})} className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs" />
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "رقم البوليصة" : "Policy Number"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.insurancePolicyNumber || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                insurancePolicyNumber: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs"
+                          />
                         </div>
                         <div>
-                           <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'شركة التأمين' : 'Insurance Company'}</label>
-                           <input type="text" value={editForm.insuranceCompany || ''} onChange={e => setEditForm({...editForm, insuranceCompany: e.target.value})} className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs" />
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar"
+                              ? "شركة التأمين"
+                              : "Insurance Company"}
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.insuranceCompany || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                insuranceCompany: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs"
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3 col-span-1 md:col-span-2">
                         <div>
-                           <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'فئة التأمين' : 'Insurance Class'}</label>
-                           <select value={editForm.insuranceClass || 'C'} onChange={e => setEditForm({...editForm, insuranceClass: e.target.value})} className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs form-select">
-                              <option value="VIP">VIP</option>
-                              <option value="A">Class A</option>
-                              <option value="B">Class B</option>
-                              <option value="C">Class C</option>
-                           </select>
-                        </div>
-                        <div>
-                           <label className="block text-slate-400 font-bold mb-1">{lang === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'}</label>
-                           <input type="date" value={editForm.insuranceExpiryDate || ''} onChange={e => setEditForm({...editForm, insuranceExpiryDate: e.target.value})} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center text-xs" />
-                        </div>
-                      </div>
-
-
-                    <div className="flex gap-2 text-xs font-black pt-3">
-                      <button 
-                        type="submit" 
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>{lang === 'ar' ? 'حفظ وتعديل التبعات' : 'Save Modifications'}</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setIsEditing(false)} 
-                        className="px-4 bg-slate-200 text-slate-700 py-2 rounded-xl transition-all"
-                      >
-                        {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  /* VIEWING DATA MODE */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-right">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'اسمه الكامل:' : 'Arabic Name:'}</span>
-                      <p className="font-extrabold text-slate-800 text-[13px]">{selectedEmp.arabicName}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'الاسم باللغة الإنجليزية:' : 'English Name:'}</span>
-                      <p className="font-bold text-slate-800 font-mono text-[11px]">{selectedEmp.englishName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'الجنسية:' : 'Nationality:'}</span>
-                      <p className="font-bold text-slate-800">{selectedEmp.nationality || 'سعودي'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'المسمى الوظيفي:' : 'Job Title:'}</span>
-                      <p className="font-bold text-indigo-750">{selectedEmp.jobTitle}</p>
-                      {selectedEmp.classification && (
-                        <span className="inline-block mt-1 px-2.5 py-0.5 text-[10px] font-black bg-[#0072BC]/10 text-[#0072BC] rounded-md">
-                          {selectedEmp.classification}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'رقم الإقامة / الهوية الوطنية:' : 'ID / Iqama ID:'}</span>
-                      <p className="font-mono font-black text-slate-800 text-[13px]">{selectedEmp.iqamaId}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'رقم الجوال:' : 'Mobile Number:'}</span>
-                      <p className="font-mono font-black text-slate-800 text-[13px]">{selectedEmp.mobile || (lang === 'ar' ? 'غير مسجل' : 'Not Set')}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'رقم جواز السفر:' : 'Passport Book Number:'}</span>
-                      <p className="font-mono font-bold text-slate-700">{selectedEmp.passportDetails || (lang === 'ar' ? 'غير مسجل يدوياً' : 'Not Set')}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'تاريخ الميلاد:' : 'Date of Birth:'}</span>
-                      <p className="font-mono text-slate-700">{selectedEmp.birthDate || '1995-12-10'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'تاريخ التحاقه بالعمل:' : 'Date of Joining:'}</span>
-                      <p className="font-mono text-slate-700">{selectedEmp.dateOfJoining || '2022-01-01'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'تاريخ انتهاء الإقامة:' : 'Iqama Expiry Date:'}</span>
-                      <div className="flex flex-col gap-1 items-start mt-0.5">
-                        <span className="font-mono font-bold text-slate-800">{selectedEmp.iqamaExpiryDate || (lang === 'ar' ? 'غير محدد' : 'Not Specified')}</span>
-                        {selectedEmp.iqamaExpiryDate && (() => {
-                          const statusObj = getIqamaStatus(selectedEmp.iqamaExpiryDate, lang, 'iqama');
-                          return (
-                            <span className={`px-2 py-0.5 text-[9.5px] font-black rounded border ${statusObj.badgeClass}`}>
-                              {statusObj.status} {statusObj.daysLeft > 0 ? `(${statusObj.daysLeft} ${lang === 'ar' ? 'يوم' : 'days'})` : ''}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    
-                    <div className="col-span-2 border-t pt-2 mt-2">
-                      <span className="text-xs text-[#0072BC] block font-black mb-2">{lang === 'ar' ? 'تأمين طبي:' : 'Medical Insurance:'}</span>
-                      <div className="flex flex-wrap gap-4">
-                        <div>
-                          <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'رقم البوليصة:' : 'Policy/Company:'}</span>
-                          <p className="font-mono font-black text-slate-800 text-xs">{selectedEmp.insurancePolicyNumber || '-'} / {selectedEmp.insuranceCompany || '-'}</p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'الفئة:' : 'Class:'}</span>
-                          <p className="font-black text-slate-800 text-xs">{selectedEmp.insuranceClass || '-'}</p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'تاريخ الانتهاء:' : 'Expiry Date:'}</span>
-                          <div className="flex flex-col gap-1 items-start mt-0.5">
-                            <span className="font-mono font-bold text-slate-800 text-xs">{selectedEmp.insuranceExpiryDate || (lang === 'ar' ? 'غير مسجل' : 'Not Set')}</span>
-                            {selectedEmp.insuranceExpiryDate && (() => {
-                              const insStatus = getInsuranceStatus(selectedEmp.insuranceExpiryDate, lang);
-                              return (
-                                <span className={`px-2 py-0.5 text-[9.5px] font-black rounded border ${insStatus.badgeClass}`}>
-                                  {insStatus.status} {insStatus.daysLeft > 0 ? `(${insStatus.daysLeft} ${lang === 'ar' ? 'يوم' : 'days'})` : ''}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'تاريخ انتهاء الجواز:' : 'Passport Expiry Date:'}</span>
-                      <p className="font-mono font-semibold text-amber-700">{selectedEmp.passportExpiryDate || 'عير محدد'}</p>
-                    </div>
-                    
-                    {/* Dynamic Calculated Years of Experience built natively on dateOfJoining subtraction */}
-                    <div className="col-span-1 sm:col-span-2 bg-[#0072BC]/5 p-3.5 rounded-xl border border-[#0072BC]/10 flex justify-between items-center text-xs mt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">📊</span>
-                        <div>
-                          <p className="font-extrabold text-[#0072BC]">{lang === 'ar' ? 'سنوات الخبرة بالمنشأة' : 'Calculated In-House Service'}</p>
-                          <p className="text-[10px] text-slate-450">{lang === 'ar' ? 'محسوبة تلقائياً بناءً على تاريخ الالتحاق إلى اليوم' : 'Parsed dynamically up to current UTC time'}</p>
-                        </div>
-                      </div>
-                      <div className="text-left">
-                        <span className="font-mono text-lg font-black text-[#0072BC] bg-[#0072BC]/15 px-3 py-1 rounded-lg">
-                          {calculateExperience(selectedEmp.dateOfJoining)}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-bold mr-1.5">{lang === 'ar' ? 'سنوات' : 'Years'}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-
-              {/* SECTION: Salary and Employment Contract Details */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4 text-right">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base text-slate-705">💵</span>
-                    <div>
-                      <h4 className="font-extrabold text-[#0072BC] text-xs">
-                        {lang === 'ar' ? 'بيانات الراتب والعقد الوظيفي' : 'Salary and Employment Contract Details'}
-                      </h4>
-                      <span className="text-[10px] text-slate-400 block">
-                        {lang === 'ar' ? 'إدارة الرواتب الأساسية، البدلات (سكن، نقل، طعام)، وتواريخ العقود لمنصة قوى.' : 'Manage basic compensation, allowances (housing, food, transport), and Qiwa contract specifics.'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {!isEditingSalaryContract && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingSalaryContract(true);
-                        setSalaryContractForm({
-                          basicSalary: selectedEmp.basicSalary || 0,
-                          housing: selectedEmp.allowances?.housing || 0,
-                          transport: selectedEmp.allowances?.transport || 0,
-                          food: (selectedEmp.allowances as any)?.food || 0,
-                          loans: selectedEmp.allowances?.loans || 0,
-                          deductions: selectedEmp.allowances?.deductions || 0,
-                          status: selectedEmp.allowances?.status || 'Active',
-                          contractQiwaNumber: selectedEmp.contractQiwaNumber || '',
-                          contractUrl: selectedEmp.contractUrl || '',
-                          contractExpiry: selectedEmp.contractExpiry || ''
-                        });
-                        setIsContractEditingUrl(!selectedEmp.contractUrl);
-                      }}
-                      className="px-3 py-1 bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC] font-extrabold text-[11px] rounded-lg transition-all cursor-pointer"
-                    >
-                      {lang === 'ar' ? 'تعديل الراتب والعقد' : 'Edit Salary & Contract'}
-                    </button>
-                  )}
-                </div>
-
-                {isEditingSalaryContract ? (
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const updatedFields: Partial<Employee> = {
-                      basicSalary: Number(salaryContractForm.basicSalary) || 0,
-                      allowances: {
-                        housing: Number(salaryContractForm.housing) || 0,
-                        transport: Number(salaryContractForm.transport) || 0,
-                        phone: selectedEmp.allowances?.phone || 0,
-                        food: Number(salaryContractForm.food) || 0,
-                        loans: Number(salaryContractForm.loans) || 0,
-                        deductions: Number(salaryContractForm.deductions) || 0,
-                        status: salaryContractForm.status || 'Active'
-                      },
-                      contractQiwaNumber: salaryContractForm.contractQiwaNumber || '',
-                      contractUrl: salaryContractForm.contractUrl || '',
-                      contractExpiry: salaryContractForm.contractExpiry || ''
-                    };
-                    onUpdateEmployeeFields(selectedEmp.id, updatedFields);
-                    setSelectedEmp(prev => prev ? { ...prev, ...updatedFields } : null);
-                    setIsEditingSalaryContract(false);
-                    if (onReloadEmployees) {
-                      await onReloadEmployees();
-                    }
-                    showToast(lang === 'ar' ? '✓ تم حفظ تعديلات الراتب والعقد بنجاح!' : '✓ Salary and contract modifications saved!', 'success');
-                  }} className="space-y-4">
-                    {/* SECTION 1: Compensations & Allowances editing */}
-                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
-                      <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                        <span>💰</span>
-                        {lang === 'ar' ? 'تفاصيل الراتب والبدلات' : 'Salary & Allowance Items'}
-                      </h5>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-right">
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'الراتب الأساسي' : 'Basic Salary'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.basicSalary || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, basicSalary: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'بدل سكن' : 'Housing Allowance'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.housing || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, housing: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'بدل نقل' : 'Transport Allowance'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.transport || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, transport: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'بدل طعام' : 'Food Allowance'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.food || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, food: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 2: Status, Loans, Deductions */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right pt-3 border-t border-slate-100">
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'حالة الموظف' : 'Employee Status'}</label>
-                          <select 
-                            value={salaryContractForm.status || 'Active'}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, status: e.target.value })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-center"
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "فئة التأمين" : "Insurance Class"}
+                          </label>
+                          <select
+                            value={editForm.insuranceClass || "C"}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                insuranceClass: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs form-select"
                           >
-                            <option value="Active">{lang === 'ar' ? '🟢 نشط (Active)' : 'Active'}</option>
-                            <option value="On Leave">{lang === 'ar' ? '🌴 في إجازة (On Leave)' : 'On Leave'}</option>
-                            <option value="Suspended">{lang === 'ar' ? '🔴 موقوف عن العمل (Suspended)' : 'Suspended'}</option>
+                            <option value="VIP">VIP</option>
+                            <option value="A">Class A</option>
+                            <option value="B">Class B</option>
+                            <option value="C">Class C</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'السلفة المالية النشطة (ريال)' : 'Active Loan/Advance (SAR)'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.loans || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, loans: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center text-amber-600"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'إجمالي الخصومات هذا الشهر (ريال)' : 'This Month Deductions (SAR)'}</label>
-                          <input 
-                            type="number"
-                            value={salaryContractForm.deductions || ''}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, deductions: parseFloat(e.target.value) || 0 })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center text-rose-600"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Live Total calculation badge */}
-                      <div className="flex justify-between items-center bg-emerald-50 text-emerald-800 px-3 py-2 rounded-xl text-xs border border-emerald-100/50 mt-1">
-                        <span className="font-bold">{lang === 'ar' ? 'إجمالي الراتب المحسوب:' : 'Calculated Gross Salary:'}</span>
-                        <span className="font-mono font-black text-sm">
-                          {(Number(salaryContractForm.basicSalary) + Number(salaryContractForm.housing) + Number(salaryContractForm.transport) + Number(salaryContractForm.food)).toLocaleString()} {lang === 'ar' ? 'ريال سعودي' : 'SAR'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* SECTION 2: Contract Specifics editing */}
-                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
-                      <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                        <span>📜</span>
-                        {lang === 'ar' ? 'تفاصيل عقد العمل والمنصات' : 'Qiwa Platform & Contract Details'}
-                      </h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-right">
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'رقم العقد في منصة قوى' : 'Qiwa Contract Number'}</label>
-                          <input 
-                            type="text"
-                            placeholder="e.g. QW-905183"
-                            value={salaryContractForm.contractQiwaNumber}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, contractQiwaNumber: e.target.value })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">{lang === 'ar' ? 'تاريخ انتهاء عقد العمل' : 'Contract Expiry Date'}</label>
-                          <input 
+                          <label className="block text-slate-400 font-bold mb-1">
+                            {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}
+                          </label>
+                          <input
                             type="date"
-                            value={salaryContractForm.contractExpiry}
-                            onChange={e => setSalaryContractForm({ ...salaryContractForm, contractExpiry: e.target.value })}
-                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            value={editForm.insuranceExpiryDate || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                insuranceExpiryDate: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-center text-xs"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-2 mt-2 text-right">
-                        <label className="block text-slate-400 font-bold text-[10px]">
-                          {lang === 'ar' ? 'ملف أو رابط العقد / المستند' : 'Contract Document File or URL'}
-                        </label>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                          {/* Option 1: URL input */}
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-bold text-slate-400">
-                              {lang === 'ar' ? 'خيار أ: إدخال رابط العقد يدوياً' : 'Option A: Enter Contract Web URL'}
-                            </span>
-                            <input 
-                              type="url"
-                              placeholder="https://example.com/contract.pdf"
-                              value={salaryContractForm.contractUrl?.startsWith('data:') ? '' : salaryContractForm.contractUrl}
-                              onChange={e => setSalaryContractForm({ ...salaryContractForm, contractUrl: e.target.value })}
-                              className="w-full text-[11px] p-2.5 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
-                            />
-                          </div>
-
-                          {/* Option 2: File Upload area */}
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-bold text-slate-400">
-                              {lang === 'ar' ? 'خيار ب: رفع ملف عقد جديد (PDF أو صورة)' : 'Option B: Upload New Contract (PDF or Image)'}
-                            </span>
-                            
-                            <div className="relative border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-300 transition bg-white p-2 text-center cursor-pointer">
-                              <input 
-                                type="file"
-                                accept="application/pdf,image/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    try {
-                                      showToast(lang === 'ar' ? 'جاري تحويل ومعالجة الملف...' : 'Processing file...', 'info');
-                                      const base64 = await handleFileToBase64(file);
-                                      setSalaryContractForm({ ...salaryContractForm, contractUrl: base64 });
-                                      showToast(lang === 'ar' ? '✓ تم رفع وتجهيز الملف للقرص بنجاح!' : '✓ File prepared successfully!', 'success');
-                                    } catch (err) {
-                                      showToast(lang === 'ar' ? 'فشل معالجة الملف' : 'File processing failed', 'error');
-                                    }
-                                  }
-                                }}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              />
-                              <div className="flex flex-col items-center justify-center py-1">
-                                <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                                <span className="text-[10px] font-bold text-slate-600 block">
-                                  {lang === 'ar' ? 'اسحب وأفلت أو تصفح الملفات' : 'Drag & drop or browse'}
-                                </span>
-                                <span className="text-[8px] text-slate-400 font-bold block mt-0.5">
-                                  PDF / PNG / JPG
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Uploaded File Status badge / Action */}
-                        {salaryContractForm.contractUrl && (
-                          <div className="flex justify-between items-center bg-sky-50 text-sky-850 px-3 py-1.5 rounded-lg text-[10px] border border-sky-100/50 mt-1.5 font-bold">
-                            <span className="flex items-center gap-1">
-                              <span>📎</span>
-                              <span>
-                                {salaryContractForm.contractUrl.startsWith('data:application/pdf') 
-                                  ? (lang === 'ar' ? 'ملف مستند PDF مجهز للتعاقد' : 'PDF Document Ready')
-                                  : salaryContractForm.contractUrl.startsWith('data:image/')
-                                    ? (lang === 'ar' ? 'صورة العقد مجهزة' : 'Image Document Ready')
-                                    : (lang === 'ar' ? 'رابط ويب خارجي مدخل' : 'External Web URL Entered')
-                                }
-                              </span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setSalaryContractForm({ ...salaryContractForm, contractUrl: '' })}
-                              className="text-rose-600 hover:text-rose-850 px-2 py-0.5 rounded-md hover:bg-rose-100/40 transition font-black"
-                            >
-                              {lang === 'ar' ? 'حذف الملف' : 'Clear File'}
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex gap-2 text-xs font-black pt-3">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>
+                            {lang === "ar"
+                              ? "حفظ وتعديل التبعات"
+                              : "Save Modifications"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditing(false)}
+                          className="px-4 bg-slate-200 text-slate-700 py-2 rounded-xl transition-all"
+                        >
+                          {lang === "ar" ? "إلغاء" : "Cancel"}
+                        </button>
                       </div>
-                    </div>
-
-                    {/* Actions bar for Salay and Contract edits form */}
-                    <div className="flex gap-2 text-xs font-black pt-2">
-                      <button 
-                        type="submit" 
-                        className="flex-1 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>{lang === 'ar' ? 'حفظ بيانات الراتب والعقد' : 'Commit Changes'}</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setIsEditingSalaryContract(false)} 
-                        className="px-4 bg-slate-100 text-slate-600 py-2 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
-                      >
-                        {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  /* READ ONLY PRESENTATION & COUNTDOWN BADGES */
-                  <div className="space-y-4">
-                    {/* compensations table-like items */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-right">
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'الراتب الأساسي' : 'Basic Salary:'}</span>
-                        <p className="font-mono font-black text-slate-800 mt-0.5">{selectedEmp.basicSalary?.toLocaleString() || 0} SAR</p>
-                      </div>
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'بدل سكن' : 'Housing Allowance:'}</span>
-                        <p className="font-mono font-black text-slate-700 mt-0.5">{selectedEmp.allowances?.housing?.toLocaleString() || 0} SAR</p>
-                      </div>
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'بدل نقل' : 'Transport Allowance:'}</span>
-                        <p className="font-mono font-black text-slate-700 mt-0.5">{selectedEmp.allowances?.transport?.toLocaleString() || 0} SAR</p>
-                      </div>
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'بدل طعام' : 'Food Allowance:'}</span>
-                        <p className="font-mono font-black text-slate-700 mt-0.5">{(selectedEmp.allowances as any)?.food?.toLocaleString() || 0} SAR</p>
-                      </div>
-                    </div>
-
-                    {/* Secondary Metrics row for Status, Active Loans and Deductions */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right">
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'حالة العمل الحالية' : 'Work Status:'}</span>
-                        <p className="font-extrabold mt-0.5 text-xs text-slate-800">
-                          {selectedEmp.allowances?.status === 'On Leave' 
-                            ? (lang === 'ar' ? '🌴 في إجازة (On Leave)' : 'On Leave')
-                            : selectedEmp.allowances?.status === 'Suspended'
-                              ? (lang === 'ar' ? '🔴 موقوف عن العمل (Suspended)' : 'Suspended')
-                              : (lang === 'ar' ? '🟢 نشط (Active)' : 'Active')
-                          }
+                    </form>
+                  ) : (
+                    /* VIEWING DATA MODE */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-right">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "اسمه الكامل:" : "Arabic Name:"}
+                        </span>
+                        <p className="font-extrabold text-slate-800 text-[13px]">
+                          {selectedEmp.arabicName}
                         </p>
                       </div>
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'السلفة المالية النشطة' : 'Active Personal Loan:'}</span>
-                        <p className="font-mono font-black text-amber-600 mt-0.5">{(selectedEmp.allowances?.loans || 0).toLocaleString()} SAR</p>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "الاسم باللغة الإنجليزية:"
+                            : "English Name:"}
+                        </span>
+                        <p className="font-bold text-slate-800 font-mono text-[11px]">
+                          {selectedEmp.englishName || "N/A"}
+                        </p>
                       </div>
-                      <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
-                        <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'الخصومات هذا الشهر' : 'This Month Deductions:'}</span>
-                        <p className="font-mono font-black text-rose-500 mt-0.5">-{(selectedEmp.allowances?.deductions || 0).toLocaleString()} SAR</p>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "الجنسية:" : "Nationality:"}
+                        </span>
+                        <p className="font-bold text-slate-800">
+                          {selectedEmp.nationality || "سعودي"}
+                        </p>
                       </div>
-                    </div>
-
-                    <div className="flex justify-between items-center bg-[#0072BC]/5 text-[#0072BC] px-4 py-3 rounded-xl text-xs border border-[#0072BC]/10">
-                      <span className="font-black text-slate-750">{lang === 'ar' ? 'إجمالي الراتب الشهري الشامل:' : 'Total Calculated Gross Compensation:'}</span>
-                      <span className="font-mono font-black text-base">
-                        {((selectedEmp.basicSalary || 0) + 
-                          (selectedEmp.allowances?.housing || 0) + 
-                          (selectedEmp.allowances?.transport || 0) + 
-                          ((selectedEmp.allowances as any)?.food || 0)).toLocaleString()} {lang === 'ar' ? 'ريال سعودي' : 'SAR'}
-                      </span>
-                    </div>
-
-                    {/* Contract Details and Counter/Countdown */}
-                    <div className="bg-slate-50/40 p-4 rounded-xl border border-slate-100 space-y-3 text-right">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'رقم العقد في قوى:' : 'Qiwa Contract Number:'}</span>
-                          <p className="font-mono font-bold text-slate-800 text-xs mt-0.5">{selectedEmp.contractQiwaNumber || (lang === 'ar' ? 'غير مسجل' : 'N/A')}</p>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "المسمى الوظيفي:" : "Job Title:"}
+                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <p className="font-bold text-indigo-750">
+                            {selectedEmp.jobTitle}
+                          </p>
+                          {selectedEmp.classification && (
+                            <span className="inline-block mt-1 px-2.5 py-0.5 text-[10px] font-black bg-[#0072BC]/10 text-[#0072BC] rounded-md">
+                              {selectedEmp.classification}
+                            </span>
+                          )}
                         </div>
-                        <div>
-                          <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'تاريخ انتهاء عقد العمل:' : 'Contract Expiry Date:'}</span>
-                          <p className="font-mono font-bold text-slate-800 text-xs mt-0.5">{selectedEmp.contractExpiry || (lang === 'ar' ? 'غير محدد' : 'N/A')}</p>
-                        </div>
                       </div>
-
-                      {/* Contract Countdown Bar */}
-                      {selectedEmp.contractExpiry && (() => {
-                        const expiry = new Date(selectedEmp.contractExpiry);
-                        const today = new Date();
-                        expiry.setHours(0, 0, 0, 0);
-                        today.setHours(0, 0, 0, 0);
-                        const diffTime = expiry.getTime() - today.getTime();
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        let badgeColorClass = "";
-                        let textMessage = "";
-                        let isExpired = false;
-
-                        if (diffDays <= 0) {
-                          isExpired = true;
-                          badgeColorClass = "bg-rose-50 text-rose-700 border-rose-200";
-                          textMessage = lang === 'ar' 
-                            ? "⚠️ انتهى العقد! يرجى اتخاذ إجراء إما بإنهاء العلاقة التعاقدية أو تجديد عقد العمل، ويرجى إعلام الموظف بانتهاء عقد العمل."
-                            : "⚠️ Contract Expired! Please take action: either terminate the contractual relationship or renew the employment contract, and notify the employee of contract expiration.";
-                        } else if (diffDays <= 60) {
-                          // Less than or equal to 2 months (60 days)
-                          badgeColorClass = "bg-orange-50 text-orange-700 border-orange-200 animate-pulse";
-                          textMessage = lang === 'ar' 
-                            ? "⚠️ بقي أقل من شهرين! يرجى الاستعداد لتسوية العقد أو أخذ خطوة تجديد عقد العمل." 
-                            : "⚠️ Less than 2 months remaining. Prepare contract actions.";
-                        } else if (diffDays <= 90) {
-                          // Less than 3 months but more than 2 months (61 to 90 days)
-                          badgeColorClass = "bg-yellow-50 text-yellow-700 border-yellow-200";
-                        } else {
-                          // More than 3 months
-                          badgeColorClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
-                        }
-
-                        return (
-                          <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
-                            <div className="flex justify-between items-center text-right" dir="rtl">
-                              <span className="text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'حالة سريان العقد:' : 'Contract Validity State:'}</span>
-                              <span className={`px-3 py-1 text-xs font-black rounded-lg border flex items-center gap-1 font-mono ${badgeColorClass}`}>
-                                ⏳ {isExpired ? (
-                                  <span>{lang === 'ar' ? 'منتهي الصلاحية' : 'Expired'}</span>
-                                ) : (
-                                  <span>
-                                    {lang === 'ar' ? `متبقي ${diffDays} يوم` : `${diffDays} days remaining`}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            
-                            {textMessage && (
-                              <div className="p-3 bg-red-50/50 border border-red-100 rounded-xl mt-1.5">
-                                <p className="text-red-700 text-xs font-extrabold leading-relaxed text-right" dir="rtl">
-                                  {textMessage}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Displaying / Opening Contract Link URL */}
-                      <div className="space-y-3 pt-2.5 border-t border-slate-100">
-                        {selectedEmp.contractUrl ? (
-                          <>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {/* 1. Preview button */}
-                              <button
-                                type="button"
-                                onClick={() => setIsPreviewingContract(!isPreviewingContract)}
-                                className={`py-2 px-3 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center ${
-                                  isPreviewingContract 
-                                    ? 'bg-[#0072BC] text-white' 
-                                    : 'bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC]'
-                                }`}
-                              >
-                                <span>👁️ {lang === 'ar' ? 'معاينة داخل النظام' : 'System Preview'}</span>
-                              </button>
-
-                              {/* 2. Download / Open button */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const dataUrl = selectedEmp.contractUrl;
-                                  if (!dataUrl) return;
-                                  if (dataUrl.startsWith('data:')) {
-                                    const link = document.createElement('a');
-                                    link.href = dataUrl;
-                                    const isPdf = dataUrl.startsWith('data:application/pdf');
-                                    link.download = `contract_${selectedEmp.arabicName || selectedEmp.englishName || 'document'}.${isPdf ? 'pdf' : 'png'}`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                  } else {
-                                    window.open(dataUrl, '_blank');
-                                  }
-                                }}
-                                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-750 font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                              >
-                                <span>📥 {lang === 'ar' ? 'تحميل المستند' : 'Download File'}</span>
-                              </button>
-
-                              {/* 3. Edit / Replace button */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSalaryContractForm({
-                                    basicSalary: selectedEmp.basicSalary || 0,
-                                    housing: selectedEmp.allowances?.housing || 0,
-                                    transport: selectedEmp.allowances?.transport || 0,
-                                    food: (selectedEmp.allowances as any)?.food || 0,
-                                    loans: selectedEmp.allowances?.loans || 0,
-                                    deductions: selectedEmp.allowances?.deductions || 0,
-                                    status: selectedEmp.allowances?.status || 'Active',
-                                    contractQiwaNumber: selectedEmp.contractQiwaNumber || '',
-                                    contractUrl: selectedEmp.contractUrl || '',
-                                    contractExpiry: selectedEmp.contractExpiry || ''
-                                  });
-                                  setIsEditingSalaryContract(true);
-                                }}
-                                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-650 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer text-center"
-                              >
-                                <span>✏️ {lang === 'ar' ? 'تعديل / استبدال' : 'Edit / Replace'}</span>
-                              </button>
-
-                              {/* 4. Delete contract file button */}
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (window.confirm(lang === 'ar' ? 'هل أنت متأكد من رغبتك في حذف مستند العقد بشكل نهائي؟' : 'Are you sure you want to delete the contract document permanently?')) {
-                                    try {
-                                      const updatedFields: Partial<Employee> = { contractUrl: '' };
-                                      onUpdateEmployeeFields(selectedEmp.id, updatedFields);
-                                      setSelectedEmp(prev => prev ? { ...prev, ...updatedFields } : null);
-                                      if (onReloadEmployees) {
-                                        await onReloadEmployees();
-                                      }
-                                      setIsPreviewingContract(false);
-                                      showToast(lang === 'ar' ? '✓ تم حذف ملف العقد بنجاح!' : '✓ Contract file deleted successfully!', 'success');
-                                    } catch (err) {
-                                      showToast(lang === 'ar' ? 'فشل حذف الملف' : 'Failed to delete file', 'error');
-                                    }
-                                  }
-                                }}
-                                className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                              >
-                                <span>🗑️ {lang === 'ar' ? 'حذف العقد' : 'Delete File'}</span>
-                              </button>
-                            </div>
-
-                            {/* Inline system viewer container */}
-                            {isPreviewingContract && (
-                              <div className="mt-3 border border-slate-150 rounded-2xl overflow-hidden bg-slate-50/50 p-2 shadow-inner space-y-2 animate-fade-in">
-                                <div className="flex justify-between items-center bg-slate-100 p-2 rounded-xl text-xs font-bold text-slate-700">
-                                  <span className="flex items-center gap-1.5">
-                                    <span>📄</span>
-                                    <span>{lang === 'ar' ? 'معاينة مستند عقد العمل داخل النظام' : 'In-System Employment Contract Preview'}</span>
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsPreviewingContract(false)}
-                                    className="text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded-md hover:bg-slate-200 transition font-black"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                                
-                                <div className="w-full flex justify-center bg-white rounded-xl border p-1 overflow-hidden min-h-[300px]">
-                                  {selectedEmp.contractUrl.startsWith('data:application/pdf') ? (
-                                    <div className="w-full h-[550px] flex flex-col">
-                                      {contractPdfBlobUrl ? (
-                                        <iframe 
-                                          src={contractPdfBlobUrl} 
-                                          title="Contract PDF Preview"
-                                          className="w-full flex-1 rounded-lg border-0" 
-                                        />
-                                      ) : (
-                                        <div className="p-8 text-center text-slate-400 text-xs">
-                                          {lang === 'ar' ? 'جاري تهيئة معاينة ملف الـ PDF...' : 'Preparing PDF preview...'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : selectedEmp.contractUrl.startsWith('data:image/') ? (
-                                    <div className="p-2 flex justify-center items-center w-full bg-slate-50/25">
-                                      <img 
-                                        src={selectedEmp.contractUrl} 
-                                        alt="Contract Scan" 
-                                        className="max-h-[550px] max-w-full rounded-lg object-contain shadow-md"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className="w-full p-6 text-center text-slate-500 text-xs space-y-3 flex flex-col justify-center items-center">
-                                      <p className="font-extrabold text-slate-600">
-                                        {lang === 'ar' ? 'المستند الحالي مخزن كرابط ويب خارجي ولا يمكن معاينته مباشرة هنا.' : 'The current document is stored as a web URL and cannot be displayed inline.'}
-                                      </p>
-                                      <a 
-                                        href={selectedEmp.contractUrl} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
-                                      >
-                                        {lang === 'ar' ? 'فتح الرابط في نافذة جديدة ↗' : 'Open External URL ↗'}
-                                      </a>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSalaryContractForm({
-                                basicSalary: selectedEmp.basicSalary || 0,
-                                housing: selectedEmp.allowances?.housing || 0,
-                                transport: selectedEmp.allowances?.transport || 0,
-                                food: (selectedEmp.allowances as any)?.food || 0,
-                                loans: selectedEmp.allowances?.loans || 0,
-                                deductions: selectedEmp.allowances?.deductions || 0,
-                                status: selectedEmp.allowances?.status || 'Active',
-                                contractQiwaNumber: selectedEmp.contractQiwaNumber || '',
-                                contractUrl: selectedEmp.contractUrl || '',
-                                contractExpiry: selectedEmp.contractExpiry || ''
-                              });
-                              setIsEditingSalaryContract(true);
-                            }}
-                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-550 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "حالة الموظف:" : "Employee Status:"}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className={`px-3 py-1 text-[10.5px] font-bold rounded-lg ${selectedEmp.allowances?.status === "On Leave" ? "bg-amber-100 text-amber-700" : selectedEmp.allowances?.status === "Suspended" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
                           >
-                            <span>⚠️ {lang === 'ar' ? 'لم يتم رفع مستند العقد بعد (اضغط لتعديل ورفع ملف PDF أو صورة)' : 'No Contract Document Uploaded Yet (Click to Upload)'}</span>
-                          </button>
-                        )}
+                            {selectedEmp.allowances?.status === "On Leave"
+                              ? lang === "ar"
+                                ? "في إجازة"
+                                : "On Leave"
+                              : selectedEmp.allowances?.status === "Suspended"
+                                ? lang === "ar"
+                                  ? "موقوف"
+                                  : "Suspended"
+                                : lang === "ar"
+                                  ? "على رأس العمل"
+                                  : "Active"}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "رقم الإقامة / الهوية الوطنية:"
+                            : "ID / Iqama ID:"}
+                        </span>
+                        <p className="font-mono font-black text-slate-800 text-[13px]">
+                          {selectedEmp.iqamaId}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "رقم الجوال:" : "Mobile Number:"}
+                        </span>
+                        <p className="font-mono font-black text-slate-800 text-[13px]">
+                          {selectedEmp.mobile ||
+                            (lang === "ar" ? "غير مسجل" : "Not Set")}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "رقم جواز السفر:"
+                            : "Passport Book Number:"}
+                        </span>
+                        <p className="font-mono font-bold text-slate-700">
+                          {selectedEmp.passportDetails ||
+                            (lang === "ar" ? "غير مسجل يدوياً" : "Not Set")}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar" ? "تاريخ الميلاد:" : "Date of Birth:"}
+                        </span>
+                        <p className="font-mono text-slate-700">
+                          {selectedEmp.birthDate || "1995-12-10"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "تاريخ التحاقه بالعمل:"
+                            : "Date of Joining:"}
+                        </span>
+                        <p className="font-mono text-slate-700">
+                          {selectedEmp.dateOfJoining || "2022-01-01"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "تاريخ انتهاء الإقامة:"
+                            : "Iqama Expiry Date:"}
+                        </span>
+                        <div className="flex flex-col gap-1 items-start mt-0.5">
+                          <span className="font-mono font-bold text-slate-800">
+                            {selectedEmp.iqamaExpiryDate ||
+                              (lang === "ar" ? "غير محدد" : "Not Specified")}
+                          </span>
+                          {selectedEmp.iqamaExpiryDate &&
+                            (() => {
+                              const statusObj = getIqamaStatus(
+                                selectedEmp.iqamaExpiryDate,
+                                lang,
+                                "iqama",
+                              );
+                              return (
+                                <span
+                                  className={`px-2 py-0.5 text-[9.5px] font-black rounded border ${statusObj.badgeClass}`}
+                                >
+                                  {statusObj.status}{" "}
+                                  {statusObj.daysLeft > 0
+                                    ? `(${statusObj.daysLeft} ${lang === "ar" ? "يوم" : "days"})`
+                                    : ""}
+                                </span>
+                              );
+                            })()}
+                        </div>
                       </div>
 
-                    </div>
-                  </div>
-                )}
-              </div>
+                      <div className="col-span-2 border-t pt-2 mt-2">
+                        <span className="text-xs text-[#0072BC] block font-black mb-2">
+                          {lang === "ar" ? "تأمين طبي:" : "Medical Insurance:"}
+                        </span>
+                        <div className="flex flex-wrap gap-4">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-bold">
+                              {lang === "ar"
+                                ? "رقم البوليصة:"
+                                : "Policy/Company:"}
+                            </span>
+                            <p className="font-mono font-black text-slate-800 text-xs">
+                              {selectedEmp.insurancePolicyNumber || "-"} /{" "}
+                              {selectedEmp.insuranceCompany || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-bold">
+                              {lang === "ar" ? "الفئة:" : "Class:"}
+                            </span>
+                            <p className="font-black text-slate-800 text-xs">
+                              {selectedEmp.insuranceClass || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-bold">
+                              {lang === "ar"
+                                ? "تاريخ الانتهاء:"
+                                : "Expiry Date:"}
+                            </span>
+                            <div className="flex flex-col gap-1 items-start mt-0.5">
+                              <span className="font-mono font-bold text-slate-800 text-xs">
+                                {selectedEmp.insuranceExpiryDate ||
+                                  (lang === "ar" ? "غير مسجل" : "Not Set")}
+                              </span>
+                              {selectedEmp.insuranceExpiryDate &&
+                                (() => {
+                                  const insStatus = getInsuranceStatus(
+                                    selectedEmp.insuranceExpiryDate,
+                                    lang,
+                                  );
+                                  return (
+                                    <span
+                                      className={`px-2 py-0.5 text-[9.5px] font-black rounded border ${insStatus.badgeClass}`}
+                                    >
+                                      {insStatus.status}{" "}
+                                      {insStatus.daysLeft > 0
+                                        ? `(${insStatus.daysLeft} ${lang === "ar" ? "يوم" : "days"})`
+                                        : ""}
+                                    </span>
+                                  );
+                                })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">
+                          {lang === "ar"
+                            ? "تاريخ انتهاء الجواز:"
+                            : "Passport Expiry Date:"}
+                        </span>
+                        <p className="font-mono font-semibold text-amber-700">
+                          {selectedEmp.passportExpiryDate || "عير محدد"}
+                        </p>
+                      </div>
 
-              {/* SECTION: Custody Assets ("العهد المسجلة لدى الموظف" تكتب يدوياً) */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
-                  <span className="text-base text-slate-700">🛡️</span>
-                  <div>
-                    <h4 className="font-extrabold text-slate-800 text-xs">{lang === 'ar' ? 'العهد المسجلة لدى الموظف' : 'Registered Employee Custody List'}</h4>
-                    <span className="text-[10px] text-slate-400 block">{lang === 'ar' ? 'إضافة عهد يدوية مع تتبع تواريخ الاستلام وتصنيف العهدة بالتفصيل.' : 'A complete manual record of tools, laptops, or cars allocated to this staff.'}</span>
-                  </div>
-                </div>
-
-                {/* List of custom assets inside selected employee */}
-                <div className="space-y-2">
-                  {selectedEmp.custodyAssets && selectedEmp.custodyAssets.length > 0 ? (
-                    <div className="border border-slate-100 rounded-xl overflow-hidden text-right">
-                      <table className="w-full text-[11px] border-collapse bg-slate-50/50">
-                        <thead>
-                          <tr className="bg-slate-100/60 text-slate-500 text-[9px] uppercase font-bold border-b border-slate-150">
-                            <th className="p-2 font-black">{lang === 'ar' ? 'العهدة' : 'Asset'}</th>
-                            <th className="p-2 font-black">{lang === 'ar' ? 'تاريخ الاستلام' : 'Receipt Date'}</th>
-                            <th className="p-2 font-black">{lang === 'ar' ? 'تصنيف العهدة' : 'Category'}</th>
-                            <th className="p-2 font-black">{lang === 'ar' ? 'معلومات إضافية' : 'Additional Info'}</th>
-                            <th className="p-2 text-center font-black">{lang === 'ar' ? 'حذف' : 'Remove'}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-150">
-                          {selectedEmp.custodyAssets.map((asset, idx) => (
-                            <tr key={idx} className="hover:bg-white transition-colors text-slate-700 font-bold">
-                              <td className="p-2 text-indigo-700">{asset.name}</td>
-                              <td className="p-2 font-mono text-[10px]">{asset.receivedDate}</td>
-                              <td className="p-2">
-                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-[9px]">
-                                  {asset.category}
-                                </span>
-                              </td>
-                              <td className="p-2 text-slate-500 font-medium">{asset.additionalInfo || '—'}</td>
-                              <td className="p-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveCustodyAsset(idx)}
-                                  className="p-1 hover:bg-rose-50 text-rose-500 rounded-lg transition-all"
-                                  title={lang === 'ar' ? 'مسح العهدة' : 'Delete asset'}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div id="no-custody" className="p-6 bg-slate-50 rounded-xl text-center text-slate-400 font-bold border border-dashed border-slate-200">
-                      {lang === 'ar' ? '✕ لا توجد أي عهد مسجلة مخصصة لهذا الموظف حالياً.' : 'No manual custody registry found for this individual.'}
+                      {/* Dynamic Calculated Years of Experience built natively on dateOfJoining subtraction */}
+                      <div className="col-span-1 sm:col-span-2 bg-[#0072BC]/5 p-3.5 rounded-xl border border-[#0072BC]/10 flex justify-between items-center text-xs mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">📊</span>
+                          <div>
+                            <p className="font-extrabold text-[#0072BC]">
+                              {lang === "ar"
+                                ? "سنوات الخبرة بالمنشأة"
+                                : "Calculated In-House Service"}
+                            </p>
+                            <p className="text-[10px] text-slate-450">
+                              {lang === "ar"
+                                ? "محسوبة تلقائياً بناءً على تاريخ الالتحاق إلى اليوم"
+                                : "Parsed dynamically up to current UTC time"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <span className="font-mono text-lg font-black text-[#0072BC] bg-[#0072BC]/15 px-3 py-1 rounded-lg">
+                            {calculateExperience(selectedEmp.dateOfJoining)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-bold mr-1.5">
+                            {lang === "ar" ? "سنوات" : "Years"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Manuel Asset Registration Form */}
-                <form onSubmit={handleAddCustodyAsset} className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/55 space-y-4 text-right">
-                  <h5 className="font-extrabold text-xs text-slate-700">
-                    ➕ {lang === 'ar' ? 'إضافة عهدة للموظف يدوياً:' : 'Register New Custom Custody Area:'}
-                  </h5>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-slate-400 text-[10px] font-bold mb-1">{lang === 'ar' ? 'العهدة المستلمة' : 'Asset'}</label>
-                      <input 
-                        required
-                        type="text" 
-                        placeholder={lang === 'ar' ? 'مثال: لابتوب، جهاز معيرة' : 'e.g. Dell Latitue L54'}
-                        value={newAsset.name} 
-                        onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
-                        className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
-                      />
+                {/* SECTION: Salary and Employment Contract Details */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4 text-right">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base text-slate-705">💵</span>
+                      <div>
+                        <h4 className="font-extrabold text-[#0072BC] text-xs">
+                          {lang === "ar"
+                            ? "بيانات الراتب والعقد الوظيفي"
+                            : "Salary and Employment Contract Details"}
+                        </h4>
+                        <span className="text-[10px] text-slate-400 block">
+                          {lang === "ar"
+                            ? "إدارة الرواتب الأساسية، البدلات (سكن، نقل، طعام)، وتواريخ العقود لمنصة قوى."
+                            : "Manage basic compensation, allowances (housing, food, transport), and Qiwa contract specifics."}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-slate-400 text-[10px] font-bold mb-1">{lang === 'ar' ? 'تاريخ الاستلام' : 'Receipt Date'}</label>
-                      <input 
-                        type="date" 
-                        value={newAsset.receivedDate} 
-                        onChange={e => setNewAsset({ ...newAsset, receivedDate: e.target.value })}
-                        className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-400 text-[10px] font-bold mb-1">{lang === 'ar' ? 'تصنيف العهدة' : 'Category'}</label>
-                      <select 
-                        value={newAsset.category}
-                        onChange={e => setNewAsset({ ...newAsset, category: e.target.value })}
-                        className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
+
+                    {!isEditingSalaryContract && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingSalaryContract(true);
+                          setSalaryContractForm({
+                            basicSalary: selectedEmp.basicSalary || 0,
+                            housing: selectedEmp.allowances?.housing || 0,
+                            transport: selectedEmp.allowances?.transport || 0,
+                            food: (selectedEmp.allowances as any)?.food || 0,
+                            loans: selectedEmp.allowances?.loans || 0,
+                            deductions: selectedEmp.allowances?.deductions || 0,
+                            status: selectedEmp.allowances?.status || "Active",
+                            contractQiwaNumber:
+                              selectedEmp.contractQiwaNumber || "",
+                            contractUrl: selectedEmp.contractUrl || "",
+                            contractExpiry: selectedEmp.contractExpiry || "",
+                          });
+                          setIsContractEditingUrl(!selectedEmp.contractUrl);
+                        }}
+                        className="px-3 py-1 bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC] font-extrabold text-[11px] rounded-lg transition-all cursor-pointer"
                       >
-                        <option value="أجهزة ومعدات">{lang === 'ar' ? 'أجهزة ومعدات ومستلزمات' : 'IT/Electronic hardware'}</option>
-                        <option value="سيارات ونقل">{lang === 'ar' ? 'سيارات وشاحنات نقل' : 'Vehicles / Mobility'}</option>
-                        <option value="أدوات ورش ومصنع">{lang === 'ar' ? 'أدوات ورش ومصنع نيون' : 'Shopfloor Mechanical tools'}</option>
-                        <option value="أثاث ومجهوزات">{lang === 'ar' ? 'أثاث ومجهوزات مكتبية' : 'Furniture & Office supplies'}</option>
-                        <option value="أخرى">{lang === 'ar' ? 'تصنيفات أخرى' : 'Other'}</option>
-                      </select>
+                        {lang === "ar"
+                          ? "تعديل الراتب والعقد"
+                          : "Edit Salary & Contract"}
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditingSalaryContract ? (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const updatedFields: Partial<Employee> = {
+                          basicSalary:
+                            Number(salaryContractForm.basicSalary) || 0,
+                          allowances: {
+                            housing: Number(salaryContractForm.housing) || 0,
+                            transport:
+                              Number(salaryContractForm.transport) || 0,
+                            phone: selectedEmp.allowances?.phone || 0,
+                            food: Number(salaryContractForm.food) || 0,
+                            loans: Number(salaryContractForm.loans) || 0,
+                            deductions:
+                              Number(salaryContractForm.deductions) || 0,
+                            status: salaryContractForm.status || "Active",
+                          },
+                          contractQiwaNumber:
+                            salaryContractForm.contractQiwaNumber || "",
+                          contractUrl: salaryContractForm.contractUrl || "",
+                          contractExpiry:
+                            salaryContractForm.contractExpiry || "",
+                        };
+                        onUpdateEmployeeFields(selectedEmp.id, updatedFields);
+                        setSelectedEmp((prev) =>
+                          prev ? { ...prev, ...updatedFields } : null,
+                        );
+                        setIsEditingSalaryContract(false);
+                        if (onReloadEmployees) {
+                          await onReloadEmployees();
+                        }
+                        showToast(
+                          lang === "ar"
+                            ? "✓ تم حفظ تعديلات الراتب والعقد بنجاح!"
+                            : "✓ Salary and contract modifications saved!",
+                          "success",
+                        );
+                      }}
+                      className="space-y-4"
+                    >
+                      {/* SECTION 1: Compensations & Allowances editing */}
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
+                        <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                          <span>💰</span>
+                          {lang === "ar"
+                            ? "تفاصيل الراتب والبدلات"
+                            : "Salary & Allowance Items"}
+                        </h5>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-right">
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "الراتب الأساسي"
+                                : "Basic Salary"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.basicSalary || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  basicSalary: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "بدل سكن" : "Housing Allowance"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.housing || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  housing: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "بدل نقل"
+                                : "Transport Allowance"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.transport || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  transport: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "بدل طعام" : "Food Allowance"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.food || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  food: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Row 2: Status, Loans, Deductions */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right pt-3 border-t border-slate-100">
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "حالة الموظف"
+                                : "Employee Status"}
+                            </label>
+                            <select
+                              value={salaryContractForm.status || "Active"}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  status: e.target.value,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-center"
+                            >
+                              <option value="Active">
+                                {lang === "ar" ? "🟢 نشط (Active)" : "Active"}
+                              </option>
+                              <option value="On Leave">
+                                {lang === "ar"
+                                  ? "🌴 في إجازة (On Leave)"
+                                  : "On Leave"}
+                              </option>
+                              <option value="Suspended">
+                                {lang === "ar"
+                                  ? "🔴 موقوف عن العمل (Suspended)"
+                                  : "Suspended"}
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "السلفة المالية النشطة (ريال)"
+                                : "Active Loan/Advance (SAR)"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.loans || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  loans: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center text-amber-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "إجمالي الخصومات هذا الشهر (ريال)"
+                                : "This Month Deductions (SAR)"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.deductions || ""}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  deductions: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center text-rose-600"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Live Total calculation badge */}
+                        <div className="flex justify-between items-center bg-emerald-50 text-emerald-800 px-3 py-2 rounded-xl text-xs border border-emerald-100/50 mt-1">
+                          <span className="font-bold">
+                            {lang === "ar"
+                              ? "إجمالي الراتب المحسوب:"
+                              : "Calculated Gross Salary:"}
+                          </span>
+                          <span className="font-mono font-black text-sm">
+                            {(
+                              Number(salaryContractForm.basicSalary) +
+                              Number(salaryContractForm.housing) +
+                              Number(salaryContractForm.transport) +
+                              Number(salaryContractForm.food)
+                            ).toLocaleString()}{" "}
+                            {lang === "ar" ? "ريال سعودي" : "SAR"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* SECTION 2: Contract Specifics editing */}
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
+                        <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                          <span>📜</span>
+                          {lang === "ar"
+                            ? "تفاصيل عقد العمل والمنصات"
+                            : "Qiwa Platform & Contract Details"}
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-right">
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "رقم العقد في منصة قوى"
+                                : "Qiwa Contract Number"}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. QW-905183"
+                              value={salaryContractForm.contractQiwaNumber}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  contractQiwaNumber: e.target.value,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar"
+                                ? "تاريخ انتهاء عقد العمل"
+                                : "Contract Expiry Date"}
+                            </label>
+                            <input
+                              type="date"
+                              value={salaryContractForm.contractExpiry}
+                              onChange={(e) =>
+                                setSalaryContractForm({
+                                  ...salaryContractForm,
+                                  contractExpiry: e.target.value,
+                                })
+                              }
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 mt-2 text-right">
+                          <label className="block text-slate-400 font-bold text-[10px]">
+                            {lang === "ar"
+                              ? "ملف أو رابط العقد / المستند"
+                              : "Contract Document File or URL"}
+                          </label>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                            {/* Option 1: URL input */}
+                            <div className="space-y-1">
+                              <span className="block text-[9px] font-bold text-slate-400">
+                                {lang === "ar"
+                                  ? "خيار أ: إدخال رابط العقد يدوياً"
+                                  : "Option A: Enter Contract Web URL"}
+                              </span>
+                              <input
+                                type="url"
+                                placeholder="https://example.com/contract.pdf"
+                                value={
+                                  salaryContractForm.contractUrl?.startsWith(
+                                    "data:",
+                                  )
+                                    ? ""
+                                    : salaryContractForm.contractUrl
+                                }
+                                onChange={(e) =>
+                                  setSalaryContractForm({
+                                    ...salaryContractForm,
+                                    contractUrl: e.target.value,
+                                  })
+                                }
+                                className="w-full text-[11px] p-2.5 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
+                              />
+                            </div>
+
+                            {/* Option 2: File Upload area */}
+                            <div className="space-y-1">
+                              <span className="block text-[9px] font-bold text-slate-400">
+                                {lang === "ar"
+                                  ? "خيار ب: رفع ملف عقد جديد (PDF أو صورة)"
+                                  : "Option B: Upload New Contract (PDF or Image)"}
+                              </span>
+
+                              <div className="relative border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-300 transition bg-white p-2 text-center cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="application/pdf,image/*"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        showToast(
+                                          lang === "ar"
+                                            ? "جاري تحويل ومعالجة الملف..."
+                                            : "Processing file...",
+                                          "info",
+                                        );
+                                        const base64 =
+                                          await handleFileToBase64(file);
+                                        setSalaryContractForm({
+                                          ...salaryContractForm,
+                                          contractUrl: base64,
+                                        });
+                                        showToast(
+                                          lang === "ar"
+                                            ? "✓ تم رفع وتجهيز الملف للقرص بنجاح!"
+                                            : "✓ File prepared successfully!",
+                                          "success",
+                                        );
+                                      } catch (err) {
+                                        showToast(
+                                          lang === "ar"
+                                            ? "فشل معالجة الملف"
+                                            : "File processing failed",
+                                          "error",
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                                <div className="flex flex-col items-center justify-center py-1">
+                                  <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                                  <span className="text-[10px] font-bold text-slate-600 block">
+                                    {lang === "ar"
+                                      ? "اسحب وأفلت أو تصفح الملفات"
+                                      : "Drag & drop or browse"}
+                                  </span>
+                                  <span className="text-[8px] text-slate-400 font-bold block mt-0.5">
+                                    PDF / PNG / JPG
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Uploaded File Status badge / Action */}
+                          {salaryContractForm.contractUrl && (
+                            <div className="flex justify-between items-center bg-sky-50 text-sky-850 px-3 py-1.5 rounded-lg text-[10px] border border-sky-100/50 mt-1.5 font-bold">
+                              <span className="flex items-center gap-1">
+                                <span>📎</span>
+                                <span>
+                                  {salaryContractForm.contractUrl.startsWith(
+                                    "data:application/pdf",
+                                  )
+                                    ? lang === "ar"
+                                      ? "ملف مستند PDF مجهز للتعاقد"
+                                      : "PDF Document Ready"
+                                    : salaryContractForm.contractUrl.startsWith(
+                                          "data:image/",
+                                        )
+                                      ? lang === "ar"
+                                        ? "صورة العقد مجهزة"
+                                        : "Image Document Ready"
+                                      : lang === "ar"
+                                        ? "رابط ويب خارجي مدخل"
+                                        : "External Web URL Entered"}
+                                </span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSalaryContractForm({
+                                    ...salaryContractForm,
+                                    contractUrl: "",
+                                  })
+                                }
+                                className="text-rose-600 hover:text-rose-850 px-2 py-0.5 rounded-md hover:bg-rose-100/40 transition font-black"
+                              >
+                                {lang === "ar" ? "حذف الملف" : "Clear File"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions bar for Salay and Contract edits form */}
+                      <div className="flex gap-2 text-xs font-black pt-2">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>
+                            {lang === "ar"
+                              ? "حفظ بيانات الراتب والعقد"
+                              : "Commit Changes"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingSalaryContract(false)}
+                          className="px-4 bg-slate-100 text-slate-600 py-2 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+                        >
+                          {lang === "ar" ? "إلغاء" : "Cancel"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    /* READ ONLY PRESENTATION & COUNTDOWN BADGES */
+                    <div className="space-y-4">
+                      {/* compensations table-like items */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-right">
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "الراتب الأساسي" : "Basic Salary:"}
+                          </span>
+                          <p className="font-mono font-black text-slate-800 mt-0.5">
+                            {selectedEmp.basicSalary?.toLocaleString() || 0} SAR
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "بدل سكن" : "Housing Allowance:"}
+                          </span>
+                          <p className="font-mono font-black text-slate-700 mt-0.5">
+                            {selectedEmp.allowances?.housing?.toLocaleString() ||
+                              0}{" "}
+                            SAR
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "بدل نقل" : "Transport Allowance:"}
+                          </span>
+                          <p className="font-mono font-black text-slate-700 mt-0.5">
+                            {selectedEmp.allowances?.transport?.toLocaleString() ||
+                              0}{" "}
+                            SAR
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "بدل طعام" : "Food Allowance:"}
+                          </span>
+                          <p className="font-mono font-black text-slate-700 mt-0.5">
+                            {(
+                              selectedEmp.allowances as any
+                            )?.food?.toLocaleString() || 0}{" "}
+                            SAR
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Secondary Metrics row for Status, Active Loans and Deductions */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right">
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar"
+                              ? "حالة العمل الحالية"
+                              : "Work Status:"}
+                          </span>
+                          <p className="font-extrabold mt-0.5 text-xs text-slate-800">
+                            {selectedEmp.allowances?.status === "On Leave"
+                              ? lang === "ar"
+                                ? "🌴 في إجازة (On Leave)"
+                                : "On Leave"
+                              : selectedEmp.allowances?.status === "Suspended"
+                                ? lang === "ar"
+                                  ? "🔴 موقوف عن العمل (Suspended)"
+                                  : "Suspended"
+                                : lang === "ar"
+                                  ? "🟢 نشط (Active)"
+                                  : "Active"}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar"
+                              ? "السلفة المالية النشطة"
+                              : "Active Personal Loan:"}
+                          </span>
+                          <p className="font-mono font-black text-amber-600 mt-0.5">
+                            {(
+                              selectedEmp.allowances?.loans || 0
+                            ).toLocaleString()}{" "}
+                            SAR
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar"
+                              ? "الخصومات هذا الشهر"
+                              : "This Month Deductions:"}
+                          </span>
+                          <p className="font-mono font-black text-rose-500 mt-0.5">
+                            -
+                            {(
+                              selectedEmp.allowances?.deductions || 0
+                            ).toLocaleString()}{" "}
+                            SAR
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center bg-[#0072BC]/5 text-[#0072BC] px-4 py-3 rounded-xl text-xs border border-[#0072BC]/10">
+                        <span className="font-black text-slate-750">
+                          {lang === "ar"
+                            ? "إجمالي الراتب الشهري الشامل:"
+                            : "Total Calculated Gross Compensation:"}
+                        </span>
+                        <span className="font-mono font-black text-base">
+                          {(
+                            (selectedEmp.basicSalary || 0) +
+                            (selectedEmp.allowances?.housing || 0) +
+                            (selectedEmp.allowances?.transport || 0) +
+                            ((selectedEmp.allowances as any)?.food || 0)
+                          ).toLocaleString()}{" "}
+                          {lang === "ar" ? "ريال سعودي" : "SAR"}
+                        </span>
+                      </div>
+
+                      {/* Contract Details and Counter/Countdown */}
+                      <div className="bg-slate-50/40 p-4 rounded-xl border border-slate-100 space-y-3 text-right">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <span className="block text-[10px] text-slate-400 font-bold">
+                              {lang === "ar"
+                                ? "رقم العقد في قوى:"
+                                : "Qiwa Contract Number:"}
+                            </span>
+                            <p className="font-mono font-bold text-slate-800 text-xs mt-0.5">
+                              {selectedEmp.contractQiwaNumber ||
+                                (lang === "ar" ? "غير مسجل" : "N/A")}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-slate-400 font-bold">
+                              {lang === "ar"
+                                ? "تاريخ انتهاء عقد العمل:"
+                                : "Contract Expiry Date:"}
+                            </span>
+                            <p className="font-mono font-bold text-slate-800 text-xs mt-0.5">
+                              {selectedEmp.contractExpiry ||
+                                (lang === "ar" ? "غير محدد" : "N/A")}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Contract Countdown Bar */}
+                        {selectedEmp.contractExpiry &&
+                          (() => {
+                            const expiry = new Date(selectedEmp.contractExpiry);
+                            const today = new Date();
+                            expiry.setHours(0, 0, 0, 0);
+                            today.setHours(0, 0, 0, 0);
+                            const diffTime = expiry.getTime() - today.getTime();
+                            const diffDays = Math.ceil(
+                              diffTime / (1000 * 60 * 60 * 24),
+                            );
+
+                            let badgeColorClass = "";
+                            let textMessage = "";
+                            let isExpired = false;
+
+                            if (diffDays <= 0) {
+                              isExpired = true;
+                              badgeColorClass =
+                                "bg-rose-50 text-rose-700 border-rose-200";
+                              textMessage =
+                                lang === "ar"
+                                  ? "⚠️ انتهى العقد! يرجى اتخاذ إجراء إما بإنهاء العلاقة التعاقدية أو تجديد عقد العمل، ويرجى إعلام الموظف بانتهاء عقد العمل."
+                                  : "⚠️ Contract Expired! Please take action: either terminate the contractual relationship or renew the employment contract, and notify the employee of contract expiration.";
+                            } else if (diffDays <= 60) {
+                              // Less than or equal to 2 months (60 days)
+                              badgeColorClass =
+                                "bg-orange-50 text-orange-700 border-orange-200 animate-pulse";
+                              textMessage =
+                                lang === "ar"
+                                  ? "⚠️ بقي أقل من شهرين! يرجى الاستعداد لتسوية العقد أو أخذ خطوة تجديد عقد العمل."
+                                  : "⚠️ Less than 2 months remaining. Prepare contract actions.";
+                            } else if (diffDays <= 90) {
+                              // Less than 3 months but more than 2 months (61 to 90 days)
+                              badgeColorClass =
+                                "bg-yellow-50 text-yellow-700 border-yellow-200";
+                            } else {
+                              // More than 3 months
+                              badgeColorClass =
+                                "bg-emerald-50 text-emerald-700 border-emerald-200";
+                            }
+
+                            return (
+                              <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
+                                <div
+                                  className="flex justify-between items-center text-right"
+                                  dir="rtl"
+                                >
+                                  <span className="text-[10px] text-slate-400 font-bold">
+                                    {lang === "ar"
+                                      ? "حالة سريان العقد:"
+                                      : "Contract Validity State:"}
+                                  </span>
+                                  <span
+                                    className={`px-3 py-1 text-xs font-black rounded-lg border flex items-center gap-1 font-mono ${badgeColorClass}`}
+                                  >
+                                    ⏳{" "}
+                                    {isExpired ? (
+                                      <span>
+                                        {lang === "ar"
+                                          ? "منتهي الصلاحية"
+                                          : "Expired"}
+                                      </span>
+                                    ) : (
+                                      <span>
+                                        {lang === "ar"
+                                          ? `متبقي ${diffDays} يوم`
+                                          : `${diffDays} days remaining`}
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+
+                                {textMessage && (
+                                  <div className="p-3 bg-red-50/50 border border-red-100 rounded-xl mt-1.5">
+                                    <p
+                                      className="text-red-700 text-xs font-extrabold leading-relaxed text-right"
+                                      dir="rtl"
+                                    >
+                                      {textMessage}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                        {/* Displaying / Opening Contract Link URL */}
+                        <div className="space-y-3 pt-2.5 border-t border-slate-100">
+                          {selectedEmp.contractUrl ? (
+                            <>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                {/* 1. Preview button */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIsPreviewingContract(
+                                      !isPreviewingContract,
+                                    )
+                                  }
+                                  className={`py-2 px-3 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                                    isPreviewingContract
+                                      ? "bg-[#0072BC] text-white"
+                                      : "bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC]"
+                                  }`}
+                                >
+                                  <span>
+                                    👁️{" "}
+                                    {lang === "ar"
+                                      ? "معاينة داخل النظام"
+                                      : "System Preview"}
+                                  </span>
+                                </button>
+
+                                {/* 2. Download / Open button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const dataUrl = selectedEmp.contractUrl;
+                                    if (!dataUrl) return;
+                                    if (dataUrl.startsWith("data:")) {
+                                      const link = document.createElement("a");
+                                      link.href = dataUrl;
+                                      const isPdf = dataUrl.startsWith(
+                                        "data:application/pdf",
+                                      );
+                                      link.download = `contract_${selectedEmp.arabicName || selectedEmp.englishName || "document"}.${isPdf ? "pdf" : "png"}`;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    } else {
+                                      window.open(dataUrl, "_blank");
+                                    }
+                                  }}
+                                  className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-750 font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                                >
+                                  <span>
+                                    📥{" "}
+                                    {lang === "ar"
+                                      ? "تحميل المستند"
+                                      : "Download File"}
+                                  </span>
+                                </button>
+
+                                {/* 3. Edit / Replace button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSalaryContractForm({
+                                      basicSalary: selectedEmp.basicSalary || 0,
+                                      housing:
+                                        selectedEmp.allowances?.housing || 0,
+                                      transport:
+                                        selectedEmp.allowances?.transport || 0,
+                                      food:
+                                        (selectedEmp.allowances as any)?.food ||
+                                        0,
+                                      loans: selectedEmp.allowances?.loans || 0,
+                                      deductions:
+                                        selectedEmp.allowances?.deductions || 0,
+                                      status:
+                                        selectedEmp.allowances?.status ||
+                                        "Active",
+                                      contractQiwaNumber:
+                                        selectedEmp.contractQiwaNumber || "",
+                                      contractUrl:
+                                        selectedEmp.contractUrl || "",
+                                      contractExpiry:
+                                        selectedEmp.contractExpiry || "",
+                                    });
+                                    setIsEditingSalaryContract(true);
+                                  }}
+                                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-650 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer text-center"
+                                >
+                                  <span>
+                                    ✏️{" "}
+                                    {lang === "ar"
+                                      ? "تعديل / استبدال"
+                                      : "Edit / Replace"}
+                                  </span>
+                                </button>
+
+                                {/* 4. Delete contract file button */}
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (
+                                      window.confirm(
+                                        lang === "ar"
+                                          ? "هل أنت متأكد من رغبتك في حذف مستند العقد بشكل نهائي؟"
+                                          : "Are you sure you want to delete the contract document permanently?",
+                                      )
+                                    ) {
+                                      try {
+                                        const updatedFields: Partial<Employee> =
+                                          { contractUrl: "" };
+                                        onUpdateEmployeeFields(
+                                          selectedEmp.id,
+                                          updatedFields,
+                                        );
+                                        setSelectedEmp((prev) =>
+                                          prev
+                                            ? { ...prev, ...updatedFields }
+                                            : null,
+                                        );
+                                        if (onReloadEmployees) {
+                                          await onReloadEmployees();
+                                        }
+                                        setIsPreviewingContract(false);
+                                        showToast(
+                                          lang === "ar"
+                                            ? "✓ تم حذف ملف العقد بنجاح!"
+                                            : "✓ Contract file deleted successfully!",
+                                          "success",
+                                        );
+                                      } catch (err) {
+                                        showToast(
+                                          lang === "ar"
+                                            ? "فشل حذف الملف"
+                                            : "Failed to delete file",
+                                          "error",
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                                >
+                                  <span>
+                                    🗑️{" "}
+                                    {lang === "ar"
+                                      ? "حذف العقد"
+                                      : "Delete File"}
+                                  </span>
+                                </button>
+                              </div>
+
+                              {/* Inline system viewer container */}
+                              {isPreviewingContract && (
+                                <div className="mt-3 border border-slate-150 rounded-2xl overflow-hidden bg-slate-50/50 p-2 shadow-inner space-y-2 animate-fade-in">
+                                  <div className="flex justify-between items-center bg-slate-100 p-2 rounded-xl text-xs font-bold text-slate-700">
+                                    <span className="flex items-center gap-1.5">
+                                      <span>📄</span>
+                                      <span>
+                                        {lang === "ar"
+                                          ? "معاينة مستند عقد العمل داخل النظام"
+                                          : "In-System Employment Contract Preview"}
+                                      </span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setIsPreviewingContract(false)
+                                      }
+                                      className="text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded-md hover:bg-slate-200 transition font-black"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+
+                                  <div className="w-full flex justify-center bg-white rounded-xl border p-1 overflow-hidden min-h-[300px]">
+                                    {selectedEmp.contractUrl.startsWith(
+                                      "data:application/pdf",
+                                    ) ? (
+                                      <div className="w-full h-[550px] flex flex-col">
+                                        {contractPdfBlobUrl ? (
+                                          <iframe
+                                            src={contractPdfBlobUrl}
+                                            title="Contract PDF Preview"
+                                            className="w-full flex-1 rounded-lg border-0"
+                                          />
+                                        ) : (
+                                          <div className="p-8 text-center text-slate-400 text-xs">
+                                            {lang === "ar"
+                                              ? "جاري تهيئة معاينة ملف الـ PDF..."
+                                              : "Preparing PDF preview..."}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : selectedEmp.contractUrl.startsWith(
+                                        "data:image/",
+                                      ) ? (
+                                      <div className="p-2 flex justify-center items-center w-full bg-slate-50/25">
+                                        <img
+                                          src={selectedEmp.contractUrl}
+                                          alt="Contract Scan"
+                                          className="max-h-[550px] max-w-full rounded-lg object-contain shadow-md"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full p-6 text-center text-slate-500 text-xs space-y-3 flex flex-col justify-center items-center">
+                                        <p className="font-extrabold text-slate-600">
+                                          {lang === "ar"
+                                            ? "المستند الحالي مخزن كرابط ويب خارجي ولا يمكن معاينته مباشرة هنا."
+                                            : "The current document is stored as a web URL and cannot be displayed inline."}
+                                        </p>
+                                        <a
+                                          href={selectedEmp.contractUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
+                                        >
+                                          {lang === "ar"
+                                            ? "فتح الرابط في نافذة جديدة ↗"
+                                            : "Open External URL ↗"}
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSalaryContractForm({
+                                  basicSalary: selectedEmp.basicSalary || 0,
+                                  housing: selectedEmp.allowances?.housing || 0,
+                                  transport:
+                                    selectedEmp.allowances?.transport || 0,
+                                  food:
+                                    (selectedEmp.allowances as any)?.food || 0,
+                                  loans: selectedEmp.allowances?.loans || 0,
+                                  deductions:
+                                    selectedEmp.allowances?.deductions || 0,
+                                  status:
+                                    selectedEmp.allowances?.status || "Active",
+                                  contractQiwaNumber:
+                                    selectedEmp.contractQiwaNumber || "",
+                                  contractUrl: selectedEmp.contractUrl || "",
+                                  contractExpiry:
+                                    selectedEmp.contractExpiry || "",
+                                });
+                                setIsEditingSalaryContract(true);
+                              }}
+                              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-550 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <span>
+                                ⚠️{" "}
+                                {lang === "ar"
+                                  ? "لم يتم رفع مستند العقد بعد (اضغط لتعديل ورفع ملف PDF أو صورة)"
+                                  : "No Contract Document Uploaded Yet (Click to Upload)"}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                {/* SECTION: Custody Assets ("العهد المسجلة لدى الموظف" تكتب يدوياً) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+                    <span className="text-base text-slate-700">🛡️</span>
                     <div>
-                      <label className="block text-slate-400 text-[10px] font-bold mb-1">{lang === 'ar' ? 'معلومات إضافية ومحضر الاستلام' : 'Additional details'}</label>
-                      <input 
-                        type="text" 
-                        placeholder={lang === 'ar' ? 'مثال: رقم تسلسلي، قطع إضافية' : 'Serial tag or status description'}
-                        value={newAsset.additionalInfo} 
-                        onChange={e => setNewAsset({ ...newAsset, additionalInfo: e.target.value })}
-                        className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
-                      />
+                      <h4 className="font-extrabold text-slate-800 text-xs">
+                        {lang === "ar"
+                          ? "العهد المسجلة لدى الموظف"
+                          : "Registered Employee Custody List"}
+                      </h4>
+                      <span className="text-[10px] text-slate-400 block">
+                        {lang === "ar"
+                          ? "إضافة عهد يدوية مع تتبع تواريخ الاستلام وتصنيف العهدة بالتفصيل."
+                          : "A complete manual record of tools, laptops, or cars allocated to this staff."}
+                      </span>
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-2 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white font-black text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                  {/* List of custom assets inside selected employee */}
+                  <div className="space-y-2">
+                    {selectedEmp.custodyAssets &&
+                    selectedEmp.custodyAssets.length > 0 ? (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden text-right">
+                        <table className="w-full text-[11px] border-collapse bg-slate-50/50">
+                          <thead>
+                            <tr className="bg-slate-100/60 text-slate-500 text-[9px] uppercase font-bold border-b border-slate-150">
+                              <th className="p-2 font-black">
+                                {lang === "ar" ? "العهدة" : "Asset"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar"
+                                  ? "تاريخ الاستلام"
+                                  : "Receipt Date"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar" ? "تصنيف العهدة" : "Category"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar"
+                                  ? "معلومات إضافية"
+                                  : "Additional Info"}
+                              </th>
+                              <th className="p-2 text-center font-black">
+                                {lang === "ar" ? "حذف" : "Remove"}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-150">
+                            {selectedEmp.custodyAssets.map((asset, idx) => (
+                              <tr
+                                key={idx}
+                                className="hover:bg-white transition-colors text-slate-700 font-bold"
+                              >
+                                <td className="p-2 text-indigo-700">
+                                  {asset.name}
+                                </td>
+                                <td className="p-2 font-mono text-[10px]">
+                                  {asset.receivedDate}
+                                </td>
+                                <td className="p-2">
+                                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-[9px]">
+                                    {asset.category}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-slate-500 font-medium">
+                                  {asset.additionalInfo || "—"}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveCustodyAsset(idx)
+                                    }
+                                    className="p-1 hover:bg-rose-50 text-rose-500 rounded-lg transition-all"
+                                    title={
+                                      lang === "ar"
+                                        ? "مسح العهدة"
+                                        : "Delete asset"
+                                    }
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div
+                        id="no-custody"
+                        className="p-6 bg-slate-50 rounded-xl text-center text-slate-400 font-bold border border-dashed border-slate-200"
+                      >
+                        {lang === "ar"
+                          ? "✕ لا توجد أي عهد مسجلة مخصصة لهذا الموظف حالياً."
+                          : "No manual custody registry found for this individual."}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manuel Asset Registration Form */}
+                  <form
+                    onSubmit={handleAddCustodyAsset}
+                    className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/55 space-y-4 text-right"
                   >
-                    ⚡ {lang === 'ar' ? 'إضافة وتسجيل العهدة فوراً للسيستم' : 'Commit Asset Handover & Save'}
+                    <h5 className="font-extrabold text-xs text-slate-700">
+                      ➕{" "}
+                      {lang === "ar"
+                        ? "إضافة عهدة للموظف يدوياً:"
+                        : "Register New Custom Custody Area:"}
+                    </h5>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "العهدة المستلمة" : "Asset"}
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          placeholder={
+                            lang === "ar"
+                              ? "مثال: لابتوب، جهاز معيرة"
+                              : "e.g. Dell Latitue L54"
+                          }
+                          value={newAsset.name}
+                          onChange={(e) =>
+                            setNewAsset({ ...newAsset, name: e.target.value })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "تاريخ الاستلام" : "Receipt Date"}
+                        </label>
+                        <input
+                          type="date"
+                          value={newAsset.receivedDate}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              receivedDate: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "تصنيف العهدة" : "Category"}
+                        </label>
+                        <select
+                          value={newAsset.category}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              category: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
+                        >
+                          <option value="أجهزة ومعدات">
+                            {lang === "ar"
+                              ? "أجهزة ومعدات ومستلزمات"
+                              : "IT/Electronic hardware"}
+                          </option>
+                          <option value="سيارات ونقل">
+                            {lang === "ar"
+                              ? "سيارات وشاحنات نقل"
+                              : "Vehicles / Mobility"}
+                          </option>
+                          <option value="أدوات ورش ومصنع">
+                            {lang === "ar"
+                              ? "أدوات ورش ومصنع نيون"
+                              : "Shopfloor Mechanical tools"}
+                          </option>
+                          <option value="أثاث ومجهوزات">
+                            {lang === "ar"
+                              ? "أثاث ومجهوزات مكتبية"
+                              : "Furniture & Office supplies"}
+                          </option>
+                          <option value="أخرى">
+                            {lang === "ar" ? "تصنيفات أخرى" : "Other"}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar"
+                            ? "معلومات إضافية ومحضر الاستلام"
+                            : "Additional details"}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={
+                            lang === "ar"
+                              ? "مثال: رقم تسلسلي، قطع إضافية"
+                              : "Serial tag or status description"
+                          }
+                          value={newAsset.additionalInfo}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              additionalInfo: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white font-black text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      ⚡{" "}
+                      {lang === "ar"
+                        ? "إضافة وتسجيل العهدة فوراً للسيستم"
+                        : "Commit Asset Handover & Save"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* REMOVE EMPLOYEE FROM TABLE TRIGGER (إزالة الموظف من الجدول) */}
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEmployee(selectedEmp.id)}
+                    className="px-5 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-600" />
+                    <span>
+                      {lang === "ar"
+                        ? "إزالة هذا الموظف من الجدول"
+                        : "Remove Employee From Table"}
+                    </span>
                   </button>
-                </form>
-              </div>
-
-              {/* REMOVE EMPLOYEE FROM TABLE TRIGGER (إزالة الموظف من الجدول) */}
-              <div className="pt-4 border-t border-slate-100 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleDeleteEmployee(selectedEmp.id)}
-                  className="px-5 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4 text-rose-600" />
-                  <span>{lang === 'ar' ? 'إزالة هذا الموظف من الجدول' : 'Remove Employee From Table'}</span>
-                </button>
-              </div>
-
-              </div> {/* CLOSE TAB 1: INFO CONTENT */}
-
+                </div>
+              </div>{" "}
+              {/* CLOSE TAB 1: INFO CONTENT */}
               {/* TAB 2: ATTACHMENTS CONTENT */}
-              <div className={`w-full mt-8 bg-slate-50 rounded-2xl border border-slate-100 p-6 print:w-full print:border-none print:break-before-page ${modalTab === 'attachments' ? 'block' : 'hidden'} print:block`}>
-                 <h3 className="font-black text-slate-800 text-lg mb-6 border-b border-slate-200 pb-3">
-                   {lang === 'ar' ? 'المرفقات والمستندات' : 'Attachments & Documents'}
-                 </h3>
-                 <EmployeeAttachmentsPanel 
-                   lang={lang}
-                   showToast={showToast}
-                   emp={selectedEmp}
-                   onUpdate={(fields) => {
-                     onUpdateEmployeeFields(selectedEmp.id, fields);
-                     setSelectedEmp({...selectedEmp, ...fields});
-                   }}
-                 />
+              <div
+                className={`w-full mt-8 bg-slate-50 rounded-2xl border border-slate-100 p-6 print:w-full print:border-none print:break-before-page ${modalTab === "attachments" ? "block" : "hidden"} print:block`}
+              >
+                <h3 className="font-black text-slate-800 text-lg mb-6 border-b border-slate-200 pb-3">
+                  {lang === "ar"
+                    ? "المرفقات والمستندات"
+                    : "Attachments & Documents"}
+                </h3>
+                <EmployeeAttachmentsPanel
+                  lang={lang}
+                  showToast={showToast}
+                  emp={selectedEmp}
+                  onUpdate={(fields) => {
+                    onUpdateEmployeeFields(selectedEmp.id, fields);
+                    setSelectedEmp({ ...selectedEmp, ...fields });
+                  }}
+                />
               </div>
-
-            </div> {/* Close Scrollable Content Wrapper */}
-          </div> {/* Close Flex container */}
+            </div>{" "}
+            {/* Close Scrollable Content Wrapper */}
+          </div>{" "}
+          {/* Close Flex container */}
         </div>
       )}
 
       {/* 5. ADD NEW EMPLOYEE DIALOG MODAL (إضافة موظف) */}
       {isAddOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in" dir="rtl">
-          <form onSubmit={handleCreateNewEmployeeSubmit} className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 text-xs text-right">
-            
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
+          dir="rtl"
+        >
+          <form
+            onSubmit={handleCreateNewEmployeeSubmit}
+            className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 text-xs text-right"
+          >
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-black text-slate-800">
-                ➕ {lang === 'ar' ? 'نموذج إلحاق وتعيين موظف جديد' : 'New Personnel Onboarding Form'}
+                ➕{" "}
+                {lang === "ar"
+                  ? "نموذج إلحاق وتعيين موظف جديد"
+                  : "New Personnel Onboarding Form"}
               </h3>
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsAddOpen(false)}
                 className="p-1 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-500 transition-all cursor-pointer"
@@ -2364,53 +3571,92 @@ export default function HrEmployeeDirectoryTab({
             </div>
 
             <div className="space-y-4">
-              
               <div>
-                <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'اسمه رباعي بالعربية (مطلوب)' : 'Full Name Arabic (Required)'}</label>
-                <input 
-                  type="text" 
+                <label className="block text-slate-500 font-bold mb-1">
+                  {lang === "ar"
+                    ? "اسمه رباعي بالعربية (مطلوب)"
+                    : "Full Name Arabic (Required)"}
+                </label>
+                <input
+                  type="text"
                   required
                   placeholder="مثال: سلمان بن فيصل العتيبي"
-                  value={newEmpForm.arabicName} 
-                  onChange={e => setNewEmpForm({ ...newEmpForm, arabicName: e.target.value })}
+                  value={newEmpForm.arabicName}
+                  onChange={(e) =>
+                    setNewEmpForm({ ...newEmpForm, arabicName: e.target.value })
+                  }
                   className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-right"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'الاسم بالإنجليزية (اختياري)' : 'Full Name English (Optional)'}</label>
-                <input 
-                  type="text" 
+                <label className="block text-slate-500 font-bold mb-1">
+                  {lang === "ar"
+                    ? "الاسم بالإنجليزية (اختياري)"
+                    : "Full Name English (Optional)"}
+                </label>
+                <input
+                  type="text"
                   placeholder="e.g. Salman Faisal Al-Otaibi"
-                  value={newEmpForm.englishName} 
-                  onChange={e => setNewEmpForm({ ...newEmpForm, englishName: e.target.value })}
+                  value={newEmpForm.englishName}
+                  onChange={(e) =>
+                    setNewEmpForm({
+                      ...newEmpForm,
+                      englishName: e.target.value,
+                    })
+                  }
                   className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-right font-mono"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'التصنيف الوظيفي (مطلوب)' : 'Job Classification (Required)'}</label>
-                  <select 
-                    value={newEmpForm.classification} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, classification: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar"
+                      ? "التصنيف الوظيفي (مطلوب)"
+                      : "Job Classification (Required)"}
+                  </label>
+                  <select
+                    value={newEmpForm.classification}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        classification: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
                   >
-                    <option value="موظف">{lang === 'ar' ? 'موظف' : 'Staff'}</option>
-                    <option value="عامل تصنيع">{lang === 'ar' ? 'عامل تصنيع' : 'Manufacturing Worker'}</option>
-                    <option value="إداري">{lang === 'ar' ? 'إداري' : 'Administrative'}</option>
-                    <option value="الإدارة العليا">{lang === 'ar' ? 'الإدارة العليا' : 'Senior Management'}</option>
-                    <option value="فراس">{lang === 'ar' ? 'فراس' : 'Firas'}</option>
+                    <option value="موظف">
+                      {lang === "ar" ? "موظف" : "Staff"}
+                    </option>
+                    <option value="عامل تصنيع">
+                      {lang === "ar" ? "عامل تصنيع" : "Manufacturing Worker"}
+                    </option>
+                    <option value="إداري">
+                      {lang === "ar" ? "إداري" : "Administrative"}
+                    </option>
+                    <option value="الإدارة العليا">
+                      {lang === "ar" ? "الإدارة العليا" : "Senior Management"}
+                    </option>
+                    <option value="فراس">
+                      {lang === "ar" ? "فراس" : "Firas"}
+                    </option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'المسمى الوظيفي (مطلوب)' : 'Job Title (Required)'}</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar"
+                      ? "المسمى الوظيفي (مطلوب)"
+                      : "Job Title (Required)"}
+                  </label>
+                  <input
+                    type="text"
                     required
                     placeholder="فني تجميع / أخصائي مبيعات"
-                    value={newEmpForm.jobTitle} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, jobTitle: e.target.value })}
+                    value={newEmpForm.jobTitle}
+                    onChange={(e) =>
+                      setNewEmpForm({ ...newEmpForm, jobTitle: e.target.value })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-right"
                   />
                 </div>
@@ -2418,19 +3664,27 @@ export default function HrEmployeeDirectoryTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'الجنسية' : 'Nationality'}</label>
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "الجنسية" : "Nationality"}
+                  </label>
                   <CountrySelect
                     value={newEmpForm.nationality}
-                    onChange={val => setNewEmpForm({ ...newEmpForm, nationality: val })}
+                    onChange={(val) =>
+                      setNewEmpForm({ ...newEmpForm, nationality: val })
+                    }
                     lang={lang}
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'رقم الجوال' : 'Mobile Number'}</label>
-                  <input 
-                    type="text" 
-                    value={newEmpForm.mobile} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, mobile: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newEmpForm.mobile}
+                    onChange={(e) =>
+                      setNewEmpForm({ ...newEmpForm, mobile: e.target.value })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-right"
                   />
                 </div>
@@ -2438,23 +3692,36 @@ export default function HrEmployeeDirectoryTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'رقم الإقامة / الهوية (مطلوب)' : 'Iqama / ID Number (Required)'}</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar"
+                      ? "رقم الإقامة / الهوية (مطلوب)"
+                      : "Iqama / ID Number (Required)"}
+                  </label>
+                  <input
+                    type="text"
                     required
                     placeholder="مثال: 2409819482"
-                    value={newEmpForm.iqamaId} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, iqamaId: e.target.value })}
+                    value={newEmpForm.iqamaId}
+                    onChange={(e) =>
+                      setNewEmpForm({ ...newEmpForm, iqamaId: e.target.value })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'رقم جواز السفر' : 'Passport Book Number'}</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "رقم جواز السفر" : "Passport Book Number"}
+                  </label>
+                  <input
+                    type="text"
                     placeholder="مثال: SA0928371"
-                    value={newEmpForm.passportDetails} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, passportDetails: e.target.value })}
+                    value={newEmpForm.passportDetails}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        passportDetails: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
@@ -2462,20 +3729,34 @@ export default function HrEmployeeDirectoryTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}</label>
-                  <input 
-                    type="date" 
-                    value={newEmpForm.birthDate} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, birthDate: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "تاريخ الميلاد" : "Date of Birth"}
+                  </label>
+                  <input
+                    type="date"
+                    value={newEmpForm.birthDate}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        birthDate: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'تاريخ التحاقه بالعمل' : 'Date of Joining'}</label>
-                  <input 
-                    type="date" 
-                    value={newEmpForm.dateOfJoining} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, dateOfJoining: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "تاريخ التحاقه بالعمل" : "Date of Joining"}
+                  </label>
+                  <input
+                    type="date"
+                    value={newEmpForm.dateOfJoining}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        dateOfJoining: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
@@ -2483,42 +3764,99 @@ export default function HrEmployeeDirectoryTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'تاريخ انتهاء الإقامة' : 'Iqama Expiry Date'}</label>
-                  <input 
-                    type="date" 
-                    value={newEmpForm.iqamaExpiryDate} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, iqamaExpiryDate: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar"
+                      ? "تاريخ انتهاء الإقامة"
+                      : "Iqama Expiry Date"}
+                  </label>
+                  <input
+                    type="date"
+                    value={newEmpForm.iqamaExpiryDate}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        iqamaExpiryDate: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'تاريخ انتهاء الجواز' : 'Passport Expiry Date'}</label>
-                  <input 
-                    type="date" 
-                    value={newEmpForm.passportExpiryDate} 
-                    onChange={e => setNewEmpForm({ ...newEmpForm, passportExpiryDate: e.target.value })}
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {lang === "ar"
+                      ? "تاريخ انتهاء الجواز"
+                      : "Passport Expiry Date"}
+                  </label>
+                  <input
+                    type="date"
+                    value={newEmpForm.passportExpiryDate}
+                    onChange={(e) =>
+                      setNewEmpForm({
+                        ...newEmpForm,
+                        passportExpiryDate: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                   />
                 </div>
               </div>
-              
+
               {/* Medical Insurance */}
               <div className="mt-6 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-black text-[#0072BC] mb-4">{lang === 'ar' ? 'التأمين الطبي (اختياري)' : 'Medical Insurance'}</h4>
+                <h4 className="text-sm font-black text-[#0072BC] mb-4">
+                  {lang === "ar"
+                    ? "التأمين الطبي (اختياري)"
+                    : "Medical Insurance"}
+                </h4>
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
-                    <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'رقم البوليصة' : 'Policy Number'}</label>
-                    <input type="text" value={newEmpForm.insurancePolicyNumber || ''} onChange={e => setNewEmpForm({...newEmpForm, insurancePolicyNumber: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm" />
+                    <label className="block text-slate-500 font-bold mb-1">
+                      {lang === "ar" ? "رقم البوليصة" : "Policy Number"}
+                    </label>
+                    <input
+                      type="text"
+                      value={newEmpForm.insurancePolicyNumber || ""}
+                      onChange={(e) =>
+                        setNewEmpForm({
+                          ...newEmpForm,
+                          insurancePolicyNumber: e.target.value,
+                        })
+                      }
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm"
+                    />
                   </div>
                   <div>
-                    <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'شركة التأمين' : 'Insurance Company'}</label>
-                    <input type="text" value={newEmpForm.insuranceCompany || ''} onChange={e => setNewEmpForm({...newEmpForm, insuranceCompany: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm" />
+                    <label className="block text-slate-500 font-bold mb-1">
+                      {lang === "ar" ? "شركة التأمين" : "Insurance Company"}
+                    </label>
+                    <input
+                      type="text"
+                      value={newEmpForm.insuranceCompany || ""}
+                      onChange={(e) =>
+                        setNewEmpForm({
+                          ...newEmpForm,
+                          insuranceCompany: e.target.value,
+                        })
+                      }
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'فئة التأمين' : 'Class'}</label>
-                    <select value={newEmpForm.insuranceClass || 'C'} onChange={e => setNewEmpForm({...newEmpForm, insuranceClass: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm">
+                    <label className="block text-slate-500 font-bold mb-1">
+                      {lang === "ar" ? "فئة التأمين" : "Class"}
+                    </label>
+                    <select
+                      value={newEmpForm.insuranceClass || "C"}
+                      onChange={(e) =>
+                        setNewEmpForm({
+                          ...newEmpForm,
+                          insuranceClass: e.target.value,
+                        })
+                      }
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm"
+                    >
                       <option value="VIP">VIP</option>
                       <option value="A">Class A</option>
                       <option value="B">Class B</option>
@@ -2526,101 +3864,128 @@ export default function HrEmployeeDirectoryTab({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-500 font-bold mb-1">{lang === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'}</label>
-                    <input type="date" value={newEmpForm.insuranceExpiryDate || ''} onChange={e => setNewEmpForm({...newEmpForm, insuranceExpiryDate: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center" />
+                    <label className="block text-slate-500 font-bold mb-1">
+                      {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}
+                    </label>
+                    <input
+                      type="date"
+                      value={newEmpForm.insuranceExpiryDate || ""}
+                      onChange={(e) =>
+                        setNewEmpForm({
+                          ...newEmpForm,
+                          insuranceExpiryDate: e.target.value,
+                        })
+                      }
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                    />
                   </div>
                 </div>
               </div>
-
-
             </div>
 
             <div className="flex gap-2 text-xs font-black pt-4">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="flex-1 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
               >
-                {lang === 'ar' ? 'إضافة وحفظ' : 'Enroll Employee'}
+                {lang === "ar" ? "إضافة وحفظ" : "Enroll Employee"}
               </button>
-              <button 
-                type="button" 
-                onClick={() => setIsAddOpen(false)} 
+              <button
+                type="button"
+                onClick={() => setIsAddOpen(false)}
                 className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl transition-all cursor-pointer"
               >
-                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                {lang === "ar" ? "إلغاء" : "Cancel"}
               </button>
             </div>
-
           </form>
         </div>
       )}
 
       {/* 6. AI IMPORT MODAL (استيراد بالذكاء الاصطناعي) */}
       {isAiImportOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" dir="rtl">
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+          dir="rtl"
+        >
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-4 text-xs text-right">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-black text-indigo-700 flex items-center gap-2">
                 <span>🤖</span>
-                {lang === 'ar' ? 'استيراد بيانات ذكي' : 'Smart Data Import'}
+                {lang === "ar" ? "استيراد بيانات ذكي" : "Smart Data Import"}
               </h3>
-              <button onClick={() => setIsAiImportOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50">
+              <button
+                onClick={() => setIsAiImportOpen(false)}
+                className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <p className="text-slate-500 font-medium leading-relaxed">
-              {lang === 'ar' 
-                ? 'قم بلصق النص المنسوخ من الجواز أو الإقامة، أو رفع صورة لمستند (PDF/Image). الذكاء الاصطناعي سيقوم باستخراج الاسم، التواريخ، الأرقام وغيرها تلقائياً!'
-                : 'Paste text from a document, or upload an image/PDF. Our AI will extract all relevant information automatically.'}
+              {lang === "ar"
+                ? "قم بلصق النص المنسوخ من الجواز أو الإقامة، أو رفع صورة لمستند (PDF/Image). الذكاء الاصطناعي سيقوم باستخراج الاسم، التواريخ، الأرقام وغيرها تلقائياً!"
+                : "Paste text from a document, or upload an image/PDF. Our AI will extract all relevant information automatically."}
             </p>
 
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="font-extrabold text-slate-700">
-                  {lang === 'ar' ? '١. الصق نصاً أو بيانات:' : '1. Paste Text/Data:'}
+                  {lang === "ar"
+                    ? "١. الصق نصاً أو بيانات:"
+                    : "1. Paste Text/Data:"}
                 </label>
                 <textarea
                   value={aiImportText}
-                  onChange={e => setAiImportText(e.target.value)}
-                  placeholder={lang === 'ar' ? 'انسخ بيانات الإقامة أو الجواز والصقها هنا...' : 'Paste document text...'}
+                  onChange={(e) => setAiImportText(e.target.value)}
+                  placeholder={
+                    lang === "ar"
+                      ? "انسخ بيانات الإقامة أو الجواز والصقها هنا..."
+                      : "Paste document text..."
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 h-32 focus:border-indigo-500 outline-none resize-none"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="font-extrabold text-slate-700">
-                  {lang === 'ar' ? '٢. أو ارفع صورة / مستند (PDF/Excel):' : '2. Or Upload Document (PDF/Excel/Image):'}
+                  {lang === "ar"
+                    ? "٢. أو ارفع صورة / مستند (PDF/Excel):"
+                    : "2. Or Upload Document (PDF/Excel/Image):"}
                 </label>
                 <input
                   type="file"
                   accept="image/*,.pdf,.xlsx,.xls,.csv"
-                  onChange={e => setAiImportFile(e.target.files?.[0] || null)}
+                  onChange={(e) => setAiImportFile(e.target.files?.[0] || null)}
                   className="w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all border border-slate-200 rounded-xl p-2"
                 />
               </div>
             </div>
 
             <div className="flex gap-2 text-xs font-black pt-4">
-              <button 
+              <button
                 onClick={handleAiImportSubmit}
                 disabled={aiImportLoading || (!aiImportText && !aiImportFile)}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 {aiImportLoading ? (
-                  <span className="animate-pulse">{lang === 'ar' ? 'جاري الاستخراج...' : 'Extracting...'}</span>
+                  <span className="animate-pulse">
+                    {lang === "ar" ? "جاري الاستخراج..." : "Extracting..."}
+                  </span>
                 ) : (
                   <>
                     <span>🤖</span>
-                    <span>{lang === 'ar' ? 'استخراج وتعبئة' : 'Extract & Fill'}</span>
+                    <span>
+                      {lang === "ar" ? "استخراج وتعبئة" : "Extract & Fill"}
+                    </span>
                   </>
                 )}
               </button>
-              <button 
-                onClick={() => setIsAiImportOpen(false)} 
+              <button
+                onClick={() => setIsAiImportOpen(false)}
                 className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl transition-all cursor-pointer"
               >
-                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                {lang === "ar" ? "إلغاء" : "Cancel"}
               </button>
             </div>
           </div>
@@ -2629,29 +3994,36 @@ export default function HrEmployeeDirectoryTab({
 
       {/* 7. CUSTOM COUNTDOWN DELETE MODAL */}
       {empToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" dir="rtl">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+          dir="rtl"
+        >
           <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100 space-y-4 text-right">
             <div className="flex items-center gap-2 justify-end text-rose-600 pb-2 border-b">
               <span className="text-base font-black">
-                {lang === 'ar' ? 'تأكيد إزالة الموظف من الجدول' : 'Confirm Employee Removal'}
+                {lang === "ar"
+                  ? "تأكيد إزالة الموظف من الجدول"
+                  : "Confirm Employee Removal"}
               </span>
               <Trash2 className="w-5 h-5" />
             </div>
-            
+
             <p className="text-xs text-slate-600 font-bold leading-relaxed">
-              {lang === 'ar' 
-                ? `هل أنت متأكد من رغبتك في إزالة الموظف "${empToDelete.arabicName || empToDelete.englishName}" من النظام؟` 
+              {lang === "ar"
+                ? `هل أنت متأكد من رغبتك في إزالة الموظف "${empToDelete.arabicName || empToDelete.englishName}" من النظام؟`
                 : `Are you sure you want to remove employee "${empToDelete.englishName || empToDelete.arabicName}" from the system?`}
             </p>
 
             <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100 text-rose-700 text-[11px] space-y-1">
               <p className="font-black">
-                {lang === 'ar' ? '⚠️ تحذير أمني هام:' : '⚠️ Important Security Warning:'}
+                {lang === "ar"
+                  ? "⚠️ تحذير أمني هام:"
+                  : "⚠️ Important Security Warning:"}
               </p>
               <p className="font-bold">
-                {lang === 'ar' 
-                  ? 'هذا الإجراء سيقوم بحذف كافة سجلات وعقود وعهدات الموظف تماماً من قاعدة البيانات. الرجاء قراءة هذا التنبيه بعناية.' 
-                  : 'This action will permanently delete all records, contracts, and assets of this employee from the database. Please read this caution carefully.'}
+                {lang === "ar"
+                  ? "هذا الإجراء سيقوم بحذف كافة سجلات وعقود وعهدات الموظف تماماً من قاعدة البيانات. الرجاء قراءة هذا التنبيه بعناية."
+                  : "This action will permanently delete all records, contracts, and assets of this employee from the database. Please read this caution carefully."}
               </p>
             </div>
 
@@ -2660,8 +4032,8 @@ export default function HrEmployeeDirectoryTab({
                 <div className="flex items-center gap-2 text-indigo-600 font-black text-xs animate-pulse">
                   <span>⏳</span>
                   <span>
-                    {lang === 'ar' 
-                      ? `يرجى الانتظار والمراجعة لـ ${deleteCountdown} ثوانٍ...` 
+                    {lang === "ar"
+                      ? `يرجى الانتظار والمراجعة لـ ${deleteCountdown} ثوانٍ...`
                       : `Please wait and review for ${deleteCountdown} seconds...`}
                   </span>
                 </div>
@@ -2669,7 +4041,9 @@ export default function HrEmployeeDirectoryTab({
                 <div className="flex items-center gap-2 text-emerald-600 font-black text-xs">
                   <span>✅</span>
                   <span>
-                    {lang === 'ar' ? 'يمكنك الآن تأكيد الحذف النهائي' : 'You can now confirm permanent deletion'}
+                    {lang === "ar"
+                      ? "يمكنك الآن تأكيد الحذف النهائي"
+                      : "You can now confirm permanent deletion"}
                   </span>
                 </div>
               )}
@@ -2681,16 +4055,20 @@ export default function HrEmployeeDirectoryTab({
                 onClick={confirmDeleteEmployee}
                 disabled={deleteCountdown > 0}
                 className={`px-5 py-2.5 text-white font-black text-xs rounded-xl shadow transition-all flex items-center gap-1.5 ${
-                  deleteCountdown > 0 
-                    ? 'bg-rose-300 cursor-not-allowed opacity-75' 
-                    : 'bg-rose-600 hover:bg-rose-700 cursor-pointer active:scale-95'
+                  deleteCountdown > 0
+                    ? "bg-rose-300 cursor-not-allowed opacity-75"
+                    : "bg-rose-600 hover:bg-rose-700 cursor-pointer active:scale-95"
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>
-                  {deleteCountdown > 0 
-                    ? (lang === 'ar' ? `انتظر (${deleteCountdown}ث)` : `Wait (${deleteCountdown}s)`)
-                    : (lang === 'ar' ? 'تأكيد الحذف النهائي' : 'Confirm Permanent Delete')}
+                  {deleteCountdown > 0
+                    ? lang === "ar"
+                      ? `انتظر (${deleteCountdown}ث)`
+                      : `Wait (${deleteCountdown}s)`
+                    : lang === "ar"
+                      ? "تأكيد الحذف النهائي"
+                      : "Confirm Permanent Delete"}
                 </span>
               </button>
               <button
@@ -2698,13 +4076,12 @@ export default function HrEmployeeDirectoryTab({
                 onClick={() => setEmpToDelete(null)}
                 className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
               >
-                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                {lang === "ar" ? "إلغاء" : "Cancel"}
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

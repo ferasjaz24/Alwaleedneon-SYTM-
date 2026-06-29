@@ -1,11 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global safety net catch-all deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
     // Common helper functions
     function isSignedIn() {
       return request.auth != null;
@@ -23,6 +18,111 @@ service cloud.firestore {
     // Clients Collection Rules
     match /clients/{clientId} {
       allow read, write: if isSignedIn() && isValidId(clientId);
+    }
+
+    // Deductions Collection Rules
+    match /deductions/{deductionId} {
+      allow read, write: if isSignedIn() && isValidId(deductionId);
+    }
+
+    // Salaries Collection Rules
+    match /salaries/{salaryId} {
+      allow read, write: if isSignedIn() && isValidId(salaryId);
+    }
+
+    // Leaves Collection Rules
+    match /leaves/{leaveId} {
+      allow read, write: if isSignedIn() && isValidId(leaveId);
+    }
+
+    // Vacations Collection Rules
+    match /vacations/{vacationId} {
+      allow read, write: if isSignedIn() && isValidId(vacationId);
+    }
+
+    // Activity Logs Collection Rules
+    match /activity_logs/{logId} {
+      allow read, write: if isSignedIn() && isValidId(logId);
+    }
+
+    // Clearances Collection Rules
+    match /clearances/{clearanceId} {
+      allow read, write: if isSignedIn() && isValidId(clearanceId);
+    }
+
+    // Employee Docs Collection Rules
+    match /employee-docs/{docId} {
+      allow read, write: if isSignedIn() && isValidId(docId);
+    }
+
+    // Vehicle Docs Collection Rules
+    match /vehicle-docs/{docId} {
+      allow read, write: if isSignedIn() && isValidId(docId);
+    }
+
+    // Doc Activity Logs Collection Rules
+    match /doc-activity-logs/{logId} {
+      allow read, write: if isSignedIn() && isValidId(logId);
+    }
+
+    // Projects Collection Rules
+    match /projects/{projectId} {
+      allow read, write: if isSignedIn() && isValidId(projectId);
+    }
+
+    // Customers Collection Rules
+    match /customers/{customerId} {
+      allow read, write: if isSignedIn() && isValidId(customerId);
+    }
+
+    // Pricing Studies Collection Rules
+    match /pricing_studies/{studyId} {
+      allow read, write: if isSignedIn() && isValidId(studyId);
+    }
+
+    // Production Orders Collection Rules
+    match /production_orders/{orderId} {
+      allow read, write: if isSignedIn() && isValidId(orderId);
+    }
+
+    // Inventory Collection Rules
+    match /inventory/{itemId} {
+      allow read, write: if isSignedIn() && isValidId(itemId);
+    }
+
+    // Sales Quotations Collection Rules
+    match /sales_quotations/{quoteId} {
+      allow read, write: if isSignedIn() && isValidId(quoteId);
+    }
+
+    // Warehouse Items Collection Rules
+    match /warehouse_items/{itemId} {
+      allow read, write: if isSignedIn() && isValidId(itemId);
+    }
+
+    // Tasks Collection Rules
+    match /tasks/{taskId} {
+      allow read, write: if isSignedIn() && isValidId(taskId);
+    }
+
+    // Payments Collection Rules
+    match /payments/{paymentId} {
+      allow read, write: if isSignedIn() && isValidId(paymentId);
+    }
+
+    // Login Logs Collection Rules
+    match /login_logs/{logId} {
+      allow read, write: if isValidId(logId);
+    }
+
+    // System Settings Collection Rules
+    match /system_settings/{settingId} {
+      allow read, write: if isSignedIn() && isValidId(settingId);
+    }
+
+    // Global safety net catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

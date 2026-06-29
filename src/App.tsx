@@ -34,6 +34,8 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Accessibility,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import HrSubSections from "./components/HrSubSections";
@@ -59,6 +61,7 @@ import FinanceApprovals from "./components/FinanceApprovals";
 import AdvancedPermissionsPortal from "./components/AdvancedPermissionsPortal";
 import AISettingsModal from "./components/AISettingsModal";
 import MainDashboard from "./components/MainDashboard";
+import JournalEntries from "./components/finance/JournalEntries";
 
 export const hrSubmenus = [
   { id: "dashboard", ar: "📊 لوحة القيادة والمؤشرات", en: "📊 HR Dashboard" },
@@ -76,13 +79,8 @@ export const hrSubmenus = [
   },
   {
     id: "payroll_main",
-    ar: "💵 مسير الرواتب - الرئيسية",
+    ar: "💵 مسير الرواتب والمكافآت",
     en: "💵 Payroll Overview",
-  },
-  {
-    id: "payroll_deductions",
-    ar: "📉 الخصومات والجزاءات الفورية",
-    en: "📉 Deductions & Penalties",
   },
   {
     id: "recruitment",
@@ -157,9 +155,25 @@ export const productionSubmenus = [
   },
 ];
 
+export const financeSubmenus = [
+  {
+    id: "finance_journal",
+    ar: "📒 القيود اليومية",
+    en: "📒 Journal Entries"
+  }
+];
+
 export default function App() {
   // Locale state
   const [lang, setLang] = useState<"ar" | "en">("ar");
+  
+  // Accessibility state
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [fontSize, setFontSize] = useState<"ss" | "s" | "m" | "l" | "xl">("m");
+  const [isAccessibilityMenuOpen, setIsAccessibilityMenuOpen] = useState(false);
+  
+  // Sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Auth state
   const [user, setUser] = useState<User | null>(null);
@@ -192,6 +206,7 @@ export default function App() {
     | "documents"
     | "production"
     | "warehouse"
+    | "finance"
   >("dashboard");
 
   // Active HR Sub-Tabs and collapsible states
@@ -213,6 +228,10 @@ export default function App() {
     useState("warehouse_dashboard");
   const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
 
+  // Active Finance Sub-Tabs and collapsible states
+  const [activeFinanceSubTab, setActiveFinanceSubTab] = useState("finance_journal");
+  const [isFinanceDropdownOpen, setIsFinanceDropdownOpen] = useState(false);
+
   // Directory Filters
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -233,7 +252,7 @@ export default function App() {
     jobTitle: "Senior Signage Technician",
     grade: "Grade 3",
     basicSalary: 6000,
-    allowances: { housing: 1500, transport: 800, phone: 200 },
+    allowances: { housing: 1500, transport: 800, phone: 0 },
     homeAddress: "",
     custody: { laptop: "", tools: "", vehicles: "", other: "" },
     birthDate: "1995-01-01",
@@ -439,6 +458,55 @@ export default function App() {
       console.error(err);
     }
   };
+
+  // Apply Accessibility Settings
+  useEffect(() => {
+    const htmlEl = document.documentElement;
+    // Theme
+    if (theme === "dark") {
+      htmlEl.classList.add("dark");
+      htmlEl.style.filter = "invert(0.9) hue-rotate(180deg)";
+    } else {
+      htmlEl.classList.remove("dark");
+      htmlEl.style.filter = "none";
+    }
+
+    // Font Size Scaling
+    let styleEl = document.getElementById("a11y-styles");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "a11y-styles";
+      document.head.appendChild(styleEl);
+    }
+    
+    const scale = {
+      ss: 0.85,
+      s: 0.95,
+      m: 1,
+      l: 1.1,
+      xl: 1.2
+    }[fontSize];
+
+    if (scale === 1) {
+      styleEl.innerHTML = "";
+    } else {
+      let css = "";
+      for (let i = 8; i <= 40; i++) {
+        css += `.text-\\[${i}px\\] { font-size: ${i * scale}px !important; }\n`;
+      }
+      css += `
+        .text-xs { font-size: ${12 * scale}px !important; line-height: ${16 * scale}px !important; }
+        .text-sm { font-size: ${14 * scale}px !important; line-height: ${20 * scale}px !important; }
+        .text-base { font-size: ${16 * scale}px !important; line-height: ${24 * scale}px !important; }
+        .text-lg { font-size: ${18 * scale}px !important; line-height: ${28 * scale}px !important; }
+        .text-xl { font-size: ${20 * scale}px !important; line-height: ${28 * scale}px !important; }
+        .text-2xl { font-size: ${24 * scale}px !important; line-height: ${32 * scale}px !important; }
+        .text-3xl { font-size: ${30 * scale}px !important; line-height: ${36 * scale}px !important; }
+        .text-4xl { font-size: ${36 * scale}px !important; line-height: ${40 * scale}px !important; }
+      `;
+      styleEl.innerHTML = css;
+    }
+  }, [theme, fontSize]);
 
   // Fetch initial system data
   useEffect(() => {
@@ -1058,6 +1126,39 @@ export default function App() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: `<style>${sharedPrintStyles}</style>` + sharedPrintHeader }} />
+      <style>{`
+        .sidebar-collapsed span:not(.lucide):not(.text-\\[11px\\]) {
+          display: none !important;
+        }
+        .sidebar-collapsed .text-\\[11px\\] {
+          display: none !important;
+        }
+        .sidebar-collapsed .mt-1.mr-2.ml-2.pr-4 {
+          display: none !important;
+        }
+        .sidebar-collapsed button {
+          justify-content: center !important;
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+        }
+        .sidebar-collapsed button > div.flex.items-center {
+          justify-content: center !important;
+          width: 100%;
+        }
+        .sidebar-collapsed .text-\\[10px\\] {
+          display: none !important;
+        }
+        .sidebar-collapsed .glass-panel {
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+        }
+        .sidebar-collapsed .justify-between.mb-2 {
+          justify-content: center !important;
+        }
+        html.dark img, html.dark video {
+          filter: invert(1) hue-rotate(180deg);
+        }
+      `}</style>
       {/* 2. HEADER BAR (Al-Waleed Integrated Theme) */}
       <header
         id="main-global-header"
@@ -1092,25 +1193,66 @@ export default function App() {
           id="toolbar-global-actions"
           className="flex items-center gap-4 md:gap-6"
         >
-          {/* Bilingual Language Switcher with no layout shifting */}
-          <div
-            id="lang-switch-container"
-            className="flex bg-slate-200/60 p-1 rounded-xl"
-          >
-            <button
-              id="lang-btn-ar"
-              onClick={() => setLang("ar")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === "ar" ? "bg-[#0072BC] text-white shadow-md" : "text-slate-600 hover:text-[#0072BC]"}`}
+          {/* Bilingual Language Switcher & Accessibility */}
+          <div className="flex items-center gap-2 relative">
+            <div
+              id="lang-switch-container"
+              className="flex bg-slate-200/60 p-1 rounded-xl"
             >
-              العربية
-            </button>
-            <button
-              id="lang-btn-en"
-              onClick={() => setLang("en")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === "en" ? "bg-[#0072BC] text-white shadow-md" : "text-slate-600 hover:text-[#0072BC]"}`}
-            >
-              EN
-            </button>
+              <button
+                id="lang-btn-ar"
+                onClick={() => setLang("ar")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === "ar" ? "bg-[#0072BC] text-white shadow-md" : "text-slate-600 hover:text-[#0072BC]"}`}
+              >
+                العربية
+              </button>
+              <button
+                id="lang-btn-en"
+                onClick={() => setLang("en")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === "en" ? "bg-[#0072BC] text-white shadow-md" : "text-slate-600 hover:text-[#0072BC]"}`}
+              >
+                EN
+              </button>
+            </div>
+
+            {/* Accessibility Menu Button */}
+            <div className="relative">
+              <button
+                onClick={() => setIsAccessibilityMenuOpen(!isAccessibilityMenuOpen)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm flex items-center justify-center"
+                title={lang === "ar" ? "تسهيلات الاستخدام" : "Accessibility"}
+              >
+                <Accessibility className="w-5 h-5" />
+              </button>
+              {isAccessibilityMenuOpen && (
+                <div className="absolute top-12 left-0 md:right-0 md:left-auto bg-white shadow-xl border border-slate-100 rounded-2xl p-4 w-64 z-50">
+                  <h4 className="font-bold text-slate-800 mb-3">{lang === "ar" ? "تسهيلات الاستخدام" : "Accessibility Options"}</h4>
+                  
+                  <div className="mb-4">
+                    <span className="text-xs font-bold text-slate-500 mb-2 block">{lang === "ar" ? "المظهر" : "Theme"}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setTheme("light")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${theme === "light" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{lang === "ar" ? "فاتح" : "Light"}</button>
+                      <button onClick={() => setTheme("dark")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${theme === "dark" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{lang === "ar" ? "داكن" : "Dark"}</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-xs font-bold text-slate-500 mb-2 block">{lang === "ar" ? "حجم الخط" : "Font Size"}</span>
+                    <div className="flex gap-1">
+                      {["ss", "s", "m", "l", "xl"].map(size => (
+                        <button 
+                          key={size}
+                          onClick={() => setFontSize(size as any)} 
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase ${fontSize === size ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* User profile check */}
@@ -1335,15 +1477,24 @@ export default function App() {
           {/* LEFT SIDEBAR NAVIGATION PANELS (FROSTED GLASS ARCHITECTURE) */}
           <aside
             id="sidebar-panel-container"
-            className="col-span-12 lg:col-span-3 flex flex-col gap-4 print:hidden"
+            className={`col-span-12 ${isSidebarCollapsed ? 'lg:col-span-1 sidebar-collapsed' : 'lg:col-span-3'} flex flex-col gap-4 print:hidden transition-all duration-300`}
           >
             {/* Quick module router widget */}
             <div className="glass-panel rounded-3xl p-6 flex flex-col gap-2 relative overflow-hidden bg-white/70">
-              <p className="text-[10px] font-bold text-[#0072BC] tracking-widest uppercase mb-2">
-                {lang === "ar"
-                  ? "أقسام النظام الأساسية"
-                  : "Al-Waleed ERP Modules"}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-[#0072BC] tracking-widest uppercase">
+                  {lang === "ar"
+                    ? "أقسام النظام الأساسية"
+                    : "Al-Waleed ERP Modules"}
+                </p>
+                <button
+                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  className="p-1 rounded-md text-slate-400 hover:text-[#0072BC] hover:bg-blue-50 transition-colors"
+                  title={isSidebarCollapsed ? (lang === "ar" ? "عرض الأقسام" : "Expand Modules") : (lang === "ar" ? "طي الأقسام" : "Collapse Modules")}
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? "-rotate-90" : "rotate-0"}`} />
+                </button>
+              </div>
 
               {/* Dashboard Nav (Global) */}
               {(user.role === "Super Admin" ||
@@ -1619,6 +1770,62 @@ export default function App() {
                   )}
                 </div>
               )}
+
+              {/* Financial Accounting */}
+              <div
+                id="tab-btn-finance-group"
+                className="w-full flex flex-col gap-2"
+              >
+                <button
+                  id="tab-btn-finance"
+                  onClick={() => {
+                    setActiveTab("finance");
+                    setIsFinanceDropdownOpen(!isFinanceDropdownOpen);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-[14px] font-extrabold transition-all duration-300 ${activeTab === "finance" ? "bg-[#0072BC] text-white shadow-xl shadow-[#0072BC]/20" : "text-slate-600 hover:bg-slate-50 hover:text-[#0072BC]"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
+                    <span>
+                      {lang === "ar"
+                        ? "المحاسبة المالية 💰"
+                        : "Financial Accounting 💰"}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-black opacity-90 select-none transition-transform duration-300">
+                    {isFinanceDropdownOpen ? "▼" : "▲"}
+                  </span>
+                </button>
+
+                {/* Nested Accordion Submenus */}
+                {isFinanceDropdownOpen && (
+                  <div className="mt-1 mr-2 ml-2 pr-4 text-[13px] flex flex-col gap-2 border-r-2 border-[#0072BC]/30 py-2">
+                    {financeSubmenus.map((sub) => {
+                      const isSubActive =
+                        activeTab === "finance" &&
+                        activeFinanceSubTab === sub.id;
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => {
+                            setActiveTab("finance");
+                            setActiveFinanceSubTab(sub.id);
+                          }}
+                          className={`w-full flex items-center gap-3 py-2.5 px-3.5 rounded-xl text-right font-semibold transition-all duration-200 ${
+                            isSubActive
+                              ? "bg-[#0072BC] text-white font-extrabold shadow-md shadow-[#0072BC]/15 scale-[1.02]"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-[#0072BC]"
+                          }`}
+                        >
+                          <span className="truncate leading-loose">
+                            {lang === "ar" ? sub.ar : sub.en}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
               {/* Manufacturing Production Control Hub */}
               {canAccessModule(user, 'production') && (
@@ -1907,7 +2114,7 @@ export default function App() {
           {/* MAIN MODULE CONTENT GATEWAY */}
           <main
             id="main-tabs-content-gate"
-            className="col-span-12 lg:col-span-9 flex flex-col gap-6 print:block"
+            className={`col-span-12 ${isSidebarCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'} flex flex-col gap-6 print:block transition-all duration-300`}
           >
             {!isCurrentTabAccessible() ? (
               <div className="flex flex-col items-center justify-center min-h-[500px] p-8 bg-white border border-slate-200 rounded-3xl shadow-sm text-center">
@@ -4346,6 +4553,13 @@ export default function App() {
                   <FinanceApprovals lang={lang} user={user!} />
                 </div>
               )}
+
+            {/* TAB: FINANCIAL ACCOUNTING */}
+            {activeTab === "finance" && activeFinanceSubTab === "finance_journal" && (
+              <div id="content-tab-finance" className="space-y-6">
+                <JournalEntries lang={lang} user={user!} />
+              </div>
+            )}
 
             {/* TAB: MANUFACTURING PRODUCTION CONTROL CENTER */}
             {activeTab === "production" && (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   DollarSign, Landmark, Receipt, Users, Search, Eye, 
-  Printer, FileText, Send, CheckCircle, Calculator, ChevronRight, X
+  Printer, FileText, Send, CheckCircle, Calculator, ChevronRight, X, Trash2
 } from 'lucide-react';
 import { Employee } from '../../types';
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from '../../utils/PrintShared';
@@ -138,7 +138,7 @@ export default function HrPayrollTab({
     const basic = Number(emp.basicSalary) || 0;
     const h = Number(emp.allowances?.housing) || 0;
     const t = Number(emp.allowances?.transport) || 0;
-    const p = Number(emp.allowances?.phone) || 0;
+    const p = 0; // Phone allowance removed
     const f = Number(emp.allowances?.food) || 0;
     const o = Number(emp.allowances?.overtime) || 0;
     const b = Number(emp.allowances?.bonuses) || 0;
@@ -188,7 +188,13 @@ export default function HrPayrollTab({
   // Compute live active deductions for each employee to link databases
   const getEmployeeDeductionsTotal = (empId: string) => {
     return deductionsList
-      .filter(d => d.employeeId === empId && d.date && d.date.startsWith(selectedMonth) && (d.status === 'confirmed' || d.status === 'notified'))
+      .filter(d => d.employeeId === empId && d.date && d.date.startsWith(selectedMonth) && (d.status === 'confirmed' || d.status === 'notified') && d.type !== 'سلفة')
+      .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  };
+
+  const getEmployeeLoansTotal = (empId: string) => {
+    return deductionsList
+      .filter(d => d.employeeId === empId && d.date && d.date.startsWith(selectedMonth) && (d.status === 'confirmed' || d.status === 'notified') && d.type === 'سلفة')
       .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   };
 
@@ -249,13 +255,13 @@ export default function HrPayrollTab({
   const handleDeleteDeduction = async (id: string) => {
     if (confirmDeleteId !== id) {
       setConfirmDeleteId(id);
-      triggerSuccess(lang === 'ar' ? '⚠️ يرجى الضغط مرة أخرى على زر الإزالة لتأكيد الحذف نهائياً' : '⚠️ Please click remove again to confirm final deletion');
-      // Reset confirmation after 5 seconds
+      triggerSuccess(lang === 'ar' ? '⚠️ يرجى الضغط مرة أخرى على سلة المهملات لتأكيد الحذف نهائياً' : '⚠️ Please click the trash icon again to confirm final deletion');
       setTimeout(() => {
         setConfirmDeleteId(null);
       }, 5000);
       return;
     }
+
     try {
       const res = await fetch(`/api/deductions?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -293,7 +299,7 @@ export default function HrPayrollTab({
       // Calculate active allowances total
       const h = Number(emp.allowances?.housing) || 0;
       const t = Number(emp.allowances?.transport) || 0;
-      const p = Number(emp.allowances?.phone) || 0;
+      const p = 0; // Phone allowance removed
       const f = Number(emp.allowances?.food) || 0;
       const o = Number(emp.allowances?.overtime) || 0;
       const b = Number(emp.allowances?.bonuses) || 0;
@@ -303,6 +309,7 @@ export default function HrPayrollTab({
       const defaultD = Number(emp.allowances?.deductions) || 0;
       const defaultL = Number(emp.allowances?.loans) || 0;
       const dynamicD = getEmployeeDeductionsTotal(emp.id);
+      const dynamicL = getEmployeeLoansTotal(emp.id);
 
       // Check if already approved/recorded paid slip
       const matchedPaidSlip = monthlyPayrolls.find(p => p.month === selectedMonth && p.employeeId === emp.id);
@@ -310,7 +317,7 @@ export default function HrPayrollTab({
       grid[emp.id] = {
         basic: matchedPaidSlip ? matchedPaidSlip.basicSalary : (Number(emp.basicSalary) || 0),
         allowances: matchedPaidSlip ? matchedPaidSlip.allowancesSum : allowancesSum,
-        deductions: matchedPaidSlip ? matchedPaidSlip.deductionsSum : (defaultD + defaultL + dynamicD),
+        deductions: matchedPaidSlip ? matchedPaidSlip.deductionsSum : (defaultD + defaultL + dynamicD + dynamicL),
         status: matchedPaidSlip ? matchedPaidSlip.status : 'مسودة'
       };
     });
@@ -533,7 +540,7 @@ export default function HrPayrollTab({
   const totalAllowances = employees.reduce((acc, emp) => {
     const h = Number(emp.allowances?.housing) || 0;
     const t = Number(emp.allowances?.transport) || 0;
-    const p = Number(emp.allowances?.phone) || 0;
+    const p = 0; // Phone allowance removed
     const f = Number(emp.allowances?.food) || 0;
     const o = Number(emp.allowances?.overtime) || 0;
     const b = Number(emp.allowances?.bonuses) || 0;
@@ -544,7 +551,8 @@ export default function HrPayrollTab({
     const d = Number(emp.allowances?.deductions) || 0;
     const l = Number(emp.allowances?.loans) || 0;
     const dynamicD = getEmployeeDeductionsTotal(emp.id);
-    return acc + d + l + dynamicD;
+    const dynamicL = getEmployeeLoansTotal(emp.id);
+    return acc + d + l + dynamicD + dynamicL;
   }, 0);
 
   const netPayrollSum = totalBaseSalaries + totalAllowances - totalDeductionsPlusLoans;
@@ -597,7 +605,7 @@ export default function HrPayrollTab({
   const handleSendPayslipToESS = async () => {
     if (!selectedEmp) return;
 
-    const netSalaryCalculated = editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans;
+    const netSalaryCalculated = editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id);
 
     const payload = {
       empId: selectedEmp.id,
@@ -609,8 +617,8 @@ export default function HrPayrollTab({
         : `Electronic official Payslip compiled and issued by HR-Finance department for the current month.`,
       status: 'RESOLVED',
       hrNotes: lang === 'ar' 
-        ? `الراتب الأساسي: ${editBasic} ريال | بدل سكن: ${editHousing} ريال | بدل نقل: ${editTransport} ريال\nإضافي: ${editOvertime} ريال | مكافآت: ${editBonuses} ريال\nخصومات: -${editDeductions} ريال | سلف مستقطعة: -${editLoans} ريال\n---------------------------\n💰 صافي الراتب المستحق: ${netSalaryCalculated} ريال سعودي\nتم الإرسال والاعتماد بواسطة: رئيس الموارد البشرية.`
-        : `Basic Salary: ${editBasic} SAR | Housing: ${editHousing} SAR | Transport: ${editTransport} SAR\nOvertime: ${editOvertime} SAR | Bonuses: ${editBonuses} SAR\nDeductions: -${editDeductions} SAR | Loans: -${editLoans} SAR\n---------------------------\n💰 Net Disbursed Wages: ${netSalaryCalculated} SAR\nApproved & certified by: Head of HR Administration.`
+        ? `الراتب الأساسي: ${editBasic} ريال | بدل سكن: ${editHousing} ريال | بدل نقل: ${editTransport} ريال\nإضافي: ${editOvertime} ريال | مكافآت: ${editBonuses} ريال\nخصومات: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} ريال | سلف مستقطعة: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} ريال\n---------------------------\n💰 صافي الراتب المستحق: ${netSalaryCalculated} ريال سعودي\nتم الإرسال والاعتماد بواسطة: رئيس الموارد البشرية.`
+        : `Basic Salary: ${editBasic} SAR | Housing: ${editHousing} SAR | Transport: ${editTransport} SAR\nOvertime: ${editOvertime} SAR | Bonuses: ${editBonuses} SAR\nDeductions: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} SAR | Loans: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} SAR\n---------------------------\n💰 Net Disbursed Wages: ${netSalaryCalculated} SAR\nApproved & certified by: Head of HR Administration.`
     };
 
     try {
@@ -761,7 +769,7 @@ export default function HrPayrollTab({
       const basic = Number(emp.basicSalary) || 0;
       const h = Number(emp.allowances?.housing) || 0;
       const t = Number(emp.allowances?.transport) || 0;
-      const p = Number(emp.allowances?.phone) || 0;
+      const p = 0; // Phone allowance removed
       const f = Number(emp.allowances?.food) || 0;
       const o = Number(emp.allowances?.overtime) || 0;
       const b = Number(emp.allowances?.bonuses) || 0;
@@ -1196,15 +1204,19 @@ export default function HrPayrollTab({
                   const basic = Number(emp.basicSalary) || 0;
                   const housing = Number(emp.allowances?.housing) || 0;
                   const transport = Number(emp.allowances?.transport) || 0;
-                  const phone = Number(emp.allowances?.phone) || 0;
+                  const phone = 0; // Phone allowance removed
                   const food = Number(emp.allowances?.food) || 0;
                   const overtime = Number(emp.allowances?.overtime) || 0;
                   const bonuses = Number(emp.allowances?.bonuses) || 0;
-                  const deductions = Number(emp.allowances?.deductions) || 0;
+                  const staticDeductions = Number(emp.allowances?.deductions) || 0;
                   const loans = Number(emp.allowances?.loans) || 0;
+                  const dynamicDeductions = getEmployeeDeductionsTotal(emp.id);
+                  const dynamicLoans = getEmployeeLoansTotal(emp.id);
+                  const deductions = staticDeductions + dynamicDeductions;
+                  const totalLoans = loans + dynamicLoans;
 
                   const allowSum = housing + transport + phone + food + overtime + bonuses;
-                  const netSalary = basic + allowSum - deductions - loans;
+                  const netSalary = basic + allowSum - deductions - totalLoans;
 
                   return (
                     <tr key={emp.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-slate-600 transition">
@@ -1412,7 +1424,7 @@ export default function HrPayrollTab({
                     <div className="space-y-1 text-right flex flex-col justify-end">
                       <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'صافي الراتب المستحق (بعد الحساب)' : 'Net Wages Calculated'}</span>
                       <p className="text-lg font-black text-emerald-700 font-mono leading-none pt-2">
-                        {(editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans).toLocaleString()} ريال
+                        {(editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)).toLocaleString()} ريال
                       </p>
                     </div>
 
@@ -1479,16 +1491,16 @@ export default function HrPayrollTab({
                       <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold pt-1">
                         <div className="bg-rose-50 p-1.5 rounded border border-rose-100">
                           <span className="text-rose-600 text-[9px] block">استقطاع غياب/خصومات</span>
-                          <span className="text-rose-800 font-mono text-[11px]">-{editDeductions}</span>
+                          <span className="text-rose-800 font-mono text-[11px]">-{editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)}</span>
                         </div>
                         <div className="bg-rose-50 p-1.5 rounded border border-rose-100">
                           <span className="text-rose-600 text-[9px] block">سلف مستقطعة</span>
-                          <span className="text-rose-800 font-mono text-[11px]">-{editLoans}</span>
+                          <span className="text-rose-800 font-mono text-[11px]">-{editLoans + getEmployeeLoansTotal(selectedEmp.id)}</span>
                         </div>
                         <div className="bg-emerald-50 p-1.5 rounded border border-emerald-100 text-emerald-800">
                           <span className="text-emerald-700 text-[9px] block font-black">صافي الراتب المستحق</span>
                           <span className="text-emerald-900 font-mono text-[12px] font-extrabold">
-                            {editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans} ريال
+                            {editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)} ريال
                           </span>
                         </div>
                       </div>
@@ -1560,8 +1572,7 @@ export default function HrPayrollTab({
       {/* ======================================================== */}
       {/* 3. DEDUCTIONS AND DISCIPLINARY ACTIONS MODULE (الخصومات والجزاءات) */}
       {/* ======================================================== */}
-      {activeHRSubTab === 'payroll_deductions' && (
-        <div className="space-y-6 text-right" dir="rtl">
+        <div className="space-y-6 text-right mt-8" dir="rtl">
           
           {/* Header Action Section */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1680,13 +1691,10 @@ export default function HrPayrollTab({
                         </button>
                         <button 
                           onClick={() => handleDeleteDeduction(item.id)}
-                          className={`px-2.5 py-1 rounded font-black text-[10px] transition ${
-                            confirmDeleteId === item.id 
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse' 
-                              : 'bg-red-50 hover:bg-red-100 text-red-600'
-                          }`}
+                          className={`p-1.5 rounded transition duration-150 flex items-center justify-center border ${confirmDeleteId === item.id ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white animate-pulse' : 'bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 border-red-200/50'}`}
+                          title={lang === 'ar' ? 'إزالة الخصم والمخالفة نهائياً' : 'Remove Deduction and Violation permanently'}
                         >
-                          {confirmDeleteId === item.id ? '⚠️ لتأكيد المسح اضغط ثانية' : '🗑️ إزالة'}
+                          <Trash2 size={13} className="stroke-[2.5]" />
                         </button>
                       </td>
                     </tr>
@@ -1774,7 +1782,7 @@ export default function HrPayrollTab({
                       const basic = Number(emp.basicSalary) || 0;
                       const h = Number(emp.allowances?.housing) || 0;
                       const t = Number(emp.allowances?.transport) || 0;
-                      const p = Number(emp.allowances?.phone) || 0;
+                      const p = 0; // Phone allowance removed
                       const f = Number(emp.allowances?.food) || 0;
                       const o = Number(emp.allowances?.overtime) || 0;
                       const b = Number(emp.allowances?.bonuses) || 0;
@@ -2250,13 +2258,10 @@ export default function HrPayrollTab({
                         {editingDeduction && (
                           <button
                             onClick={() => handleDeleteDeduction(editingDeduction.id)}
-                            className={`px-4 py-2.5 font-black text-xs rounded-xl transition ${
-                              confirmDeleteId === editingDeduction.id
-                                ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse'
-                                : 'bg-rose-50 hover:bg-rose-100 text-rose-700'
-                            }`}
+                            className={`px-4 py-2.5 font-black text-xs rounded-xl transition duration-150 flex items-center gap-1.5 border ${confirmDeleteId === editingDeduction.id ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white animate-pulse' : 'bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 border-rose-200/50'}`}
                           >
-                            {confirmDeleteId === editingDeduction.id ? '⚠️ لتأكيد المسح اضغط ثانية' : '🗑️ ازالة الخصم'}
+                            <Trash2 size={14} className="stroke-[2.5]" />
+                            {confirmDeleteId === editingDeduction.id ? (lang === 'ar' ? '⚠️ تأكيد الإزالة نهائياً' : '⚠️ Confirm Removal') : (lang === 'ar' ? 'ازالة الخصم والمخالفة' : 'Remove Deduction & Violation')}
                           </button>
                         )}
                       </div>
@@ -2270,7 +2275,6 @@ export default function HrPayrollTab({
           )}
 
         </div>
-      )}
 
       {/* ======================================================== */}
       {/* 4. MONTHLY ALL 12 MONTHS SALARIES MULTI-GRID PLATFORM */}
@@ -2389,6 +2393,7 @@ export default function HrPayrollTab({
                     const row = inlineWages[emp.id] || { basic: 0, allowances: 0, deductions: 0, status: 'مسودة' };
                     const net = row.basic + row.allowances - row.deductions;
                     const dynamicDeductions = getEmployeeDeductionsTotal(emp.id);
+                    const dynamicLoans = getEmployeeLoansTotal(emp.id);
 
                     return (
                       <tr key={emp.id} className="hover:bg-slate-50/70 transition font-bold text-slate-700">
@@ -2450,10 +2455,16 @@ export default function HrPayrollTab({
 
                         {/* Track dynamic deductions link */}
                         <td className="p-4 whitespace-nowrap text-[10px] text-slate-400">
-                          {dynamicDeductions > 0 ? (
-                            <span className="text-red-500">⚠️ يتضمن ({dynamicDeductions}) خصومات نشطة بالشهر</span>
+                          {dynamicDeductions > 0 || dynamicLoans > 0 ? (
+                            <span className="text-red-500">
+                              ⚠️ يتضمن 
+                              {dynamicDeductions > 0 ? ` (${dynamicDeductions}) خصومات` : ''}
+                              {dynamicDeductions > 0 && dynamicLoans > 0 ? ' و ' : ''}
+                              {dynamicLoans > 0 ? ` (${dynamicLoans}) سلف` : ''}
+                               نشطة بالشهر
+                            </span>
                           ) : (
-                            <span>لا توجد خصومات جزائية للشهر</span>
+                            <span>لا توجد خصومات أو سلف للشهر</span>
                           )}
                         </td>
 

@@ -89,7 +89,7 @@ export default function HrSubSections({
       jobTitle: newEmp.jobTitle || 'Technician',
       grade: newEmp.grade || 'PROBATION',
       basicSalary: newEmp.basicSalary || 5000,
-      allowances: newEmp.allowances || { housing: 1500, transport: 500, phone: 200 },
+      allowances: newEmp.allowances || { housing: 1500, transport: 500, phone: 0 },
       homeAddress: newEmp.homeAddress || '',
       custody: newEmp.custody || {},
       birthDate: newEmp.birthDate || '',
@@ -456,8 +456,7 @@ export default function HrSubSections({
       title_ar: 'مسير الرواتب المالي (WPS)',
       title_en: 'Payroll Management (WPS)',
       subs: [
-        { id: 'payroll_main', label_ar: '💵 مسير الرواتب - الرئيسية', label_en: '💵 Payroll Overview' },
-        { id: 'payroll_deductions', label_ar: '📉 الخصومات والجزاءات الفورية', label_en: '📉 Deductions & Penalties' }
+        { id: 'payroll_main', label_ar: '💵 مسير الرواتب - الرئيسية', label_en: '💵 Payroll Overview' }
       ]
     },
     {
@@ -625,7 +624,7 @@ export default function HrSubSections({
                     experienceYears: expYears,
                     iqamaId: `24${Math.floor(10000000 + Math.random() * 90000000)}`,
                     passportDetails: `AC${Math.floor(100000 + Math.random() * 900000)}`,
-                    allowances: { housing: 1000, transport: 400, phone: 100 },
+                    allowances: { housing: 1000, transport: 400, phone: 0 },
                     grade: 'Grade 1'
                   };
 
@@ -1721,7 +1720,7 @@ export default function HrSubSections({
         )}
 
         {/* VIEW: Payroll Section */}
-        {(activeHRSubTab === 'payroll_main' || activeHRSubTab === 'payroll_deductions') && (
+        {(activeHRSubTab === 'payroll_main') && (
           <HrPayrollTab 
             lang={lang}
             employees={localEmployees}
