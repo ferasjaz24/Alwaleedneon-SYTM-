@@ -39,6 +39,16 @@ export default function FinanceApprovals({
     onConfirm: () => void;
   } | null>(null);
 
+  const [filterMonth, setFilterMonth] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredRequests = requests.filter(r => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch = r.projectName?.toLowerCase().includes(q) || r.quotationNumber?.toLowerCase().includes(q);
+    const matchMonth = filterMonth ? r.sentToFinanceAt?.startsWith(filterMonth) || r.createdAt?.startsWith(filterMonth) : true;
+    return matchSearch && matchMonth;
+  });
+
   const fetchRequests = async () => {
     setLoading(true);
     try {
@@ -334,20 +344,35 @@ export default function FinanceApprovals({
 
   return (
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <Building className="w-7 h-7 text-[#0072BC]" />
           {lang === "ar"
             ? "بوابة تعميد عرض الشراء"
             : "Finance Approvals Quotes"}
         </h2>
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <input
+            type="text"
+            placeholder="بحث بالمشروع، رقم العرض..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-64 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]"
+          />
+          <input
+            type="month"
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            className="w-full sm:w-48 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]"
+          />
+        </div>
       </div>
 
       {loading ? (
         <div className="text-center py-10">Loading...</div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {requests.map((r, i) => (
+          {filteredRequests.map((r, i) => (
             <div
               key={i}
               className="flex flex-col md:flex-row items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:shadow-md transition"

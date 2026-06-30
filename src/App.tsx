@@ -62,6 +62,8 @@ import AdvancedPermissionsPortal from "./components/AdvancedPermissionsPortal";
 import AISettingsModal from "./components/AISettingsModal";
 import MainDashboard from "./components/MainDashboard";
 import JournalEntries from "./components/finance/JournalEntries";
+import RevenuesExpenses from "./components/finance/RevenuesExpenses";
+import CustomerSupplierInvoices from "./components/finance/CustomerSupplierInvoices";
 
 export const hrSubmenus = [
   { id: "dashboard", ar: "📊 لوحة القيادة والمؤشرات", en: "📊 HR Dashboard" },
@@ -160,6 +162,16 @@ export const financeSubmenus = [
     id: "finance_journal",
     ar: "📒 القيود اليومية",
     en: "📒 Journal Entries"
+  },
+  {
+    id: "finance_revenues_expenses",
+    ar: "💰 الإيرادات والمصروفات",
+    en: "💰 Revenues & Expenses"
+  },
+  {
+    id: "finance_customer_supplier_invoices",
+    ar: "🧾 فواتير العملاء والموردين",
+    en: "🧾 Customer & Supplier Invoices"
   }
 ];
 
@@ -1800,7 +1812,15 @@ export default function App() {
                 {/* Nested Accordion Submenus */}
                 {isFinanceDropdownOpen && (
                   <div className="mt-1 mr-2 ml-2 pr-4 text-[13px] flex flex-col gap-2 border-r-2 border-[#0072BC]/30 py-2">
-                    {financeSubmenus.map((sub) => {
+                    {financeSubmenus.filter((sub) => {
+                      if (sub.id === "finance_journal") {
+                        return canShowSubmenu(user!, "finance", "journal");
+                      }
+                      if (sub.id === "finance_customer_supplier_invoices") {
+                        return canShowSubmenu(user!, "finance", "invoices");
+                      }
+                      return true;
+                    }).map((sub) => {
                       const isSubActive =
                         activeTab === "finance" &&
                         activeFinanceSubTab === sub.id;
@@ -4556,8 +4576,18 @@ export default function App() {
 
             {/* TAB: FINANCIAL ACCOUNTING */}
             {activeTab === "finance" && activeFinanceSubTab === "finance_journal" && (
-              <div id="content-tab-finance" className="space-y-6">
+              <div id="content-tab-finance-journal" className="space-y-6">
                 <JournalEntries lang={lang} user={user!} />
+              </div>
+            )}
+            {activeTab === "finance" && activeFinanceSubTab === "finance_revenues_expenses" && (
+              <div id="content-tab-finance-revenues" className="space-y-6">
+                <RevenuesExpenses lang={lang} user={user!} />
+              </div>
+            )}
+            {activeTab === "finance" && activeFinanceSubTab === "finance_customer_supplier_invoices" && (
+              <div id="content-tab-finance-invoices" className="space-y-6">
+                <CustomerSupplierInvoices lang={lang} user={user!} />
               </div>
             )}
 

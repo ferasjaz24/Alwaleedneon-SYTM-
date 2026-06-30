@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PlusCircle, Search, Filter, Eye, Edit, CheckCircle, XCircle, Printer, FileText, Trash2, X, Upload } from "lucide-react";
 import { User } from "../../types";
 import { hasAdvancedPermission } from "../../lib/permissions";
+import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../../utils/PrintShared";
 
 interface JournalEntryProps {
   lang: "ar" | "en";
@@ -10,8 +11,43 @@ interface JournalEntryProps {
 
 export default function JournalEntries({ lang, user }: JournalEntryProps) {
   const [entries, setEntries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingEntryId, setEditingEntryId] = useState("");
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<any>(null);
+  const [approveConfirmItem, setApproveConfirmItem] = useState<any>(null);
+
+  const filteredEntries = entries.filter((e) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = 
+      e.id?.toLowerCase().includes(q) ||
+      e.description?.toLowerCase().includes(q) ||
+      e.reference?.toLowerCase().includes(q);
+    const matchesMonth = filterMonth ? e.date?.startsWith(filterMonth) : true;
+    return matchesSearch && matchesMonth;
+  });
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  const fetchEntries = async () => {
+    try {
+      const res = await fetch("/api/journal-entries");
+      if (res.ok) {
+        const data = await res.json();
+        data.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setEntries(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // State for Add Modal
   const [entryForm, setEntryForm] = useState({
@@ -24,6 +60,8 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     reference: "",
     project: "",
     attachment: null as File | null,
+    attachmentData: "",
+    attachmentType: "",
     description: "",
     notes: ""
   });
@@ -50,14 +88,24 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
   const canUploadAttachment = hasAdvancedPermission(user, 'finance', 'journal', 'upload_attachment');
 
   const handleCloseModal = () => {
-    const isFormEdited = entryForm.type || entryForm.debitAccount || entryForm.creditAccount || entryForm.amount || entryForm.description;
-    if (isFormEdited) {
-      if (confirm("لديك بيانات غير محفوظة، هل تريد إغلاق النافذة؟")) {
-        setShowAddModal(false);
-      }
-    } else {
-      setShowAddModal(false);
-    }
+    setShowAddModal(false);
+    setEditingEntryId("");
+    setEntryForm({
+      date: new Date().toISOString().split("T")[0],
+      type: "",
+      status: "مسودة",
+      debitAccount: "",
+      creditAccount: "",
+      amount: "",
+      reference: "",
+      project: "",
+      attachment: null,
+      attachmentData: "",
+      attachmentType: "",
+      description: "",
+      notes: ""
+    });
+    setFormError("");
   };
 
   const validateForm = () => {
@@ -71,61 +119,233 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     return "";
   };
 
-  const handleSave = (status: string) => {
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleSave = async (status: string) => {
     const error = validateForm();
     if (error) {
       setFormError(error);
       return;
     }
     
-    // Simulate save
-    const newId = "JE-2026-" + String(entries.length + 1).padStart(4, '0');
-    const newEntry = {
-      id: newId,
+    let base64File = entryForm.attachmentData;
+    let fileType = entryForm.attachmentType;
+    if (entryForm.attachment) {
+      base64File = await fileToBase64(entryForm.attachment);
+      fileType = entryForm.attachment.type;
+    }
+
+    const payload = {
       ...entryForm,
+      attachment: undefined,
+      attachmentData: base64File,
+      attachmentType: fileType,
       status,
       createdBy: user.username,
       updatedAt: new Date().toISOString()
     };
-    
-    setEntries([newEntry, ...entries]);
-    setShowAddModal(false);
-    
-    let actionType = "إنشاء قيد مسودة";
-    if (status === "بانتظار اعتماد") actionType = "إرسال قيد للاعتماد";
-    if (status === "معتمد") actionType = "إنشاء واعتماد قيد";
-    
-    console.log("Audit Log Recorded:", {
-      username: user.username,
-      timestamp: new Date().toISOString(),
-      entryId: newId,
-      actionType
-    });
-    
-    if (status === "مسودة") alert("تم حفظ القيد كمسودة بنجاح.");
-    else if (status === "بانتظار اعتماد") alert("تم حفظ القيد وإرساله للاعتماد.");
-    else if (status === "معتمد") alert("تم حفظ واعتماد القيد بنجاح.");
-    
-    // Reset form
+
+    try {
+      const url = editingEntryId ? `/api/journal-entries/${editingEntryId}` : "/api/journal-entries";
+      const method = editingEntryId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        fetchEntries();
+        setShowAddModal(false);
+        if (status === "مسودة") alert("تم حفظ القيد كمسودة بنجاح.");
+        else if (status === "بانتظار اعتماد") alert("تم حفظ القيد وإرساله للاعتماد.");
+        else if (status === "معتمد") alert("تم حفظ واعتماد القيد بنجاح.");
+        setEditingEntryId("");
+        setEntryForm({
+          date: new Date().toISOString().split("T")[0],
+          type: "",
+          status: "مسودة",
+          debitAccount: "",
+          creditAccount: "",
+          amount: "",
+          reference: "",
+          project: "",
+          attachment: null,
+          attachmentData: "",
+          attachmentType: "",
+          description: "",
+          notes: ""
+        });
+        setFormError("");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء الحفظ");
+    }
+  };
+
+  const handleEdit = (entry: any) => {
+    setEditingEntryId(entry.id);
     setEntryForm({
-      date: new Date().toISOString().split("T")[0],
-      type: "",
-      status: "مسودة",
-      debitAccount: "",
-      creditAccount: "",
-      amount: "",
-      reference: "",
-      project: "",
+      date: entry.date || "",
+      type: entry.type || "",
+      status: entry.status || "مسودة",
+      debitAccount: entry.debitAccount || "",
+      creditAccount: entry.creditAccount || "",
+      amount: entry.amount || "",
+      reference: entry.reference || "",
+      project: entry.project || "",
       attachment: null,
-      description: "",
-      notes: ""
+      attachmentData: entry.attachmentData || "",
+      attachmentType: entry.attachmentType || "",
+      description: entry.description || "",
+      notes: entry.notes || ""
     });
-    setFormError("");
+    setShowAddModal(true);
+  };
+
+  const isAdmin = (u: User) => {
+    const un = u.username?.toLowerCase() || '';
+    const rn = u.role?.toLowerCase() || '';
+    return un === 'feras' || un === 'admin' || rn === 'super admin' || rn === 'general admin director' || rn.includes('الادارة العليا') || rn === 'senior management';
+  };
+
+  const handleDelete = (entry: any) => {
+    setDeleteConfirmItem(entry);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmItem) return;
+    if (deleteConfirmItem.status === "معتمد" && !isAdmin(user)) {
+      return; // Handled in UI (button disabled)
+    }
+    try {
+      await fetch(`/api/journal-entries/${deleteConfirmItem.id}`, { method: "DELETE" });
+      setDeleteConfirmItem(null);
+      fetchEntries();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePrintPdf = (entry: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <html dir="${lang === "ar" ? "rtl" : "ltr"}">
+        <head>
+          <title>قيد يومي - ${entry.id}</title>
+          <style>${sharedPrintStyles}</style>
+          <style>
+            body { font-family: 'Tajawal', sans-serif; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; }
+            .entry-header { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0072BC; }
+            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .label { font-size: 12px; color: #64748b; font-weight: bold; margin-bottom: 4px; display: block; }
+            .value { font-size: 15px; color: #0f172a; font-weight: bold; }
+            .accounts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .account-box { padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+            .account-box.debit { background: #fff1f2; border-color: #fecdd3; }
+            .account-box.credit { background: #ecfdf5; border-color: #a7f3d0; }
+            .amount { font-size: 24px; font-weight: 900; margin-top: 10px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          ${sharedPrintHeader}
+          <h2 style="text-align: center; color: #0072BC; margin: 30px 0;">قيد يومي (Journal Entry)</h2>
+          
+          <div class="entry-header">
+            <div>
+              <span class="label">رقم القيد</span>
+              <span class="value" style="color: #0072BC; font-size: 18px;">${entry.id}</span>
+            </div>
+            <div style="text-align: left;">
+              <span class="label">تاريخ القيد</span>
+              <span class="value">${entry.date}</span>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-grid">
+              <div>
+                <span class="label">نوع القيد</span>
+                <span class="value">${entry.type}</span>
+              </div>
+              <div>
+                <span class="label">حالة القيد</span>
+                <span class="value">${entry.status}</span>
+              </div>
+              <div style="grid-column: span 2;">
+                <span class="label">وصف القيد</span>
+                <span class="value">${entry.description}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="accounts-grid">
+            <div class="account-box debit">
+              <span class="label" style="color: #be123c;">الحساب المدين (Debit)</span>
+              <span class="value" style="color: #881337; font-size: 18px;">${entry.debitAccount}</span>
+              <div class="amount" style="color: #be123c;">${Number(entry.amount).toLocaleString()} SAR</div>
+            </div>
+            <div class="account-box credit">
+              <span class="label" style="color: #047857;">الحساب الدائن (Credit)</span>
+              <span class="value" style="color: #064e3b; font-size: 18px;">${entry.creditAccount}</span>
+              <div class="amount" style="color: #047857;">${Number(entry.amount).toLocaleString()} SAR</div>
+            </div>
+          </div>
+
+          ${entry.reference ? `
+          <div class="info-box">
+            <span class="label">المرجع</span>
+            <span class="value">${entry.reference}</span>
+          </div>
+          ` : ''}
+
+          ${entry.notes ? `
+          <div class="info-box">
+            <span class="label">ملاحظات</span>
+            <span class="value">${entry.notes}</span>
+          </div>
+          ` : ''}
+          
+          ${sharedPrintFooter}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
   const confirmApprove = () => {
     if (confirm("هل أنت متأكد من حفظ واعتماد هذا القيد؟ بعد الاعتماد لن يمكن تعديله إلا بصلاحية خاصة.")) {
       handleSave("معتمد");
+    }
+  };
+
+  const handleApprove = (entry: any) => {
+    setApproveConfirmItem(entry);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveConfirmItem) return;
+    try {
+      await fetch(`/api/journal-entries/${approveConfirmItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...approveConfirmItem, status: "معتمد" })
+      });
+      setApproveConfirmItem(null);
+      fetchEntries();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -172,6 +392,12 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
             className="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+        <input
+          type="month"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+          className="w-full md:w-48 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
         <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-slate-50">
           <Filter className="w-4 h-4" /> فلاتر
         </button>
@@ -195,12 +421,12 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {entries.length === 0 ? (
+              {filteredEntries.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-slate-500">لا توجد قيود يومية مسجلة</td>
                 </tr>
               ) : (
-                entries.map((entry, idx) => (
+                filteredEntries.map((entry, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="p-4 font-mono text-blue-600 font-bold">{entry.id}</td>
                     <td className="p-4">{entry.date}</td>
@@ -220,13 +446,19 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                       </span>
                     </td>
                     <td className="p-4 flex items-center gap-1">
-                      <button className="text-slate-500 hover:bg-slate-100 p-1.5 rounded transition-colors" title="عرض التفاصيل"><Eye className="w-4 h-4" /></button>
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'edit_entry') && <button className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors" title="تعديل"><Edit className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'approve_entry') && entry.status !== 'معتمد' && <button className="text-emerald-500 hover:bg-emerald-50 p-1.5 rounded transition-colors" title="اعتماد"><CheckCircle className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'cancel_entry') && entry.status !== 'ملغي' && <button className="text-amber-500 hover:bg-amber-50 p-1.5 rounded transition-colors" title="إلغاء"><XCircle className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'print_entry') && <button className="text-indigo-500 hover:bg-indigo-50 p-1.5 rounded transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'export_pdf') && <button className="text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-colors" title="تصدير PDF"><FileText className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'delete_entry') && <button className="text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors" title="حذف"><Trash2 className="w-4 h-4" /></button>}
+                      {entry.attachmentData && <button onClick={() => setPreviewFile(entry.attachmentData)} className="text-purple-500 hover:bg-purple-50 p-1.5 rounded transition-colors" title="معاينة المرفق"><Eye className="w-4 h-4" /></button>}
+                      {hasAdvancedPermission(user, 'finance', 'journal', 'edit_entry') && <button onClick={() => handleEdit(entry)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors" title="تعديل"><Edit className="w-4 h-4" /></button>}
+                      {entry.status !== 'معتمد' && (
+                        <button 
+                          onClick={() => handleApprove(entry)} 
+                          className="text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition active:scale-95 duration-100" 
+                          title="اعتماد"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      {hasAdvancedPermission(user, 'finance', 'journal', 'print_entry') && <button onClick={() => handlePrintPdf(entry)} className="text-indigo-500 hover:bg-indigo-50 p-1.5 rounded transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>}
+                      <button onClick={() => handleDelete(entry)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition active:scale-95 duration-100" title="حذف"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 ))
@@ -243,7 +475,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">إضافة قيد يومي جديد +</h3>
+                <h3 className="text-xl font-bold text-slate-800">{editingEntryId ? "تعديل قيد يومي" : "إضافة قيد يومي جديد +"}</h3>
                 <p className="text-sm text-slate-500 mt-1">قم بتسجيل قيد محاسبي جديد مع تحديد الحساب المدين والدائن والمبلغ.</p>
               </div>
               <button onClick={handleCloseModal} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -263,7 +495,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">رقم القيد</label>
-                  <input type="text" disabled value="تلقائي (مثل JE-2026-0001)" className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 text-sm font-mono" />
+                  <input type="text" disabled value={editingEntryId || "تلقائي (مثل JV26060001)"} className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 text-sm font-mono" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">تاريخ القيد <span className="text-rose-500">*</span></label>
@@ -325,22 +557,20 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                 )}
                 {canUploadAttachment && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">المرفق</label>
-                    <div 
-                      className="flex items-center gap-2 w-full p-1.5 border border-dashed border-slate-300 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => {
-                        console.log("Audit Log Recorded:", {
-                          username: user.username,
-                          timestamp: new Date().toISOString(),
-                          entryId: "Draft",
-                          actionType: "رفع مرفق قيد"
-                        });
-                        alert("تم رفع المرفق وتسجيل العملية في السجل.");
+                    <label className="block text-sm font-bold text-slate-700 mb-2">المرفق (اختياري)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setEntryForm({...entryForm, attachment: e.target.files[0]});
+                        }
                       }}
-                    >
-                      <div className="bg-white p-2 rounded shadow-sm border text-slate-600"><Upload className="w-4 h-4" /></div>
-                      <span className="text-xs text-slate-500">رفع فاتورة أو إيصال (اختياري)</span>
-                    </div>
+                      className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {entryForm.attachmentData && !entryForm.attachment && (
+                       <div className="mt-2 text-xs text-emerald-600 font-bold">يوجد مرفق محفوظ مسبقاً</div>
+                    )}
                   </div>
                 )}
               </div>
@@ -381,6 +611,163 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800">معاينة المرفق</h3>
+              <button onClick={() => setPreviewFile(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-auto flex justify-center bg-slate-100">
+              {previewFile.startsWith("data:application/pdf") ? (
+                <iframe src={previewFile} className="w-full h-full min-h-[60vh] border-0 rounded-lg shadow-inner" />
+              ) : (
+                <img src={previewFile} alt="مرفق" className="max-w-full max-h-full object-contain rounded-lg shadow-sm" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirmItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setDeleteConfirmItem(null)} className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 transition">
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-3 text-rose-600 mb-4">
+              <div className="p-3 bg-rose-50 rounded-full">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">تأكيد حذف القيد اليومي</h3>
+                <p className="text-sm text-slate-500">لا يمكن التراجع عن هذا الإجراء</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl mb-6 text-sm text-slate-600 space-y-2 border border-slate-100">
+              <div className="flex justify-between">
+                <span className="font-medium">رقم القيد:</span>
+                <span className="font-mono font-bold text-slate-800">{deleteConfirmItem.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">التاريخ:</span>
+                <span className="text-slate-800">{deleteConfirmItem.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">النوع:</span>
+                <span className="text-slate-800">{deleteConfirmItem.type}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">المبلغ:</span>
+                <span className="font-bold text-rose-600">{Number(deleteConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">الحالة:</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                  deleteConfirmItem.status === 'معتمد' ? 'bg-emerald-100 text-emerald-700' :
+                  deleteConfirmItem.status === 'بانتظار اعتماد' ? 'bg-amber-100 text-amber-700' :
+                  deleteConfirmItem.status === 'ملغي' ? 'bg-rose-100 text-rose-700' :
+                  'bg-slate-100 text-slate-700'
+                }`}>{deleteConfirmItem.status}</span>
+              </div>
+            </div>
+
+            {deleteConfirmItem.status === "معتمد" && !isAdmin(user) ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs mb-6 leading-relaxed">
+                عذراً، هذا القيد اليومي معتمد ومثبت محاسبياً. لا يمكن حذف القيود المعتمدة إلا من قبل الإدارة العليا أو المخولين بالصلاحيات الإدارية الكاملة.
+              </div>
+            ) : (
+              <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+                هل أنت متأكد تماماً من رغبتك في حذف هذا القيد اليومي بشكل نهائي من قاعدة البيانات؟ سيتم مسح كافة الأرصدة المرتبطة به.
+              </p>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirmItem(null)} className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold rounded-xl transition">
+                إلغاء
+              </button>
+              <button 
+                onClick={handleConfirmDelete} 
+                disabled={deleteConfirmItem.status === "معتمد" && !isAdmin(user)}
+                className={`px-5 py-2.5 text-white font-bold rounded-xl transition shadow-md ${
+                  deleteConfirmItem.status === "معتمد" && !isAdmin(user)
+                    ? "bg-slate-300 cursor-not-allowed shadow-none"
+                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-100"
+                }`}
+              >
+                نعم، احذف القيد
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Approve Confirmation Modal */}
+      {approveConfirmItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setApproveConfirmItem(null)} className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 transition">
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-3 text-emerald-600 mb-4">
+              <div className="p-3 bg-emerald-50 rounded-full">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">تأكيد اعتماد القيد اليومي</h3>
+                <p className="text-sm text-slate-500">سيتم تثبيت القيد وترحيله للحسابات</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl mb-6 text-sm text-slate-600 space-y-2 border border-slate-100">
+              <div className="flex justify-between">
+                <span className="font-medium">رقم القيد:</span>
+                <span className="font-mono font-bold text-slate-800">{approveConfirmItem.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">التاريخ:</span>
+                <span className="text-slate-800">{approveConfirmItem.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">الحساب المدين:</span>
+                <span className="text-rose-600 font-medium">{approveConfirmItem.debitAccount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">الحساب الدائن:</span>
+                <span className="text-emerald-600 font-medium">{approveConfirmItem.creditAccount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">المبلغ:</span>
+                <span className="font-bold text-slate-800">{Number(approveConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+              </div>
+            </div>
+
+            <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+              عند اعتماد هذا القيد، سيتم إقفاله محاسبياً وترحيله للأرصدة المالية. لن يمكن تعديله أو حذفه لاحقاً إلا بصلاحيات الإدارة العليا.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setApproveConfirmItem(null)} className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold rounded-xl transition">
+                إلغاء
+              </button>
+              <button 
+                onClick={handleConfirmApprove} 
+                className="px-5 py-2.5 text-white bg-emerald-600 hover:bg-emerald-700 font-bold rounded-xl transition shadow-md shadow-emerald-100"
+              >
+                نعم، اعتمد القيد الآن
+              </button>
             </div>
           </div>
         </div>

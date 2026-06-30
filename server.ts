@@ -977,6 +977,160 @@ export async function startServer() {
 
   // Audit log storage
 
+  // API: Journal Entries
+  app.get("/api/journal-entries", async (req, res) => {
+    res.json(await getCollectionDocs("journal_entries"));
+  });
+
+  app.post("/api/journal-entries", async (req, res) => {
+    const entry = req.body;
+    if (!entry.id) {
+      let yearStr = "26";
+      let monthStr = "06";
+      if (entry.date && typeof entry.date === 'string' && entry.date.includes('-')) {
+        const parts = entry.date.split('-');
+        if (parts.length >= 2) {
+          yearStr = parts[0].trim().slice(-2);
+          monthStr = parts[1].trim().padStart(2, '0');
+        }
+      } else {
+        const now = new Date();
+        yearStr = String(now.getFullYear()).slice(-2);
+        monthStr = String(now.getMonth() + 1).padStart(2, '0');
+      }
+      const prefix = `JV${yearStr}${monthStr}`;
+
+      const entries = await getCollectionDocs("journal_entries");
+      const matchedEntries = entries.filter((e: any) => e.id && e.id.startsWith(prefix));
+
+      let nextNum = 1;
+      if (matchedEntries.length > 0) {
+        const numbers = matchedEntries.map((e: any) => {
+          const suffix = e.id.slice(prefix.length);
+          const parsed = parseInt(suffix, 10);
+          return isNaN(parsed) ? 0 : parsed;
+        });
+        const maxNum = Math.max(...numbers, 0);
+        nextNum = maxNum + 1;
+      }
+
+      entry.id = `${prefix}${String(nextNum).padStart(4, '0')}`;
+    }
+    await setDoc(doc(db, "journal_entries", entry.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.put("/api/journal-entries/:id", async (req, res) => {
+    const entry = req.body;
+    await updateDoc(doc(db, "journal_entries", req.params.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.delete("/api/journal-entries/:id", async (req, res) => {
+    await deleteDoc(doc(db, "journal_entries", req.params.id));
+    res.json({ success: true });
+  });
+
+  // API: Revenues
+  app.get("/api/revenues", async (req, res) => {
+    res.json(await getCollectionDocs("revenues"));
+  });
+
+  app.post("/api/revenues", async (req, res) => {
+    const entry = req.body;
+    if (!entry.id) {
+      entry.id = `REV-2026-${Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0')}`;
+    }
+    await setDoc(doc(db, "revenues", entry.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.put("/api/revenues/:id", async (req, res) => {
+    const entry = req.body;
+    await updateDoc(doc(db, "revenues", req.params.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.delete("/api/revenues/:id", async (req, res) => {
+    await deleteDoc(doc(db, "revenues", req.params.id));
+    res.json({ success: true });
+  });
+
+  // API: Expenses
+  app.get("/api/expenses", async (req, res) => {
+    res.json(await getCollectionDocs("expenses"));
+  });
+
+  app.post("/api/expenses", async (req, res) => {
+    const entry = req.body;
+    if (!entry.id) {
+      entry.id = `EXP-2026-${Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0')}`;
+    }
+    await setDoc(doc(db, "expenses", entry.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.put("/api/expenses/:id", async (req, res) => {
+    const entry = req.body;
+    await updateDoc(doc(db, "expenses", req.params.id), entry);
+    res.json({ success: true, entry });
+  });
+
+  app.delete("/api/expenses/:id", async (req, res) => {
+    await deleteDoc(doc(db, "expenses", req.params.id));
+    res.json({ success: true });
+  });
+
+  // API: Customer Invoices
+  app.get("/api/customer-invoices", async (req, res) => {
+    res.json(await getCollectionDocs("customer_invoices"));
+  });
+
+  app.post("/api/customer-invoices", async (req, res) => {
+    const invoice = req.body;
+    if (!invoice.id) {
+      invoice.id = `CIV-${Math.floor(10000 + Math.random() * 90000)}`;
+    }
+    await setDoc(doc(db, "customer_invoices", invoice.id), invoice);
+    res.json({ success: true, invoice });
+  });
+
+  app.put("/api/customer-invoices/:id", async (req, res) => {
+    const invoice = req.body;
+    await updateDoc(doc(db, "customer_invoices", req.params.id), invoice);
+    res.json({ success: true, invoice });
+  });
+
+  app.delete("/api/customer-invoices/:id", async (req, res) => {
+    await deleteDoc(doc(db, "customer_invoices", req.params.id));
+    res.json({ success: true });
+  });
+
+  // API: Supplier Invoices
+  app.get("/api/supplier-invoices", async (req, res) => {
+    res.json(await getCollectionDocs("supplier_invoices"));
+  });
+
+  app.post("/api/supplier-invoices", async (req, res) => {
+    const invoice = req.body;
+    if (!invoice.id) {
+      invoice.id = `SIV-${Math.floor(10000 + Math.random() * 90000)}`;
+    }
+    await setDoc(doc(db, "supplier_invoices", invoice.id), invoice);
+    res.json({ success: true, invoice });
+  });
+
+  app.put("/api/supplier-invoices/:id", async (req, res) => {
+    const invoice = req.body;
+    await updateDoc(doc(db, "supplier_invoices", req.params.id), invoice);
+    res.json({ success: true, invoice });
+  });
+
+  app.delete("/api/supplier-invoices/:id", async (req, res) => {
+    await deleteDoc(doc(db, "supplier_invoices", req.params.id));
+    res.json({ success: true });
+  });
+
   // API v1: Employee Audit Trails
   app.get("/api/v1/hr/employee/audit-trails", async (req, res) => {
     res.json(await getCollectionDocs("activity_logs"));

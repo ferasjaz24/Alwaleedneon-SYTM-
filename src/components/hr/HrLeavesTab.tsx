@@ -191,6 +191,7 @@ function AttachmentsModal({
   onUpdate,
   onPreview,
   lang,
+  setConfirmAction,
 }: {
   req: LeaveRequest;
   onClose: () => void;
@@ -512,11 +513,11 @@ export default function HrLeavesTab({
 
             if (activeLeave && emp.allowances?.status !== "On Leave") {
               onUpdateEmployeeFields(emp.id, {
-                allowances: { ...(emp.allowances || {}), status: "On Leave" },
+                allowances: emp.allowances ? { ...emp.allowances, status: "On Leave" } : { housing: 0, transport: 0, status: "On Leave" },
               });
             } else if (!activeLeave && emp.allowances?.status === "On Leave") {
               onUpdateEmployeeFields(emp.id, {
-                allowances: { ...(emp.allowances || {}), status: "Active" },
+                allowances: emp.allowances ? { ...emp.allowances, status: "Active" } : { housing: 0, transport: 0, status: "Active" },
               });
             }
           });

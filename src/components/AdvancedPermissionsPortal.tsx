@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { 
   Shield, Users, Briefcase, Settings, Package, Box, LayoutDashboard, Copy, 
-  History, Save, X, Lock, Unlock, AlertTriangle, FileText, CheckCircle
+  History, Save, X, Lock, Unlock, AlertTriangle, FileText, CheckCircle, DollarSign
 } from 'lucide-react';
 
 // Define the exact sub-sections and their unique permissions mentioned by the user
@@ -331,6 +331,140 @@ const PERMISSIONS_SCHEMA = {
           { id: 'view_install', label: 'عرض طلبات/أوامر التركيب', type: 'view' },
           { id: 'schedule_install', label: 'جدولة و تعيين فريق تركيب', type: 'exec' },
           { id: 'complete_install', label: 'إكمال وإغلاق ملف التركيب', type: 'approve' }
+        ]
+      }
+    }
+  },
+  finance: {
+    ar: 'المحاسبة والمالية',
+    icon: <DollarSign className="w-5 h-5"/>,
+    sub: {
+      journal: {
+        ar: 'القيود اليومية العامة',
+        perms: [
+          { id: 'view_entries', label: 'عرض دفتر القيود اليومية', type: 'view' },
+          { id: 'add_entry', label: 'إضافة قيد جديد', type: 'add' },
+          { id: 'edit_entry', label: 'تعديل قيد يومية', type: 'edit' },
+          { id: 'submit_approval', label: 'إرسال القيد للاعتماد', type: 'exec' },
+          { id: 'approve_entry', label: 'اعتماد قيد اليومية', type: 'approve' },
+          { id: 'print_entry', label: 'طباعة/تصدير القيد', type: 'export' },
+          { id: 'view_projects', label: 'عرض المشاريع بالقيود', type: 'view' },
+          { id: 'upload_attachment', label: 'رفع مرفقات القيود', type: 'add' }
+        ]
+      },
+      customer_invoices: {
+        ar: 'فواتير العملاء',
+        perms: [
+          { id: 'view_portal', label: 'عرض بوابة فواتير العملاء', type: 'view' },
+          { id: 'view_table', label: 'عرض جدول فواتير العملاء', type: 'view' },
+          { id: 'view_details', label: 'عرض تفاصيل فاتورة عميل', type: 'view' },
+          { id: 'search_invoices', label: 'البحث في فواتير العملاء', type: 'view' },
+          { id: 'use_filters', label: 'استخدام فلاتر فواتير العملاء', type: 'view' },
+          { id: 'view_attachment', label: 'عرض مرفق فاتورة العميل', type: 'view' },
+          { id: 'view_log', label: 'عرض سجل عمليات الفاتورة', type: 'view' },
+          { id: 'add_invoice', label: 'إضافة فاتورة عميل جديدة', type: 'add' },
+          { id: 'open_add_modal', label: 'فتح نافذة إضافة فاتورة عميل', type: 'add' },
+          { id: 'save_draft', label: 'حفظ فاتورة عميل كمسودة', type: 'add' },
+          { id: 'send_approval', label: 'إرسال فاتورة عميل للاعتماد', type: 'exec' },
+          { id: 'create_from_quote', label: 'إنشاء فاتورة من عرض سعر', type: 'add' },
+          { id: 'upload_attachment', label: 'رفع مرفق فاتورة عميل', type: 'add' },
+          { id: 'edit_invoice', label: 'تعديل فاتورة عميل', type: 'edit' },
+          { id: 'edit_draft', label: 'تعديل فاتورة عميل مسودة', type: 'edit' },
+          { id: 'edit_pending', label: 'تعديل فاتورة عميل بانتظار اعتماد', type: 'edit' },
+          { id: 'edit_amount', label: 'تعديل مبلغ فاتورة عميل', type: 'edit' },
+          { id: 'edit_due_date', label: 'تعديل تاريخ الاستحقاق', type: 'edit' },
+          { id: 'edit_attachment', label: 'تعديل مرفق الفاتورة', type: 'edit' },
+          { id: 'approve_invoice', label: 'اعتماد فاتورة عميل', type: 'approve' },
+          { id: 'reject_invoice', label: 'رفض اعتماد فاتورة عميل', type: 'approve' },
+          { id: 'unapprove_invoice', label: 'إلغاء اعتماد فاتورة عميل', type: 'sensitive' },
+          { id: 'issue_invoice', label: 'إصدار فاتورة عميل', type: 'approve' },
+          { id: 'register_payment', label: 'تسجيل دفعة على فاتورة عميل', type: 'financial' },
+          { id: 'edit_payment', label: 'تعديل دفعة فاتورة عميل', type: 'edit' },
+          { id: 'delete_payment', label: 'حذف دفعة فاتورة عميل', type: 'delete' },
+          { id: 'upload_receipt', label: 'رفع سند دفع عميل', type: 'add' },
+          { id: 'cancel_invoice', label: 'إلغاء فاتورة عميل', type: 'delete' },
+          { id: 'delete_unapproved', label: 'حذف فاتورة عميل غير معتمدة', type: 'delete' },
+          { id: 'delete_draft', label: 'حذف فاتورة عميل مسودة', type: 'delete' },
+          { id: 'edit_approved', label: 'تعديل فاتورة عميل معتمدة', type: 'sensitive' },
+          { id: 'delete_approved', label: 'حذف فاتورة عميل معتمدة', type: 'sensitive' },
+          { id: 'delete_paid', label: 'حذف فاتورة عميل مدفوعة', type: 'sensitive' },
+          { id: 'edit_paid_amount', label: 'تعديل مبلغ فاتورة مدفوعة', type: 'sensitive' },
+          { id: 'unapprove_issued', label: 'إلغاء اعتماد فاتورة صادرة', type: 'sensitive' },
+          { id: 'delete_approved_attachment', label: 'حذف مرفق فاتورة معتمدة', type: 'sensitive' },
+          { id: 'register_unapproved_payment', label: 'تسجيل دفعة على فاتورة غير معتمدة', type: 'sensitive' },
+          { id: 'export_all', label: 'تصدير كامل فواتير العملاء', type: 'export' },
+          
+          { id: 'preview_invoice', label: 'معاينة فاتورة عميل', type: 'view' },
+          { id: 'print_invoice', label: 'طباعة فاتورة عميل', type: 'export' },
+          { id: 'export_pdf', label: 'تصدير فاتورة عميل PDF', type: 'export' },
+          { id: 'view_qr', label: 'عرض QR فاتورة عميل', type: 'view' },
+          { id: 'edit_before_approval', label: 'تعديل بيانات فاتورة عميل قبل الاعتماد', type: 'edit' },
+          { id: 'edit_approved_invoice', label: 'تعديل بيانات فاتورة عميل معتمدة', type: 'sensitive' },
+          { id: 'edit_items', label: 'تعديل الأصناف داخل فاتورة عميل', type: 'edit' },
+          { id: 'edit_vat', label: 'تعديل الضريبة داخل فاتورة عميل', type: 'edit' },
+          { id: 'edit_discount', label: 'تعديل الخصم داخل فاتورة عميل', type: 'edit' },
+          
+          { id: 'edit_template', label: 'تعديل قالب الفاتورة', type: 'sensitive' },
+          { id: 'edit_company_data', label: 'تعديل بيانات شركة داخل الفاتورة', type: 'sensitive' },
+          { id: 'edit_tax_data', label: 'تعديل بيانات ضريبية داخل الفاتورة', type: 'sensitive' },
+          { id: 'export_approved', label: 'تصدير فاتورة معتمدة', type: 'sensitive' },
+          { id: 'export_cancelled', label: 'تصدير فاتورة ملغاة', type: 'sensitive' },
+          { id: 'print_cancelled', label: 'طباعة فاتورة ملغاة', type: 'sensitive' },
+          { id: 'modify_qr', label: 'حذف أو تعديل QR Code', type: 'sensitive' }
+        ]
+      },
+      supplier_invoices: {
+        ar: 'فواتير الموردين',
+        perms: [
+          { id: 'view_portal', label: 'عرض بوابة فواتير الموردين', type: 'view' },
+          { id: 'view_table', label: 'عرض جدول فواتير الموردين', type: 'view' },
+          { id: 'view_details', label: 'عرض تفاصيل فاتورة مورد', type: 'view' },
+          { id: 'search_invoices', label: 'البحث في فواتير الموردين', type: 'view' },
+          { id: 'use_filters', label: 'استخدام فلاتر فواتير الموردين', type: 'view' },
+          { id: 'view_attachment', label: 'عرض مرفق فاتورة المورد', type: 'view' },
+          { id: 'view_log', label: 'عرض سجل عمليات فاتورة المورد', type: 'view' },
+          { id: 'add_invoice', label: 'إضافة فاتورة مورد جديدة', type: 'add' },
+          { id: 'open_add_modal', label: 'فتح نافذة إضافة فاتورة مورد', type: 'add' },
+          { id: 'save_recorded', label: 'حفظ فاتورة مورد كمسجلة', type: 'add' },
+          { id: 'send_approval', label: 'إرسال فاتورة مورد للاعتماد', type: 'exec' },
+          { id: 'create_from_po', label: 'إنشاء فاتورة من أمر شراء', type: 'add' },
+          { id: 'upload_attachment', label: 'رفع مرفق فاتورة مورد', type: 'add' },
+          { id: 'edit_invoice', label: 'تعديل فاتورة مورد', type: 'edit' },
+          { id: 'edit_recorded', label: 'تعديل فاتورة مورد مسجلة', type: 'edit' },
+          { id: 'edit_pending', label: 'تعديل فاتورة مورد بانتظار اعتماد', type: 'edit' },
+          { id: 'edit_amount', label: 'تعديل مبلغ فاتورة مورد', type: 'edit' },
+          { id: 'edit_due_date', label: 'تعديل تاريخ الاستحقاق', type: 'edit' },
+          { id: 'edit_attachment', label: 'تعديل مرفق فاتورة المورد', type: 'edit' },
+          { id: 'approve_invoice', label: 'اعتماد فاتورة مورد', type: 'approve' },
+          { id: 'reject_invoice', label: 'رفض فاتورة مورد', type: 'approve' },
+          { id: 'unapprove_invoice', label: 'إلغاء اعتماد فاتورة مورد', type: 'sensitive' },
+          { id: 'request_revision', label: 'طلب تعديل فاتورة مورد', type: 'edit' },
+          { id: 'register_payment', label: 'تسجيل دفع لفاتورة مورد', type: 'financial' },
+          { id: 'edit_payment', label: 'تعديل دفع فاتورة مورد', type: 'edit' },
+          { id: 'delete_payment', label: 'حذف دفع فاتورة مورد', type: 'delete' },
+          { id: 'upload_receipt', label: 'رفع سند دفع مورد', type: 'add' },
+          { id: 'link_payment_account', label: 'ربط الدفع بالصندوق أو البنك', type: 'financial' },
+          { id: 'cancel_invoice', label: 'إلغاء فاتورة مورد', type: 'delete' },
+          { id: 'delete_unapproved', label: 'حذف فاتورة مورد غير معتمدة', type: 'delete' },
+          { id: 'delete_recorded', label: 'حذف فاتورة مورد مسجلة', type: 'delete' },
+          { id: 'edit_approved', label: 'تعديل فاتورة مورد معتمدة', type: 'sensitive' },
+          { id: 'delete_approved', label: 'حذف فاتورة مورد معتمدة', type: 'sensitive' },
+          { id: 'delete_paid', label: 'حذف فاتورة مورد مدفوعة', type: 'sensitive' },
+          { id: 'edit_paid_amount', label: 'تعديل مبلغ فاتورة مورد مدفوعة', type: 'sensitive' },
+          { id: 'unapprove_paid', label: 'إلغاء اعتماد فاتورة مورد مدفوعة', type: 'sensitive' },
+          { id: 'pay_unapproved', label: 'تسجيل دفع لفاتورة مورد غير معتمدة', type: 'sensitive' },
+          { id: 'delete_approved_attachment', label: 'حذف مرفق فاتورة مورد معتمدة', type: 'sensitive' },
+          { id: 'export_all', label: 'تصدير كامل فواتير الموردين', type: 'export' },
+          
+          { id: 'preview_invoice', label: 'معاينة فاتورة مورد', type: 'view' },
+          { id: 'print_invoice', label: 'طباعة فاتورة مورد', type: 'export' },
+          { id: 'export_pdf', label: 'تصدير فاتورة مورد PDF', type: 'export' },
+          { id: 'view_qr', label: 'عرض QR فاتورة مورد', type: 'view' },
+          { id: 'edit_before_approval', label: 'تعديل بيانات فاتورة مورد قبل الاعتماد', type: 'edit' },
+          { id: 'edit_approved_invoice', label: 'تعديل بيانات فاتورة مورد معتمدة', type: 'sensitive' },
+          { id: 'edit_items', label: 'تعديل الأصناف داخل فاتورة مورد', type: 'edit' },
+          { id: 'edit_vat', label: 'تعديل الضريبة داخل فاتورة مورد', type: 'edit' },
+          { id: 'edit_discount', label: 'تعديل الخصم داخل فاتورة مورد', type: 'edit' }
         ]
       }
     }

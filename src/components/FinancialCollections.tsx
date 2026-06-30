@@ -52,6 +52,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterMonth, setFilterMonth] = useState('');
   const [statusFilter, setStatusFilter] = useState('الكل');
   const [sortOrder, setSortOrder] = useState('الأحدث');
 
@@ -593,6 +594,9 @@ export default function FinancialCollections({ lang, user }: FCProps) {
   };
 
   const filteredPlans = plans.filter(p => {
+    if (filterMonth && p.createdAt && !p.createdAt.startsWith(filterMonth)) {
+      return false;
+    }
     if (searchQuery) {
       const term = searchQuery.toLowerCase();
       if (!p.clientName?.toLowerCase().includes(term) && 
@@ -675,6 +679,12 @@ export default function FinancialCollections({ lang, user }: FCProps) {
           <option value="تم التحصيل">تم التحصيل</option>
           <option value="تم تحصيل جميع الدفعات">تم تحصيل جميع الدفعات</option>
         </select>
+        <input 
+          type="month"
+          value={filterMonth}
+          onChange={e => setFilterMonth(e.target.value)}
+          className="w-full md:w-48 p-2 border rounded-xl font-bold text-sm bg-slate-50 focus:bg-white focus:border-[#0072BC]"
+        />
         <select 
           value={sortOrder}
           onChange={e => setSortOrder(e.target.value)}

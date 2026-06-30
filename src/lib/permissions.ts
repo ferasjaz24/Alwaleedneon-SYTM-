@@ -237,5 +237,10 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
     if (subId === 'prod_installation') return hasAdvancedPermission(user, 'production', 'installation', 'view_install');
   }
 
+  if (module === 'finance') {
+    if (subId === 'journal') return hasAdvancedPermission(user, 'finance', 'journal', 'view_entries');
+    if (subId === 'invoices') return hasAdvancedPermission(user, 'finance', 'customer_invoices', 'view_portal') || hasAdvancedPermission(user, 'finance', 'supplier_invoices', 'view_portal');
+  }
+
   return true;
 }
