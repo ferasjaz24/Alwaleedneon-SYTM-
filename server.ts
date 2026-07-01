@@ -1521,14 +1521,19 @@ export async function startServer() {
 
   app.post("/api/gemini/translate", async (req, res) => {
     try {
-      const { text, context } = req.body;
+      const { text, context, targetLang } = req.body;
       
 
       const ai = await getGeminiClient();
-      const prompt = `Translate the following text from Arabic to English professionally. Context: ${context}. Return ONLY the translated English text, nothing else, no quotes around it. Text to translate: "${text}"`;
+      let prompt = "";
+      if (targetLang === "ar" || targetLang === "arabic") {
+        prompt = `Translate the following text professionally into polished, official business Arabic. Context: ${context || "Official Business"}. Return ONLY the translated Arabic text, nothing else, do not include surrounding quotes. Text to translate: "${text}"`;
+      } else {
+        prompt = `Translate the following text professionally into polished, official business English. Context: ${context || "Official Business"}. Return ONLY the translated English text, nothing else, do not include surrounding quotes. Text to translate: "${text}"`;
+      }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
       });
 

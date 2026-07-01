@@ -25,6 +25,8 @@ import {
   X,
   ExternalLink,
   HelpCircle,
+  Printer,
+  FileCheck,
 } from "lucide-react";
 import { Employee, User, Quotation } from "../types";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../utils/PrintShared";
@@ -59,6 +61,8 @@ export default function ProductionHub({
   const [installationRequests, setInstallationRequests] = useState<any[]>([]);
   const [installationOrders, setInstallationOrders] = useState<any[]>([]);
 
+  const [selectedPreviewFile, setSelectedPreviewFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
+
   const roleStr = user?.role?.toLowerCase() || "";
   const userStr = user?.username?.toLowerCase() || "";
   const isOwnerOrAdmin =
@@ -71,6 +75,51 @@ export default function ProductionHub({
     roleStr.includes("مدير نظام") ||
     roleStr.includes("إدارة") ||
     roleStr.includes("مدير");
+
+  const handlePrintFile = (file: { name: string; mimeType: string; data: string }) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert(lang === "ar" ? "الرجاء السماح بالنوافذ المنبثقة للطباعة" : "Please allow popups to print");
+      return;
+    }
+    
+    if (file.mimeType.startsWith("image/")) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>طباعة ملف التصميم - ${file.name}</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+              img { max-width: 100%; max-height: 100%; object-fit: contain; }
+              @media print {
+                img { max-width: 100%; max-height: 100%; }
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${file.data}" onload="window.print(); window.close();" />
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else if (file.mimeType === "application/pdf") {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>طباعة ملف التصميم - ${file.name}</title>
+            <style>
+              body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+              iframe { border: none; width: 100%; height: 100%; }
+            </style>
+          </head>
+          <body>
+            <iframe src="${file.data}" onload="setTimeout(function() { window.print(); }, 1000);"></iframe>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
 
   // Collection plans for payments check
   const [collectionPlans, setCollectionPlans] = useState<any[]>([]);
@@ -3136,7 +3185,24 @@ export default function ProductionHub({
                             ? "ورقة التصميم الرسمية والرسومات أوتوكاد:"
                             : "Official Design Blueprint:"}
                         </span>
-                        {ord.designLink ? (
+                        {ord.designFileType === "file" && ord.designFile ? (
+                          <div className="flex gap-2 items-center">
+                            <button
+                              onClick={() => setSelectedPreviewFile(ord.designFile)}
+                              className="px-3 py-1 bg-indigo-600 hover:bg-[#0072BC] text-white rounded-lg font-black inline-flex items-center gap-1 transition text-xs shadow-sm"
+                            >
+                              <ExternalLink className="w-3 h-3" />{" "}
+                              {lang === "ar" ? "عرض ومعاينة الملف" : "Preview File"}
+                            </button>
+                            <button
+                              onClick={() => handlePrintFile(ord.designFile)}
+                              className="p-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
+                              title={lang === "ar" ? "طباعة" : "Print"}
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : ord.designLink ? (
                           <a
                             href={ord.designLink}
                             target="_blank"
@@ -4002,7 +4068,23 @@ export default function ProductionHub({
                               : "Update Crew"}
                           </button>
 
-                          {req.designLink && (
+                          {req.designFileType === "file" && req.designFile ? (
+                            <div className="flex gap-1.5 items-center">
+                              <button
+                                onClick={() => setSelectedPreviewFile(req.designFile)}
+                                className="px-3 py-2 bg-white hover:bg-indigo-50 border hover:border-indigo-200 text-slate-700 transition font-black text-xs rounded-xl shadow-sm cursor-pointer inline-flex items-center gap-1.5 animate-pulse"
+                              >
+                                🎨 {lang === "ar" ? "عرض ومعاينة الملف" : "Preview File"}
+                              </button>
+                              <button
+                                onClick={() => handlePrintFile(req.designFile)}
+                                className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition shadow-sm"
+                                title={lang === "ar" ? "طباعة" : "Print"}
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : req.designLink ? (
                             <a
                               href={req.designLink}
                               target="_blank"
@@ -4011,7 +4093,7 @@ export default function ProductionHub({
                             >
                               🎨 {lang === "ar" ? "فتح التصميم" : "Open Design"}
                             </a>
-                          )}
+                          ) : null}
 
                           <button
                             onClick={() => {
@@ -4339,15 +4421,34 @@ export default function ProductionHub({
                       ? "ملفات التصميم المرفقة:"
                       : "Attached Blueprint:"}
                   </span>
-                  <a
-                    href={selectedInbound.designLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-extrabold rounded-lg inline-flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-3 h-3" />{" "}
-                    {lang === "ar" ? "عرض الرسومات والأوتوكاد" : "Autocad View"}
-                  </a>
+                  {selectedInbound.designFileType === "file" && selectedInbound.designFile ? (
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={() => setSelectedPreviewFile(selectedInbound.designFile)}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg inline-flex items-center gap-1 transition text-xs shadow-sm"
+                      >
+                        <ExternalLink className="w-3 h-3" />{" "}
+                        {lang === "ar" ? "عرض ومعاينة الملف" : "Preview File"}
+                      </button>
+                      <button
+                        onClick={() => handlePrintFile(selectedInbound.designFile)}
+                        className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
+                        title={lang === "ar" ? "طباعة" : "Print"}
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <a
+                      href={selectedInbound.designLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-extrabold rounded-lg inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />{" "}
+                      {lang === "ar" ? "عرض الرسومات والأوتوكاد" : "Autocad View"}
+                    </a>
+                  )}
                 </div>
                 <div>
                   <span className="font-extrabold text-slate-400 block mb-0.5">
@@ -6290,6 +6391,64 @@ export default function ProductionHub({
                   : lang === "ar"
                     ? "تأكيد العمل"
                     : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Design File Preview Modal */}
+      {selectedPreviewFile && (
+        <div className="fixed inset-0 z-[2500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-3xl h-[85vh] shadow-2xl flex flex-col text-right">
+            <div className="flex justify-between items-center pb-4 border-b">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-indigo-600" />
+                {lang === "ar" ? "معاينة ملف التصميم:" : "Design Preview:"} {selectedPreviewFile.name}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePrintFile(selectedPreviewFile)}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> {lang === "ar" ? "طباعة" : "Print"}
+                </button>
+                <button
+                  onClick={() => setSelectedPreviewFile(null)}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-50 rounded-2xl p-4 my-4 flex items-center justify-center">
+              {selectedPreviewFile.mimeType.startsWith("image/") ? (
+                <img
+                  src={selectedPreviewFile.data}
+                  alt={selectedPreviewFile.name}
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-sm"
+                />
+              ) : selectedPreviewFile.mimeType === "application/pdf" ? (
+                <iframe
+                  src={selectedPreviewFile.data}
+                  title={selectedPreviewFile.name}
+                  className="w-full h-full border-0 rounded-xl bg-white"
+                />
+              ) : (
+                <div className="text-center text-slate-500 font-bold p-12">
+                  <p className="mb-2">لا يمكن عرض هذا الملف مباشرة</p>
+                  <p className="text-xs text-slate-400">يرجى تنزيله أو استخدام خيار الطباعة</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t">
+              <button
+                onClick={() => setSelectedPreviewFile(null)}
+                className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition text-sm"
+              >
+                {lang === "ar" ? "إغلاق" : "Close"}
               </button>
             </div>
           </div>

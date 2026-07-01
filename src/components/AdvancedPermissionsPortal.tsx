@@ -398,6 +398,15 @@ const PERMISSIONS_SCHEMA = {
           { id: 'print_invoice', label: 'طباعة فاتورة عميل', type: 'export' },
           { id: 'export_pdf', label: 'تصدير فاتورة عميل PDF', type: 'export' },
           { id: 'view_qr', label: 'عرض QR فاتورة عميل', type: 'view' },
+          { id: 'zatca_settings', label: 'إدارة إعدادات زاتكا ZATCA', type: 'sensitive' },
+          { id: 'zatca_monitor', label: 'عرض لوحة زاتكا ZATCA Monitor', type: 'view' },
+          { id: 'zatca_generate_qr', label: 'توليد QR متوافق مع زاتكا', type: 'exec' },
+          { id: 'zatca_generate_xml', label: 'توليد XML لزاتكا', type: 'exec' },
+          { id: 'zatca_validate', label: 'التحقق الضريبي للفاتورة', type: 'exec' },
+          { id: 'zatca_send', label: 'إرسال الفاتورة إلى زاتكا', type: 'approve' },
+          { id: 'zatca_resend', label: 'إعادة إرسال لزاتكا', type: 'sensitive' },
+          { id: 'zatca_view_log', label: 'عرض سجل زاتكا للفاتورة', type: 'view' },
+          { id: 'zatca_export_xml', label: 'تصدير XML زاتكا', type: 'export' },
           { id: 'edit_before_approval', label: 'تعديل بيانات فاتورة عميل قبل الاعتماد', type: 'edit' },
           { id: 'edit_approved_invoice', label: 'تعديل بيانات فاتورة عميل معتمدة', type: 'sensitive' },
           { id: 'edit_items', label: 'تعديل الأصناف داخل فاتورة عميل', type: 'edit' },
@@ -495,6 +504,25 @@ const PERMISSIONS_SCHEMA = {
         perms: [
           { id: 'view_audit', label: 'عرض سجل التدقيق بالكامل', type: 'view' },
           { id: 'delete_audit', label: 'حذف أو تفريغ السجل', type: 'sensitive' }
+        ]
+      }
+    }
+  },
+  notifications: {
+    ar: 'إشعارات النظام',
+    icon: <Settings className="w-5 h-5"/>,
+    sub: {
+      general: {
+        ar: 'عرض الإشعارات',
+        perms: [
+          { id: 'view_all', label: 'عرض جميع إشعارات النظام', type: 'view' },
+          { id: 'view_hr', label: 'عرض إشعارات الموارد البشرية', type: 'view' },
+          { id: 'view_sales', label: 'عرض إشعارات المبيعات', type: 'view' },
+          { id: 'view_purchasing', label: 'عرض إشعارات المشتريات', type: 'view' },
+          { id: 'view_production', label: 'عرض إشعارات الانتاج', type: 'view' },
+          { id: 'view_finance', label: 'عرض إشعارات المحاسبة المالية', type: 'view' },
+          { id: 'view_public', label: 'عرض الاشعارات العامة', type: 'view' },
+          { id: 'view_private', label: 'عرض الاشعارات الخاصة', type: 'view' }
         ]
       }
     }

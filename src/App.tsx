@@ -38,6 +38,7 @@ import {
   Accessibility,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
+import NotificationsBell from "./components/NotificationsBell";
 import HrSubSections from "./components/HrSubSections";
 import SalesHub from "./components/SalesHub";
 import SalesQuotations from "./components/SalesQuotations";
@@ -1205,8 +1206,9 @@ export default function App() {
           id="toolbar-global-actions"
           className="flex items-center gap-4 md:gap-6"
         >
-          {/* Bilingual Language Switcher & Accessibility */}
+          {/* Notifications & Bilingual Language Switcher & Accessibility */}
           <div className="flex items-center gap-2 relative">
+            <NotificationsBell user={user} lang={lang} />
             <div
               id="lang-switch-container"
               className="flex bg-slate-200/60 p-1 rounded-xl"

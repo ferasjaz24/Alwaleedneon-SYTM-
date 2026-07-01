@@ -76,6 +76,7 @@ export default function SuppliersPricing({
 function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
   const [requests, setRequests] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -96,16 +97,20 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
     setLoading(true);
     try {
       const ts = Date.now();
-      const [rReqs, rSupps] = await Promise.all([
+      const [rReqs, rSupps, rMats] = await Promise.all([
         fetch(`/api/dynamic/pricing_requests?t=${ts}`).then((r) =>
           r.ok ? r.json() : [],
         ),
         fetch(`/api/dynamic/suppliers?t=${ts}`).then((r) =>
           r.ok ? r.json() : [],
         ),
+        fetch(`/api/dynamic/materials_warehouse?t=${ts}`).then((r) =>
+          r.ok ? r.json() : [],
+        ),
       ]);
       setRequests(Array.isArray(rReqs) ? rReqs : []);
       setSuppliers(Array.isArray(rSupps) ? rSupps : []);
+      setMaterials(Array.isArray(rMats) ? rMats : []);
     } catch (e) {}
     setLoading(false);
   };
@@ -120,13 +125,24 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
       setQuoteDetails(req.pricingDetails);
     } else if (req.outOfStockItems && req.outOfStockItems.length > 0) {
       setQuoteDetails(
-        req.outOfStockItems.map((item: any) => ({
-          materialName: item.itemName,
-          quantity: item.qty,
-          supplierId: "",
-          price: "",
-          isVatInclusive: false,
-        })),
+        req.outOfStockItems.map((item: any) => {
+          const matchedMat = materials.find(
+            (m: any) =>
+              m.arabicName === item.itemName ||
+              m.englishName === item.itemName ||
+              m.name === item.itemName
+          );
+          const defSupId = matchedMat?.defaultSupplier || "";
+          const defSup = suppliers.find((s: any) => String(s.id) === String(defSupId));
+          return {
+            materialName: item.itemName,
+            quantity: item.qty,
+            supplierId: defSupId,
+            supplierName: defSup?.name || "",
+            price: "",
+            isVatInclusive: false,
+          };
+        }),
       );
     } else {
       setQuoteDetails([]);
@@ -617,7 +633,31 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                   <tbody>
                     {quoteDetails.map((q, idx) => (
                       <tr key={idx} className="border-b">
-                        <td className="p-2 font-bold">{q.materialName}</td>
+                        <td className="p-2 font-bold">
+                          <div>{q.materialName}</div>
+                          {(() => {
+                            const matchedMat = materials.find(
+                              (m: any) =>
+                                m.arabicName === q.materialName ||
+                                m.englishName === q.materialName ||
+                                m.name === q.materialName
+                            );
+                            const defSupId = matchedMat?.defaultSupplier;
+                            const defSup = suppliers.find((s: any) => String(s.id) === String(defSupId));
+                            if (defSup) {
+                              return (
+                                <span className="inline-block mt-1 text-[10px] bg-sky-50 text-[#0072BC] px-2 py-0.5 rounded-md font-bold">
+                                  {lang === "ar" ? `المورد الموصى به: ${defSup.name}` : `Recommended: ${defSup.name}`}
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-block mt-1 text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-md font-bold">
+                                {lang === "ar" ? "لم يحدد مورد افتراضي في المستودع" : "No default supplier set in warehouse"}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="p-2">
                           <input
                             type="number"

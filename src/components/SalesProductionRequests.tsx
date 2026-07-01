@@ -17,6 +17,7 @@ import {
   Edit,
   Clock,
   ExternalLink,
+  Printer,
 } from "lucide-react";
 
 interface SalesProductionRequestsProps {
@@ -32,6 +33,12 @@ interface ProductionRequest {
   clientName: string;
   projectName: string;
   designLink: string;
+  designFileType?: "link" | "file";
+  designFile?: {
+    name: string;
+    mimeType: string;
+    data: string;
+  } | null;
   completionDate: string;
   notes: string;
   status: string;
@@ -71,13 +78,19 @@ export default function SalesProductionRequests({
   const [selectedQuoteId, setSelectedQuoteId] = useState("");
   const [quoteSearch, setQuoteSearch] = useState("");
   const [designLink, setDesignLink] = useState("");
-  const [completionDate, setCompletionDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const [designFileType, setDesignFileType] = useState<"link" | "file">("link");
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
+  const [selectedPreviewFile, setSelectedPreviewFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
 
   const [editingLinkReq, setEditingLinkReq] = useState<{
     id: string;
+    type: "link" | "file";
     link: string;
+    file: { name: string; mimeType: string; data: string } | null;
   } | null>(null);
+
+  const [completionDate, setCompletionDate] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Resubmission state & toast
   const [resubmitReq, setResubmitReq] = useState<any | null>(null);
@@ -156,6 +169,8 @@ export default function SalesProductionRequests({
     setSelectedQuoteId("");
     setQuoteSearch("");
     setDesignLink("");
+    setDesignFileType("link");
+    setUploadedFile(null);
     setCompletionDate("");
     setNotes("");
     setIsModalOpen(true);
@@ -175,7 +190,12 @@ export default function SalesProductionRequests({
 
   const handleSaveRequest = async () => {
     if (!selectedQuoteId) return showAlert("الرجاء اختيار المشروع / عرض السعر");
-    if (!designLink.trim()) return showAlert("الرجاء إضافة رابط ملف التصميم");
+    if (designFileType === "link" && !designLink.trim()) {
+      return showAlert("الرجاء إضافة رابط ملف التصميم");
+    }
+    if (designFileType === "file" && !uploadedFile) {
+      return showAlert("الرجاء إرفاق ملف التصميم");
+    }
     if (!completionDate)
       return showAlert("الرجاء تحديد تاريخ الانتهاء المتفق عليه");
 
@@ -187,7 +207,9 @@ export default function SalesProductionRequests({
       quotationNumber: quote?.quotationNumber || quote?.id || "---",
       clientName: quote?.clientName || "---",
       projectName: quote?.projectName || "---",
-      designLink: designLink.trim(),
+      designLink: designFileType === "link" ? designLink.trim() : "uploaded-file",
+      designFileType,
+      designFile: designFileType === "file" ? uploadedFile : null,
       completionDate,
       notes: notes.trim(),
       status: "في انتظار المراجعة",
@@ -280,25 +302,74 @@ export default function SalesProductionRequests({
     }
   };
 
-  const updateDesignLink = async (reqId: string, newLink: string) => {
-    if (!newLink.trim()) return showAlert("الرابط لا يمكن أن يكون فارغاً");
+  const updateDesignFileAndLink = async (reqId: string, type: "link" | "file", link: string, file: any) => {
+    if (type === "link" && !link.trim()) return showAlert("الرابط لا يمكن أن يكون فارغاً");
+    if (type === "file" && !file) return showAlert("الرجاء رفع الملف");
     try {
       const res = await fetch(
         `/api/dynamic/sales_production_requests/${reqId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ designLink: newLink.trim() }),
+          body: JSON.stringify({
+            designFileType: type,
+            designLink: type === "link" ? link.trim() : "uploaded-file",
+            designFile: type === "file" ? file : null,
+          }),
         },
       );
       if (res.ok) {
         fetchData();
+        setTopToast("تم تحديث ملف التصميم بنجاح");
+        setTimeout(() => setTopToast(null), 3000);
       } else {
         showAlert("حدث خطأ أثناء التحديث");
       }
     } catch (e) {
       console.error(e);
       showAlert("حدث خطأ أثناء التحديث");
+    }
+  };
+
+  const handlePrintFile = (file: { name: string; mimeType: string; data: string }) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return showAlert("الرجاء السماح بالنوافذ المنبثقة للطباعة");
+    
+    if (file.mimeType.startsWith("image/")) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>طباعة ملف التصميم - ${file.name}</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+              img { max-width: 100%; max-height: 100%; object-fit: contain; }
+              @media print {
+                img { max-width: 100%; max-height: 100%; }
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${file.data}" onload="window.print(); window.close();" />
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else if (file.mimeType === "application/pdf") {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>طباعة ملف التصميم - ${file.name}</title>
+            <style>
+              body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+              iframe { border: none; width: 100%; height: 100%; }
+            </style>
+          </head>
+          <body>
+            <iframe src="${file.data}" onload="setTimeout(function() { window.print(); }, 1000);"></iframe>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
   };
 
@@ -511,29 +582,77 @@ export default function SalesProductionRequests({
               {/* Link Input / Button */}
               <div className="p-3 bg-slate-50 rounded-xl mt-4 border border-slate-100">
                 <label className="text-xs font-bold text-slate-500 mb-2 block">
-                  رابط ملف التصميم:
+                  ملف التصميم:
                 </label>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={req.designLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition truncate"
-                  >
-                    <ExternalLink className="w-4 h-4" /> عرض ملف التصميم
-                  </a>
-                  {(user.username === req.createdBy || isOwnerOrAdmin) && (
-                    <button
-                      onClick={() =>
-                        setEditingLinkReq({ id: req.id!, link: req.designLink })
-                      }
-                      className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex-shrink-0 transition"
-                      title="تعديل الرابط"
+                {req.designFileType === "file" && req.designFile ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
+                      <FileCheck className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-700 truncate">{req.designFile.name}</p>
+                        <p className="text-[10px] text-slate-400">{req.designFile.mimeType}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedPreviewFile(req.designFile!)}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> عرض ومعاينة
+                      </button>
+                      <button
+                        onClick={() => handlePrintFile(req.designFile!)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-lg flex-shrink-0 transition"
+                        title="طباعة"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      {(user.username === req.createdBy || isOwnerOrAdmin) && (
+                        <button
+                          onClick={() =>
+                            setEditingLinkReq({
+                              id: req.id!,
+                              type: "file",
+                              link: "",
+                              file: req.designFile || null
+                            })
+                          }
+                          className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex-shrink-0 transition"
+                          title="تعديل الملف"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={req.designLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition truncate text-center"
                     >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                      <ExternalLink className="w-4 h-4" /> عرض ملف التصميم
+                    </a>
+                    {(user.username === req.createdBy || isOwnerOrAdmin) && (
+                      <button
+                        onClick={() =>
+                          setEditingLinkReq({
+                            id: req.id!,
+                            type: req.designFileType || "link",
+                            link: req.designLink,
+                            file: null
+                          })
+                        }
+                        className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex-shrink-0 transition"
+                        title="تعديل الرابط"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {req.notes && (
@@ -713,22 +832,70 @@ export default function SalesProductionRequests({
                 </div>
               </div>
 
-              {/* Design Link */}
+              {/* Design Link / File Upload */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">
-                  رابط ملف التصميم
+                  طريقة إرفاق ملف التصميم
                 </label>
-                <div className="relative">
-                  <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={designLink}
-                    onChange={(e) => setDesignLink(e.target.value)}
-                    className="w-full pr-12 pl-4 py-3 border rounded-xl font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 text-left"
-                    dir="ltr"
-                  />
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setDesignFileType("link")}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${designFileType === "link" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    رابط خارجي
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesignFileType("file")}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${designFileType === "file" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    رفع ملف (صورة / PDF)
+                  </button>
                 </div>
+
+                {designFileType === "link" ? (
+                  <div className="relative">
+                    <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={designLink}
+                      onChange={(e) => setDesignLink(e.target.value)}
+                      className="w-full pr-12 pl-4 py-3 border rounded-xl font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 text-left"
+                      dir="ltr"
+                    />
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50 hover:bg-slate-100/50 transition relative flex flex-col items-center justify-center text-center">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setUploadedFile({
+                              name: file.name,
+                              mimeType: file.type,
+                              data: reader.result as string,
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <FileCheck className="w-10 h-10 text-indigo-500 mb-2" />
+                    <p className="text-xs font-bold text-slate-700 mb-1">
+                      {uploadedFile ? `تم اختيار: ${uploadedFile.name}` : "اسحب ملف التصميم هنا أو انقر للتصفح"}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      صورة (PNG, JPG) أو ملف PDF
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Completion Date */}
@@ -816,23 +983,75 @@ export default function SalesProductionRequests({
         </div>
       )}
 
-      {/* Edit Link Modal */}
+      {/* Edit Link / File Modal */}
       {editingLinkReq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col text-right">
             <h3 className="text-lg font-bold text-slate-800 mb-4">
-              تعديل رابط ملف التصميم
+              تعديل ملف التصميم
             </h3>
-            <input
-              type="url"
-              value={editingLinkReq.link}
-              onChange={(e) =>
-                setEditingLinkReq({ ...editingLinkReq, link: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 text-left mb-6"
-              dir="ltr"
-              placeholder="https://..."
-            />
+
+            {/* Toggle in edit */}
+            <div className="flex rounded-xl bg-slate-100 p-1 mb-4">
+              <button
+                type="button"
+                onClick={() => setEditingLinkReq({ ...editingLinkReq, type: "link" })}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${editingLinkReq.type === "link" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              >
+                رابط خارجي
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingLinkReq({ ...editingLinkReq, type: "file" })}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${editingLinkReq.type === "file" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              >
+                رفع ملف (صورة / PDF)
+              </button>
+            </div>
+
+            {editingLinkReq.type === "link" ? (
+              <input
+                type="url"
+                value={editingLinkReq.link}
+                onChange={(e) =>
+                  setEditingLinkReq({ ...editingLinkReq, link: e.target.value })
+                }
+                className="w-full p-3 border rounded-xl font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 text-left mb-6"
+                dir="ltr"
+                placeholder="https://..."
+              />
+            ) : (
+              <div className="mb-6">
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setEditingLinkReq({
+                          ...editingLinkReq,
+                          file: {
+                            name: f.name,
+                            mimeType: f.type,
+                            data: reader.result as string
+                          }
+                        });
+                      };
+                      reader.readAsDataURL(f);
+                    }
+                  }}
+                  className="w-full text-xs font-bold text-slate-500 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {editingLinkReq.file && (
+                  <p className="mt-2 text-xs text-indigo-600 font-bold">
+                    تم اختيار: {editingLinkReq.file.name}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setEditingLinkReq(null)}
@@ -842,7 +1061,12 @@ export default function SalesProductionRequests({
               </button>
               <button
                 onClick={() => {
-                  updateDesignLink(editingLinkReq.id, editingLinkReq.link);
+                  updateDesignFileAndLink(
+                    editingLinkReq.id,
+                    editingLinkReq.type,
+                    editingLinkReq.link,
+                    editingLinkReq.file
+                  );
                   setEditingLinkReq(null);
                 }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition flex items-center gap-2"
@@ -917,6 +1141,63 @@ export default function SalesProductionRequests({
                 className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-750 text-white font-black text-xs rounded-xl transition shadow-md shadow-indigo-100"
               >
                 🚀 إرسال التحديث للإنتاج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Selected Design File Preview Modal */}
+      {selectedPreviewFile && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-3xl h-[85vh] shadow-2xl flex flex-col text-right">
+            <div className="flex justify-between items-center pb-4 border-b">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-indigo-600" />
+                معاينة ملف التصميم: {selectedPreviewFile.name}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePrintFile(selectedPreviewFile)}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> طباعة
+                </button>
+                <button
+                  onClick={() => setSelectedPreviewFile(null)}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-50 rounded-2xl p-4 my-4 flex items-center justify-center">
+              {selectedPreviewFile.mimeType.startsWith("image/") ? (
+                <img
+                  src={selectedPreviewFile.data}
+                  alt={selectedPreviewFile.name}
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-sm"
+                />
+              ) : selectedPreviewFile.mimeType === "application/pdf" ? (
+                <iframe
+                  src={selectedPreviewFile.data}
+                  title={selectedPreviewFile.name}
+                  className="w-full h-full border-0 rounded-xl bg-white"
+                />
+              ) : (
+                <div className="text-center text-slate-500 font-bold p-12">
+                  <p className="mb-2">لا يمكن عرض هذا الملف مباشرة</p>
+                  <p className="text-xs text-slate-400">يرجى تنزيله أو استخدام خيار الطباعة</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t">
+              <button
+                onClick={() => setSelectedPreviewFile(null)}
+                className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition text-sm"
+              >
+                إغلاق
               </button>
             </div>
           </div>

@@ -28,6 +28,7 @@ export interface UserPermissions {
     procurement: ModulePermissions;
     reports: ModulePermissions;
     settings: ModulePermissions;
+    notifications: ModulePermissions;
   };
   // Legacy
   modules?: any;

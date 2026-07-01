@@ -18,6 +18,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
   const [docCategory, setDocCategory] = useState<string>('financial');
   const [docTemplate, setDocTemplate] = useState<string>('advance_payment');
   const [docContent, setDocContent] = useState<string>('');
+  const [docLanguage, setDocLanguage] = useState<'ar' | 'en'>('ar');
   
   const [quoteSearch, setQuoteSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -37,6 +38,43 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showAllLogs, setShowAllLogs] = useState<boolean>(false);
   const [topNotification, setTopNotification] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
+
+  const handleTranslateLetter = async (targetLang: "ar" | "en") => {
+    if (!docContent || !docContent.trim()) {
+      showToast(lang === "ar" ? "لا يوجد محتوى لترجمته" : "No content to translate", "error");
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      // Strip some HTML tags for translation, or just translate directly as it is an HTML block.
+      // Gemini handles HTML structure translation very well if instructed properly.
+      const response = await fetch("/api/gemini/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: docContent,
+          targetLang: targetLang,
+          context: `An official business letter from Al Waleed Neon company (fnoon alwaleed neon). Keep all HTML tags (like <div>, <p>, <br>, <b>, <strong>, etc.) exactly intact in their original places, only translating the human text content inside/between them professionally.`
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.translatedText) {
+          setDocContent(data.translatedText);
+          showToast(lang === "ar" ? "تمت الترجمة بنجاح" : "Translated successfully", "success");
+        } else {
+          showToast(lang === "ar" ? "فشلت الترجمة" : "Translation failed", "error");
+        }
+      } else {
+        showToast(lang === "ar" ? "فشلت الترجمة" : "Translation failed", "error");
+      }
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -140,57 +178,90 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
   }, []);
 
   const getTemplateText = () => {
-    if (!selectedQuoteId) return 'يرجى تحديد عرض السعر المعتمد أولاً لتعبئة البيانات التلقائية للمستند.';
+    if (!selectedQuoteId) {
+      return docLanguage === 'ar' 
+        ? 'يرجى تحديد عرض السعر المعتمد أولاً لتعبئة البيانات التلقائية للمستند.'
+        : 'Please select an approved quotation first to populate the automatic document fields.';
+    }
     
     const quote = quotes.find(q => q.id === selectedQuoteId);
     if (!quote) return '';
 
-    // Match client data
-    const client = clients.find(c => 
-      c.companyName?.trim().toLowerCase() === quote.clientName?.trim().toLowerCase() ||
-      c.contactName?.trim().toLowerCase() === quote.clientName?.trim().toLowerCase() ||
-      c.id === quote.clientId
-    );
+    const d = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+    const client = clients.find(c => c.id === quote.clientId);
+    const fullClientName = client ? (client.companyName || client.name) : 'العميل الكريم';
+    const repName = docLanguage === 'ar'
+      ? (client?.contactName || 'عناية المعني')
+      : (client?.contactName || 'Attn: Representative');
 
-    const d = new Date().toLocaleDateString('ar-SA');
-    const fullClientName = client?.companyName || quote.clientName || 'العميل الموقر';
-    const repName = client?.contactName || 'عناية المعني';
-    const clientPhone = client?.phone || 'غير مسجل';
-    const clientEmail = client?.email || 'غير مسجل';
-    const projectName = quote.projectName || 'الأعمال المعتمدة بالعرض';
+    const projectName = docLanguage === 'ar'
+      ? (quote.projectName || 'الأعمال المعتمدة بالعرض')
+      : (quote.projectName || 'approved works under quotation');
+
     const qtnNo = quote.quotationNumber || quote.id;
 
-    const phaseNote = selectedPhaseLabel && selectedPhaseAmount > 0 ? `\n\nنفيدكم بأن مبلغ الدفعة المطلوبة (${selectedPhaseLabel}) هو: ${selectedPhaseAmount} ريال سعودي، نرجو التفضل بتحويله لإكمال الإجراءات المعتمدة.\n\n` : '\n\n';
+    if (docLanguage === 'ar') {
+      const phaseNote = selectedPhaseLabel && selectedPhaseAmount > 0 ? `\n\nنفيدكم بأن مبلغ الدفعة المطلوبة (${selectedPhaseLabel}) هو: ${selectedPhaseAmount} ريال سعودي، نرجو التفضل بتحويله لإكمال الإجراءات المعتمدة.\n\n` : '\n\n';
 
-    switch(docTemplate) {
-      case 'advance_payment': return `الرقم المرجعي: SL-ADV-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب سداد الدفعة المقدمة للبدء بتنفيذ الأعمال\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nفي البداية، نود أن نشكركم على ثقتكم الغالية باختيار "شركة فنون الوليد للصناعة" لتنفيذ وتصنيع متطلباتكم لمشروع (${projectName}).\n\nنأمل الإحاطة بأنه تم استلام وتوثيق اعتمادكم لعرض السعر رقم (${qtnNo}). وحرصاً منا على تقديم أفضل مستويات الخدمة والبدء الفوري في أعمال التوريد والتصنيع لضمان تسليم الأعمال ضمن الجدول الزمني المتفق عليه، نأمل منكم التكرم بتحويل الدفعة المقدمة المنصوص عليها في عرض السعر المعتمد.${phaseNote}يسرنا استقبال التحويل على حسابات الشركة البنكية المرفقة طيه مع تزويدنا بصورة من إيصال الحوالة للبدء مباشرة في جدولة العمليات.\n\nنقدر لكم تعاونكم الدائم وسرعة استجابتكم.\n\nوتفضلوا بقبول فائق التحية والاحترام،،،\n\nإدارة المبيعات والتحصيل\nشركة فنون الوليد للصناعة`;
-      
-      case 'due_payment': return `الرقم المرجعي: SL-DUE-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب سداد دفعة مالية مستحقة حسب مراحل الإنجاز\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nاستناداً إلى مسيرة العمل المشتركة في مشروع (${projectName}) وفق عرض السعر المعتمد رقم (${qtnNo})، يسعدنا إبلاغكم بأننا قد أنجزنا بنجاح المرحلة المقررة من الأعمال وتم تسليمها أو تجهيزها وفقاً لأعلى معايير الجودة المتبعة لدينا.\n\nوبناءً على جدول الدفعات المتفق عليه، فقد حان موعد استحقاق الدفعة التالية المترتبة على هذه المرحلة.${phaseNote}نرجو من سعادتكم التكرم بترتيب إجراءات السداد في أقرب وقت ممكن لضمان سير الأعمال اللاحقة بسلاسة ودون أية توقفات أو تأخير في الجدول الزمني الكلي للمشروع.\n\nشاكرين ومقدرين لكم التزامكم ودعمكم المستمر لجهودنا.\n\nوتفضلوا بقبول خالص التقدير والاحترام،،،\n\nإدارة المبيعات والتحصيل\nشركة فنون الوليد للصناعة`;
-      
-      case 'late_payment': return `الرقم المرجعي: SL-LT-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: تذكير ودي بشأن دفعة مالية متأخرة\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nنبعث إليكم أطيب تحياتنا في "شركة فنون الوليد للصناعة"، متمنين لكم دوام التوفيق والنجاح.\n\nنرجو التكرم بالإحاطة بأنه من خلال مراجعة سجلاتنا المالية لمشروع (${projectName}) بعرض السعر رقم (${qtnNo})، تبين لنا عدم استلام الدفعة المستحقة عن الأعمال المنجزة حتى تاريخه، والتي قمنا بإشعاركم بها مسبقاً.${phaseNote}لعله من باب السهو أو مشاغلكم العملية تأخر الدفع، ولذا نرجو منكم التفضل بحث القسم المالي لديكم على إنهاء وإتمام عملية السداد للمبلغ المستحق حفاظاً على سير العلاقة والجدول الزمني للعمل دون عوائق.\n\nنؤكد التزامنا التام بإنهاء المشروع على الوجه الأكمل المأمول بمجرد تسوية الوضع المالي المطلوب.\n\nشاكرين لكم حسن استيعابكم وتجاوبكم المستمر.\n\nوتفضلوا بقبول أسمى اعتباراتنا،،،\n\nالقسم المالي وإدارة المشاريع\nشركة فنون الوليد للصناعة`;
+      switch(docTemplate) {
+        case 'advance_payment': return `الرقم المرجعي: SL-ADV-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب سداد الدفعة المقدمة للبدء بتنفيذ الأعمال\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nفي البداية، نود أن نشكركم على ثقتكم الغالية باختيار "شركة فنون الوليد للصناعة" لتنفيذ وتصنيع متطلباتكم لمشروع (${projectName}).\n\nنأمل الإحاطة بأنه تم استلام وتوثيق اعتمادكم لعرض السعر رقم (${qtnNo}). وحرصاً منا على تقديم أفضل مستويات الخدمة والبدء الفوري في أعمال التوريد والتصنيع لضمان تسليم الأعمال ضمن الجدول الزمني المتفق عليه، نأمل منكم التكرم بتحويل الدفعة المقدمة المنصوص عليها في عرض السعر المعتمد.${phaseNote}يسرنا استقبال التحويل على حسابات الشركة البنكية المرفقة طيه مع تزويدنا بصورة من إيصال الحوالة للبدء مباشرة في جدولة العمليات.\n\nنقدر لكم تعاونكم الدائم وسرعة استجابتكم.\n\nوتفضلوا بقبول فائق التحية والاحترام،،،\n\nإدارة المبيعات والتحصيل\nشركة فنون الوليد للصناعة`;
+        
+        case 'due_payment': return `الرقم المرجعي: SL-DUE-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب سداد دفعة مالية مستحقة حسب مراحل الإنجاز\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nاستناداً إلى مسيرة العمل المشتركة في مشروع (${projectName}) وفق عرض السعر المعتمد رقم (${qtnNo})، يسعدنا إبلاغكم بأننا قد أنجزنا بنجاح المرحلة المقررة من الأعمال وتم تسليمها أو تجهيزها وفقاً لأعلى معايير الجودة المتبعة لدينا.\n\nوبناءً على جدول الدفعات المتفق عليه، فقد حان موعد استحقاق الدفعة التالية المترتبة على هذه المرحلة.${phaseNote}نرجو من سعادتكم التكرم بترتيب إجراءات السداد في أقرب وقت ممكن لضمان سير الأعمال اللاحقة بسلاسة ودون أية توقفات أو تأخير في الجدول الزمني الكلي للمشروع.\n\nشاكرين ومقرارين لكم التزامكم ودعمكم المستمر لجهودنا.\n\nوتفضلوا بقبول خالص التقدير والاحترام،،،\n\nإدارة المبيعات والتحصيل\nشركة فنون الوليد للصناعة`;
+        
+        case 'late_payment': return `الرقم المرجعي: SL-LT-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: تذكير ودي بشأن دفعة مالية متأخرة\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nنبعث إليكم أطيب تحياتنا في "شركة فنون الوليد للصناعة"، متمنين لكم دوام التوفيق والنجاح.\n\nنرجو التكرم بالإحاطة بأنه من خلال مراجعة سجلاتنا المالية لمشروع (${projectName}) بعرض السعر رقم (${qtnNo})، تبين لنا عدم استلام الدفعة المستحقة عن الأعمال المنجزة حتى تاريخه، والتي قمنا بإشعاركم بها مسبقاً.${phaseNote}لعله من باب السهو أو مشاغلكم العملية تأخر الدفع، ولذا نرجو منكم التفضل بحث القسم المالي لديكم على إنهاء وإتمام عملية السداد للمبلغ المستحق حفاظاً على سير العلاقة والجدول الزمني للعمل دون عوائق.\n\nنؤكد التزامنا التام بإنهاء المشروع على الوجه الأكمل المأمول بمجرد تسوية الوضع المالي المطلوب.\n\nشاكرين لكم حسن استيعابكم وتجاوبكم المستمر.\n\nوتفضلوا بقبول أسمى اعتباراتنا،،،\n\nالقسم المالي وإدارة المشاريع\nشركة فنون الوليد للصناعة`;
 
-      case 'site_prep': return `الرقم المرجعي: SL-PRP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار وتوجيه لطلب جاهزية الموقع قبل بدء التركيب\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nفي إطار التعاون المشترك للبدء بمشروع (${projectName}) بناءً على عرض السعر رقم (${qtnNo})، وحرصاً على تنفيذ أعمال التركيب باحترافية وسرعة قياسية.\n\nنود إفادتكم بضرورة تجهيز وإعداد الموقع الميداني لاستقبال الفرق الفنية التابعة لنا. ويشمل ذلك التأكد من خلو واجهة التركيب أو المنطقة المستهدفة من أية عوائق، وتوفير التمديدات الكهربائية اللازمة، وإصدار أية تصاريح دخول مؤقتة (إن وجدت) لمركباتنا وفنيينا.\n\nنأمل إفادتنا خطياً أو بمكتوب رسمي عبر البريد الإلكتروني أو وسائل التواصل المعتمدة حال جاهزية الموقع لديكم بالكامل، ليتم إدراجكم فوراً في جدول أعمال التركيبات النهائية.\n\nنشكر لكم تعاونكم الفعّال لضمان جودة المخرجات.\n\nمع التحية والتقدير،،،\n\nالإدارة الهندسية وأعمال التشغيل\nشركة فنون الوليد للصناعة`;
+        case 'site_prep': return `الرقم المرجعي: SL-PRP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار وتوجيه لطلب جاهزية الموقع قبل بدء التركيب\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nفي إطار التعاون المشترك للبدء بمشروع (${projectName}) بناءً على عرض السعر رقم (${qtnNo})، وحرصاً على تنفيذ أعمال التركيب باحترافية وسرعة قياسية.\n\nنود إفادتكم بضرورة تجهيز وإعداد الموقع الميداني لاستقبال الفرق الفنية التابعة لنا. ويشمل ذلك التأكد من خلو واجهة التركيب أو المنطقة المستهدفة من أية عوائق، وتوفير التمديدات الكهربائية اللازمة، وإصدار أية تصاريح دخول مؤقتة (إن وجدت) لمركباتنا وفنيينا.\n\nنأمل إفادتنا خطياً أو بمكتب رسمي عبر البريد الإلكتروني أو وسائل التواصل المعتمدة حال جاهزية الموقع لديكم بالكامل، ليتم إدراجكم فوراً في جدول أعمال التركيبات النهائية.\n\nنشكر لكم تعاونكم الفعّال لضمان جودة المخرجات.\n\nمع التحية والتقدير،،،\n\nإدارة الهندسية وأعمال التشغيل\nشركة فنون الوليد للصناعة`;
 
-      case 'design_approval': return `الرقم المرجعي: SL-APP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب المراجعة والاعتماد النهائي للتصاميم الفنية\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nإلحاقاً للتوافق على أعمال مشروع (${projectName}) بموجب عرض السعر رقم (${qtnNo})، يسرنا أن نرفق لكم طيه المخططات والتصاميم الفنية النهائية المقترحة لتنفيذ المتطلبات.\n\nيرجى التكرم بالاطلاع وإجراء المراجعة التفصيلية للأبعاد، والألوان، والمواد الموضحة بالتصميم. وحيث أن عملية التصنيع والإنتاج مبنية كلياً على هذا الاعتماد.\n\nونأمل الإحاطة بأن أي تعديلات بعد الاعتماد الخطي ستتطلب تقييماً جديداً للتكاليف والمدة الزمنية وفق جدول الإنتاج.\n\nآملين سرعة الرد ليتسنى لنا بدء مراحل التصنيع دون تأخير.\n\nوتفضلوا بقبول فائق التقدير،،،\n\nقسم التصميم والمبيعات\nشركة فنون الوليد للصناعة`;
+        case 'design_approval': return `الرقم المرجعي: SL-APP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: طلب المراجعة والاعتماد النهائي للتصاميم الفنية\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nإلحاقاً للتوافق على أعمال مشروع (${projectName}) بموجب عرض السعر رقم (${qtnNo})، يسرنا أن نرفق لكم طيه المخططات والتصاميم الفنية النهائية المقترحة لتنفيذ المتطلبات.\n\nيرجى التكرم بالاطلاع وإجراء المراجعة التفصيلية للأبعاد، والألوان، والمواد الموضحة بالتصميم. وحيث أن عملية التصنيع والإنتاج مبنية كلياً على هذا الاعتماد.\n\nونأمل الإحاطة بأن أي تعديلات بعد الاعتماد الخطي ستتطلب تقييماً جديداً للتكاليف والمدة الزمنية وفق جدول الإنتاج.\n\nآملين سرعة الرد ليتسنى لنا بدء مراحل التصنيع دون تأخير.\n\nوتفضلوا بقبول فائق التقدير،،،\n\nقسم التصميم والمبيعات\nشركة فنون الوليد للصناعة`;
 
-      case 'installation_ready': return `الرقم المرجعي: SL-RDY-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار جاهزية الأعمال للتنفيذ والتركيب الميداني\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nنهديكم أطيب تحياتنا ونتمنى لكم التوفيق المتواصل.\nنود أن نزف لكم خبر اكتمال تصنيع كافة المواد والواجهات الخاصة بمشروع (${projectName}) المتعلق بعرض السعر رقم (${qtnNo}) في ورشنا المركزية، وبأنها الآن قد اجتازت اختبارات الجودة وباتت جاهزة تماماً للتركيب.\n\nوبناءً عليه، نرجو منكم تأكيد النطاق الزمني المناسب لكم لاستقبال الفرق الفنية للبدء في التركيب، مع ضمان جاهزية الموقع من طرفكم (وصول التيار، التصاريح الأمنية إن لزمت، وخلو المسار).\n\nكما نذكركم بلطف بأنه -إن وُجد- التزام بدفعة ملزمة قبل التركيب بناءً على جدول العقد، فإنه يُرجى تصفيتها قبل جدولة الفرق تفادياً للتأخير.\n\nجزيل الشكر لاختياركم لنا ونتطلع لإخراج الموقع بأبهى حُلة.\n\nمع وافر الاحترام،،،\n\nإدارة الإنتاج والعمليات الميدانية\nشركة فنون الوليد للصناعة`;
+        case 'installation_ready': return `الرقم المرجعي: SL-RDY-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار جاهزية الأعمال للتنفيذ والتركيب الميداني\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nنهديكم أطيب تحياتنا ونتمنى لكم التوفيق المتواصل.\nنود أن نزف لكم خبر اكتمال تصنيع كافة المواد والواجهات الخاصة بمشروع (${projectName}) المتعلق بعرض السعر رقم (${qtnNo}) في ورشنا المركزية، وبأنها الآن قد اجتازت اختبارات الجودة وباتت جاهزة تماماً للتركيب.\n\nوبناءً عليه، نرجو منكم تأكيد النطاق الزمني المناسب لكم لاستقبال الفرق الفنية للبدء في التركيب، مع ضمان جاهزية الموقع من طرفكم (وصول التيار، التصاريح الأمنية إن لزمت، وخلو المسار).\n\nكما نذكركم بلطف بأنه -إن وُجد- التزام بدفعة ملزمة قبل التركيب بناءً على جدول العقد، فإنه يُرجى تصفيتها قبل جدولة الفرق تفادياً للتأخير.\n\nجزيل الشكر لاختياركم لنا ونتطلع لإخراج الموقع بأبهى حُلة.\n\nمع وافر الاحترام،،،\n\nإدارة الإنتاج والعمليات الميدانية\nشركة فنون الوليد للصناعة`;
 
-      case 'handover': return `الرقم المرجعي: SL-HND-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: مستند وخطاب تسليم الأعمال النهائية للمشروع\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nبكل فخر واعتزاز، نعلن لكم عن الانتهاء الكامل للمهام الموكلة إلينا وتوريد وتثبيت مكونات مشروع (${projectName}) المشار إليه بعرض سعر رقم (${qtnNo}).\n\nلقد قمنا بتنفيذ الأعمال بمنتهى الدقة والاحترافية مطابقة للمواصفات الفنية والتصاميم المعتمدة من قبلكم. نُقدّم لكم بموجب هذا الخطاب مستند التسليم الابتدائي/النهائي للأعمال؛ ونرجو من جهتكم الموقرة التفضل بمعاينة و فحص الموقع والمشغولات والمصادقة على استلامها.\n\nإن توقيعكم بالاستلام يُمثل شهادة ثقة نعتز بها وتأكيداً على مطابقة الأعمال، ويُمثل إيذاناً ببدء فترات الضمان في حال نص العقد عليها، وانتقال مسؤولية العناية بها لجهاتكم الكريمة.\n\nنشكركم لإتاحة الفرصة لنا لنكون شركاء في نجاحكم، ونتطلع لخدمتكم بمشاريع لاحقة.\n\nتفضلوا بقبول التحيات والتقدير،،،\n\nإدارة المشاريع\nشركة فنون الوليد للصناعة`;
+        case 'handover': return `الرقم المرجعي: SL-HND-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: مستند وخطاب تسليم الأعمال النهائية للمشروع\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nبكل فخر واعتزاز، نعلن لكم عن الانتهاء الكامل للمهام الموكلة إلينا وتوريد وتثبيت مكونات مشروع (${projectName}) المشار إليه بعرض سعر رقم (${qtnNo}).\n\nلقد قمنا بتنفيذ الأعمال بمنتهى الدقة والاحترافية مطابقة للمواصفات الفنية والتصاميم المعتمدة من قبلكم. نُقدّم لكم بموجب هذا الخطاب مستند التسليم الابتدائي/النهائي للأعمال؛ ونرجو من جهتكم الموقرة التفضل بمعاينة و فحص الموقع والمشغولات والمصادقة على استلامها.\n\nإن توقيعكم بالاستلام يُمثل شهادة ثقة نعتز بها وتأكيداً على مطابقة الأعمال، ويُمثل إيذاناً ببدء فترات الضمان في حال نص العقد عليها، وانتقال مسؤولية العناية بها لجهاتكم الكريمة.\n\nنشكر لكم إتاحة الفرصة لنا لنكون شركاء في نجاحكم، ونتطلع لخدمتكم بمشاريع لاحقة.\n\nتفضلوا بقبول التحيات والتقدير،،،\n\nإدارة المشاريع\nشركة فنون الوليد للصناعة`;
 
-      case 'final_payment': return `الرقم المرجعي: SL-FNL-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: المطالبة الرسمية بالدفعة الختامية وتسوية المستحقات المالية\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nتهنئكم "شركة فنون الوليد للصناعة" بباكورة الانتهاء من مشروع (${projectName}) وفقاً لعرض السعر رقم (${qtnNo})، والذي تم تسليم أعماله بنجاح ولله الحمد وفقاً للضوابط والمعايير المتفق عليها.\n\nوإذ نتطلع إلى إنهاء إغلاق الدفاتر المالية لهذا المشروع، نتقدم لكم اليوم بهذه المطالبة الرسمية المتعلقة بسداد (الدفعة الختامية المتبقية) نظير تسليم الأعمال.\n\nنأمل من إدارتكم المالية الموقرة سرعة تسوية هذه المستحقات وإصدار الإجراء اللازم لصرفها في حينه، تجسيداً لحسن المعاملة المتبادلة وتتويجاً لهذا الإنجاز المشترك الذي نأمل بأن يكون قد حاز على رضاكم المطلق.${phaseNote}\n\nنشكر حسن تفهكم وسرعة تجاوبكم باستمرار.\n\nوتقبلوا وافر وافر التحية والتقدير،،،\n\nإدارة الشؤون المالية والتحصيل\nشركة فنون الوليد للصناعة`;
+        case 'final_payment': return `الرقم المرجعي: SL-FNL-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: المطالبة الرسمية بالدفعة الختامية وتسوية المستحقات المالية\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nتهنئكم "شركة فنون الوليد للصناعة" بباكورة الانتهاء من مشروع (${projectName}) وفقاً لعرض السعر رقم (${qtnNo})، والذي تم تسليم أعماله بنجاح ولله الحمد وفقاً للضوابط والمعايير المتفق عليها.\n\nوإذ نتطلع إلى إنهاء إغلاق الدفاتر المالية لهذا المشروع، نتقدم لكم اليوم بهذه المطالبة الرسمية المتعلقة بسداد (الدفعة الختامية المتبقية) نظير تسليم الأعمال.\n\nنأمل من إدارتكم المالية الموقرة سرعة تسوية هذه المستحقات وإصدار الإجراء اللازم لصرفها في حينه، تجسيداً لحسن المعاملة المتبادلة وتتويجاً لهذا الإنجاز المشترك الذي نأمل بأن يكون قد حاز على رضاكم المطلق.${phaseNote}\n\nنشكر حسن تفهكم وسرعة تجاوبكم باستمرار.\n\nوتقبلوا وافر وافر التحية والتقدير،،،\n\nإدارة الشؤون المالية والتحصيل\nشركة فنون الوليد للصناعة`;
 
-      case 'warning': return `الرقم المرجعي: SL-WRN-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إنذار نهائي ومخاطبة بضرورة تسوية الموقف المالي/التشغيلي\n\nإلى السادة / ${fullClientName} المحترمين\nالسلام عليكم ورحمة الله وبركاته، أما بعد:\n\nتشير سجلاتنا المحاسبية والتنسيقية لمشروع (${projectName}) المرتبط بعرض سعر رقم (${qtnNo})، بأننا التزمنا التزاماً عميقاً وصبرنا لفترة طويلة حيال الإخلال ببند (السداد للمستحقات / أو تعطيل الأعمال من جهتكم)، وسبق أن تمت مخاطبتكم مراراً بأسلوب ودي دون جدوى أو استجابة تصحيحية جادة.\n\nوحيث أن هذا التعطيل كبّد الشركة التزامات وتكاليف إضافية خارجة عن النطاق الموصوف؛ فإننا نوجه لكم هذا الخطاب كإشعار أخير وملزم بضرورة التجاوب وتسوية المبالغ أو المعوقات خلال (5 أيام عمل) كحد أقصى من استلامكم لهذا الخطاب.\n\nفي حال الانقضاء دون معالجة جذرية، تحتفظ "شركة فنون الوليد للصناعة" بجميع حقوقها القانونية والنظامية الكاملة باللجوء إلى الطرق الرسمية والقضائية المعمول بها في وزارة العدل والمحاكم المختصة لاسترداد الحقوق وفرض غرامات التأخير أو التعويضات الناتجة، ولنا الأمل ألا نضطر لهذه الخطوة و نكتفي بحسّكم المهني وتفهمكم.\n\nولكم منا الاحترام المتبادل،،،\n\nالإدارة القانونية والمالية\nشركة فنون الوليد للصناعة`;
+        case 'warning': return `الرقم المرجعي: SL-WRN-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إنذار نهائي ومخاطبة بضرورة تسوية الموقف المالي/التشغيلي\n\nإلى السادة / ${fullClientName} المحترمين\nالسلام عليكم ورحمة الله وبركاته، أما بعد:\n\nتشير سجلاتنا المحاسبية والتنسيقية لمشروع (${projectName}) المرتبط بعرض سعر رقم (${qtnNo})، بأننا التزمنا التزاماً عميقاً وصبرنا لفترة طويلة حيال الإخلال ببند (السداد للمستحقات / أو تعطيل الأعمال من جهتكم)، وسبق أن تمت مخاطبتكم مراراً بأسلوب ودي دون جدوى أو استجابة تصحيحية جادة.\n\nوحيث أن هذا التعطيل كبّد الشركة التزامات وتكاليف إضافية خارجة عن النطاق الموصوف؛ فإننا نوجه لكم هذا الخطاب كإشعار أخير وملزم بضرورة التجاوب وتسوية المبالغ أو المعوقات خلال (5 أيام عمل) كحد أقصى من استلامكم لهذا الخطاب.\n\nفي حال الانقضاء دون معالجة جذرية، تحتفظ "شركة فنون الوليد للصناعة" بجميع حقوقها القانونية والنظامية الكاملة باللجوء إلى الطرق الرسمية والقضائية المعمول بها في وزارة العدل والمحاكم المختصة لاسترداد الحقوق وفرض غرامات التأخير أو التعويضات الناتجة، ولنا الأمل ألا نضطر لهذه الخطوة و نكتفي بحسّهم المهني وتفهمكم.\n\nولكم منا الاحترام المتبادل،،،\n\nإدارة القانونية والمالية\nشركة فنون الوليد للصناعة`;
 
-      case 'expire_quote': return `الرقم المرجعي: SL-EXP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار بانتهاء صلاحية عرض السعر المرفوع\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nبالإشارة لسعيكم المستمر لتطوير أعمالكم وطلبكم لتسعير خدماتنا المرتبطة بمشروع (${projectName}) والذي صدر بموجبه عرض السعر رقم (${qtnNo}).\n\nنلفت انتباهكم الراقي إلى أن المدة القانونية لصلاحية الأرقام والتكاليف والمواد المعروضة بالخطاب قد انقضت (حيث كانت المشروطية 15 إلى 30 يوماً كأقصى تقدير).\nوبطبيعة ديناميكية السوق واختلاف تكاليف المواد الخام، فإننا نعتذر عن استمرار الالتزام بالتسعيرة السابقة بعد هذا التاريخ.\n\nفي حال رغبتكم بتجديد الاهتمام والبدء بالمشروع، يُسعدنا دوماً خدمتكم، ولكننا سنكون بحاجة لإصدار تسعيرة مُحدّثة تعكس التغيرات الحالية للمواد.\n\nنأمل أن تجمعنا بكم مشاريع مشتركة دوماً.\n\nمع فائق الاحترام والتقدير،،،\n\nقسم دراسة المشاريع والمبيعات\nشركة فنون الوليد للصناعة`;
+        case 'expire_quote': return `الرقم المرجعي: SL-EXP-${qtnNo}\nالتاريخ: ${d}\n\nالموضوع: إشعار بانتهاء صلاحية عرض السعر المرفوع\n\nعناية السادة / ${fullClientName} المحترمين\nعناية الأستاذ / ${repName}\nالسلام عليكم ورحمة الله وبركاته،\n\nبالإشارة لسعيكم المستمر لتطوير أعمالكم وطلبكم لتسعير خدماتنا المرتبطة بمشروع (${projectName}) والذي صدر بموجبه عرض السعر رقم (${qtnNo}).\n\nنلفت انتباهكم الراقي إلى أن المدة القانونية لصلاحية الأرقام والتكاليف والمواد المعروضة بالخطاب قد انقضت (حيث كانت المشروطية 15 إلى 30 يوماً كأقصى تقدير).\nوبطبيعة ديناميكية السوق واختلاف تكاليف المواد الخام، فإننا نعتذر عن استمرار الالتزام بالتسعيرة السابقة بعد هذا التاريخ.\n\nفي حال رغبتكم بتجديد الاهتمام والبدء بالمشروع، يُسعدنا دوماً خدمتكم، ولكننا سنكون بحاجة لإصدار تسعيرة مُحدّثة تعكس التغيرات الحالية للمواد.\n\nنأمل أن تجمعنا بكم مشاريع مشتركة دوماً.\n\nمع فائق الاحترام والتقدير،،،\n\nقسم دراسة المشاريع والمبيعات\nشركة فنون الوليد للصناعة`;
 
-      default:
-        return 'محتوى النموذج';
+        default:
+          return 'محتوى النموذج';
+      }
+    } else {
+      const phaseNote = selectedPhaseLabel && selectedPhaseAmount > 0 
+        ? `\n\nPlease be informed that the required payment amount for (${selectedPhaseLabel}) is: SAR ${selectedPhaseAmount}, which we kindly request you to transfer to finalize the approved actions.\n\n` 
+        : '\n\n';
+
+      switch(docTemplate) {
+        case 'advance_payment': return `Reference: SL-ADV-${qtnNo}\nDate: ${d}\n\nSubject: Request for Advance Payment to Initiate Execution of Works\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nFirst of all, we would like to extend our sincere appreciation for your confidence in choosing "Al Waleed Fine Arts Industry Company" (Fnoon Al Waleed Industry) to manufacture and execute your project requirements for (${projectName}).\n\nPlease be informed that we have received and documented your approval of Quotation No. (${qtnNo}). To ensure immediate commencement of raw material procurement and fabrication scheduling to meet the agreed timeline, we kindly request the transfer of the advance payment specified in the approved quotation.${phaseNote}We are pleased to receive your bank transfer on the company's attached bank accounts. Please provide us with a copy of the transfer receipt to proceed immediately.\n\nThank you for your continuous cooperation and prompt action.\n\nBest regards,\n\nSales & Collection Department\nAl Waleed Fine Arts Industry Co.`;
+        
+        case 'due_payment': return `Reference: SL-DUE-${qtnNo}\nDate: ${d}\n\nSubject: Request for Payment of Outstanding Stage Instalment\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nBased on our mutual cooperation in executing the (${projectName}) project in accordance with approved Quotation No. (${qtnNo}), we are pleased to inform you that we have successfully completed and prepared the designated stage of works in line with our highest quality standards.\n\nAs per the agreed payment schedule, the instalment for this stage is now due for settlement.${phaseNote}We kindly request your esteemed team to arrange for the payment of the due amount at your earliest convenience to ensure subsequent project stages proceed smoothly and without any delays or halts to the overall project schedule.\n\nWe highly appreciate your continuous support and commitment to our shared goals.\n\nBest regards,\n\nSales & Collection Department\nAl Waleed Fine Arts Industry Co.`;
+        
+        case 'late_payment': return `Reference: SL-LT-${qtnNo}\nDate: ${d}\n\nSubject: Friendly Reminder Regarding Outstanding Past-Due Payment\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nWe send you our warmest greetings from "Al Waleed Fine Arts Industry Company", wishing you continued success and prosperity.\n\nWe would like to kindly bring to your attention that, upon reviewing our financial records for the (${projectName}) project under Quotation No. (${qtnNo}), we have not yet received the due instalment for the completed works, of which we have previously notified you.${phaseNote}Assuming this might have been an oversight amidst your busy business operations, we kindly request you to instruct your finance department to process the settlement of the due amount to maintain our fruitful progress and keep the execution on schedule.\n\nWe remain fully committed to completing the project to your utmost satisfaction upon the settlement of this financial balance.\n\nThank you for your understanding and prompt cooperation.\n\nBest regards,\n\nFinance Department & Project Management\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'site_prep': return `Reference: SL-PRP-${qtnNo}\nDate: ${d}\n\nSubject: Notice and Request for Site Readiness Prior to Installation\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nIn the framework of our mutual cooperation to commence the (${projectName}) project based on Quotation No. (${qtnNo}), and in our pursuit of executing the installation works with the highest level of professionalism and speed:\n\nWe would like to inform you of the necessity of preparing the site to receive our technical installation teams. This includes ensuring the installation facade or target area is completely clear of any obstacles, providing necessary electrical connections, and issuing any required temporary access permits for our vehicles and technicians.\n\nPlease notify us in writing or via an official email once the site is fully prepared on your end, so that your project can be immediately scheduled for final field installation works.\n\nThank you for your active cooperation in ensuring the highest quality of deliverables.\n\nBest regards,\n\nEngineering & Operations Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'design_approval': return `Reference: SL-APP-${qtnNo}\nDate: ${d}\n\nSubject: Request for Review and Final Approval of Technical Designs\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nFurther to our agreement regarding the (${projectName}) project pursuant to Quotation No. (${qtnNo}), we are pleased to attach herewith the proposed final technical designs and shop drawings for your review and approval.\n\nWe kindly request you to carefully review the dimensions, colors, and materials indicated in the designs. Please note that the fabrication and manufacturing process is entirely built upon this written approval.\n\nKindly be informed that any modifications requested after this written approval will require a new cost and timeline evaluation in accordance with our production schedule.\n\nWe look forward to your prompt response so we may proceed with the fabrication phases without delay.\n\nBest regards,\n\nDesign & Sales Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'installation_ready': return `Reference: SL-RDY-${qtnNo}\nDate: ${d}\n\nSubject: Notification of Production Completion and Field Installation Readiness\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nWe send you our warmest greetings, wishing you continued success.\nWe are delighted to inform you that the manufacturing and fabrication of all signages, structures, and facades for the (${projectName}) project under Quotation No. (${qtnNo}) have been fully completed at our central workshops. The products have successfully passed all quality assurance tests and are now completely ready for installation.\n\nAccordingly, we kindly request you to confirm the most suitable schedule on your end to receive our technical teams, while ensuring that the site is fully prepared (power supply available, security access permits cleared, and installation area accessible).\n\nWe also kindly remind you that any due payment required before installation according to the agreement terms should be settled prior to scheduling the installation teams to avoid any delays.\n\nThank you for choosing Al Waleed. We look forward to executing a stellar installation.\n\nBest regards,\n\nProduction & Field Operations Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'handover': return `Reference: SL-HND-${qtnNo}\nDate: ${d}\n\nSubject: Project Handover Document and Completion Certificate\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nWith great pride and pleasure, we announce the complete and successful execution of all assigned works, delivery, and installation for the (${projectName}) project under Quotation No. (${qtnNo}).\n\nThe works have been executed with the utmost precision and professionalism, conforming fully to the technical specifications and designs approved by your esteemed team. We hereby submit this official handover document for your inspection, review, and endorsement of successful completion.\n\nYour signature on this handover represents a certificate of trust we cherish, confirming project conformity, and marking the official start of the warranty period (if stipulated) as well as the transition of care to your side.\n\nThank you for giving us the opportunity to be partners in your success. We look forward to serving you in future projects.\n\nBest regards,\n\nProject Management Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'final_payment': return `Reference: SL-FNL-${qtnNo}\nDate: ${d}\n\nSubject: Official Invoice for Final Payment and Account Reconciliation\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\n"Al Waleed Fine Arts Industry Company" congratulates you on the successful completion of the (${projectName}) project in accordance with Quotation No. (${qtnNo}), the works of which have been delivered successfully.\n\nAs we work towards closing the financial books for this completed project, we submit this official request for the settlement of the remaining final payment instalment.\n\nWe kindly request your esteemed finance department to expedite the processing of this payment, as a testament to our fruitful mutual business and to culminate this shared achievement.${phaseNote}\n\nThank you for your understanding and prompt response.\n\nBest regards,\n\nFinance & Collection Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'warning': return `Reference: SL-WRN-${qtnNo}\nDate: ${d}\n\nSubject: Final Written Warning and Demand for Financial / Operational Settlement\n\nTo: Messrs. / ${fullClientName}\nPeace, mercy, and blessings of God be upon you,\n\nOur accounting and project coordination records for the (${projectName}) project under Quotation No. (${qtnNo}) indicate that, despite our deep commitment and extensive patience, there is an ongoing breach regarding (settlement of outstanding dues / or obstruction of operations from your side), about which we have repeatedly contacted you in a friendly manner without receiving a serious corrective response.\n\nSince this delay has caused our company additional financial obligations and logistical costs outside the agreed scope, we hereby issue this final and binding notification demanding immediate response and settlement of all dues or obstacles within a maximum of (5 working days) from the receipt of this letter.\n\nShould this period elapse without resolution, "Al Waleed Fine Arts Industry Company" reserves its full legal and system rights to resort to formal and judicial procedures through the Ministry of Justice and competent courts to recover all dues, impose delay penalties, and seek damages. We sincerely hope we do not have to resort to such actions and count on your high sense of professionalism.\n\nRespectfully,\n\nLegal & Finance Department\nAl Waleed Fine Arts Industry Co.`;
+
+        case 'expire_quote': return `Reference: SL-EXP-${qtnNo}\nDate: ${d}\n\nSubject: Notice of Expiry of Submitted Price Quotation\n\nAttn: Messrs. / ${fullClientName}\nAttn: Mr. / ${repName}\nPeace, mercy, and blessings of God be upon you,\n\nWith reference to your interest in our services and your request for a price quotation for the (${projectName}) project, under which Quotation No. (${qtnNo}) was issued:\n\nWe kindly draw your attention to the fact that the validity period for the costs, materials, and rates proposed in the quotation has now expired (the validity period being 15 to 30 days maximum from the date of issue).\nDue to the dynamic nature of the market and fluctuations in the costs of raw materials, we regret to inform you that we cannot commit to the previously quoted prices beyond this date.\n\nShould you wish to renew your interest and proceed with the project, we will be absolutely delighted to serve you. However, we will need to issue a revised and updated quotation reflecting current market rates.\n\nWe hope to partner with you in upcoming opportunities.\n\nBest regards,\n\nProject Costing & Sales Department\nAl Waleed Fine Arts Industry Co.`;
+
+        default:
+          return 'Template Content';
+      }
     }
   };
 
   useEffect(() => {
     setDocContent(getTemplateText());
-  }, [selectedQuoteId, docTemplate, docCategory, selectedPhaseLabel, selectedPhaseAmount]);
+  }, [selectedQuoteId, docTemplate, docCategory, selectedPhaseLabel, selectedPhaseAmount, docLanguage]);
 
   const handlePrint = () => {
     const printArea = document.getElementById('printable-sales-letter-container');
@@ -614,7 +685,25 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
 
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 print:hidden space-y-4">
         {/* Filters and Controls */}
-        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold">
+        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-bold">
+          
+          <div>
+            <label className="block mb-2 text-slate-500">لغة الخطاب</label>
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${docLanguage === 'ar' ? 'bg-white shadow text-indigo-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-200'}`}
+                onClick={() => setDocLanguage('ar')}
+              >
+                عربي
+              </button>
+              <button
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${docLanguage === 'en' ? 'bg-white shadow text-indigo-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-200'}`}
+                onClick={() => setDocLanguage('en')}
+              >
+                English
+              </button>
+            </div>
+          </div>
           
           <div>
             <label className="block mb-2 text-slate-500">تصنيف الخطاب</label>
@@ -759,6 +848,29 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           <p className="text-center text-[10px] text-slate-400 mb-2 print:hidden font-bold">معاينة قابلة للتعديل - انقر على النص للتعديل وإضافة بنودك مباشرة قبل الطباعة</p>
           <div className="max-w-[210mm] mx-auto print:hidden">
             <RichTextToolbar />
+            
+            {/* AI Professional Translation Bar */}
+            <div className="bg-white border-t border-slate-100 p-3 flex flex-wrap items-center justify-between gap-2 rounded-b-xl mb-4 shadow-sm text-right" dir="rtl">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                ✨ {lang === 'ar' ? 'ترجمة الخطاب الفورية (Gemini AI):' : 'Instant AI Translation (Gemini):'}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleTranslateLetter("ar")}
+                  disabled={isTranslating}
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  {isTranslating ? 'جاري الترجمة...' : 'ترجمة إلى العربية 🇸🇦'}
+                </button>
+                <button
+                  onClick={() => handleTranslateLetter("en")}
+                  disabled={isTranslating}
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  {isTranslating ? 'Translating...' : 'Translate to English 🇬🇧'}
+                </button>
+              </div>
+            </div>
           </div>
           <div id="printable-sales-letter-container">
             <div id="printable-sales-letter" className="relative mx-auto bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>

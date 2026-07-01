@@ -79,6 +79,7 @@ const legacyRoleMappings: Record<string, Partial<UserPermissions['moduleAccess']
     procurement: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
     reports: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
     settings: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
+    notifications: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
   }
 };
 
@@ -89,7 +90,8 @@ const moduleDefinitions = [
   { id: 'production', ar: 'الإنتاج والتركيب', en: 'Production Hub' },
   { id: 'procurement', ar: 'المشتريات والمستودع', en: 'Procurement & Warehouse' },
   { id: 'reports', ar: 'التقارير والإحصائيات', en: 'Reports' },
-  { id: 'settings', ar: 'الإعدادات المتقدمة', en: 'Settings' }
+  { id: 'settings', ar: 'الإعدادات المتقدمة', en: 'Settings' },
+  { id: 'notifications', ar: 'إشعارات النظام', en: 'Notifications' }
 ] as const;
 
 const actionDefinitions = [

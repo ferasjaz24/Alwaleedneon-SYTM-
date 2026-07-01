@@ -181,13 +181,13 @@ export default function SalesDashboard({
     if (!q || !q.items || !Array.isArray(q.items)) return 0;
     let subtotal = 0;
     q.items.forEach((item: any) => {
-      const qty = Number(item.quantity) || 0;
+      const qty = Number(item.quantity) || 1;
       const price = Number(item.unitPrice) || 0;
       const disk = Number(item.discountPct) || 0;
       const lineTotal = qty * price * (1 - disk / 100);
       subtotal += lineTotal;
     });
-    return subtotal * (1 + (q.vatRate || 0.15));
+    return subtotal * 1.15;
   };
 
   // ---------------- FILTER DATA BY MONTH AND YEAR ----------------
@@ -218,13 +218,13 @@ export default function SalesDashboard({
   // Custom filter of matching items
   const currentQuotes = useMemo(() => {
     return quotations.filter((q) =>
-      isSelectedPeriod(q.dateCreated || q.quoteDate),
+      isSelectedPeriod(q.date || q.dateCreated || q.createdAt || q.quoteDate || q.lastUpdated),
     );
   }, [quotations, selectedMonth, selectedYear]);
 
   const prevQuotes = useMemo(() => {
     return quotations.filter((q) =>
-      isPreviousPeriod(q.dateCreated || q.quoteDate),
+      isPreviousPeriod(q.date || q.dateCreated || q.createdAt || q.quoteDate || q.lastUpdated),
     );
   }, [quotations, selectedMonth, selectedYear]);
 
@@ -317,54 +317,26 @@ export default function SalesDashboard({
     let collectedSum = 0;
     let remainingSum = 0;
 
-    // Filter collection plans whose createdAt falls in the selected month
-    const activePlansInMonth = collections.filter((p) =>
-      isSelectedPeriod(p.createdAt || p.dateCreated),
-    );
-
-    activePlansInMonth.forEach((plan) => {
+    collections.forEach((plan) => {
       if (plan.phases && Array.isArray(plan.phases)) {
         plan.phases.forEach((ph: any) => {
           const amt = Number(ph.amount) || 0;
-          if (
-            ph.status.includes("تم التحصيل") ||
-            ph.status.includes("مدفوعة")
-          ) {
-            collectedSum += amt;
-          } else {
-            remainingSum += amt;
+          const isCollectedStatus =
+            ph.status?.includes("تم التحصيل") ||
+            ph.status?.includes("مدفوعة") || ph.isCollected;
+
+          const phaseDate = ph.collectedDate || ph.dueDate || plan.date || plan.createdAt || plan.lastUpdated;
+          
+          if (isSelectedPeriod(phaseDate)) {
+            if (isCollectedStatus) {
+              collectedSum += amt;
+            } else {
+              remainingSum += amt;
+            }
           }
         });
       }
     });
-
-    // If no collections plans in this month, fallback to scanning all phases collected during this month and remaining
-    if (activePlansInMonth.length === 0) {
-      collections.forEach((plan) => {
-        if (plan.phases && Array.isArray(plan.phases)) {
-          plan.phases.forEach((ph: any) => {
-            const amt = Number(ph.amount) || 0;
-            const collectedInM =
-              ph.collectedDate && isSelectedPeriod(ph.collectedDate);
-            const dueInM = ph.dueDate && isSelectedPeriod(ph.dueDate);
-
-            if (
-              (ph.status.includes("تم التحصيل") ||
-                ph.status.includes("مدفوعة")) &&
-              collectedInM
-            ) {
-              collectedSum += amt;
-            } else if (
-              !ph.status.includes("تم التحصيل") &&
-              !ph.status.includes("مدفوعة") &&
-              dueInM
-            ) {
-              remainingSum += amt;
-            }
-          });
-        }
-      });
-    }
 
     // Rate calculation: match user standard
     const approvedQuotesVal = card2Stats.value;
@@ -391,12 +363,10 @@ export default function SalesDashboard({
     collections.forEach((plan) => {
       if (plan.phases && Array.isArray(plan.phases)) {
         plan.phases.forEach((ph: any) => {
-          const isCollected =
-            ph.status.includes("تم التحصيل") || ph.status.includes("مدفوعة");
-          const isPastDue = ph.dueDate && new Date(ph.dueDate) < new Date();
-          const matchesPeriod = ph.dueDate && isSelectedPeriod(ph.dueDate);
-
-          if (!isCollected && isPastDue && matchesPeriod) {
+          const isOverdueStatus = ph.status?.includes("متأخر");
+          const phaseDate = ph.collectedDate || ph.dueDate || plan.date || plan.createdAt || plan.lastUpdated;
+          
+          if (isOverdueStatus && isSelectedPeriod(phaseDate)) {
             const amt = Number(ph.amount) || 0;
             overdueCount++;
             overdueSum += amt;
@@ -1058,8 +1028,8 @@ export default function SalesDashboard({
             <div className="space-y-1">
               <span className="text-slate-400 font-bold text-xs uppercase block">
                 {lang === "ar"
-                  ? "إجمالي قيمة عروض الأسعار"
-                  : "Total Quotes Value"}
+                  ? "إجمالي المبيعات"
+                  : "Total Sales"}
               </span>
               <h3 className="text-2xl font-black text-slate-800">
                 {card1Stats.value.toLocaleString()}{" "}
@@ -1192,8 +1162,8 @@ export default function SalesDashboard({
             <div className="space-y-1">
               <span className="text-slate-400 font-bold text-xs uppercase block">
                 {lang === "ar"
-                  ? "الدفعات المتأخرة المستحقة"
-                  : "Overdue Delayed Assets"}
+                  ? "المتأخرات"
+                  : "Overdue"}
               </span>
               <h3 className="text-2xl font-black text-rose-600">
                 {card5Stats.amount.toLocaleString()}{" "}

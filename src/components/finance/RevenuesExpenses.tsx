@@ -18,31 +18,43 @@ export default function RevenuesExpenses({ user, lang }: RevenuesExpensesProps) 
   const [activeTab, setActiveTab] = useState<'revenues' | 'expenses'>('revenues');
 
   return (
-    <div className="space-y-6">
-      {/* Tabs */}
-      <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 p-1">
-        <button
-          onClick={() => setActiveTab('revenues')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-colors ${
-            activeTab === 'revenues'
-              ? 'bg-emerald-50 text-emerald-700 shadow-sm'
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-          }`}
-        >
-          <ArrowDownRight className="w-5 h-5" />
-          بوابة الإيرادات
-        </button>
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-colors ${
-            activeTab === 'expenses'
-              ? 'bg-rose-50 text-rose-700 shadow-sm'
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-          }`}
-        >
-          <ArrowUpRight className="w-5 h-5" />
-          بوابة المصروفات
-        </button>
+    <div className="space-y-6" dir="rtl">
+      {/* Title Header with clean premium alignment */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span>💵</span>
+            <span>بوابة الإيرادات والمصروفات</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            إدارة وتسجيل وتأكيد التدفقات المالية الداخلة والمصروفات التشغيلية.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setActiveTab('revenues')}
+            className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'revenues'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ArrowDownRight className="w-4 h-4" />
+            بوابة الإيرادات
+          </button>
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'expenses'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ArrowUpRight className="w-4 h-4" />
+            بوابة المصروفات
+          </button>
+        </div>
       </div>
 
       {activeTab === 'revenues' && <RevenuesTab user={user} lang={lang} isAdmin={isAdmin(user)} />}
@@ -272,22 +284,61 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   return (
     <div className="space-y-6">
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("معتمد")}>
-          <div className="text-sm text-slate-500 mb-1">الإيرادات المعتمدة</div>
-          <div className="text-2xl font-black text-emerald-600">{totalRevenues.toLocaleString()} ر.س</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Approved Revenues */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("معتمد")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">الإيرادات المعتمدة</div>
+            <div className="text-2xl font-black text-emerald-600">
+              {totalRevenues.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+            </div>
+            <div className="text-[11px] text-emerald-500 font-semibold">المبالغ المقبولة والمرحلة للأرصدة</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-600">
+            <DollarSign className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("بانتظار اعتماد")}>
-          <div className="text-sm text-slate-500 mb-1">بانتظار الاعتماد</div>
-          <div className="text-2xl font-black text-amber-500">{pendingRevenues.toLocaleString()} ر.س</div>
+
+        {/* Pending Revenues */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("بانتظار اعتماد")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">بانتظار الاعتماد</div>
+            <div className="text-2xl font-black text-amber-500">
+              {pendingRevenues.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+            </div>
+            <div className="text-[11px] text-amber-500 font-semibold">تتطلب مراجعة واعتماد المحاسب</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-amber-50 text-amber-600">
+            <Clock className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("مسجل")}>
-          <div className="text-sm text-slate-500 mb-1">إيرادات مسجلة</div>
-          <div className="text-2xl font-black text-slate-700">{revenues.filter(r => r.status === 'مسجل').length} حركة</div>
+
+        {/* Registered Transactions */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("مسجل")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">إيرادات مسجلة</div>
+            <div className="text-2xl font-black text-slate-800">
+              {revenues.filter(r => r.status === 'مسجل').length} <span className="text-xs font-bold">حركة</span>
+            </div>
+            <div className="text-[11px] text-slate-400">حركات مضافة ومحفوظة كمسودة</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-100 text-slate-600">
+            <FileText className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("all")}>
-          <div className="text-sm text-slate-500 mb-1">إجمالي الحركات</div>
-          <div className="text-2xl font-black text-[#0072BC]">{revenues.length} حركة</div>
+
+        {/* Total Transactions */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("all")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">إجمالي حركات الإيراد</div>
+            <div className="text-2xl font-black text-[#0072BC]">
+              {revenues.length} <span className="text-xs font-bold">حركة</span>
+            </div>
+            <div className="text-[11px] text-slate-400">كافة العمليات والتدفقات المالية</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-indigo-50 text-indigo-600">
+            <Wallet className="w-6 h-6" />
+          </div>
         </div>
       </div>
 
@@ -1214,22 +1265,61 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   return (
     <div className="space-y-6">
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("مدفوع")}>
-          <div className="text-sm text-slate-500 mb-1">مصروفات مدفوعة</div>
-          <div className="text-2xl font-black text-blue-600">{totalPaid.toLocaleString()} ر.س</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Paid Expenses */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("مدفوع")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">مصروفات مدفوعة</div>
+            <div className="text-2xl font-black text-blue-600">
+              {totalPaid.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+            </div>
+            <div className="text-[11px] text-blue-500 font-semibold">المبالغ المسددة بالكامل للجهات والموردين</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-blue-50 text-blue-600">
+            <CheckCircle className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("معتمد")}>
-          <div className="text-sm text-slate-500 mb-1">إجمالي المعتمد (وغير مدفوع)</div>
-          <div className="text-2xl font-black text-emerald-600">{(totalApproved - totalPaid).toLocaleString()} ر.س</div>
+
+        {/* Total Approved (unpaid) Expenses */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("معتمد")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">معتمد (بانتظار الصرف)</div>
+            <div className="text-2xl font-black text-emerald-600">
+              {(totalApproved - totalPaid).toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+            </div>
+            <div className="text-[11px] text-emerald-500 font-semibold">مبالغ معتمدة وجاهزة لأمر الصرف والتحويل</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-600">
+            <DollarSign className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("بانتظار اعتماد")}>
-          <div className="text-sm text-slate-500 mb-1">بانتظار الاعتماد</div>
-          <div className="text-2xl font-black text-amber-500">{pendingExpenses.toLocaleString()} ر.س</div>
+
+        {/* Pending Expenses */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("بانتظار اعتماد")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">بانتظار الاعتماد</div>
+            <div className="text-2xl font-black text-amber-500">
+              {pendingExpenses.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+            </div>
+            <div className="text-[11px] text-amber-500 font-semibold">طلبات صرف معلقة تطلب موافقة المحاسب</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-amber-50 text-amber-600">
+            <Clock className="w-6 h-6" />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("all")}>
-          <div className="text-sm text-slate-500 mb-1">إجمالي الحركات</div>
-          <div className="text-2xl font-black text-[#0072BC]">{expenses.length} حركة</div>
+
+        {/* Total Expenses Transactions */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:shadow-md transition" onClick={() => setFilterStatus("all")}>
+          <div className="space-y-1.5 text-right">
+            <div className="text-xs font-bold text-slate-500">إجمالي حركات المصروفات</div>
+            <div className="text-2xl font-black text-[#0072BC]">
+              {expenses.length} <span className="text-xs font-bold">حركة</span>
+            </div>
+            <div className="text-[11px] text-slate-400">كافة العمليات والمدفوعات المسجلة</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-indigo-50 text-indigo-600">
+            <Wallet className="w-6 h-6" />
+          </div>
         </div>
       </div>
 

@@ -199,6 +199,7 @@ export default function FinanceApprovals({
     printWin.document.open();
     printWin.document.write(html);
     printWin.document.close();
+    printWin.document.title = `Finance_Approval_${selectedReq.quotationNumber || selectedReq.id}`;
     printWin.print();
   };
 

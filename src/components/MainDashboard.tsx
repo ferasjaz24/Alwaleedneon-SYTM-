@@ -89,6 +89,9 @@ export default function MainDashboard({
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [purchaseRequests, setPurchaseRequests] = useState<any[]>([]);
   const [salesProdRequests, setSalesProdRequests] = useState<any[]>([]);
+  const [revenues, setRevenues] = useState<any[]>([]);
+  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -109,6 +112,9 @@ export default function MainDashboard({
         inqRes,
         docsRes,
         prodReqsRes,
+        revRes,
+        ciRes,
+        expRes,
       ] = await Promise.all([
         fetch(`/api/sales_quotations?t=${ts}`).then((r) =>
           r.ok ? r.json() : [],
@@ -144,6 +150,9 @@ export default function MainDashboard({
         fetch(`/api/dynamic/sales_production_requests?t=${ts}`).then((r) =>
           r.ok ? r.json() : [],
         ),
+        fetch(`/api/revenues?t=${ts}`).then((r) => (r.ok ? r.json() : [])),
+        fetch(`/api/customer-invoices?t=${ts}`).then((r) => (r.ok ? r.json() : [])),
+        fetch(`/api/expenses?t=${ts}`).then((r) => (r.ok ? r.json() : [])),
       ]);
 
       setSalesQuotations(sqRes);
@@ -160,6 +169,9 @@ export default function MainDashboard({
       setInquiries(inqRes);
       setDocumentLogs(docsRes);
       setSalesProdRequests(prodReqsRes);
+      setRevenues(revRes);
+      setCustomerInvoices(ciRes);
+      setExpenses(expRes);
     } catch (err) {
       console.error(err);
     } finally {
@@ -205,7 +217,7 @@ export default function MainDashboard({
   // CALCULATION LOGIC
   // -------------------------
   const filteredSales = salesQuotations.filter((sq) =>
-    filterByDate(sq.date || sq.createdAt || sq.lastUpdated),
+    filterByDate(sq.date || sq.dateCreated || sq.createdAt || sq.lastUpdated || sq.quoteDate),
   );
   const countSales = filteredSales.length;
   const approvedSales = filteredSales.filter((sq) => sq.status === "معتمد");
@@ -220,7 +232,7 @@ export default function MainDashboard({
       sq.status === "تم التحويل للإنتاج",
   );
 
-  const totalTarget = filteredSales.reduce((sum, q) => {
+  const totalQuotationsValue = filteredSales.reduce((sum, q) => {
     const st =
       q.items?.reduce(
         (s: number, i: any) => s + i.quantity * (i.unitPrice || 0),
@@ -231,24 +243,50 @@ export default function MainDashboard({
     return sum + (st + fees) * (1 + vat);
   }, 0);
 
-  const filteredCollections = financialCollections.filter((fc) =>
-    filterByDate(fc.date || fc.createdAt || fc.lastUpdated),
-  );
-  const totalCollected = filteredCollections.reduce((sum, fc) => {
-    const planCollected =
-      fc.phases
-        ?.filter((ph: any) => ph.status?.includes("تم التحصيل"))
-        .reduce((s: number, ph: any) => s + (ph.amount || 0), 0) || 0;
-    return sum + planCollected;
+  const totalSalesValue = filteredSales.reduce((sum, q) => {
+    const st =
+      q.items?.reduce(
+        (s: number, i: any) => s + (Number(i.quantity) || 1) * (Number(i.unitPrice) || 0) * (1 - (Number(i.discountPct) || 0) / 100),
+        0,
+      ) || 0;
+    return sum + (st * 1.15);
   }, 0);
 
-  const totalRemaining = totalTarget - totalCollected;
+  const filteredCollections = financialCollections.filter((fc) =>
+    filterByDate(fc.date || fc.dateCreated || fc.createdAt || fc.lastUpdated),
+  );
 
-  const latePayments = filteredCollections.reduce((acc, fc) => {
-    const latePhases =
-      fc.phases?.filter((ph: any) => ph.status?.includes("متأخر")) || [];
-    return acc.concat(latePhases);
-  }, []);
+  // Compute total collections dynamically from Financial Collections phases
+  let totalCollected = 0;
+  let totalOverdue = 0;
+  let overdueCount = 0;
+
+  financialCollections.forEach((fc) => {
+    if (fc.phases && Array.isArray(fc.phases)) {
+      fc.phases.forEach((ph: any) => {
+        const isOverdue = ph.status?.includes("متأخر");
+        const isCollected = ph.status?.includes("تم التحصيل") || ph.status?.includes("مدفوعة") || ph.isCollected;
+        
+        // Use phase date if available, else plan date
+        const phaseDate = ph.collectedDate || ph.dueDate || fc.date || fc.createdAt || fc.lastUpdated;
+        
+        if (filterByDate(phaseDate)) {
+          if (isCollected) {
+            totalCollected += (Number(ph.amount) || 0);
+          }
+          if (isOverdue) {
+            totalOverdue += (Number(ph.amount) || 0);
+            overdueCount++;
+          }
+        }
+      });
+    }
+  });
+
+  const totalRemaining = Math.max(0, totalSalesValue - totalCollected);
+
+  // Fallback if latePayments array is needed for badge count
+  const latePayments = new Array(overdueCount).fill({});
 
   const prodItems = [...productionProjects, ...productionOrders];
   const newProdOrders = prodItems.filter((p) =>
@@ -446,33 +484,39 @@ export default function MainDashboard({
   // HISTORY
   // -------------------------
   let historyLogs: any[] = [];
-  filteredSales.slice(0, 3).forEach((s) =>
-    historyLogs.push({
-      date: s.createdAt,
-      user: s.createdBy || "Auto",
-      dept: "المبيعات",
-      action: "إنشاء عرض سعر",
-      ref: s.id,
-    }),
-  );
-  productionOrders.slice(0, 3).forEach((p) =>
-    historyLogs.push({
-      date: p.createdAt,
-      user: p.statusUpdatedBy || "Auto",
-      dept: "الإنتاج",
-      action: "تحديث أمر إنتاج",
-      ref: p.id,
-    }),
-  );
-  openPurchases.slice(0, 2).forEach((p) =>
-    historyLogs.push({
-      date: p.requestDate,
-      user: p.requestedBy || "Auto",
-      dept: "المشتريات",
-      action: "طلب شراء مفتوح",
-      ref: p.id,
-    }),
-  );
+  filteredSales.slice(0, 3).forEach((s) => {
+    if (s && s.id) {
+      historyLogs.push({
+        date: s.createdAt,
+        user: s.createdBy || "Auto",
+        dept: "المبيعات",
+        action: "إنشاء عرض سعر",
+        ref: s.id,
+      });
+    }
+  });
+  productionOrders.slice(0, 3).forEach((p) => {
+    if (p && p.id) {
+      historyLogs.push({
+        date: p.createdAt,
+        user: p.statusUpdatedBy || "Auto",
+        dept: "الإنتاج",
+        action: "تحديث أمر إنتاج",
+        ref: p.id,
+      });
+    }
+  });
+  openPurchases.slice(0, 2).forEach((p) => {
+    if (p && p.id) {
+      historyLogs.push({
+        date: p.requestDate,
+        user: p.requestedBy || "Auto",
+        dept: "المشتريات",
+        action: "طلب شراء مفتوح",
+        ref: p.id,
+      });
+    }
+  });
   historyLogs.push(...activityLogs);
   historyLogs.sort(
     (a, b) =>
@@ -607,41 +651,41 @@ export default function MainDashboard({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           onClick={() => onNavigate("sales", "sales_quotations")}
-          title={lang === "ar" ? "المبيعات المعتمدة" : "Approved"}
-          value={totalTarget}
+          title={lang === "ar" ? "إجمالي المبيعات" : "Total Sales"}
+          value={totalSalesValue}
           isCurrency
           icon={FileText}
           iconColor="text-blue-600"
           iconBg="bg-blue-50"
           subtitle={
             lang === "ar"
-              ? `عدد العروض: ${approvedSales.length}`
-              : `Quotes: ${approvedSales.length}`
+              ? `الصفقات المعتمدة: ${approvedSales.length}`
+              : `Approved: ${approvedSales.length}`
           }
           badgeText={`${conversionRate}%`}
           badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
         />
         <KpiCard
           onClick={() => onNavigate("sales", "sales_collections")}
-          title={lang === "ar" ? "التحصيل النقدي" : "Collected"}
+          title={lang === "ar" ? "التحصيل النقدي الفعلي" : "Actual Collected"}
           value={totalCollected}
           isCurrency
           icon={DollarSign}
           iconColor="text-emerald-600"
           iconBg="bg-emerald-50"
-          subtitle={lang === "ar" ? "المحصل من المشاريع" : "Collected so far"}
-          badgeText={`${totalTarget ? Math.round((totalCollected / totalTarget) * 100) : 0}%`}
+          subtitle={lang === "ar" ? "التحصيل من الإيرادات والفواتير" : "Collected from all sources"}
+          badgeText={`${totalSalesValue ? Math.round((totalCollected / totalSalesValue) * 100) : 0}%`}
           badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
         />
         <KpiCard
           onClick={() => onNavigate("sales", "sales_collections")}
-          title={lang === "ar" ? "المتأخرات / المتبقي" : "Remaining"}
-          value={totalRemaining}
+          title={lang === "ar" ? "المتأخرات" : "Overdue"}
+          value={totalOverdue}
           isCurrency
           icon={AlertTriangle}
           iconColor="text-rose-600"
           iconBg="bg-rose-50"
-          subtitle={lang === "ar" ? "دفعات معلقة" : "Pending payments"}
+          subtitle={lang === "ar" ? "إجمالي المبالغ المتأخرة في التحصيل" : "Total overdue collections"}
           badgeText={String(latePayments.length)}
           badgeColor="text-rose-700 bg-rose-50 border-rose-100"
         />
@@ -756,13 +800,13 @@ export default function MainDashboard({
           <MiniStat
             onClick={() => onNavigate("sales", "sales_collections")}
             title={lang === "ar" ? "المتأخر" : "Overdue"}
-            value={kpiFormatter.format(totalRemaining)}
+            value={kpiFormatter.format(totalOverdue)}
             color="text-rose-600"
           />
           <MiniStat
             onClick={() => onNavigate("sales", "sales_collections")}
             title={lang === "ar" ? "نسبة التحصيل" : "Collection %"}
-            value={`${totalTarget ? Math.round((totalCollected / totalTarget) * 100) : 0}%`}
+            value={`${totalSalesValue ? Math.round((totalCollected / totalSalesValue) * 100) : 0}%`}
             color="text-amber-500"
           />
         </div>
@@ -776,18 +820,18 @@ export default function MainDashboard({
               <BarChart
                 data={[
                   {
-                    name: lang === "ar" ? "العروض المعتمدة" : "Approved",
-                    val: totalTarget,
+                    name: lang === "ar" ? "المبيعات" : "Sales",
+                    val: totalSalesValue,
                     fill: "#0a2540",
                   },
                   {
-                    name: lang === "ar" ? "تم تحصيله" : "Collected",
+                    name: lang === "ar" ? "التحصيل" : "Collected",
                     val: totalCollected,
                     fill: "#10b981",
                   },
                   {
-                    name: lang === "ar" ? "المبلغ المتبقي" : "Remaining",
-                    val: totalRemaining,
+                    name: lang === "ar" ? "المتأخر" : "Overdue",
+                    val: totalOverdue,
                     fill: "#f43f5e",
                   },
                 ]}

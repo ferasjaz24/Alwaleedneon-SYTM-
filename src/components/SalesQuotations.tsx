@@ -775,6 +775,7 @@ body {
           <style>${getPrintStyles()}</style>
         </head>
         <body>
+          <script>document.title = "${title}";</script>
           <div class="quotation-print-wrapper" dir="rtl">
             <button class="print-button no-print" onclick="window.print()">طباعة</button>
             ${bodyContentsHtml}
@@ -783,6 +784,7 @@ body {
       </html>
     `);
     win.document.close();
+    win.document.title = title;
   };
   const handleExportSelected = () => {
     if (selectedQuotes.length === 0) return;
@@ -946,7 +948,7 @@ body {
      const win = window.open('', '_blank');
      if(!win) return;
      const sqHtml = processQuotationContext(sq);
-     writePrintDocument(win, `عرض سعر - ${sq.quotationNumber}`, sqHtml);
+     writePrintDocument(win, sq.quotationNumber, sqHtml);
   };
 
 
