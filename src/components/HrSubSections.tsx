@@ -1621,7 +1621,7 @@ export default function HrSubSections({
                   <p className="text-3xl font-black font-mono mt-1">SAR {(calculateSaudiEos() || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
                 <div className="space-y-1.5 text-[11px] text-cyan-100 pt-3 border-t border-cyan-800">
-                  <p>⚖️ {lang === 'ar' ? 'نظام الاحتساب مأخوذ من ملخص المادة ٨٤ لقانون العمل السعودي.' : 'Based strictly on Saudi Article 84 rule: 0.5 salary for first 5 years, 1.0 salary for subsequent years, pro-rated.'}</p>
+                  <p>⚖️ {lang === 'ar' ? 'نظام الاحتساب مأخوذ من ملخص المادة 84 لقانون العمل السعودي.' : 'Based strictly on Saudi Article 84 rule: 0.5 salary for first 5 years, 1.0 salary for subsequent years, pro-rated.'}</p>
                 </div>
               </div>
             </div>

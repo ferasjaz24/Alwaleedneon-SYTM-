@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import { collection, doc, getDocs, setDoc, query, where } from "firebase/firestore";
+import { detectBankFromIban } from "../../utils/ibanHelper";
 
 interface BankAccount {
   id: string;
@@ -764,12 +765,30 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">رقم الآيبان IBAN</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-bold text-slate-600">رقم الآيبان IBAN</label>
+                    {bankForm.iban && (() => {
+                      const det = detectBankFromIban(bankForm.iban, "ar");
+                      return det.matched ? (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
+                          ✓ {det.ar}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                   <input
                     type="text"
                     value={bankForm.iban || ""}
-                    onChange={(e) => setBankForm({ ...bankForm, iban: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono"
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase().replace(/\s+/g, "");
+                      const det = detectBankFromIban(val, "ar");
+                      setBankForm({
+                        ...bankForm,
+                        iban: val,
+                        bankName: det.matched ? det.ar : (bankForm.bankName || ""),
+                      });
+                    }}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono text-center"
                     placeholder="SA8080000..."
                   />
                 </div>

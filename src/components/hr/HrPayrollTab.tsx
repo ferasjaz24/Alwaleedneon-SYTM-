@@ -540,9 +540,13 @@ export default function HrPayrollTab({
   const [editLoans, setEditLoans] = useState<number>(0);
 
   // Summary statistics across active employees
-  const totalBaseSalaries = employees.reduce((acc, emp) => acc + (Number(emp.basicSalary) || 0), 0);
+  const totalBaseSalaries = employees.reduce((acc, emp) => {
+    if (!emp) return acc;
+    return acc + (Number(emp.basicSalary) || 0);
+  }, 0);
   
   const totalAllowances = employees.reduce((acc, emp) => {
+    if (!emp) return acc;
     const h = Number(emp.allowances?.housing) || 0;
     const t = Number(emp.allowances?.transport) || 0;
     const p = 0; // Phone allowance removed
@@ -553,6 +557,7 @@ export default function HrPayrollTab({
   }, 0);
 
   const totalDeductionsPlusLoans = employees.reduce((acc, emp) => {
+    if (!emp) return acc;
     const d = Number(emp.allowances?.deductions) || 0;
     const l = Number(emp.allowances?.loans) || 0;
     const dynamicD = getEmployeeDeductionsTotal(emp.id);
@@ -760,6 +765,7 @@ export default function HrPayrollTab({
 
   // Filter employees registry list for search matches
   const filteredEmployees = employees.filter(emp => {
+    if (!emp) return false;
     const q = searchQuery.toLowerCase();
     const idMatch = (emp.id || '').toLowerCase().includes(q);
     const iqamaMatch = (emp.iqamaId || '').toLowerCase().includes(q);

@@ -53,7 +53,7 @@ export default function HrContractsTab({ lang, employees }: HrContractsTabProps)
   
   // Immutably logged alterations ledger
   const [amendments, setAmendments] = useState<ContractAmendment[]>([
-    { id: 'AMD-500', empId: 'EMP-1002', date: '2026-06-01', byUser: 'Feras (Owner)', changeCategory_ar: 'ملحق رقم ١: زيادة الراتب ومخاطر الارتفاع', changeCategory_en: 'Addendum 1: Pay bump & Safety risk allowance injection', details: 'Added SAR 500 risk premium for crane operations at alturas.' }
+    { id: 'AMD-500', empId: 'EMP-1002', date: '2026-06-01', byUser: 'Feras (Owner)', changeCategory_ar: 'ملحق رقم 1: زيادة الراتب ومخاطر الارتفاع', changeCategory_en: 'Addendum 1: Pay bump & Safety risk allowance injection', details: 'Added SAR 500 risk premium for crane operations at alturas.' }
   ]);
 
   const activeEmp = employees.find(e => e.id === selectedEmpId) || employees[0];
@@ -82,7 +82,7 @@ export default function HrContractsTab({ lang, employees }: HrContractsTabProps)
         body_ar: `إنه في يوم ${today}، جرى الاتفاق والتعاقد بين شركة فنون الوليد للصناعة وبصفتها الطرف الأول، والسيد ${empName} (جنسيته وافد وجوازه رقم ${activeEmp.passportDetails} وإقامته رقم ${activeEmp.iqamaId}) بصفته الطرف الثاني على التالي:
 1. يلتزم الطرف الثاني بالعمل كموظف بمسمى "${activeEmp.jobTitle}" تحت قيادة وتوجيه إدارة القسم "${activeEmp.department}".
 2. يلتزم الطرف الأول بسداد مقابل مالي أساسي قدره ${basicPay} ريال سعودي، بالإضافة لبدل سكن وقدره ${housing} وبدل انتقال قدره ${transport} تلافياً للمخالفات.
-3. يعتبر هذا العقد مرتبطاً شكلاً ومضموناً بصلاحية رخصة العمل والإقامة النظامية، ويجدد برصيد موافقة الطرفين عبر منصة قوى المعتمدة من وزارة الموارد البشرية رقم المادة ٥٥ لعمل الوافدين.`,
+3. يعتبر هذا العقد مرتبطاً شكلاً ومضموناً بصلاحية رخصة العمل والإقامة النظامية، ويجدد برصيد موافقة الطرفين عبر منصة قوى المعتمدة من وزارة الموارد البشرية رقم المادة 55 لعمل الوافدين.`,
         body_en: `On this day of ${today}, this contract is finalized between Al-Waleed Advertising & Neon Co. Ltd. (First Party) and Mr. ${empName}, holder of Passport No. ${activeEmp.passportDetails} & Residency Id: ${activeEmp.iqamaId} (Second Party):
 1. The Second Party agrees to perform duties associated with the job rank "${activeEmp.jobTitle}" in "${activeEmp.department}" department safely.
 2. First Party shall pay a core Basic monthly compensation of SAR ${basicPay}, in addition to housing allowance of SAR ${housing} and transport allowance of SAR ${transport} strictly inside electronic WPS bank portal.
@@ -96,7 +96,7 @@ export default function HrContractsTab({ lang, employees }: HrContractsTabProps)
         title_en: 'Temporary Project-Based Employment Agreement',
         body_ar: `عقد عمل مخصص لإنجاز مهام وعقود تركيب لوحات مشروع فني ("موقت - مول شابيلي جراند بالرياض") بين الطرف الأول شركة فنون الوليد والطرف الثاني السيد ${empName}:
 1. يلتزم الطرف الثاني بتسخير مهام خبرته لإنجاز مقاسات ورفع لوحات وبدلات النيون المضيئة لهذا المقصد الحصري.
-2. تنتهي العلاقة التعاقدية حكماً وتلقائياً فور تصفية وإعلان تسليم اللوحات الخارجية للجهة الاستشارية للمشروع، وبدون الحاجة لإنذار مسبق المادة ٥٤ لقانون العمل السعودي.
+2. تنتهي العلاقة التعاقدية حكماً وتلقائياً فور تصفية وإعلان تسليم اللوحات الخارجية للجهة الاستشارية للمشروع، وبدون الحاجة لإنذار مسبق المادة 54 لقانون العمل السعودي.
 3. يستحق الطرف الثاني الراتب الحصري البالغ ${basicPay} ريال سعودي ولا يجوز المطالبة بملحق دائم بعد إنتهاء التصفية.`,
         body_en: `This Task-Specific Temporary labor agreement is signed for the exclusive execution of signage assemblies at "Shabili Mall Riyadh construction project" between First Party and Second Party Mr. ${empName}:
 1. The specialist shall deploy technical proficiency to shape, drill and mount structural outdoor letters for Shabili Mall.
@@ -111,7 +111,7 @@ export default function HrContractsTab({ lang, employees }: HrContractsTabProps)
       title_en: 'Standard National Labor Covenant (Saudi Fixed Framework)',
       body_ar: `إنه في يوم ${today}، جرى تحرير هذا الاتفاق بالتراضي بين شركة فنون الوليد للصناعة (الطرف الأول) والمواطن السعودي السيد ${empName} (هوية وطنية رقم ${activeEmp.iqamaId}) ويشار إليه بـ (الطرف الثاني) على ما يلي:
 1. يلتزم الموظف بالعمل بملف المسمى الحوكمي "${activeEmp.jobTitle}" وسكك الدرجة السلمية المعتمدة بالقسم.
-2. مدة هذا الاتفاق سنة واحدة تبدأ من تاريخ مباشرة العمل الفعلي ${activeEmp.dateOfJoining || today}. ويخضع الموظف الحائز لفترة تجربة (٩٠ يوماً) قانونية تحت المادة ٨٠ لتقييم الكفاءة.
+2. مدة هذا الاتفاق سنة واحدة تبدأ من تاريخ مباشرة العمل الفعلي ${activeEmp.dateOfJoining || today}. ويخضع الموظف الحائز لفترة تجربة (90 يوماً) قانونية تحت المادة 80 لتقييم الكفاءة.
 3. يلتزم الطرف الأول بإلحاق وتسجيل الطرف الثاني بالهيئة الوطنية للتأمينات الاجتماعية (GOSI)، وسداد وعاء أجور كلي معتمد يبلغ ${(basicPay + housing).toLocaleString('en-US')} ريال شامل أساس وبدل سكن.`,
       body_en: `On this day of ${today}, this employment agreement is ratified between Al-Waleed Neon Ltd. (First Party) and Saudi Citizen Mr. ${empName}, holder of National ID: ${activeEmp.iqamaId} (Second Party):
 1. Second Party is assigned to perform technical operations under the approved job description of "${activeEmp.jobTitle}".

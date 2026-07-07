@@ -568,6 +568,13 @@ export default function App() {
     }
   };
 
+  // Synchronize document direction and language attributes
+  useEffect(() => {
+    const htmlEl = document.documentElement;
+    htmlEl.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    htmlEl.setAttribute("lang", lang);
+  }, [lang]);
+
   // Apply Accessibility Settings
   useEffect(() => {
     const htmlEl = document.documentElement;
@@ -636,7 +643,8 @@ export default function App() {
 
         if (uRes.ok) setUsers(await uRes.json());
         if (eRes.ok) {
-          loadedEmployees = await eRes.json();
+          loadedEmployees = (await eRes.json()) || [];
+          loadedEmployees = loadedEmployees.filter(Boolean);
           setEmployees(loadedEmployees);
         }
         if (qRes.ok) {
@@ -1114,7 +1122,8 @@ export default function App() {
         // Fetch fresh employee list and update local search index immediately
         const freshEmpsRes = await fetch("/api/employees");
         if (freshEmpsRes.ok) {
-          const freshEmps = await freshEmpsRes.json();
+          let freshEmps = await freshEmpsRes.json();
+          freshEmps = (freshEmps || []).filter(Boolean);
           setEmployees(freshEmps);
           handleRebuildIndex(freshEmps, quotations);
         }
@@ -1161,7 +1170,8 @@ export default function App() {
         // Fetch fresh employee list and update index
         const freshEmpsRes = await fetch("/api/employees");
         if (freshEmpsRes.ok) {
-          const freshEmps = await freshEmpsRes.json();
+          let freshEmps = await freshEmpsRes.json();
+          freshEmps = (freshEmps || []).filter(Boolean);
           setEmployees(freshEmps);
           handleRebuildIndex(freshEmps, quotations);
         }
@@ -1386,7 +1396,7 @@ export default function App() {
         // Dynamic recruitment budget validation
         // Total company salary allocation calculation
         const totalSalaryExpense = employees.reduce(
-          (acc, emp) => acc + emp.basicSalary,
+          (acc, emp) => acc + (emp?.basicSalary || 0),
           0,
         );
         const monthlyHRBudget = 150000; // Al-Waleed target cap
@@ -4686,10 +4696,11 @@ export default function App() {
                               </thead>
                               <tbody className="divide-y divide-slate-100">
                                 {filteredEmployees.map((emp) => {
-                                  const totalSalary =
-                                    emp.basicSalary +
-                                    emp.allowances.housing +
-                                    emp.allowances.transport;
+                                  if (!emp) return null;
+                                  const basic = emp.basicSalary || 0;
+                                  const housing = emp.allowances?.housing || 0;
+                                  const transport = emp.allowances?.transport || 0;
+                                  const totalSalary = basic + housing + transport;
                                   return (
                                     <tr
                                       key={emp.id}
@@ -4721,9 +4732,9 @@ export default function App() {
                                           SAR {(totalSalary || 0).toLocaleString('en-US')}
                                         </p>
                                         <p className="text-[8px] text-slate-400">
-                                          Basic: {emp.basicSalary} | Allaw:{" "}
-                                          {emp.allowances.housing +
-                                            emp.allowances.transport}
+                                          Basic: {emp.basicSalary || 0} | Allaw:{" "}
+                                          {(emp.allowances?.housing || 0) +
+                                            (emp.allowances?.transport || 0)}
                                         </p>
                                       </td>
 

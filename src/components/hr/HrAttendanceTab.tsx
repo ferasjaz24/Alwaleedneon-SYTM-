@@ -258,7 +258,7 @@ export default function HrAttendanceTab({ lang, employees }: HrAttendanceTabProp
                 <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2 rounded-xl text-[10px] font-bold max-w-sm flex items-start gap-1">
                   <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>
-                    {lang === 'ar' ? 'تحذير: خارج نطاق لوحة الإعلانات بمسافة تتعدى الـ ٥٠٠ مترا كجدار حماية!' : 'Violation: Staff clocked too far from Olaya installation site coordinates limits! Potential offset hazard.'}
+                    {lang === 'ar' ? 'تحذير: خارج نطاق لوحة الإعلانات بمسافة تتعدى الـ 500 مترا كجدار حماية!' : 'Violation: Staff clocked too far from Olaya installation site coordinates limits! Potential offset hazard.'}
                   </span>
                 </div>
               ) : (

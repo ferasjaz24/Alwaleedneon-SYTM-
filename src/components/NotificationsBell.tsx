@@ -170,7 +170,7 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
             id: 'fin-sup-late',
             type: 'finance',
             title: lang === 'ar' ? 'فواتير موردين متأخرة السداد' : 'Overdue Supplier Invoices',
-            message: lang === 'ar' ? `يوجد ${lateSupCount} فواتير موردين غير مسددة منذ أكثر من ٣٠ يوماً` : `There are ${lateSupCount} supplier invoices unpaid for over 30 days`,
+            message: lang === 'ar' ? `يوجد ${lateSupCount} فواتير موردين غير مسددة منذ أكثر من 30 يوماً` : `There are ${lateSupCount} supplier invoices unpaid for over 30 days`,
             date: todayStr,
             isRead: false,
             icon: <FileText className="w-5 h-5 text-amber-500" />
@@ -220,7 +220,7 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
             id: 'prod-stage-delay',
             type: 'production',
             title: lang === 'ar' ? 'تأخر في مراحل التصنيع' : 'Manufacturing Stage Delay',
-            message: lang === 'ar' ? `يوجد ${stageDelayCount} مشاريع إنتاج تجاوزت ١٥ يوماً دون اكتمال` : `There are ${stageDelayCount} production projects active for over 15 days`,
+            message: lang === 'ar' ? `يوجد ${stageDelayCount} مشاريع إنتاج تجاوزت 15 يوماً دون اكتمال` : `There are ${stageDelayCount} production projects active for over 15 days`,
             date: todayStr,
             isRead: false,
             icon: <Clock className="w-5 h-5 text-orange-500" />
@@ -263,7 +263,7 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
             id: 'sales-pipeline-delay',
             type: 'sales',
             title: lang === 'ar' ? 'ركود في دورة المبيعات' : 'Sales Pipeline Stagnant',
-            message: lang === 'ar' ? `يوجد ${salesDelayCount} عروض أسعار معلقة منذ أكثر من ١٤ يوماً` : `There are ${salesDelayCount} quotations pending for over 14 days`,
+            message: lang === 'ar' ? `يوجد ${salesDelayCount} عروض أسعار معلقة منذ أكثر من 14 يوماً` : `There are ${salesDelayCount} quotations pending for over 14 days`,
             date: todayStr,
             isRead: false,
             icon: <AlertTriangle className="w-5 h-5 text-amber-500" />

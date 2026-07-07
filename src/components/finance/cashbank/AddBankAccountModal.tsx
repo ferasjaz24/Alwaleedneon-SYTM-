@@ -3,7 +3,8 @@ import { User } from "../../../types";
 import { BankAccount } from "./types";
 import { db } from "../../../firebase";
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-import { X, Save } from "lucide-react";
+import { X, Save, CheckCircle } from "lucide-react";
+import { detectBankFromIban } from "../../../utils/ibanHelper";
 
 interface Props {
   lang: "ar" | "en";
@@ -190,14 +191,34 @@ export default function AddBankAccountModal({ lang, user, bankAccount, onClose }
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                IBAN
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  IBAN
+                </label>
+                {formData.iban && (() => {
+                  const det = detectBankFromIban(formData.iban, lang);
+                  return det.matched ? (
+                    <span className="inline-flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <CheckCircle className="w-3.5 h-3.5 mr-1 ml-1" />
+                      {lang === "ar" ? `تم التعرف: ${det.ar}` : `Detected: ${det.en}`}
+                    </span>
+                  ) : null;
+                })()}
+              </div>
               <input
                 type="text"
                 required
                 value={formData.iban}
-                onChange={(e) => setFormData({ ...formData, iban: e.target.value.toUpperCase() })}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase().replace(/\s+/g, "");
+                  const det = detectBankFromIban(val, lang);
+                  setFormData({
+                    ...formData,
+                    iban: val,
+                    bank_name_ar: det.matched ? det.ar : formData.bank_name_ar,
+                    bank_name_en: det.matched ? det.en : formData.bank_name_en,
+                  });
+                }}
                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]"
                 dir="ltr"
                 placeholder="SA..."

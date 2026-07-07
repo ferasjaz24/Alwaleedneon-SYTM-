@@ -1202,14 +1202,14 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
           onClick={() => openInvoiceForm(null)}
           className="bg-[#0072BC] hover:bg-[#005185] text-white py-3 px-6 rounded-2xl font-bold text-sm shadow-lg transition-all flex items-center gap-2"
         >
-          <span>➕</span> إصدار فاتورة عميل جديدة
+          <span>➕</span> {lang === "ar" ? "إصدار فاتورة عميل جديدة" : "Issue New Customer Invoice"}
         </button>
       </div>
 
       {/* Filters Panel */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xl grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">بحث برقم الفاتورة</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">{lang === "ar" ? "بحث برقم الفاتورة" : "Search Invoice No."}</label>
           <input
             type="text"
             value={searchNo}
@@ -1219,42 +1219,42 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">بحث باسم العميل</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">{lang === "ar" ? "بحث باسم العميل" : "Search Customer Name"}</label>
           <input
             type="text"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
             className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs"
-            placeholder="شركة..."
+            placeholder={lang === "ar" ? "شركة..." : "Company..."}
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">فلتر حالة الدفع</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">{lang === "ar" ? "فلتر حالة الدفع" : "Payment Status Filter"}</label>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs bg-white"
           >
-            <option value="all">كل حالات الفواتير</option>
-            <option value="Draft">مسودة (Draft)</option>
-            <option value="Issued">معتمدة (Issued)</option>
-            <option value="Partially Paid">مدفوعة جزئياً</option>
-            <option value="Paid">مدفوعة بالكامل</option>
-            <option value="Cancelled">ملغاة</option>
+            <option value="all">{lang === "ar" ? "كل حالات الفواتير" : "All Invoice Statuses"}</option>
+            <option value="Draft">{lang === "ar" ? "مسودة (Draft)" : "Draft"}</option>
+            <option value="Issued">{lang === "ar" ? "معتمدة (Issued)" : "Issued"}</option>
+            <option value="Partially Paid">{lang === "ar" ? "مدفوعة جزئياً" : "Partially Paid"}</option>
+            <option value="Paid">{lang === "ar" ? "مدفوعة بالكامل" : "Fully Paid"}</option>
+            <option value="Cancelled">{lang === "ar" ? "ملغاة" : "Cancelled"}</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">حالة ZATCA</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">{lang === "ar" ? "حالة ZATCA" : "ZATCA Status"}</label>
           <select
             value={filterZatca}
             onChange={(e) => setFilterZatca(e.target.value)}
             className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs bg-white"
           >
-            <option value="all">كل الحالات الإلكترونية</option>
-            <option value="Pending">مبسطة جاهزة للتبليغ (Pending)</option>
-            <option value="Cleared">مستوفية التخليص (Cleared)</option>
-            <option value="Reported">تم الإبلاغ (Reported)</option>
-            <option value="Failed">فشل الإرسال (Failed)</option>
+            <option value="all">{lang === "ar" ? "كل الحالات الإلكترونية" : "All Electronic Statuses"}</option>
+            <option value="Pending">{lang === "ar" ? "مبسطة جاهزة للتبليغ (Pending)" : "Pending (Simplified)"}</option>
+            <option value="Cleared">{lang === "ar" ? "مستوفية التخليص (Cleared)" : "Cleared"}</option>
+            <option value="Reported">{lang === "ar" ? "تم الإبلاغ (Reported)" : "Reported"}</option>
+            <option value="Failed">{lang === "ar" ? "فشل الإرسال (Failed)" : "Failed"}</option>
           </select>
         </div>
       </div>
@@ -1263,23 +1263,23 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-20 text-slate-400 font-medium">
-            لا توجد فواتير تطابق شروط البحث الفلترة. يرجى إصدار أول فاتورة لتبدأ الدورة المالية.
+            {lang === "ar" ? "لا توجد فواتير تطابق شروط البحث الفلترة. يرجى إصدار أول فاتورة لتبدأ الدورة المالية." : "No invoices match the search criteria. Please issue your first invoice to start the financial cycle."}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-700 font-extrabold uppercase border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4">رقم الفاتورة</th>
-                  <th className="px-6 py-4">العميل</th>
-                  <th className="px-6 py-4">التاريخ</th>
-                  <th className="px-6 py-4">تاريخ الاستحقاق</th>
-                  <th className="px-6 py-4 text-left">قيمة الفاتورة (SAR)</th>
-                  <th className="px-6 py-4 text-left">المدفوع</th>
-                  <th className="px-6 py-4 text-left">المتبقي</th>
-                  <th className="px-6 py-4 text-center">حالة الدفع</th>
-                  <th className="px-6 py-4 text-center">نوع الفاتورة</th>
-                  <th className="px-6 py-4 text-center">العمليات</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "رقم الفاتورة" : "Invoice No."}</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "العميل" : "Customer"}</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "التاريخ" : "Date"}</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "قيمة الفاتورة (SAR)" : "Invoice Amount (SAR)"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "المدفوع" : "Paid"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "المتبقي" : "Remaining"}</th>
+                  <th className="px-6 py-4 text-center">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</th>
+                  <th className="px-6 py-4 text-center">{lang === "ar" ? "نوع الفاتورة" : "Invoice Type"}</th>
+                  <th className="px-6 py-4 text-center">{lang === "ar" ? "العمليات" : "Actions"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y font-semibold text-slate-600">

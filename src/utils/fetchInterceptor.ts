@@ -945,16 +945,17 @@ const customFetch = async function (
           });
 
           // Merge with fallback to ensure large items or offline items appear
-          const fallbackList = getLocalCollection(collectionName);
+          const fallbackList = getLocalCollection(collectionName).filter(Boolean);
+          const filteredList = list.filter(Boolean);
           fallbackList.forEach((fbItem) => {
-            if (!list.find((d) => d.id === fbItem.id)) {
-              list.push(fbItem);
+            if (fbItem && fbItem.id && !filteredList.find((d) => d && d.id === fbItem.id)) {
+              filteredList.push(fbItem);
             }
           });
           // Update the fallback with the merged list
-          saveLocalCollection(collectionName, list);
+          saveLocalCollection(collectionName, filteredList);
 
-          return new Response(JSON.stringify(list), {
+          return new Response(JSON.stringify(filteredList), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
@@ -963,7 +964,7 @@ const customFetch = async function (
             `Firestore read collection failed for ${collectionName}, using localStorage fallback:`,
             error,
           );
-          const list = getLocalCollection(collectionName);
+          const list = getLocalCollection(collectionName).filter(Boolean);
           return new Response(JSON.stringify(list), {
             status: 200,
             headers: { "Content-Type": "application/json" },

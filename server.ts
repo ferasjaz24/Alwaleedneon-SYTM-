@@ -475,6 +475,60 @@ export async function startServer() {
     }
   });
 
+  app.post("/api/translate", async (req, res) => {
+    try {
+      const { text, targetLang } = req.body;
+      if (!text) {
+        return res.json({ translation: "" });
+      }
+
+      const ai = await getGeminiClient();
+
+      if (Array.isArray(text)) {
+        // Filter out empty/whitespace-only strings to save API tokens
+        const cleanTexts = text.map(t => typeof t === 'string' ? t.trim() : "");
+        const prompt = `Translate each of the following strings into ${targetLang === 'en' ? 'English' : 'Arabic'}. Keep terms and professional naming context. Ensure the translation matches business, ERP, and signage manufacturing industry jargon if applicable.
+Do not add any explanations or notes. Return the result strictly as a JSON array of strings in the exact same order.
+JSON Input: ${JSON.stringify(cleanTexts)}`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            }
+          }
+        });
+
+        const resultText = response.text || "[]";
+        try {
+          const parsed = JSON.parse(resultText);
+          return res.json({ translation: parsed });
+        } catch (e) {
+          console.error("Failed to parse Gemini translation response as JSON:", resultText);
+          return res.json({ translation: text }); // Fallback to original
+        }
+      } else {
+        const prompt = `Translate the following text into ${targetLang === 'en' ? 'English' : 'Arabic'}. Do not add any prefix, suffix, quotes, notes, or chat introductions. Return ONLY the translated string.
+Text to translate: ${text}`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: prompt,
+        });
+
+        return res.json({ translation: (response.text || "").trim() });
+      }
+    } catch (err: any) {
+      console.error("Translation error in /api/translate:", err);
+      // Fail gracefully: return original text so system is always functional
+      return res.json({ translation: req.body.text, error: err.message });
+    }
+  });
+
   app.get("/api/users", async (req, res) => {
     res.json(await getCollectionDocs("users"));
   });

@@ -24,6 +24,8 @@ import {
   sharedPrintFooter,
   sharedPrintStyles,
 } from "../utils/PrintShared";
+import { detectBankFromIban } from "../utils/ibanHelper";
+import { TranslatedText } from "../utils/translator";
 
 interface SuppliersPricingProps {
   lang: "ar" | "en";
@@ -1065,10 +1067,10 @@ function SuppliersPortalView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                 <Building2Icon />
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">
-                {s.name}
+                <TranslatedText text={s.name} lang={lang} />
               </h3>
               <p className="text-xs text-slate-500 font-bold mb-4">
-                {s.specialty || "بدون تخصص"}
+                <TranslatedText text={s.specialty} lang={lang} fallback={lang === "ar" ? "بدون تخصص" : "No specialty"} />
               </p>
               <div className="space-y-2 text-xs text-slate-600">
                 {s.iban && (
@@ -1082,7 +1084,7 @@ function SuppliersPortalView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                     <span className="text-slate-400 ml-1">
                       {lang === "ar" ? "العنوان:" : "Addr:"}
                     </span>{" "}
-                    {s.address}
+                    <TranslatedText text={s.address} lang={lang} />
                   </p>
                 )}
                 <hr className="my-2 border-slate-100" />
@@ -1090,7 +1092,9 @@ function SuppliersPortalView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                   <span className="text-slate-400 ml-1">
                     {lang === "ar" ? "المندوب:" : "Rep:"}
                   </span>{" "}
-                  <strong className="text-slate-700">{s.repName}</strong>{" "}
+                  <strong className="text-slate-700">
+                    <TranslatedText text={s.repName} lang={lang} />
+                  </strong>{" "}
                   {s.repNationality ? `(${s.repNationality})` : ""}
                 </p>
                 <p>
@@ -1145,15 +1149,29 @@ function SuppliersPortalView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                   setEditingSup({ ...editingSup, name: e.target.value })
                 }
               />
-              <input
-                type="text"
-                placeholder="IBAN"
-                className="w-full p-3 border rounded-xl"
-                value={editingSup.iban || ""}
-                onChange={(e) =>
-                  setEditingSup({ ...editingSup, iban: e.target.value })
-                }
-              />
+              <div className="space-y-1">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs text-slate-500 font-bold">IBAN</span>
+                  {editingSup.iban && (() => {
+                    const det = detectBankFromIban(editingSup.iban, lang);
+                    return det.matched ? (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
+                        ✓ {lang === "ar" ? det.ar : det.en}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                <input
+                  type="text"
+                  placeholder="IBAN"
+                  className="w-full p-3 border rounded-xl font-mono text-center text-sm"
+                  value={editingSup.iban || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase().replace(/\s+/g, "");
+                    setEditingSup({ ...editingSup, iban: val });
+                  }}
+                />
+              </div>
               <input
                 type="text"
                 placeholder={lang === "ar" ? "العنوان" : "Address"}

@@ -816,7 +816,7 @@ export default function HrLeavesTab({
           >
             ⏱️{" "}
             {lang === "ar"
-              ? "تراكم بمعدل ٢.٥ يوم شهرياً"
+              ? "تراكم بمعدل 2.5 يوم شهرياً"
               : "Simulate 2.5d Accrual Month"}
           </button>
 

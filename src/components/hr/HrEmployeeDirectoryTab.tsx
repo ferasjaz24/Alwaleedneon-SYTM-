@@ -25,6 +25,8 @@ import * as XLSX from "xlsx";
 import { Employee, CustodyAsset, User } from "../../types";
 import { countries, getNationalityCode } from "../../utils/countries";
 import { searchEmployeesIndexed } from "../../lib/searchIndex";
+import { detectBankFromIban } from "../../utils/ibanHelper";
+import { TranslatedText } from "../../utils/translator";
 // Custom Country Select Component
 function CountrySelect({
   value,
@@ -1326,7 +1328,7 @@ export default function HrEmployeeDirectoryTab({
                           className="font-extrabold text-slate-800 text-[13px] cursor-pointer hover:text-[#0072BC] hover:underline transition-all"
                           onClick={() => handleOpenViewMore(emp)}
                         >
-                          {emp.arabicName}
+                          {lang === "en" ? (emp.englishName || <TranslatedText text={emp.arabicName} lang={lang} />) : emp.arabicName}
                         </p>
                         <p className="text-[10px] text-slate-450 font-mono mt-0.5">
                           {emp.englishName || emp.id}
@@ -1345,11 +1347,11 @@ export default function HrEmployeeDirectoryTab({
                   <td className="p-4">
                     <div className="flex flex-col gap-1 items-start">
                       <span className="px-3 py-1 bg-slate-100 text-slate-700 font-extrabold rounded-lg text-[10.5px]">
-                        {emp.jobTitle}
+                        <TranslatedText text={emp.jobTitle} lang={lang} />
                       </span>
                       {emp.classification && (
                         <span className="px-2 py-0.5 text-[9px] font-bold bg-[#0072BC]/10 text-[#0072BC] rounded">
-                          {emp.classification}
+                          <TranslatedText text={emp.classification} lang={lang} />
                         </span>
                       )}
                       {emp.company && (
@@ -1358,7 +1360,7 @@ export default function HrEmployeeDirectoryTab({
                             ? "bg-purple-50 text-purple-700 border-purple-100"
                             : "bg-blue-50 text-blue-700 border-blue-100"
                         }`}>
-                          {emp.company}
+                          <TranslatedText text={emp.company} lang={lang} />
                         </span>
                       )}
                     </div>
@@ -2717,13 +2719,50 @@ export default function HrEmployeeDirectoryTab({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right">
                           {/* IBAN */}
                           <div className="md:col-span-2">
-                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
-                              {lang === "ar" ? "رقم الآيبان (IBAN - يبدأ بـ SA و 24 حرف)" : "IBAN (Must start with SA)"}
-                            </label>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="block text-slate-400 font-bold text-[10px]">
+                                {lang === "ar" ? "رقم الآيبان (IBAN - يبدأ بـ SA و 24 حرف)" : "IBAN (Must start with SA)"}
+                              </label>
+                              {bankInfoForm.iban && (() => {
+                                const det = detectBankFromIban(bankInfoForm.iban, lang);
+                                return det.matched ? (
+                                  <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-100">
+                                    ✓ {lang === "ar" ? det.ar : det.en}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                             <input
                               type="text"
                               value={bankInfoForm.iban}
-                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, iban: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value.toUpperCase().replace(/\s+/g, "");
+                                const det = detectBankFromIban(val, lang);
+                                if (det.matched) {
+                                  const matchedBank = [
+                                    { nameAr: "مصرف الراجحي", nameEn: "Al Rajhi Bank", swift: "RJHIYARI" },
+                                    { nameAr: "البنك الأهلي السعودي (SNB)", nameEn: "Saudi National Bank (SNB)", swift: "NCBKSARI" },
+                                    { nameAr: "بنك الرياض", nameEn: "Riyadh Bank", swift: "RYADKARI" },
+                                    { nameAr: "مصرف الإنماء", nameEn: "Alinma Bank", swift: "ALBIKARI" },
+                                    { nameAr: "البنك العربي الوطني", nameEn: "Arab National Bank", swift: "ARABKARI" },
+                                    { nameAr: "البنك السعودي الأول (SAB)", nameEn: "Saudi First Bank (SAB)", swift: "SABBKSRI" },
+                                    { nameAr: "بنك البلاد", nameEn: "Bank Albilad", swift: "ALBIKARI" },
+                                    { nameAr: "بنك الجزيرة", nameEn: "Bank AlJazira", swift: "BJAZKARI" },
+                                    { nameAr: "البنك السعودي للاستثمار", nameEn: "Saudi Investment Bank", swift: "BSFKKARI" },
+                                    { nameAr: "بنك الخليج الدولي", nameEn: "Gulf International Bank", swift: "GIBKKARI" },
+                                  ].find(b => b.nameAr === det.ar || b.nameEn === det.en);
+                                  
+                                  setShowCustomBankInput(false);
+                                  setBankInfoForm({
+                                    ...bankInfoForm,
+                                    iban: val,
+                                    bankName: lang === "ar" ? det.ar : det.en,
+                                    swiftCode: matchedBank ? matchedBank.swift : bankInfoForm.swiftCode,
+                                  });
+                                } else {
+                                  setBankInfoForm({ ...bankInfoForm, iban: val });
+                                }
+                              }}
                               className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
                               placeholder="SA..."
                               maxLength={34}
@@ -3655,20 +3694,41 @@ export default function HrEmployeeDirectoryTab({
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
-                    <label className="block text-slate-500 font-bold mb-1">
-                      {lang === "ar" ? "رقم الآيبان (IBAN)" : "IBAN (Must start with SA)"}
-                    </label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-slate-500 font-bold">
+                        {lang === "ar" ? "رقم الآيبان (IBAN)" : "IBAN (Must start with SA)"}
+                      </label>
+                      {newEmpForm.iban && (() => {
+                        const det = detectBankFromIban(newEmpForm.iban, lang);
+                        return det.matched ? (
+                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-100">
+                            ✓ {lang === "ar" ? det.ar : det.en}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     <input
                       type="text"
                       placeholder="SA..."
                       maxLength={24}
                       value={newEmpForm.iban || ""}
-                      onChange={(e) =>
-                        setNewEmpForm({
-                          ...newEmpForm,
-                          iban: e.target.value.replace(/\s+/g, "").toUpperCase(),
-                        })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\s+/g, "").toUpperCase();
+                        const det = detectBankFromIban(val, lang);
+                        if (det.matched) {
+                          setShowNewEmpCustomBankInput(false);
+                          setNewEmpForm({
+                            ...newEmpForm,
+                            iban: val,
+                            bankName: lang === "ar" ? det.ar : det.en,
+                          });
+                        } else {
+                          setNewEmpForm({
+                            ...newEmpForm,
+                            iban: val,
+                          });
+                        }
+                      }}
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center text-xs"
                     />
                   </div>
@@ -3794,7 +3854,7 @@ export default function HrEmployeeDirectoryTab({
               <div className="space-y-2">
                 <label className="font-extrabold text-slate-700">
                   {lang === "ar"
-                    ? "١. الصق نصاً أو بيانات:"
+                    ? "1. الصق نصاً أو بيانات:"
                     : "1. Paste Text/Data:"}
                 </label>
                 <textarea
@@ -3811,7 +3871,7 @@ export default function HrEmployeeDirectoryTab({
               <div className="space-y-2">
                 <label className="font-extrabold text-slate-700">
                   {lang === "ar"
-                    ? "٢. أو ارفع صورة / مستند (PDF/Excel):"
+                    ? "2. أو ارفع صورة / مستند (PDF/Excel):"
                     : "2. Or Upload Document (PDF/Excel/Image):"}
                 </label>
                 <input

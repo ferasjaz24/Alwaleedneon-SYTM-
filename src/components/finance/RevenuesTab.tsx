@@ -356,14 +356,16 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
   });
 
   return (
-    <div className="bg-slate-50 min-h-screen p-4 md:p-8 space-y-6" dir="rtl">
+    <div className="bg-slate-50 min-h-screen p-4 md:p-8 space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Title */}
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#005185] tracking-tight">
-          💰 قسم الإيرادات والمستحقات المالية
+          {lang === "ar" ? "💰 قسم الإيرادات والمستحقات المالية" : "💰 Revenues & Accounts Receivable"}
         </h1>
         <p className="text-slate-500 mt-1 text-sm">
-          تتبع الإيرادات المتولدة من فواتير المبيعات الصادرة، وإدارة سندات المقبوضات وتثبيت الدفعات المتتالية للعملاء.
+          {lang === "ar"
+            ? "تتبع الإيرادات المتولدة من فواتير المبيعات الصادرة، وإدارة سندات المقبوضات وتثبيت الدفعات المتتالية للعملاء."
+            : "Track revenues generated from sales invoices, manage receipt vouchers, and register customer payments."}
         </p>
       </div>
 
@@ -375,7 +377,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "all" ? "bg-[#0072BC] text-white border-[#005185]" : "bg-white border-slate-100"
           }`}
         >
-          <span className="text-xs font-bold opacity-80">إجمالي الإيرادات التعاقدية</span>
+          <span className="text-xs font-bold opacity-80">{lang === "ar" ? "إجمالي الإيرادات التعاقدية" : "Total Contractual Revenues"}</span>
           <p className="text-xl font-extrabold mt-1">
             {revenues
               .filter((x) => x.revenueStatus !== "Cancelled")
@@ -390,7 +392,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "unpaid" ? "bg-rose-600 text-white border-rose-700" : "bg-white border-slate-100"
           }`}
         >
-          <span className="text-xs font-bold opacity-80">إجمالي الذمم المدينة غير المدفوعة</span>
+          <span className="text-xs font-bold opacity-80">{lang === "ar" ? "إجمالي الذمم المدينة غير المدفوعة" : "Total Outstanding Receivable"}</span>
           <p className="text-xl font-extrabold mt-1">
             {revenues
               .filter((x) => x.revenueStatus === "Unpaid")
@@ -405,7 +407,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "partially_paid" ? "bg-amber-500 text-white border-amber-600" : "bg-white border-slate-100"
           }`}
         >
-          <span className="text-xs font-bold opacity-80">مقبوضات جزئية معلقة</span>
+          <span className="text-xs font-bold opacity-80">{lang === "ar" ? "مقبوضات جزئية معلقة" : "Pending Partial Collections"}</span>
           <p className="text-xl font-extrabold mt-1">
             {revenues
               .filter((x) => x.revenueStatus === "Partially Paid")
@@ -420,7 +422,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "paid" ? "bg-emerald-600 text-white border-emerald-700" : "bg-white border-slate-100"
           }`}
         >
-          <span className="text-xs font-bold opacity-80">إجمالي الإيرادات المحصلة فعلياً</span>
+          <span className="text-xs font-bold opacity-80">{lang === "ar" ? "إجمالي الإيرادات المحصلة فعلياً" : "Total Actually Collected"}</span>
           <p className="text-xl font-extrabold mt-1">
             {revenues
               .filter((x) => x.revenueStatus !== "Cancelled")
@@ -439,7 +441,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "all" ? "border-[#0072BC] text-[#0072BC]" : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          كل الإيرادات ({revenues.filter((x) => x.revenueStatus !== "Cancelled").length})
+          {lang === "ar" ? "كل الإيرادات" : "All Revenues"} ({revenues.filter((x) => x.revenueStatus !== "Cancelled").length})
         </button>
         <button
           onClick={() => setActiveSubFilter("unpaid")}
@@ -447,7 +449,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "unpaid" ? "border-rose-600 text-rose-600" : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          مستحقات غير مدفوعة ({revenues.filter((x) => x.revenueStatus === "Unpaid").length})
+          {lang === "ar" ? "مستحقات غير مدفوعة" : "Outstanding Balances"} ({revenues.filter((x) => x.revenueStatus === "Unpaid").length})
         </button>
         <button
           onClick={() => setActiveSubFilter("partially_paid")}
@@ -455,7 +457,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "partially_paid" ? "border-amber-500 text-amber-500" : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          مدفوعة جزئياً ({revenues.filter((x) => x.revenueStatus === "Partially Paid").length})
+          {lang === "ar" ? "مدفوعة جزئياً" : "Partially Collected"} ({revenues.filter((x) => x.revenueStatus === "Partially Paid").length})
         </button>
         <button
           onClick={() => setActiveSubFilter("paid")}
@@ -463,7 +465,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "paid" ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          محصلة بالكامل ({revenues.filter((x) => x.revenueStatus === "Paid").length})
+          {lang === "ar" ? "محصلة بالكامل" : "Fully Collected"} ({revenues.filter((x) => x.revenueStatus === "Paid").length})
         </button>
         <button
           onClick={() => setActiveSubFilter("overdue")}
@@ -471,7 +473,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             activeSubFilter === "overdue" ? "border-red-600 text-red-600 animate-pulse" : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          فواتير متأخرة السداد (&gt;15 يوم)
+          {lang === "ar" ? "فواتير متأخرة السداد (>15 يوم)" : "Overdue Invoices (>15 Days)"}
         </button>
       </div>
 
@@ -479,21 +481,21 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
         {filteredRevenues.length === 0 ? (
           <div className="text-center py-20 text-slate-400 font-semibold">
-            لا توجد إيرادات مسجلة مطابقة للفرز الحالي.
+            {lang === "ar" ? "لا توجد إيرادات مسجلة مطابقة للفرز الحالي." : "No registered revenues matching the current filter."}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-700 font-extrabold uppercase border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4">رقم الفاتورة</th>
-                  <th className="px-6 py-4">العميل</th>
-                  <th className="px-6 py-4">تاريخ الاستحقاق</th>
-                  <th className="px-6 py-4 text-left">قيمة العقد شاملة الضريبة (SAR)</th>
-                  <th className="px-6 py-4 text-left">المبلغ المحصل فعلياً</th>
-                  <th className="px-6 py-4 text-left">المبلغ المتبقي الذمة</th>
-                  <th className="px-6 py-4 text-center">حالة تحصيل الإيراد</th>
-                  <th className="px-6 py-4 text-center">الإجراءات والعمليات</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "رقم الفاتورة" : "Invoice No."}</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "العميل" : "Customer"}</th>
+                  <th className="px-6 py-4">{lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "قيمة العقد شاملة الضريبة (SAR)" : "Contract Amount Inc. VAT (SAR)"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "المبلغ المحصل فعلياً" : "Amount Collected"}</th>
+                  <th className="px-6 py-4 text-left">{lang === "ar" ? "المبلغ المتبقي الذمة" : "Outstanding Receivable"}</th>
+                  <th className="px-6 py-4 text-center">{lang === "ar" ? "حالة تحصيل الإيراد" : "Collection Status"}</th>
+                  <th className="px-6 py-4 text-center">{lang === "ar" ? "الإجراءات والعمليات" : "Actions"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y font-semibold text-slate-600">
@@ -504,7 +506,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-extrabold text-slate-800">{rev.customerName}</p>
-                      {rev.quotationNo && <span className="text-[10px] text-slate-400">مرجع عرض سعر: {rev.quotationNo}</span>}
+                      {rev.quotationNo && <span className="text-[10px] text-slate-400">{lang === "ar" ? "مرجع عرض سعر: " : "Quotation Ref: "}{rev.quotationNo}</span>}
                     </td>
                     <td className="px-6 py-4 text-slate-500">{rev.revenueDate}</td>
                     <td className="px-6 py-4 text-left font-mono font-bold text-slate-800">
@@ -527,10 +529,10 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                         }`}
                       >
                         {rev.revenueStatus === "Unpaid"
-                          ? "مستحق بالكامل"
+                          ? (lang === "ar" ? "مستحق بالكامل" : "Outstanding")
                           : rev.revenueStatus === "Partially Paid"
-                          ? "محصل جزئياً"
-                          : "محصل بالكامل"}
+                          ? (lang === "ar" ? "محصل جزئياً" : "Partially Collected")
+                          : (lang === "ar" ? "محصل بالكامل" : "Fully Collected")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -540,16 +542,16 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                             onClick={() => openPaymentModal(rev)}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-3 rounded-lg text-[10px] font-extrabold transition-all shadow-sm"
                           >
-                            💵 تسجيل دفعة قبض
+                            {lang === "ar" ? "💵 تسجيل دفعة قبض" : "💵 Register Payment"}
                           </button>
                         ) : (
-                          <span className="text-emerald-700 text-xs">✔️ مستوفى</span>
+                          <span className="text-emerald-700 text-xs">{lang === "ar" ? "✔️ مستوفى" : "✔️ Settled"}</span>
                         )}
                         <button
                           onClick={() => openEditModal(rev)}
                           className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-lg text-[10px] font-extrabold transition-all border border-slate-200"
                         >
-                          ✏️ تعديل الإيراد
+                          {lang === "ar" ? "✏️ تعديل الإيراد" : "✏️ Edit Revenue"}
                         </button>
                       </div>
                     </td>
@@ -563,11 +565,11 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
       {/* REGISTER PAYMENT MODAL */}
       {showPaymentModal && selectedRevenue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in backdrop-blur-sm" dir={lang === "ar" ? "rtl" : "ltr"}>
           <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-5 text-white flex justify-between items-center">
               <h3 className="text-lg font-extrabold flex items-center gap-1.5">
-                <span>💰</span> تسجيل دفعة مقبوضات واردة
+                <span>💰</span> {lang === "ar" ? "تسجيل دفعة مقبوضات واردة" : "Register Incoming Payment"}
               </h3>
               <button
                 onClick={() => setShowPaymentModal(false)}
@@ -579,14 +581,14 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
             <form onSubmit={handleRegisterPayment} className="p-6 space-y-5 text-slate-700 text-xs font-bold">
               <div className="bg-slate-50 p-4 rounded-xl space-y-1.5">
-                <p>العميل المستفيد: <span className="text-[#005185]">{selectedRevenue.customerName}</span></p>
-                <p>الفاتورة المرتبطة: <span className="text-[#0072BC]">{selectedRevenue.invoiceNo}</span></p>
-                <p>الذمة المتبقية المستحقة: <span className="text-rose-600 font-mono text-sm">{Number(selectedRevenue.remainingAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</span></p>
+                <p>{lang === "ar" ? "العميل المستفيد:" : "Beneficiary Customer:"} <span className="text-[#005185]">{selectedRevenue.customerName}</span></p>
+                <p>{lang === "ar" ? "الفاتورة المرتبطة:" : "Linked Invoice:"} <span className="text-[#0072BC]">{selectedRevenue.invoiceNo}</span></p>
+                <p>{lang === "ar" ? "الذمة المتبقية المستحقة:" : "Remaining Balance Due:"} <span className="text-rose-600 font-mono text-sm">{Number(selectedRevenue.remainingAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</span></p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-600 mb-1">تاريخ التحصيل والدفع *</label>
+                  <label className="block text-slate-600 mb-1">{lang === "ar" ? "تاريخ التحصيل والدفع *" : "Collection & Payment Date *"}</label>
                   <input
                     type="date"
                     required
@@ -596,49 +598,49 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 mb-1">طريقة القبض والدفع *</label>
+                  <label className="block text-slate-600 mb-1">{lang === "ar" ? "طريقة القبض والدفع *" : "Receipt & Payment Method *"}</label>
                   <select
                     value={paymentForm.paymentMethod}
                     onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value as any })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-white"
                   >
-                    <option value="Bank Transfer">تحويل بنكي مباشر (Direct Transfer)</option>
-                    <option value="Cash">نقداً / كاش للصندوق (Cash Box)</option>
-                    <option value="Mada">شبكة مدى (Mada POS)</option>
-                    <option value="Cheque">شيك مصرفي (Cheque)</option>
+                    <option value="Bank Transfer">{lang === "ar" ? "تحويل بنكي مباشر (Direct Transfer)" : "Direct Bank Transfer"}</option>
+                    <option value="Cash">{lang === "ar" ? "نقداً / كاش للصندوق (Cash Box)" : "Cash to Box"}</option>
+                    <option value="Mada">{lang === "ar" ? "شبكة مدى (Mada POS)" : "Mada POS Network"}</option>
+                    <option value="Cheque">{lang === "ar" ? "شيك مصرفي (Cheque)" : "Bank Cheque"}</option>
                   </select>
                 </div>
 
                 {paymentForm.paymentMethod === "Cash" ? (
                   <div className="col-span-2">
-                    <label className="block text-slate-600 mb-1">تحديد صندوق نقدية الاستقبال *</label>
+                    <label className="block text-slate-600 mb-1">{lang === "ar" ? "تحديد صندوق نقدية الاستقبال *" : "Select Receiving Cash Box *"}</label>
                     <select
                       value={paymentForm.cashBoxId}
                       required
                       onChange={(e) => setPaymentForm({ ...paymentForm, cashBoxId: e.target.value })}
                       className="w-full border border-slate-200 rounded-lg p-2 bg-white"
                     >
-                      <option value="">-- اختر الصندوق النقدي --</option>
+                      <option value="">{lang === "ar" ? "-- اختر الصندوق النقدي --" : "-- Select Cash Box --"}</option>
                       {boxes.map((box) => (
                         <option key={box.id} value={box.id}>
-                          {box.cashBoxName} (الرصيد الحالي: {Number(box.currentBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
+                          {box.cashBoxName} ({lang === "ar" ? "الرصيد الحالي:" : "Balance:"} {Number(box.currentBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
                         </option>
                       ))}
                     </select>
                   </div>
                 ) : (
                   <div className="col-span-2">
-                    <label className="block text-slate-600 mb-1">تحديد الحساب البنكي المستقبل للدفعة *</label>
+                    <label className="block text-slate-600 mb-1">{lang === "ar" ? "تحديد الحساب البنكي المستقبل للدفعة *" : "Select Receiving Bank Account *"}</label>
                     <select
                       value={paymentForm.bankAccountId}
                       required
                       onChange={(e) => setPaymentForm({ ...paymentForm, bankAccountId: e.target.value })}
                       className="w-full border border-slate-200 rounded-lg p-2 bg-white"
                     >
-                      <option value="">-- اختر الحساب البنكي --</option>
+                      <option value="">{lang === "ar" ? "-- اختر الحساب البنكي --" : "-- Select Bank Account --"}</option>
                       {banks.map((bank) => (
                         <option key={bank.id} value={bank.id}>
-                          {bank.bankName} - {bank.accountName} (رصيد: {Number(bank.currentBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
+                          {bank.bankName} - {bank.accountName} ({lang === "ar" ? "رصيد:" : "Balance:"} {Number(bank.currentBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
                         </option>
                       ))}
                     </select>
@@ -646,7 +648,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                 )}
 
                 <div>
-                  <label className="block text-slate-600 mb-1">مبلغ القبض المسدد (SAR) *</label>
+                  <label className="block text-slate-600 mb-1">{lang === "ar" ? "مبلغ القبض المسدد (SAR) *" : "Receipt Payment Amount (SAR) *"}</label>
                   <input
                     type="number"
                     required
@@ -658,25 +660,25 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 mb-1">رقم الحوالة/المرجع</label>
+                  <label className="block text-slate-600 mb-1">{lang === "ar" ? "رقم الحوالة/المرجع" : "Transfer / Ref Number"}</label>
                   <input
                     type="text"
                     value={paymentForm.referenceNo}
                     onChange={(e) => setPaymentForm({ ...paymentForm, referenceNo: e.target.value })}
                     className="w-full border border-slate-200 rounded-lg p-2"
-                    placeholder="رقم العملية / مرجع البنك"
+                    placeholder={lang === "ar" ? "رقم العملية / مرجع البنك" : "Transaction Ref / Bank Ref"}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-600 mb-1">شرح وبيان الدفعة</label>
+                <label className="block text-slate-600 mb-1">{lang === "ar" ? "شرح وبيان الدفعة" : "Payment Description & Remarks"}</label>
                 <textarea
                   rows={2}
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                   className="w-full border border-slate-200 rounded-lg p-2"
-                  placeholder="ملاحظات تفصيلية..."
+                  placeholder={lang === "ar" ? "ملاحظات تفصيلية..." : "Detailed remarks..."}
                 />
               </div>
 
@@ -686,13 +688,13 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                   onClick={() => setShowPaymentModal(false)}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-5 rounded-lg text-xs transition-all"
                 >
-                  إلغاء
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-xs transition-all shadow-md"
                 >
-                  حفظ الدفعة وتوليد قيد مسودة
+                  {lang === "ar" ? "حفظ الدفعة وتوليد قيد مسودة" : "Save Payment & Generate Draft JV"}
                 </button>
               </div>
             </form>
@@ -702,16 +704,16 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
       {/* RECEIPT PRINT MODAL */}
       {showReceiptPrint && selectedReceipt && (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border overflow-hidden">
             <div className="bg-[#005185] p-5 text-white flex justify-between items-center">
-              <h2 className="text-sm font-bold">📄 سند قبض مبيعات مالي</h2>
+              <h2 className="text-sm font-bold">{lang === "ar" ? "📄 سند قبض مبيعات مالي" : "📄 Financial Sales Receipt Voucher"}</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => window.print()}
                   className="bg-white text-[#005185] py-1 px-3 rounded-lg font-bold text-xs"
                 >
-                  🖨️ طباعة السند
+                  {lang === "ar" ? "🖨️ طباعة السند" : "🖨️ Print Voucher"}
                 </button>
                 <button
                   onClick={() => setShowReceiptPrint(false)}
@@ -725,7 +727,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
             {/* Printable Receipt area */}
             <div className="p-8 space-y-6 text-slate-800 text-xs text-right select-text leading-relaxed font-semibold" id="receipt-print-area">
               <div className="text-center space-y-1 pb-4 border-b border-slate-200">
-                <h1 className="text-lg font-extrabold text-[#005185]">شركة فنون الوليد للدعاية والإعلان</h1>
+                <h1 className="text-lg font-extrabold text-[#005185]">{lang === "ar" ? "شركة فنون الوليد للدعاية والإعلان" : "Al Waleed Arts Advertising Co."}</h1>
                 <p className="text-[10px] text-slate-400 font-bold">AL WALEED ARTS ADVERTISING CO.</p>
                 <span className="inline-block border border-slate-400 px-3 py-0.5 rounded text-xs font-extrabold bg-slate-50">
                   سند قبض مالي مبيعات / RECEIPT VOUCHER
@@ -733,27 +735,27 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>رقم السند: <span className="font-mono text-[#0072BC] font-extrabold">{selectedReceipt.receiptNo}</span></div>
-                <div>تاريخ التحصيل: <span className="font-mono">{selectedReceipt.paymentDate}</span></div>
-                <div>الفاتورة المرتبطة: <span className="font-mono text-slate-700 font-bold">{selectedReceipt.invoiceNo}</span></div>
-                <div>طريقة الدفع: <span>{selectedReceipt.paymentMethod}</span></div>
+                <div>{lang === "ar" ? "رقم السند:" : "Voucher No:"} <span className="font-mono text-[#0072BC] font-extrabold">{selectedReceipt.receiptNo}</span></div>
+                <div>{lang === "ar" ? "تاريخ التحصيل:" : "Collection Date:"} <span className="font-mono">{selectedReceipt.paymentDate}</span></div>
+                <div>{lang === "ar" ? "الفاتورة المرتبطة:" : "Linked Invoice:"} <span className="font-mono text-slate-700 font-bold">{selectedReceipt.invoiceNo}</span></div>
+                <div>{lang === "ar" ? "طريقة الدفع:" : "Payment Method:"} <span>{selectedReceipt.paymentMethod}</span></div>
               </div>
 
               <hr />
 
               <div className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <p>استلمنا من السيد/السادة: <span className="text-[#005185] text-sm font-bold">{selectedReceipt.customerName}</span></p>
-                <p>مبلغ وقدره: <span className="text-emerald-700 text-sm font-extrabold">{Number(selectedReceipt.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</span></p>
-                {selectedReceipt.referenceNo && <p>بموجب المرجع/الحوالة: <span className="font-mono text-slate-600">{selectedReceipt.referenceNo}</span></p>}
-                {selectedReceipt.notes && <p>وذلك عن: {selectedReceipt.notes}</p>}
+                <p>{lang === "ar" ? "استلمنا من السيد/السادة:" : "Received from Messrs:"} <span className="text-[#005185] text-sm font-bold">{selectedReceipt.customerName}</span></p>
+                <p>{lang === "ar" ? "مبلغ وقدره:" : "The sum of:"} <span className="text-emerald-700 text-sm font-extrabold">{Number(selectedReceipt.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</span></p>
+                {selectedReceipt.referenceNo && <p>{lang === "ar" ? "بموجب المرجع/الحوالة:" : "By Ref/Transfer:"} <span className="font-mono text-slate-600">{selectedReceipt.referenceNo}</span></p>}
+                {selectedReceipt.notes && <p>{lang === "ar" ? "وذلك عن:" : "Being:"} {selectedReceipt.notes}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-8 pt-6 text-center font-bold">
                 <div>
-                  <p className="border-b pb-1 text-slate-400">توقيع المستلم والمسلم</p>
+                  <p className="border-b pb-1 text-slate-400">{lang === "ar" ? "توقيع المستلم والمسلم" : "Receiver & Deliverer Signature"}</p>
                 </div>
                 <div>
-                  <p className="border-b pb-1 text-[#005185]">ختم وتوقيع الإدارة المالية</p>
+                  <p className="border-b pb-1 text-[#005185]">{lang === "ar" ? "ختم وتوقيع الإدارة المالية" : "Financial Management Stamp & Signature"}</p>
                 </div>
               </div>
             </div>
@@ -763,7 +765,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                 onClick={() => setShowReceiptPrint(false)}
                 className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-xl text-xs transition-all"
               >
-                إغلاق السند
+                {lang === "ar" ? "إغلاق السند" : "Close Voucher"}
               </button>
             </div>
           </div>
@@ -772,11 +774,11 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
       {/* EDIT REVENUE MODAL */}
       {showEditModal && editingRevenue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in backdrop-blur-sm" dir={lang === "ar" ? "rtl" : "ltr"}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden text-right">
             <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-5 text-white flex justify-between items-center">
               <h3 className="text-xs font-extrabold flex items-center gap-1.5">
-                <span>✏️</span> تعديل بيانات الإيراد المستحق
+                <span>✏️</span> {lang === "ar" ? "تعديل بيانات الإيراد المستحق" : "Edit Outstanding Revenue"}
               </h3>
               <button
                 onClick={() => {
@@ -791,7 +793,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
             <form onSubmit={handleSaveEditRevenue} className="p-6 space-y-4 text-slate-700 text-xs font-bold">
               <div>
-                <label className="block text-slate-600 mb-1">اسم العميل (Customer Name) *</label>
+                <label className="block text-slate-600 mb-1">{lang === "ar" ? "اسم العميل (Customer Name) *" : "Customer Name *"}</label>
                 <input
                   type="text"
                   required
@@ -802,7 +804,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
               </div>
 
               <div>
-                <label className="block text-slate-600 mb-1">تاريخ استحقاق الإيراد *</label>
+                <label className="block text-slate-600 mb-1">{lang === "ar" ? "تاريخ استحقاق الإيراد *" : "Revenue Due Date *"}</label>
                 <input
                   type="date"
                   required
@@ -813,7 +815,7 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
               </div>
 
               <div>
-                <label className="block text-slate-600 mb-1">قيمة العقد الإجمالية شاملة الضريبة (SAR) *</label>
+                <label className="block text-slate-600 mb-1">{lang === "ar" ? "قيمة العقد الإجمالية شاملة الضريبة (SAR) *" : "Total Contract Value Inc. VAT (SAR) *"}</label>
                 <input
                   type="number"
                   required
@@ -823,18 +825,18 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                   className="w-full border border-slate-200 rounded-lg p-2 font-mono"
                 />
                 <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                  المبلغ الحالي المسدد منه: {Number(editingRevenue.paidAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR
+                  {lang === "ar" ? "المبلغ الحالي المسدد منه:" : "Currently Paid Amount:"} {Number(editingRevenue.paidAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR
                 </p>
               </div>
 
               <div>
-                <label className="block text-slate-600 mb-1">ملاحظات وشرح الإيراد</label>
+                <label className="block text-slate-600 mb-1">{lang === "ar" ? "ملاحظات وشرح الإيراد" : "Revenue Notes & Remarks"}</label>
                 <textarea
                   rows={2}
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                   className="w-full border border-slate-200 rounded-lg p-2"
-                  placeholder="مثال: إيراد الدفعة الأولى لمشروع لوحات طريق مكة..."
+                  placeholder={lang === "ar" ? "مثال: إيراد الدفعة الأولى لمشروع لوحات طريق مكة..." : "Example: Down payment for highway signs..."}
                 />
               </div>
 
@@ -847,13 +849,13 @@ export default function RevenuesTab({ lang, user }: { lang: "ar" | "en"; user: a
                   }}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-5 rounded-lg text-xs transition-all"
                 >
-                  إلغاء
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded-lg text-xs transition-all shadow-md"
                 >
-                  حفظ تعديلات الإيراد
+                  {lang === "ar" ? "حفظ تعديلات الإيراد" : "Save Revenue Changes"}
                 </button>
               </div>
             </form>
