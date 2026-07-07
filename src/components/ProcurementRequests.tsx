@@ -664,7 +664,7 @@ export default function ProcurementRequests({
                       {req.quotationNumber}
                     </td>
                     <td className="p-3.5 font-medium text-slate-400 font-mono">
-                      {new Date(req.requestedAt).toLocaleString("ar-SA", {
+                      {new Date(req.requestedAt).toLocaleString('en-US', {
                         hour12: true,
                       })}
                     </td>
@@ -775,7 +775,7 @@ export default function ProcurementRequests({
                   {lang === "ar" ? "تاريخ الطلب:" : "Request Date:"}
                 </span>
                 <span className="font-bold font-mono text-slate-700">
-                  {new Date(selectedReq.requestedAt).toLocaleString("ar-SA")}
+                  {new Date(selectedReq.requestedAt).toLocaleString('en-US')}
                 </span>
               </div>
               <div>
@@ -821,7 +821,7 @@ export default function ProcurementRequests({
                             <p><strong>${lang === "ar" ? "المشروع:" : "Project:"}</strong> ${selectedReq.projectName}</p>
                             <p><strong>${lang === "ar" ? "رقم الكوتيشن:" : "Quotation No:"}</strong> ${selectedReq.quotationNumber}</p>
                             <p><strong>${lang === "ar" ? "بواسطة:" : "Order By:"}</strong> ${selectedReq.orderCreatedBy}</p>
-                            <p><strong>${lang === "ar" ? "تاريخ الأمر:" : "Date:"}</strong> ${selectedReq.orderCreatedAt ? new Date(selectedReq.orderCreatedAt).toLocaleString("ar-SA") : ""}</p>
+                            <p><strong>${lang === "ar" ? "تاريخ الأمر:" : "Date:"}</strong> ${selectedReq.orderCreatedAt ? new Date(selectedReq.orderCreatedAt).toLocaleString('en-US') : ""}</p>
                           </div>
                           
                           <h3>${lang === "ar" ? "المواد المتوفرة بالمستودع (تمت تغطيتها)" : "Available Materials"}</h3>
@@ -1023,7 +1023,7 @@ export default function ProcurementRequests({
                         </span>
                       </span>
                       <span className="text-slate-400 font-mono" dir="ltr">
-                        {new Date(log.timestamp).toLocaleString("ar-SA")}
+                        {new Date(log.timestamp).toLocaleString('en-US')}
                       </span>
                     </div>
                   ))}

@@ -1,0 +1,21 @@
+src/components/finance/cashbank/AddReconciliationModal.tsx:208:                {formData.difference.toLocaleString()}
+src/components/finance/cashbank/TransactionsList.tsx:192:                    <span className="text-green-600">+{t.amount.toLocaleString()} {t.currency}</span>
+src/components/finance/cashbank/TransactionsList.tsx:194:                    <span className="text-red-600">-{t.amount.toLocaleString()} {t.currency}</span>
+src/components/finance/cashbank/TransfersList.tsx:184:                  {t.amount.toLocaleString()} {t.currency}
+src/components/finance/cashbank/ReconciliationList.tsx:105:                <td className="px-4 py-3 text-right" dir="ltr">{r.statement_balance.toLocaleString()}</td>
+src/components/finance/cashbank/ReconciliationList.tsx:106:                <td className="px-4 py-3 text-right" dir="ltr">{r.system_balance.toLocaleString()}</td>
+src/components/finance/cashbank/ReconciliationList.tsx:109:                    {r.difference.toLocaleString()}
+src/components/finance/cashbank/CashBankDashboard.tsx:73:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{totalCash.toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:84:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{totalBank.toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:95:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{totalDeposits.toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:106:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{totalWithdrawals.toLocaleString()}</h3>
+src/components/finance/cashbank/ArchiveList.tsx:74:                <td className="px-4 py-3 text-right" dir="ltr">{a.amount?.toLocaleString()} {a.currency}</td>
+src/components/finance/cashbank/AuditLogList.tsx:47:      return new Date(ts).toLocaleString();
+src/components/finance/cashbank/AuditLogList.tsx:50:      return new Date(ts.seconds * 1000).toLocaleString();
+src/components/finance/cashbank/AuditLogList.tsx:52:    return new Date(ts).toLocaleString();
+src/components/finance/cashbank/BankAccountsList.tsx:109:                <td className="px-4 py-3 text-right">{acc.opening_balance.toLocaleString()}</td>
+src/components/finance/cashbank/BankAccountsList.tsx:110:                <td className="px-4 py-3 text-right font-bold text-[#0072BC]">{acc.current_balance.toLocaleString()}</td>
+src/components/finance/cashbank/CashBoxesList.tsx:107:                <td className="px-4 py-3 text-right">{box.opening_balance.toLocaleString()}</td>
+src/components/finance/cashbank/CashBoxesList.tsx:108:                <td className="px-4 py-3 text-right font-bold text-[#0072BC]">{box.current_balance.toLocaleString()}</td>
+src/components/finance/CustomerSupplierInvoices.tsx:2965:                          {cb.name || cb.code} ({parseFloat(cb.current_balance || 0).toLocaleString()} ر.س)
+src/components/finance/CustomerSupplierInvoices.tsx:2980:                          {ba.bank_name || ba.account_name} - {ba.account_number} ({parseFloat(ba.current_balance || 0).toLocaleString()} ر.س)

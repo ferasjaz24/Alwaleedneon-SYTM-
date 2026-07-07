@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 const DocumentHeader = () => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #0072BC', paddingBottom: '16px', marginBottom: '32px', userSelect: 'none', direction: 'ltr' }}>
     <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#374151', margin: 0, fontFamily: '"Tajawal", sans-serif' }} dir="rtl">
+      <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#374151', margin: 0, fontFamily: "'GE SS Two', 'Gotham Pro', sans-serif" }} dir="rtl">
         شركة فنون الوليد للصناعة
       </h2>
       <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#6b7280', margin: '4px 0 0 0', letterSpacing: '0.1em', fontFamily: 'sans-serif' }}>
@@ -112,11 +112,11 @@ export default function HrContractsTab({ lang, employees }: HrContractsTabProps)
       body_ar: `إنه في يوم ${today}، جرى تحرير هذا الاتفاق بالتراضي بين شركة فنون الوليد للصناعة (الطرف الأول) والمواطن السعودي السيد ${empName} (هوية وطنية رقم ${activeEmp.iqamaId}) ويشار إليه بـ (الطرف الثاني) على ما يلي:
 1. يلتزم الموظف بالعمل بملف المسمى الحوكمي "${activeEmp.jobTitle}" وسكك الدرجة السلمية المعتمدة بالقسم.
 2. مدة هذا الاتفاق سنة واحدة تبدأ من تاريخ مباشرة العمل الفعلي ${activeEmp.dateOfJoining || today}. ويخضع الموظف الحائز لفترة تجربة (٩٠ يوماً) قانونية تحت المادة ٨٠ لتقييم الكفاءة.
-3. يلتزم الطرف الأول بإلحاق وتسجيل الطرف الثاني بالهيئة الوطنية للتأمينات الاجتماعية (GOSI)، وسداد وعاء أجور كلي معتمد يبلغ ${(basicPay + housing).toLocaleString()} ريال شامل أساس وبدل سكن.`,
+3. يلتزم الطرف الأول بإلحاق وتسجيل الطرف الثاني بالهيئة الوطنية للتأمينات الاجتماعية (GOSI)، وسداد وعاء أجور كلي معتمد يبلغ ${(basicPay + housing).toLocaleString('en-US')} ريال شامل أساس وبدل سكن.`,
       body_en: `On this day of ${today}, this employment agreement is ratified between Al-Waleed Neon Ltd. (First Party) and Saudi Citizen Mr. ${empName}, holder of National ID: ${activeEmp.iqamaId} (Second Party):
 1. Second Party is assigned to perform technical operations under the approved job description of "${activeEmp.jobTitle}".
 2. Agreement covers a 12-month fixed timeline beginning on ${activeEmp.dateOfJoining || today}. Staff shall complete a 90-day clinical probation window evaluated under Saudi Labor Code constraints.
-3. First Party guarantees full subscription inside General Organization for Social Insurance (GOSI) with total calculated monthly wage of SAR ${(basicPay + housing).toLocaleString()} (including housing allowance).`
+3. First Party guarantees full subscription inside General Organization for Social Insurance (GOSI) with total calculated monthly wage of SAR ${(basicPay + housing).toLocaleString('en-US')} (including housing allowance).`
     };
   };
 

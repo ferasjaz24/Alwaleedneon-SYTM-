@@ -87,6 +87,11 @@ export default function ProductionHub({
       printWindow.document.write(`
         <html>
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
               body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -106,6 +111,11 @@ export default function ProductionHub({
       printWindow.document.write(`
         <html>
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
               body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
@@ -887,6 +897,11 @@ export default function ProductionHub({
     const htmlContent = `
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>${title}</title>
           <style>
             ${sharedPrintStyles}
@@ -913,7 +928,7 @@ export default function ProductionHub({
         </head>
         <body>
           ${sharedPrintHeader}
-          <h1>${title} - ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</h1>
+          <h1>${title} - ${new Date().toLocaleDateString('en-US')}</h1>
           ${itemsWithProcurement.map(item => `
             <div class="item-card">
               <div class="item-header">
@@ -931,12 +946,12 @@ export default function ProductionHub({
                 </div>
                 <div class="field">
                   <div class="label">${lang === 'ar' ? 'تاريخ البدء/الإنشاء' : 'Start/Creation Date'}</div>
-                  <div class="value">${new Date(item.requestDate || item.createdAt || item.startDate || Date.now()).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                  <div class="value">${new Date(item.requestDate || item.createdAt || item.startDate || Date.now()).toLocaleDateString('en-US')}</div>
                 </div>
                 ${item.endDate ? `
                 <div class="field">
                   <div class="label">${lang === 'ar' ? 'تاريخ الانتهاء المتوقع' : 'Target End Date'}</div>
-                  <div class="value">${new Date(item.endDate).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                  <div class="value">${new Date(item.endDate).toLocaleDateString('en-US')}</div>
                 </div>` : ''}
                 <div class="field">
                   <div class="label">${lang === 'ar' ? 'المندوب' : 'Sales Rep'}</div>
@@ -955,12 +970,12 @@ export default function ProductionHub({
                 ${item.orderedAt ? `
                 <div class="field">
                   <div class="label">${lang === 'ar' ? 'تاريخ التوجيه للتركيب' : 'Installation Order Date'}</div>
-                  <div class="value">${new Date(item.orderedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                  <div class="value">${new Date(item.orderedAt).toLocaleString('en-US')}</div>
                 </div>` : ''}
                 ${item.completedAt ? `
                 <div class="field">
                   <div class="label">${lang === 'ar' ? 'تاريخ إتمام التركيب' : 'Installation Completed At'}</div>
-                  <div class="value">${new Date(item.completedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                  <div class="value">${new Date(item.completedAt).toLocaleString('en-US')}</div>
                 </div>` : ''}
                 ${item.orderedAt && item.completedAt ? (() => {
                   const diffMs = new Date(item.completedAt).getTime() - new Date(item.orderedAt).getTime();
@@ -1163,6 +1178,11 @@ export default function ProductionHub({
     const htmlContent = `
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>${title}</title>
           <style>
             ${sharedPrintStyles}
@@ -1206,12 +1226,12 @@ export default function ProductionHub({
               </div>
               <div class="field">
                 <div class="label">${lang === 'ar' ? 'تاريخ البدء/الإنشاء' : 'Start/Creation Date'}</div>
-                <div class="value">${new Date(item.requestDate || item.createdAt || item.startDate || Date.now()).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                <div class="value">${new Date(item.requestDate || item.createdAt || item.startDate || Date.now()).toLocaleDateString('en-US')}</div>
               </div>
               ${item.endDate ? `
               <div class="field">
                 <div class="label">${lang === 'ar' ? 'تاريخ الانتهاء المتوقع' : 'Target End Date'}</div>
-                <div class="value">${new Date(item.endDate).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                <div class="value">${new Date(item.endDate).toLocaleDateString('en-US')}</div>
               </div>` : ''}
               <div class="field">
                 <div class="label">${lang === 'ar' ? 'المندوب' : 'Sales Rep'}</div>
@@ -1230,12 +1250,12 @@ export default function ProductionHub({
               ${item.orderedAt ? `
               <div class="field">
                 <div class="label">${lang === 'ar' ? 'تاريخ التوجيه للتركيب' : 'Installation Order Date'}</div>
-                <div class="value">${new Date(item.orderedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                <div class="value">${new Date(item.orderedAt).toLocaleString('en-US')}</div>
               </div>` : ''}
               ${item.completedAt ? `
               <div class="field">
                 <div class="label">${lang === 'ar' ? 'تاريخ إتمام التركيب' : 'Installation Completed At'}</div>
-                <div class="value">${new Date(item.completedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+                <div class="value">${new Date(item.completedAt).toLocaleString('en-US')}</div>
               </div>` : ''}
               ${durationHTML}
             </div>
@@ -3114,7 +3134,7 @@ export default function ProductionHub({
                             {associatedProc?.receivedAt
                               ? new Date(
                                   associatedProc.receivedAt,
-                                ).toLocaleDateString("ar-SA")
+                                ).toLocaleDateString('en-US')
                               : lang === "ar"
                                 ? "تم استلام الخامات وتوريدها للورشة"
                                 : "Materials received"}
@@ -3859,7 +3879,7 @@ export default function ProductionHub({
                       <div className="text-[10px] text-slate-400 font-bold text-right px-1">
                         بواسطة: {req.statusUpdatedBy || req.confirmedBy}{" "}
                         {req.statusUpdatedAt || req.completedAt
-                          ? ` بتاريخ: ${new Date(req.statusUpdatedAt || req.completedAt).toLocaleDateString("ar-SA")}`
+                          ? ` بتاريخ: ${new Date(req.statusUpdatedAt || req.completedAt).toLocaleDateString('en-US')}`
                           : ""}
                       </div>
                     )}
@@ -4313,7 +4333,7 @@ export default function ProductionHub({
                           ? new Date(
                               selectedInbound.statusUpdatedAt ||
                                 selectedInbound.completedAt,
-                            ).toLocaleDateString("ar-SA")
+                            ).toLocaleDateString('en-US')
                           : ""}
                       </span>
                     )}
@@ -4327,7 +4347,7 @@ export default function ProductionHub({
                     {selectedInbound.requestDate
                       ? new Date(
                           selectedInbound.requestDate,
-                        ).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")
+                        ).toLocaleDateString('en-US')
                       : "---"}
                   </span>
                 </div>
@@ -4627,7 +4647,7 @@ export default function ProductionHub({
                           <p className="text-emerald-800 font-extrabold">
                             ✅{" "}
                             {lang === "ar"
-                              ? `تم انشاء امر شراء مواد رسمي بواسطة (${associatedProc.orderedBy || associatedProc.requestedBy || "إدارة المشتريات"}) وتاريخ ${associatedProc.orderedAt ? new Date(associatedProc.orderedAt).toLocaleDateString("ar-SA") : "---"}`
+                              ? `تم انشاء امر شراء مواد رسمي بواسطة (${associatedProc.orderedBy || associatedProc.requestedBy || "إدارة المشتريات"}) وتاريخ ${associatedProc.orderedAt ? new Date(associatedProc.orderedAt).toLocaleDateString('en-US') : "---"}`
                               : `Official Purchase Order finalized by (${associatedProc.orderedBy || "Procurement"}) on ${associatedProc.orderedAt ? new Date(associatedProc.orderedAt).toLocaleDateString() : "---"}`}
                           </p>
                         ) : (
@@ -4642,7 +4662,7 @@ export default function ProductionHub({
                           <p className="text-blue-800 font-extrabold text-[10px] border-t border-slate-100 pt-1 mt-1">
                             ✏️{" "}
                             {lang === "ar"
-                              ? `تم تعديل طلب الشراء بواسطة (${associatedProc.updatedBy}) وتاريخ ${new Date(associatedProc.updatedAt).toLocaleDateString("ar-SA")}`
+                              ? `تم تعديل طلب الشراء بواسطة (${associatedProc.updatedBy}) وتاريخ ${new Date(associatedProc.updatedAt).toLocaleDateString('en-US')}`
                               : `Purchase request amended by (${associatedProc.updatedBy}) on ${new Date(associatedProc.updatedAt).toLocaleDateString()}`}
                           </p>
                         )}
@@ -5130,7 +5150,7 @@ export default function ProductionHub({
                               <h4 className={`text-[11px] font-black ${isCompleted ? "text-emerald-900" : "text-slate-500"}`}>{st.stageName}</h4>
                               {isCompleted && st.completedAt && (
                                 <p className="text-[10px] text-emerald-700 font-bold mt-1">
-                                  {lang === "ar" ? "اكتمل في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString("ar-SA")}
+                                  {lang === "ar" ? "اكتمل في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString('en-US')}
                                 </p>
                               )}
                               <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">{st.description}</p>
@@ -5707,7 +5727,7 @@ export default function ProductionHub({
                                         p.assignedTeam.includes(empName),
                                     );
                                   const lastProjText = matchedProj
-                                    ? `${matchedProj.projectName} (${matchedProj.startedAt ? new Date(matchedProj.startedAt).toLocaleDateString("ar-SA") : ""})`
+                                    ? `${matchedProj.projectName} (${matchedProj.startedAt ? new Date(matchedProj.startedAt).toLocaleDateString('en-US') : ""})`
                                     : "---";
 
                                   return (

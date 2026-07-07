@@ -1,0 +1,366 @@
+src/components/hr/HrDashboardTab.tsx:352:              <p className="text-lg font-mono font-black text-purple-900 leading-none">{totalSalariesSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
+src/components/hr/HrDashboardTab.tsx:364:              <p className="text-lg font-mono font-black text-rose-900 leading-none">-{totalDeductionsSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
+src/components/hr/HrDashboardTab.tsx:376:              <p className="text-lg font-mono font-black text-amber-900 leading-none">{totalLoansSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
+src/components/hr/HrDashboardTab.tsx:465:                <span className="text-slate-400">{new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+src/components/hr/HrDashboardTab.tsx:788:                      <span>🕒 {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+src/components/hr/HrLeavesTab.tsx:1203:                      {req.totalEntitlements ? `${Number(req.totalEntitlements).toLocaleString('en-US')} SAR` : "-"}
+src/components/hr/HrPayrollTab.tsx:412:          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace;">${data.basic.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:413:          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: green;">+${data.allowances.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:414:          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: red;">-${data.deductions.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:415:          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; font-weight: bold; background: #f9f9f9;">${net.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:474:              <p>إجمالي المدفوعات الأساسية: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.basic || 0), 0).toLocaleString('en-US')} ريال</p>
+src/components/hr/HrPayrollTab.tsx:475:              <p>إجمالي الاستقطاعات والجزاءات: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.deductions || 0), 0).toLocaleString('en-US')} ريال</p>
+src/components/hr/HrPayrollTab.tsx:479:              }, 0).toLocaleString('en-US')} ريال سعودي</strong></p>
+src/components/hr/HrPayrollTab.tsx:805:          ? `المجموع الحالي لخصومات هذا الموظف خلال الشهر هو (${otherConfirmedDeductions.toLocaleString('en-US')} ريال). وبإضافة قيمة هذا الخصم (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} ريال)، يصبح إجمالي الخصم المقرّر له خلال الشهر (${totalProjectedDeductions.toLocaleString('en-US')} ريال)، وهو ما يتجاوز نصف الراتب الإجمالي البالغ (${totalSalary.toLocaleString('en-US')} ريال، والحد الأقصى المسموح به هو ${halfSalary.toLocaleString('en-US')} ريال).`
+src/components/hr/HrPayrollTab.tsx:806:          : `The current sum of this employee's deductions during this month is (${otherConfirmedDeductions.toLocaleString('en-US')} SAR). Adding this deduction (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} SAR), the target total becomes (${totalProjectedDeductions.toLocaleString('en-US')} SAR), which exceeds 50% of the total monthly salary package (${totalSalary.toLocaleString('en-US')} SAR, limit: ${halfSalary.toLocaleString('en-US')} SAR).`;
+src/components/hr/HrPayrollTab.tsx:908:                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalBaseSalaries.toLocaleString('en-US')} <span className="text-[10px] text-slate-400">ريال</span></p>
+src/components/hr/HrPayrollTab.tsx:920:                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalAllowances.toLocaleString('en-US')} <span className="text-[10px] text-slate-400">ريال</span></p>
+src/components/hr/HrPayrollTab.tsx:932:                <p className="text-xl font-mono font-black text-emerald-800 leading-none">{netPayrollSum.toLocaleString('en-US')} <span className="text-[10px] text-emerald-600">ريال</span></p>
+src/components/hr/HrPayrollTab.tsx:948:                    .toLocaleString('en-US')} <span className="text-[10px] text-red-400">ريال</span>
+src/components/hr/HrPayrollTab.tsx:1113:                        {computedNet.toLocaleString('en-US')} ريال
+src/components/hr/HrPayrollTab.tsx:1240:                      <td className="py-3 px-3 font-mono font-bold text-slate-700">{basic.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:1241:                      <td className="py-3 px-3 font-mono text-amber-700">+{allowSum.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:1242:                      <td className="py-3 px-3 font-mono font-black text-emerald-700">{netSalary.toLocaleString('en-US')} ريال</td>
+src/components/hr/HrPayrollTab.tsx:1435:                        {(editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)).toLocaleString('en-US')} ريال
+src/components/hr/HrPayrollTab.tsx:1678:                        {Number(item.amount).toLocaleString('en-US')} ريال
+src/components/hr/HrPayrollTab.tsx:1847:                              <p className="font-mono font-black text-slate-800 mt-0.5">{basic.toLocaleString('en-US')} ريال</p>
+src/components/hr/HrPayrollTab.tsx:1851:                              <p className="font-mono font-black text-emerald-600 mt-0.5">{(h + t + p + f + o + b).toLocaleString('en-US')} ريال</p>
+src/components/hr/HrPayrollTab.tsx:1855:                              <p className="font-mono font-black text-slate-800 mt-0.5">{totalSalary.toLocaleString('en-US')} ريال</p>
+src/components/hr/HrPayrollTab.tsx:2461:                          {net.toLocaleString('en-US')} ريال
+src/components/hr/HrContractsTab.tsx:115:3. يلتزم الطرف الأول بإلحاق وتسجيل الطرف الثاني بالهيئة الوطنية للتأمينات الاجتماعية (GOSI)، وسداد وعاء أجور كلي معتمد يبلغ ${(basicPay + housing).toLocaleString('en-US')} ريال شامل أساس وبدل سكن.`,
+src/components/hr/HrContractsTab.tsx:119:3. First Party guarantees full subscription inside General Organization for Social Insurance (GOSI) with total calculated monthly wage of SAR ${(basicPay + housing).toLocaleString('en-US')} (including housing allowance).`
+src/components/hr/HrOrgStructureTab.tsx:251:              <p className="font-black text-[#0072BC] font-mono">SAR {activeNode.annualBudget.toLocaleString('en-US')}</p>
+src/components/hr/InstantDocumentsHub.tsx:443:                    <td className="p-3 font-mono text-slate-500">{new Date(log.exportedAt).toLocaleString('en-US')}</td>
+src/components/hr/HrDocumentTrackingTab.tsx:1694:              <span className="font-mono text-slate-400">{new Date(log.timestamp).toLocaleString('en-US')}</span>
+src/components/hr/HrJobManagementTab.tsx:184:                  SAR {role.basicMin.toLocaleString('en-US')} - {role.basicMax.toLocaleString('en-US')}
+src/components/production/DailyProductionFollowup.tsx:364:                                                {lang === "ar" ? "أنجزت في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString('en-US')}
+src/components/finance/cashbank/AddReconciliationModal.tsx:208:                {(formData.difference || 0).toLocaleString()}
+src/components/finance/cashbank/TransactionsList.tsx:192:                    <span className="text-green-600">+{(t.amount || 0).toLocaleString()} {t.currency}</span>
+src/components/finance/cashbank/TransactionsList.tsx:194:                    <span className="text-red-600">-{(t.amount || 0).toLocaleString()} {t.currency}</span>
+src/components/finance/cashbank/TransfersList.tsx:184:                  {(t.amount || 0).toLocaleString()} {t.currency}
+src/components/finance/cashbank/ReconciliationList.tsx:105:                <td className="px-4 py-3 text-right" dir="ltr">{(r.statement_balance || 0).toLocaleString()}</td>
+src/components/finance/cashbank/ReconciliationList.tsx:106:                <td className="px-4 py-3 text-right" dir="ltr">{(r.system_balance || 0).toLocaleString()}</td>
+src/components/finance/cashbank/ReconciliationList.tsx:109:                    {(r.difference || 0).toLocaleString()}
+src/components/finance/cashbank/CashBankDashboard.tsx:73:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{(totalCash || 0).toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:84:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{(totalBank || 0).toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:95:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{(totalDeposits || 0).toLocaleString()}</h3>
+src/components/finance/cashbank/CashBankDashboard.tsx:106:        <h3 className="text-2xl font-bold text-slate-800" dir="ltr">{(totalWithdrawals || 0).toLocaleString()}</h3>
+src/components/finance/cashbank/ArchiveList.tsx:74:                <td className="px-4 py-3 text-right" dir="ltr">{(a.amount || 0).toLocaleString()} {a.currency}</td>
+src/components/finance/cashbank/AuditLogList.tsx:47:      return new Date(ts).toLocaleString();
+src/components/finance/cashbank/AuditLogList.tsx:50:      return new Date(ts.seconds * 1000).toLocaleString();
+src/components/finance/cashbank/AuditLogList.tsx:52:    return new Date(ts).toLocaleString();
+src/components/finance/cashbank/BankAccountsList.tsx:109:                <td className="px-4 py-3 text-right">{(acc.opening_balance || 0).toLocaleString()}</td>
+src/components/finance/cashbank/BankAccountsList.tsx:110:                <td className="px-4 py-3 text-right font-bold text-[#0072BC]">{(acc.current_balance || 0).toLocaleString()}</td>
+src/components/finance/cashbank/CashBoxesList.tsx:107:                <td className="px-4 py-3 text-right">{(box.opening_balance || 0).toLocaleString()}</td>
+src/components/finance/cashbank/CashBoxesList.tsx:108:                <td className="px-4 py-3 text-right font-bold text-[#0072BC]">{(box.current_balance || 0).toLocaleString()}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:259:    return parsed.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+src/components/finance/MonthlyPayrollRuns.tsx:678:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(emp.basicSalary || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:679:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${((emp.housingAllowance || 0) + (emp.transportAllowance || 0) + (emp.foodAllowance || 0) + (emp.otherAllowances || 0)).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:680:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(emp.overtimeAmount || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:681:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${emp.totalEntitlements.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:682:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${emp.totalDeductions.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:683:        <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #059669; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${emp.netSalary.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:712:            <div style="font-size: 18px; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; color: #0f172a; margin-top: 5px;">${selectedRun.totalBasicSalary.toLocaleString('en-US')} ر.س</div>
+src/components/finance/MonthlyPayrollRuns.tsx:716:            <div style="font-size: 18px; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; color: #4f46e5; margin-top: 5px;">+${selectedRun.totalAllowances.toLocaleString('en-US')} ر.س</div>
+src/components/finance/MonthlyPayrollRuns.tsx:720:            <div style="font-size: 18px; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; color: #e11d48; margin-top: 5px;">-${selectedRun.totalDeductions.toLocaleString('en-US')} ر.س</div>
+src/components/finance/MonthlyPayrollRuns.tsx:724:            <div style="font-size: 18px; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; color: #34d399; margin-top: 5px;">${selectedRun.totalNetSalary.toLocaleString('en-US')} ر.س</div>
+src/components/finance/MonthlyPayrollRuns.tsx:2143:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${selectedPayslipEmployee.basicSalary.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2145:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${selectedPayslipEmployee.loansDeduction.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2149:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${selectedPayslipEmployee.housingAllowance.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2151:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${selectedPayslipEmployee.gosiDeduction.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2155:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${selectedPayslipEmployee.transportAllowance.toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2157:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.absenceDeduction || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2161:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.foodAllowance || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2163:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.lateDeduction || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2167:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.overtimeAmount || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2169:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.penaltyDeduction || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2173:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${((selectedPayslipEmployee.otherAllowances || 0) ).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2175:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; font-family: 'Gotham Pro', sans-serif; font-weight: 900;">${(selectedPayslipEmployee.otherDeductions || 0).toLocaleString('en-US')}</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2179:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; font-size: 14px; color: #0072BC;">${selectedPayslipEmployee.totalEntitlements.toLocaleString('en-US')} ر.س</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2181:              <td style="border-bottom: 1px solid #e2e8f0; padding: 12px; border: 1px solid #cbd5e1; background-color: #fff1f2; font-weight: bold; font-family: 'Gotham Pro', sans-serif; font-weight: 900; font-size: 14px; color: #be123c;">${selectedPayslipEmployee.totalDeductions.toLocaleString('en-US')} ر.س</td>
+src/components/finance/MonthlyPayrollRuns.tsx:2189:            <span style="font-weight: 900; font-family: 'Gotham Pro', sans-serif;">${selectedPayslipEmployee.netSalary.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:2193:            <span style="font-weight: 900; font-family: 'Gotham Pro', sans-serif; color: #a5b4fc;">${(selectedPayslipEmployee.muddahAmount || 0).toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:2201:              ${Math.max(0, selectedPayslipEmployee.netSalary - (selectedPayslipEmployee.muddahAmount || 0)).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:2692:                      <span className="font-mono text-emerald-600 font-extrabold text-sm">{selectedRun.totalNetSalary.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3016:                                  emp.basicSalary.toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3035:                                  emp.housingAllowance.toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3054:                                  emp.transportAllowance.toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3073:                                  (emp.foodAllowance ?? 0).toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3092:                                  (emp.muddahAmount || 0).toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3134:                                  emp.overtimeAmount.toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3153:                                  (emp.otherAllowances || 0).toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3196:                                    {emp.loansDeduction.toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3240:                                    {(emp.absenceDeduction || 0).toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3284:                                    {(emp.lateDeduction || 0).toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3328:                                    {(emp.penaltyDeduction || 0).toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3348:                                  emp.gosiDeduction.toLocaleString('en-US')
+src/components/finance/MonthlyPayrollRuns.tsx:3365:                                      {emp.otherDeductions.toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3389:                                    {emp.otherDeductions > 0 ? emp.otherDeductions.toLocaleString('en-US') : "0"}
+src/components/finance/MonthlyPayrollRuns.tsx:3396:                                {displayTotalSalary.toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3401:                                {displayMuddah.toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3406:                                {displayRemaining.toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3499:                      {runEmployees.reduce((sum, e) => sum + e.basicSalary, 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3518:                        .toLocaleString('en-US')}{" "}
+src/components/finance/MonthlyPayrollRuns.tsx:3529:                        .toLocaleString('en-US')}{" "}
+src/components/finance/MonthlyPayrollRuns.tsx:3537:                      {runEmployees.reduce((sum, e) => sum + (e.muddahAmount || 0), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3543:                      {runEmployees.reduce((sum, e) => sum + (e.overtimeAmount || 0), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3546:                      Total OT Hours: {runEmployees.reduce((sum, e) => sum + (e.overtimeHours || 0), 0).toLocaleString('en-US')}
+src/components/finance/MonthlyPayrollRuns.tsx:3549:                      Total OT Amount: {runEmployees.reduce((sum, e) => sum + (e.overtimeAmount || 0), 0).toLocaleString('en-US')} ر.s
+src/components/finance/MonthlyPayrollRuns.tsx:3556:                      {runEmployees.reduce((sum, e) => sum + Math.max(0, e.netSalary - (e.muddahAmount || 0)), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3575:                          {runEmployees.reduce((sum, e) => sum + e.basicSalary, 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3583:                            (e.foodAllowance || 0) + (e.overtimeAmount || 0) + (e.otherAllowances || 0), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3589:                          -{runEmployees.reduce((sum, e) => sum + e.totalDeductions, 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3595:                          {runEmployees.reduce((sum, e) => sum + e.netSalary, 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3601:                          {runEmployees.reduce((sum, e) => sum + (e.muddahAmount || 0), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3607:                          {runEmployees.reduce((sum, e) => sum + Math.max(0, e.netSalary - (e.muddahAmount || 0)), 0).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3815:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.basicSalary.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3819:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.housingAllowance.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3823:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.transportAllowance.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3830:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.foodAllowance.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3867:                        <span className="font-mono font-bold text-slate-900">{(selectedPayslipEmployee.muddahAmount || 0).toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3872:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.overtimeAmount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3883:                      <span className="font-mono font-bold text-slate-900">{(selectedPayslipEmployee.otherAllowances || 0).toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3889:                  <span className="font-mono font-black text-emerald-700 text-sm sm:text-base">{selectedPayslipEmployee.totalEntitlements.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3903:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.loansDeduction.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3907:                      <span className="font-mono font-bold text-slate-900">{selectedPayslipEmployee.gosiDeduction.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3927:                        {selectedPayslipEmployee.otherDeductions.toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:3934:                  <span className="font-mono font-black text-rose-700 text-sm sm:text-base">{selectedPayslipEmployee.totalDeductions.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3943:                <span className="font-mono text-slate-200">{selectedPayslipEmployee.netSalary.toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3947:                <span className="font-mono text-indigo-400">{(selectedPayslipEmployee.muddahAmount || 0).toLocaleString('en-US')} ر.س</span>
+src/components/finance/MonthlyPayrollRuns.tsx:3957:                    {Math.max(0, selectedPayslipEmployee.netSalary - (selectedPayslipEmployee.muddahAmount || 0)).toLocaleString('en-US')} ر.س
+src/components/finance/MonthlyPayrollRuns.tsx:4445:                  {localDeductions.reduce((sum, d) => sum + Number(d.amount || 0), 0).toLocaleString('en-US')} ر.س
+src/components/finance/JournalEntries.tsx:595:              <div class="amount" style="color: #be123c;">${Number(entry.amount).toLocaleString('en-US')} SAR</div>
+src/components/finance/JournalEntries.tsx:600:              <div class="amount" style="color: #047857;">${Number(entry.amount).toLocaleString('en-US')} SAR</div>
+src/components/finance/JournalEntries.tsx:800:                        {totalDebit.toLocaleString('en-US')}
+src/components/finance/JournalEntries.tsx:803:                        {totalCredit.toLocaleString('en-US')}
+src/components/finance/JournalEntries.tsx:1086:                          {entryForm.lines.reduce((sum, l) => sum + (Number(l.debit) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/JournalEntries.tsx:1092:                          {entryForm.lines.reduce((sum, l) => sum + (Number(l.credit) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/JournalEntries.tsx:1106:                              <XCircle className="w-4 h-4" /> قيد غير متزن (الفرق: {Math.abs(dSum - cSum).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س)
+src/components/finance/JournalEntries.tsx:1291:                <span className="font-bold text-rose-600">{Number(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/finance/JournalEntries.tsx:1368:                <span className="font-bold text-slate-800">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/finance/JournalEntries.tsx:1431:                  <span className="text-slate-700 font-medium font-mono text-xs">{selectedEntry.createdAt ? new Date(selectedEntry.createdAt).toLocaleString('ar-SA') : "-"}</span>
+src/components/finance/JournalEntries.tsx:1498:                            {line.debit > 0 ? Number(line.debit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : "-"}
+src/components/finance/JournalEntries.tsx:1501:                            {line.credit > 0 ? Number(line.credit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : "-"}
+src/components/finance/JournalEntries.tsx:1511:                          {Number(selectedEntry.totalDebit || selectedEntry.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/JournalEntries.tsx:1514:                          {Number(selectedEntry.totalCredit || selectedEntry.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/JournalEntries.tsx:1630:                              <span className="font-mono font-bold text-slate-800">{Number(sourceDoc.sub_total || sourceDoc.subtotal || sourceDoc.amount_before_tax || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</span>
+src/components/finance/JournalEntries.tsx:1634:                              <span className="font-mono font-bold text-slate-800">{Number(sourceDoc.tax_amount || sourceDoc.taxAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</span>
+src/components/finance/JournalEntries.tsx:1638:                              <span className="font-mono font-bold text-blue-600 text-sm">{Number(sourceDoc.total_amount || sourceDoc.totalAmount || sourceDoc.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</span>
+src/components/finance/JournalEntries.tsx:1659:                            <span className="font-mono font-bold text-blue-600">{Number(sourceDoc.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</span>
+src/components/finance/JournalEntries.tsx:1683:                            <span className="font-mono font-bold text-blue-600">{Number(sourceDoc.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:696:      date: new Date().toLocaleString('en-US'),
+src/components/finance/CustomerSupplierInvoices.tsx:782:          date: new Date().toLocaleString('en-US'),
+src/components/finance/CustomerSupplierInvoices.tsx:819:    const ts = new Date().toLocaleString('en-US');
+src/components/finance/CustomerSupplierInvoices.tsx:918:      date: new Date().toLocaleString('en-US'),
+src/components/finance/CustomerSupplierInvoices.tsx:1088:          <td style="white-space: nowrap;">${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1090:          <td style="white-space: nowrap;">${lineTax.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1091:          <td style="font-weight: bold; white-space: nowrap;">${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1478:                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1482:                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1487:                        <td style="text-align: left; font-weight: bold; white-space: nowrap;">-${inv.discount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1492:                      <td style="text-align: left; font-weight: bold; color: #000; font-size: 13.5px; white-space: nowrap;">${inv.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1496:                      <td style="text-align: left; font-weight: bold; white-space: nowrap;">${Math.round(inv.totalAmount).toLocaleString('en-US')} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1500:                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1504:                      <td style="text-align: left; font-weight: bold; color: #c00000; white-space: nowrap;">${inv.remainingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1692:              {totalAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:1708:              {paidAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:1724:              {remainingAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:1968:                      <td className="py-4 px-6 font-bold">{inv.totalAmount.toLocaleString('en-US')} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1969:                      <td className="py-4 px-6 text-emerald-600 font-medium">{inv.paidAmount.toLocaleString('en-US')} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:1972:                          {inv.remainingAmount.toLocaleString('en-US')} ر.س
+src/components/finance/CustomerSupplierInvoices.tsx:2395:                            {item.total.toLocaleString('en-US')} ر.س
+src/components/finance/CustomerSupplierInvoices.tsx:2481:                    <span className="font-bold text-slate-800">{getFormTotals().subtotal.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:2486:                    <span className="font-bold text-slate-800">{getFormTotals().taxAmount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:2504:                      {getFormTotals().totalAmount.toLocaleString('en-US')} ر.س
+src/components/finance/CustomerSupplierInvoices.tsx:2633:                          <td className="p-3 text-left font-medium">{item.unitPrice.toLocaleString('en-US')} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:2635:                          <td className="p-3 text-left font-black">{item.total.toLocaleString('en-US')} ر.س</td>
+src/components/finance/CustomerSupplierInvoices.tsx:2660:                              <span className="font-bold text-slate-800">{pay.amount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:2730:                      <strong className="text-slate-800">{selectedInvoice.subtotal.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2734:                      <strong className="text-slate-800">{selectedInvoice.taxAmount.toLocaleString('en-US')} ر.s</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2738:                      <strong className="text-rose-600">-{selectedInvoice.discount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2742:                      <strong className="text-indigo-700">{selectedInvoice.totalAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2746:                      <strong>{selectedInvoice.paidAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2750:                      <strong>{selectedInvoice.remainingAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2903:                  <strong className="text-slate-800">{showPaymentModal.totalAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2907:                  <strong className="text-rose-600 font-bold">{showPaymentModal.remainingAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:2965:                          {cb.name || cb.code} ({parseFloat(cb.current_balance || 0).toLocaleString()} ر.س)
+src/components/finance/CustomerSupplierInvoices.tsx:2980:                          {ba.bank_name || ba.account_name} - {ba.account_number} ({parseFloat(ba.current_balance || 0).toLocaleString()} ر.س)
+src/components/finance/CustomerSupplierInvoices.tsx:3259:                            {item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/CustomerSupplierInvoices.tsx:3265:                            {((item.quantity * item.unitPrice) * (1 + (item.taxRate || 0.15))).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+src/components/finance/CustomerSupplierInvoices.tsx:3299:                      <strong className="text-slate-800">{previewInvoice.subtotal.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:3303:                      <strong className="text-slate-800">{previewInvoice.taxAmount.toLocaleString('en-US')} ر.س</strong>
+src/components/finance/CustomerSupplierInvoices.tsx:3308:                        <span>-{previewInvoice.discount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:3313:                      <span>{previewInvoice.totalAmount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:3317:                      <span>{previewInvoice.paidAmount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/CustomerSupplierInvoices.tsx:3321:                      <span>{previewInvoice.remainingAmount.toLocaleString('en-US')} ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:323:              {totalRevenues.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:337:              {pendingRevenues.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:463:                    <td className="p-4 font-bold text-emerald-600">{parseFloat(item.amount).toLocaleString('en-US')}</td>
+src/components/finance/RevenuesExpenses.tsx:769:                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-emerald-600 text-lg">{parseFloat(showDetails.amount).toLocaleString('en-US')} ر.س</strong></div>
+src/components/finance/RevenuesExpenses.tsx:779:                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('en-US')} ({showDetails.createdBy})</p>
+src/components/finance/RevenuesExpenses.tsx:783:                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('en-US')} ({showDetails.approvedBy})</p>
+src/components/finance/RevenuesExpenses.tsx:789:                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('en-US')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
+src/components/finance/RevenuesExpenses.tsx:909:                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #16a34a; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
+src/components/finance/RevenuesExpenses.tsx:986:                <span className="font-bold text-emerald-600">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:1072:                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:1427:              {totalPaid.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:1441:              {(totalApproved - totalPaid).toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:1455:              {pendingExpenses.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:1571:                    <td className="p-4 font-bold text-rose-600">{parseFloat(item.amount).toLocaleString('en-US')}</td>
+src/components/finance/RevenuesExpenses.tsx:1900:                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-rose-600 text-lg">{parseFloat(showDetails.amount).toLocaleString('en-US')} ر.س</strong></div>
+src/components/finance/RevenuesExpenses.tsx:1910:                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('en-US')} ({showDetails.createdBy})</p>
+src/components/finance/RevenuesExpenses.tsx:1914:                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('en-US')} ({showDetails.approvedBy})</p>
+src/components/finance/RevenuesExpenses.tsx:1920:                    <p className="text-slate-800">{new Date(showDetails.paidAt).toLocaleString('en-US')} ({showDetails.paidBy})</p>
+src/components/finance/RevenuesExpenses.tsx:1926:                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('en-US')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
+src/components/finance/RevenuesExpenses.tsx:1932:                    <p className="text-slate-800">{new Date(showDetails.rejectedAt).toLocaleString('en-US')} ({showDetails.rejectedBy}) - السبب: {showDetails.rejectReason}</p>
+src/components/finance/RevenuesExpenses.tsx:2051:                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #e11d48; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
+src/components/finance/RevenuesExpenses.tsx:2128:                <span className="font-bold text-rose-600">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/finance/RevenuesExpenses.tsx:2206:                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
+src/components/SalesRepsTargets.tsx:350:          <div style="font-size: 7px; color: #4f46e5; margin-bottom: 2px; font-weight: bold; transform: rotate(-45deg); height: 15px;">${val > 0 ? val.toLocaleString('en-US') : ''}</div>
+src/components/SalesRepsTargets.tsx:388:            <div class="stat-box"><div class="stat-box-label">الهدف المالي</div><div class="stat-box-value">${targetAmount.toLocaleString('en-US')} ريال</div></div>
+src/components/SalesRepsTargets.tsx:389:            <div class="stat-box"><div class="stat-box-label">المحصل المعتمد</div><div class="stat-box-value text-indigo-700">${approvedQuotesValue.toLocaleString('en-US')} ريال</div></div>
+src/components/SalesRepsTargets.tsx:391:            <div class="stat-box"><div class="stat-box-label">عمولة إضافية</div><div class="stat-box-value text-orange-600">${commissionValue.toLocaleString('en-US')} ريال</div></div>
+src/components/SalesRepsTargets.tsx:400:            <div class="stat-box"><div class="stat-box-label">القيمة التقديرية</div><div class="stat-box-value">${totalQuotesValue.toLocaleString('en-US')}</div></div>
+src/components/SalesRepsTargets.tsx:414:                 <div class="stat-box"><div class="stat-box-label">الهدف المطلوب تحصيله</div><div class="stat-box-value text-slate-700">${targetForCollection.toLocaleString('en-US')}</div></div>
+src/components/SalesRepsTargets.tsx:434:                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.approvedQuotesValue.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:435:                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.approvedQuotesValue.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:436:                <td style="padding: 8px; text-align: center; color: #047857; font-weight: 900; background-color: #ecfdf5;">${currentStats.approvedQuotesValue.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:440:                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.collected.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:441:                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.collected.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:442:                <td style="padding: 8px; text-align: center; color: #1d4ed8; font-weight: 900; background-color: #eff6ff;">${currentStats.collected.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:566:                 <h4 className="text-2xl font-black text-slate-800">{targetAmount.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
+src/components/SalesRepsTargets.tsx:574:                 <h4 className="text-2xl font-black text-emerald-900">{approvedQuotesValue.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
+src/components/SalesRepsTargets.tsx:590:                 <h4 className="text-2xl font-black text-orange-900">{commissionValue.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
+src/components/SalesRepsTargets.tsx:666:                        <p className="font-bold text-emerald-600">{totalCollectedThisMonth.toLocaleString('en-US')} ر.س</p>
+src/components/SalesRepsTargets.tsx:670:                        <p className="font-bold text-slate-700">{targetForCollection.toLocaleString('en-US')} ر.س</p>
+src/components/SalesRepsTargets.tsx:705:                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.approvedQuotesValue.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:707:                          {prevStats.approvedQuotesValue.toLocaleString('en-US')}
+src/components/SalesRepsTargets.tsx:717:                          {currentStats.approvedQuotesValue.toLocaleString('en-US')}
+src/components/SalesRepsTargets.tsx:746:                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.collected.toLocaleString('en-US')}</td>
+src/components/SalesRepsTargets.tsx:748:                          {prevStats.collected.toLocaleString('en-US')}
+src/components/SalesRepsTargets.tsx:758:                          {currentStats.collected.toLocaleString('en-US')}
+src/components/sales/ProjectPricingStudy.tsx:568:                  {study.studyResult?.pricing?.userPrice?.toLocaleString(undefined, {maximumFractionDigits:2})} SAR
+src/components/sales/ProjectPricingStudy.tsx:929:                    {totalWithVat.toLocaleString('en-US')}
+src/components/sales/ProjectPricingStudy.tsx:998:                  <span className="text-lg ml-1">{studyResult.pricing.targetPrice.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span>
+src/components/sales/ProjectPricingStudy.tsx:1044:                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة المواد" : "Material"}</span><span className="text-slate-800">{studyResult.costs.material.toLocaleString('en-US')} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1045:                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "التكاليف التشغيلية" : "Operational"}</span><span className="text-slate-800">{studyResult.costs.operational.toLocaleString('en-US')} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1046:                {canViewLaborCost && <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة العمالة" : "Labor"}</span><span className="text-slate-800">{studyResult.costs.labor.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>}
+src/components/sales/ProjectPricingStudy.tsx:1047:                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "المخاطر الإضافية" : "Risks"}</span><span className="text-slate-800">{studyResult.costs.risk.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1048:                <div className="flex justify-between border-t pt-2 text-lg font-black text-indigo-600"><span className="text-slate-800">{isAr ? "الإجمالي" : "Total"}</span><span>{studyResult.costs.total.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1056:                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر الحالي (للمستخدم)" : "User Price"}</span><span className="text-slate-800">{studyResult.pricing.userPrice.toLocaleString('en-US')} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1057:                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر المقترح" : "Suggested Price"}</span><span className="text-slate-800">{studyResult.pricing.targetPrice.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1058:                <div className="flex justify-between border-t pt-2 mt-2"><span className="text-slate-500">{isAr ? "الفرق" : "Difference"}</span><span className={studyResult.pricing.userPrice < studyResult.pricing.targetPrice ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>{(studyResult.pricing.userPrice - studyResult.pricing.targetPrice).toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
+src/components/sales/ProjectPricingStudy.tsx:1068:                  <div className="flex justify-between"><span className="text-slate-500">{isAr ? "الربح المتوقع" : "Expected Profit"}</span><span className={studyResult.pricing.actualProfit > 0 ? 'text-emerald-600' : 'text-red-600'}>{studyResult.pricing.actualProfit.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
+src/components/MainDashboard.tsx:1674:            {isCurrency ? Number(value).toLocaleString('en-US') : value}{" "}
+src/components/SalesDashboard.tsx:651:            ? `⚠️ توجد عدد ${card5Stats.count} دفعة متأخرة مستحقة هذا الشهر بقيمة إجمالية ${card5Stats.amount.toLocaleString('en-US')} ريال.`
+src/components/SalesDashboard.tsx:652:            : `⚠️ There are ${card5Stats.count} overdue payments this month amounting to ${card5Stats.amount.toLocaleString('en-US')} SAR.`,
+src/components/SalesDashboard.tsx:727:            ? `👤 العميل "${largeOutstanding.name}" لديه رصيد متبقي مستحق كبير وهو قدره ${largeOutstanding.remaining.toLocaleString('en-US')} ريال.`
+src/components/SalesDashboard.tsx:728:            : `👤 Client "${largeOutstanding.name}" has a high outstanding balance of ${largeOutstanding.remaining.toLocaleString('en-US')} SAR.`,
+src/components/SalesDashboard.tsx:1035:                {card1Stats.value.toLocaleString('en-US')}{" "}
+src/components/SalesDashboard.tsx:1074:                {card2Stats.value.toLocaleString('en-US')}{" "}
+src/components/SalesDashboard.tsx:1105:                {card3Stats.value.toLocaleString('en-US')}{" "}
+src/components/SalesDashboard.tsx:1136:                {card4Stats.collected.toLocaleString('en-US')}{" "}
+src/components/SalesDashboard.tsx:1149:                ? `المتبقي: ${card4Stats.remaining.toLocaleString('en-US')} ريال`
+src/components/SalesDashboard.tsx:1150:                : `Outstanding: ${card4Stats.remaining.toLocaleString('en-US')}`}
+src/components/SalesDashboard.tsx:1169:                {card5Stats.amount.toLocaleString('en-US')}{" "}
+src/components/SalesDashboard.tsx:1561:                        {rep.approvedVal.toLocaleString('en-US')} ريال
+src/components/SalesDashboard.tsx:1564:                        {rep.collected.toLocaleString('en-US')} ريال
+src/components/SalesDashboard.tsx:1636:                        {c.totalVal.toLocaleString('en-US')} ريال
+src/components/SalesDashboard.tsx:1639:                        {c.paid.toLocaleString('en-US')} ريال
+src/components/SalesDashboard.tsx:1644:                        {c.remaining.toLocaleString('en-US')} ريال
+src/components/SalesDashboard.tsx:1709:                      {new Date(log.date).toLocaleString('en-US', {
+src/components/SalesLetters.tsx:962:                          {new Date(log.exportedAt).toLocaleString('en-US')}
+src/components/procurement/ProcurementDashboard.tsx:351:    const monthYear = d.toLocaleString('en-US', {
+src/components/procurement/ProcurementDashboard.tsx:1246:                    {new Date(op.date).toLocaleString('en-US')}
+src/components/ProcurementRequests.tsx:667:                      {new Date(req.requestedAt).toLocaleString('en-US', {
+src/components/ProcurementRequests.tsx:778:                  {new Date(selectedReq.requestedAt).toLocaleString('en-US')}
+src/components/ProcurementRequests.tsx:824:                            <p><strong>${lang === "ar" ? "تاريخ الأمر:" : "Date:"}</strong> ${selectedReq.orderCreatedAt ? new Date(selectedReq.orderCreatedAt).toLocaleString('en-US') : ""}</p>
+src/components/ProcurementRequests.tsx:997:                    ? new Date(selectedReq.orderCreatedAt).toLocaleString(
+src/components/ProcurementRequests.tsx:1026:                        {new Date(log.timestamp).toLocaleString('en-US')}
+src/components/SalesQuotations.tsx:700:                      <td dir="ltr">${Number(item.unitPrice || 0).toLocaleString('en-US',{minimumFractionDigits:2})} ${cSym}</td>
+src/components/SalesQuotations.tsx:701:                      <td dir="ltr">${((item.quantity || 0) * (item.unitPrice || 0) * (1 - (item.discountPct||0)/100)).toLocaleString('en-US',{minimumFractionDigits:2})} ${cSym}</td>
+src/components/SalesQuotations.tsx:712:                    <td dir="ltr">${subtotal.toLocaleString('en-US',{minimumFractionDigits:2})} ${sq.currency === 'SAR' ? 'ر.س' : (sq.currency === 'USD' ? '$' : (sq.currency || 'ر.س'))}</td>
+src/components/SalesQuotations.tsx:716:                    <td dir="ltr">${vat.toLocaleString('en-US',{minimumFractionDigits:2})} ${sq.currency === 'SAR' ? 'ر.س' : (sq.currency === 'USD' ? '$' : (sq.currency || 'ر.س'))}</td>
+src/components/SalesQuotations.tsx:720:                    <td dir="ltr">${total.toLocaleString('en-US',{minimumFractionDigits:2})} ${sq.currency === 'SAR' ? 'ر.س' : (sq.currency === 'USD' ? '$' : (sq.currency || 'ر.س'))}</td>
+src/components/SalesQuotations.tsx:724:                    <td dir="ltr">${totalRounded.toLocaleString('en-US',{minimumFractionDigits:2})} ${sq.currency === 'SAR' ? 'ر.س' : (sq.currency === 'USD' ? '$' : (sq.currency || 'ر.س'))}</td>
+src/components/ProductionHub.tsx:973:                  <div class="value">${new Date(item.orderedAt).toLocaleString('en-US')}</div>
+src/components/ProductionHub.tsx:978:                  <div class="value">${new Date(item.completedAt).toLocaleString('en-US')}</div>
+src/components/ProductionHub.tsx:1253:                <div class="value">${new Date(item.orderedAt).toLocaleString('en-US')}</div>
+src/components/ProductionHub.tsx:1258:                <div class="value">${new Date(item.completedAt).toLocaleString('en-US')}</div>
+src/components/ProductionHub.tsx:5153:                                  {lang === "ar" ? "اكتمل في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString('en-US')}
+src/components/FinancialCollections.tsx:536:              <p>${totalCollected.toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</p>
+src/components/FinancialCollections.tsx:540:              <p>${totalDelayed.toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</p>
+src/components/FinancialCollections.tsx:580:            <td>${ph.amount.toLocaleString('en-US')} ر.س</td>
+src/components/FinancialCollections.tsx:734:                      <p className="text-slate-500 text-xs mt-1">الإجمالي المستحق: {plan.totalAmount.toLocaleString('en-US',{minimumFractionDigits:2})} ر.س</p>
+src/components/FinancialCollections.tsx:787:                         <td className="p-3 font-bold text-slate-800">{ph.amount.toLocaleString('en-US')} ر.س</td>
+src/components/SalesProductionRequests.tsx:689:                        ? new Date(req.heldAt).toLocaleString('en-US')
+src/components/SalesProductionRequests.tsx:715:                      ? new Date(req.completedAt).toLocaleString('en-US')
+src/components/SalesReports.tsx:626:             ${comprehensiveStats.top3ByValue.map(c => `<li>${c.name} - ${c.value.toLocaleString('en-US')} ريال</li>`).join('')}
+src/components/SalesReports.tsx:644:             <tr><th>عدد عروض الأسعار</th><td>${quotesCount} عرض</td><th>إجمالي قيمة العروض</th><td>${totalQuotesValue.toLocaleString('en-US')} ريال</td></tr>
+src/components/SalesReports.tsx:645:             <tr><th>إجمالي المعتمد</th><td>${totalApprovedValue.toLocaleString('en-US')} ريال</td><th>إجمالي المدفوع</th><td>${totalPaid.toLocaleString('en-US')} ريال</td></tr>
+src/components/SalesReports.tsx:646:             <tr><th>إجمالي المتبقي</th><td>${totalRemaining.toLocaleString('en-US')} ريال</td><th>آخر تعامل</th><td>${lastInteractionDate ? lastInteractionDate.toLocaleDateString('en-GB') : 'لا يوجد تعاملات'}</td></tr>
+src/components/SalesReports.tsx:661:             <div class="stat-box"><strong>إجمالي قيمة المعتمد:</strong> ${collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} ريال</div>
+src/components/SalesReports.tsx:662:             <div class="stat-box"><strong>المحصل:</strong> ${collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} ريال</div>
+src/components/SalesReports.tsx:663:             <div class="stat-box"><strong>المتبقي:</strong> ${collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} ريال</div>
+src/components/SalesReports.tsx:664:             <div class="stat-box"><strong>المتأخر:</strong> ${collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} ريال</div>
+src/components/SalesReports.tsx:676:             ${collectionsComprehensiveStats.top5Debtors.map(c => `<li>${c.name} - ${c.remaining.toLocaleString('en-US')} ريال</li>`).join('')}
+src/components/SalesReports.tsx:682:             ${collectionsComprehensiveStats.topLatestPayments.map(p => `<li>${p.clientName} - +${p.amount.toLocaleString('en-US')} ريال - ${new Date(p.date).toLocaleDateString('en-GB')}</li>`).join('')}
+src/components/SalesReports.tsx:693:               <tr><th>قيمة المشروع</th><td>${plan.totalAmount.toLocaleString('en-US')} ريال</td><th>المدفوع</th><td>${plan.totalCollected.toLocaleString('en-US')} ريال</td></tr>
+src/components/SalesReports.tsx:694:               <tr><th>المتبقي</th><td>${plan.remaining.toLocaleString('en-US')} ريال</td><th>تاريخ آخر دفعة</th><td>${plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td></tr>
+src/components/SalesReports.tsx:703:             <div class="stat-box"><strong>إجمالي الدفعات المتأخرة المستحقة:</strong> ${overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} ريال</div>
+src/components/SalesReports.tsx:715:                   <td style="color:#dc2626; font-weight:bold;">${p.amount.toLocaleString('en-US')} ريال</td>
+src/components/SalesReports.tsx:1073:                                 <span className="font-bold text-blue-600">{c.value.toLocaleString('en-US')} ريال</span>
+src/components/SalesReports.tsx:1100:                           <div className="bg-white border text-blue-800 border-blue-200 bg-blue-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي قيمة العروض</div><div className="text-lg font-black mt-1">{specificClientStats.totalQuotesValue.toLocaleString('en-US')}</div></div>
+src/components/SalesReports.tsx:1101:                           <div className="bg-white border text-emerald-800 border-emerald-200 bg-emerald-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المعتمد</div><div className="text-lg font-black mt-1">{specificClientStats.totalApprovedValue.toLocaleString('en-US')}</div></div>
+src/components/SalesReports.tsx:1103:                           <div className="bg-white border text-teal-800 border-teal-200 bg-teal-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المدفوع</div><div className="text-lg font-black mt-1">{specificClientStats.totalPaid.toLocaleString('en-US')}</div></div>
+src/components/SalesReports.tsx:1104:                           <div className="bg-white border text-red-800 border-red-200 bg-red-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المتبقي</div><div className="text-lg font-black mt-1">{specificClientStats.totalRemaining.toLocaleString('en-US')}</div></div>
+src/components/SalesReports.tsx:1127:                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1131:                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1135:                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1139:                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1170:                                      <div className="font-black text-orange-600">{c.remaining.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1187:                                      <div className="font-black text-emerald-700">+{p.amount.toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1206:                                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(value) => `${value.toLocaleString('en-US')}`} />
+src/components/SalesReports.tsx:1210:                                      formatter={(value: number) => [`${value.toLocaleString('en-US')} ر.س`]}
+src/components/SalesReports.tsx:1244:                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">قيمة العرض/المشروع</div><div className="font-bold mt-1 text-slate-800">{plan.totalAmount.toLocaleString('en-US')} ر.س</div></div>
+src/components/SalesReports.tsx:1245:                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">إجمالي المدفوع</div><div className="font-bold mt-1 text-emerald-600">{plan.totalCollected.toLocaleString('en-US')} ر.س</div></div>
+src/components/SalesReports.tsx:1246:                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">المتبقي</div><div className="font-bold mt-1 text-red-600">{plan.remaining.toLocaleString('en-US')} ر.س</div></div>
+src/components/SalesReports.tsx:1261:                           <div className="text-3xl font-black">{overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} ر.س</div>
+src/components/SalesReports.tsx:1289:                                    <td className="px-4 py-3 font-bold text-red-600">{p.amount.toLocaleString('en-US')} ر.س</td>
+src/components/SalesReports.tsx:1335:                                  <div className="text-2xl font-black text-blue-600">{salesRepsStats[selectedRep].totalQuotesValue.toLocaleString('en-US')}</div>
+src/components/SalesReports.tsx:1339:                                  <div className="text-2xl font-black text-emerald-600">{salesRepsStats[selectedRep].totalApprovedValue.toLocaleString('en-US')}</div>
+src/components/SalesReports.tsx:1343:                                  <div className="text-2xl font-black text-indigo-600">{salesRepsStats[selectedRep].totalCollectionLinked.toLocaleString('en-US')}</div>
+src/components/SalesReports.tsx:1356:                           <div className="text-xs mt-1 text-slate-500">{bestRepByQuotesValue?.totalQuotesValue?.toLocaleString('en-US') || 0} ر.س</div>
+src/components/SalesReports.tsx:1366:                           <div className="text-xs mt-1 text-slate-500">{bestRepByCollection?.totalCollectionLinked?.toLocaleString('en-US') || 0} ر.س</div>
+src/components/HrSubSections.tsx:883:                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-weight: bold;">SAR ${emp.basicSalary.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:887:                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${h.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:891:                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${t.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:895:                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${extra.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:899:                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${b.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:903:                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${ded.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:907:                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${loan.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:914:                <span style="font-family: monospace; font-size: 22px; color: #0072BC;">SAR ${net.toLocaleString('en-US')}</span>
+src/components/HrSubSections.tsx:980:                  details: `عزيزي الموظف الموقر، تم إصدار كشف مسير راتب وورد ستاير WPS الخاص بك لشهر يونيو 2026 بنجاح.\n\nالراتب الأساسي: SAR ${emp.basicSalary.toLocaleString('en-US')}\nبدل السكن: SAR ${h.toLocaleString('en-US')}\nبدل النقل: SAR ${t.toLocaleString('en-US')}\nإضافي ومكافآت الساعات: SAR ${(extra + b).toLocaleString('en-US')}\nمستقطع السلف والخصومات: SAR ${(ded + loan).toLocaleString('en-US')}\nصافي الراتب المستحق صرفه بنكياً: SAR ${net.toLocaleString('en-US')}\n\nالحالة: معتمد ومنفّذ ✓`,
+src/components/HrSubSections.tsx:1005:                  <p className="text-xl font-mono font-black text-indigo-950">SAR {totalBasics.toLocaleString('en-US')}</p>
+src/components/HrSubSections.tsx:1011:                  <p className="text-xl font-mono font-black text-slate-900">SAR {totalAllowances.toLocaleString('en-US')}</p>
+src/components/HrSubSections.tsx:1017:                  <p className="text-xl font-mono font-black text-[#0072BC]">SAR {grandTotalSalaries.toLocaleString('en-US')}</p>
+src/components/HrSubSections.tsx:1131:                            <td className="p-2 font-mono font-bold text-slate-800">{emp.basicSalary.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1132:                            <td className="p-2 font-mono text-slate-500">{h.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1133:                            <td className="p-2 font-mono text-slate-500">{t.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1170:                              {loans ? `-${loans.toLocaleString('en-US')}` : '0'}
+src/components/HrSubSections.tsx:1175:                              {netVal.toLocaleString('en-US')}
+src/components/HrSubSections.tsx:1250:                              <td className="p-2 text-left font-mono font-bold">SAR {emp.basicSalary.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1254:                              <td className="p-2 text-left font-mono text-slate-500">SAR {h.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1258:                              <td className="p-2 text-left font-mono text-slate-500">SAR {t.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1262:                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {extra.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1266:                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {b.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1270:                              <td className="p-2 text-left font-mono">-SAR {ded.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1274:                              <td className="p-2 text-left font-mono font-black">-SAR {loan.toLocaleString('en-US')}</td>
+src/components/HrSubSections.tsx:1281:                          <span className="text-[#0072BC] font-mono text-sm">SAR {net.toLocaleString('en-US')}</span>
+src/components/HrSubSections.tsx:1621:                  <p className="text-3xl font-black font-mono mt-1">SAR {calculateSaudiEos().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+src/components/SalesHub.tsx:566:                        <p className="font-bold font-mono">{client.dateCreated ? new Date(client.dateCreated).toLocaleString('en-GB') : 'غير متوفر'}</p>
+src/App.tsx:3704:                                {metrics.financialBurnAnnualProjection.currentMonthWPSPayrollTotal.toLocaleString(
+src/App.tsx:3714:                                {metrics.financialBurnAnnualProjection.pendingApprovedLoansActiveVal.toLocaleString('en-US')}
+src/App.tsx:4145:                                          SAR {totalSalary.toLocaleString('en-US')}
+src/App.tsx:4344:                            SAR {aiResult.salaryMin.toLocaleString('en-US')} - SAR{" "}
+src/App.tsx:4345:                            {aiResult.salaryMax.toLocaleString('en-US')}

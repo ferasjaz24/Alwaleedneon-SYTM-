@@ -133,7 +133,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
         const others = prev.filter(p => p.id !== recId);
         return [...others, payload];
       });
-      alert('تم تحديث الهدف بنجاح');
+      alert(lang === 'ar' ? 'تم تحديث الهدف بنجاح' : 'Target updated successfully');
     } catch (e) {
       console.error(e);
     }
@@ -347,7 +347,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
       const heightPercent = maxDailyApproved > 0 ? ((val / maxDailyApproved) * 100).toFixed(1) : '0';
       return `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 80px; flex: 1;">
-          <div style="font-size: 7px; color: #4f46e5; margin-bottom: 2px; font-weight: bold; transform: rotate(-45deg); height: 15px;">${val > 0 ? val.toLocaleString() : ''}</div>
+          <div style="font-size: 7px; color: #4f46e5; margin-bottom: 2px; font-weight: bold; transform: rotate(-45deg); height: 15px;">${val > 0 ? val.toLocaleString('en-US') : ''}</div>
           <div style="background-color: #6366f1; width: 8px; border-radius: 2px 2px 0 0; height: ${heightPercent}%;"></div>
           <div style="font-size: 6px; color: #64748b; margin-top: 2px;">${d.name}</div>
         </div>
@@ -359,12 +359,17 @@ export default function SalesRepsTargets({ lang, user }: Props) {
       pWindow.document.write(`
         <html dir="rtl">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>مؤشرات أداء وتشغيل المندوب</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
               @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
               @page { size: A4; margin: 20mm; }
-              body { font-family: 'Tajawal', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
+              body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
               .stat-box { border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 8px; background: #f8fafc; }
               .stat-box-label { color: #64748b; margin-bottom: 2px; font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
               .stat-box-value { font-size: 14px; font-weight: 900; color: #0f172a; white-space: nowrap; }
@@ -380,10 +385,10 @@ export default function SalesRepsTargets({ lang, user }: Props) {
           
           <h2 class="section-title">مؤشرات المبيعات والعمولات</h2>
           <div class="grid grid-cols-4 gap-2 mb-4">
-            <div class="stat-box"><div class="stat-box-label">الهدف المالي</div><div class="stat-box-value">${targetAmount.toLocaleString()} ريال</div></div>
-            <div class="stat-box"><div class="stat-box-label">المحصل المعتمد</div><div class="stat-box-value text-indigo-700">${approvedQuotesValue.toLocaleString()} ريال</div></div>
+            <div class="stat-box"><div class="stat-box-label">الهدف المالي</div><div class="stat-box-value">${targetAmount.toLocaleString('en-US')} ريال</div></div>
+            <div class="stat-box"><div class="stat-box-label">المحصل المعتمد</div><div class="stat-box-value text-indigo-700">${approvedQuotesValue.toLocaleString('en-US')} ريال</div></div>
             <div class="stat-box"><div class="stat-box-label">تحقيق الهدف</div><div class="stat-box-value ${targetAchievementRate >= 100 ? 'text-emerald-600' : 'text-blue-600'}">${targetAchievementRate}% مقفل</div></div>
-            <div class="stat-box"><div class="stat-box-label">عمولة إضافية</div><div class="stat-box-value text-orange-600">${commissionValue.toLocaleString()} ريال</div></div>
+            <div class="stat-box"><div class="stat-box-label">عمولة إضافية</div><div class="stat-box-value text-orange-600">${commissionValue.toLocaleString('en-US')} ريال</div></div>
           </div>
 
           <h2 class="section-title">مؤشرات تشغيلية وتقييم العروض</h2>
@@ -392,7 +397,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
             <div class="stat-box"><div class="stat-box-label">تم الاعتماد</div><div class="stat-box-value text-emerald-600">${approvedQuotesCount}</div></div>
             <div class="stat-box"><div class="stat-box-label">قيد التفاوض (مسودة)</div><div class="stat-box-value text-amber-600">${draftQuotesCount}</div></div>
             <div class="stat-box"><div class="stat-box-label">نسبة التحويل</div><div class="stat-box-value text-slate-800">${conversionRate}%</div></div>
-            <div class="stat-box"><div class="stat-box-label">القيمة التقديرية</div><div class="stat-box-value">${totalQuotesValue.toLocaleString()}</div></div>
+            <div class="stat-box"><div class="stat-box-label">القيمة التقديرية</div><div class="stat-box-value">${totalQuotesValue.toLocaleString('en-US')}</div></div>
           </div>
           
           <div class="grid grid-cols-2 gap-3 mb-4">
@@ -406,7 +411,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
             <div>
                <h2 class="section-title !text-red-700 !border-red-100">مؤشرات المديونيات وقوة التحصيل</h2>
                <div class="grid grid-cols-2 gap-2">
-                 <div class="stat-box"><div class="stat-box-label">الهدف المطلوب تحصيله</div><div class="stat-box-value text-slate-700">${targetForCollection.toLocaleString()}</div></div>
+                 <div class="stat-box"><div class="stat-box-label">الهدف المطلوب تحصيله</div><div class="stat-box-value text-slate-700">${targetForCollection.toLocaleString('en-US')}</div></div>
                  <div class="stat-box border-emerald-200 bg-emerald-50"><div class="stat-box-label text-emerald-800">قوة وفاعلية التحصيل</div><div class="stat-box-value font-black text-indigo-700">${collectionStrength}%</div></div>
                </div>
                <div class="text-center mt-1 font-bold text-[10px] text-red-600">يوجد عدد (${delayedCollectionsCount}) دفعات متأخرة بالجدولة</div>
@@ -426,15 +431,15 @@ export default function SalesRepsTargets({ lang, user }: Props) {
             <tbody>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 8px; font-weight: bold; color: #334155;">المبيعات المعتمدة (ر.س)</td>
-                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.approvedQuotesValue.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.approvedQuotesValue.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; color: #047857; font-weight: 900; background-color: #ecfdf5;">${currentStats.approvedQuotesValue.toLocaleString()}</td>
+                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.approvedQuotesValue.toLocaleString('en-US')}</td>
+                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.approvedQuotesValue.toLocaleString('en-US')}</td>
+                <td style="padding: 8px; text-align: center; color: #047857; font-weight: 900; background-color: #ecfdf5;">${currentStats.approvedQuotesValue.toLocaleString('en-US')}</td>
               </tr>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 8px; font-weight: bold; color: #334155;">التحصيلات النقدية (ر.س)</td>
-                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.collected.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.collected.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; color: #1d4ed8; font-weight: 900; background-color: #eff6ff;">${currentStats.collected.toLocaleString()}</td>
+                <td style="padding: 8px; text-align: center; color: #64748b;">${prev2Stats.collected.toLocaleString('en-US')}</td>
+                <td style="padding: 8px; text-align: center; color: #475569;">${prevStats.collected.toLocaleString('en-US')}</td>
+                <td style="padding: 8px; text-align: center; color: #1d4ed8; font-weight: 900; background-color: #eff6ff;">${currentStats.collected.toLocaleString('en-US')}</td>
               </tr>
               <tr>
                 <td style="padding: 8px; font-weight: bold; color: #334155;">عروض الأسعار المعتمدة (عدد)</td>
@@ -467,8 +472,8 @@ export default function SalesRepsTargets({ lang, user }: Props) {
   const filteredReps = systemUsers.filter(u => salesRepsList.includes(u.username));
   const otherUsers = systemUsers.filter(u => {
     if (salesRepsList.includes(u.username)) return false;
-    const dispName = getRepDisplayName(u.username).toLowerCase();
-    return dispName.includes(repSearch.toLowerCase()) || u.username.toLowerCase().includes(repSearch.toLowerCase());
+    const dispName = (getRepDisplayName(u.username) || '').toLowerCase();
+    return dispName.includes(repSearch.toLowerCase()) || (u.username || '').toLowerCase().includes(repSearch.toLowerCase());
   });
 
   if (loading) {
@@ -558,7 +563,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                    <Target className="w-5 h-5" />
                  </div>
                  <span className="text-slate-500 text-xs font-bold mb-1">الهدف الشهري</span>
-                 <h4 className="text-2xl font-black text-slate-800">{targetAmount.toLocaleString()} <span className="text-xs font-normal">ر.س</span></h4>
+                 <h4 className="text-2xl font-black text-slate-800">{targetAmount.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
                </div>
 
                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
@@ -566,7 +571,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                    <CheckCircle className="w-5 h-5" />
                  </div>
                  <span className="text-emerald-700 text-xs font-bold mb-1">المبيعات المعتمدة (المحققة)</span>
-                 <h4 className="text-2xl font-black text-emerald-900">{approvedQuotesValue.toLocaleString()} <span className="text-xs font-normal">ر.س</span></h4>
+                 <h4 className="text-2xl font-black text-emerald-900">{approvedQuotesValue.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
                </div>
 
                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
@@ -582,7 +587,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                    <DollarSign className="w-5 h-5" />
                  </div>
                  <span className="text-orange-700 text-xs font-bold mb-1">العمولة المستحقة (2.5%)</span>
-                 <h4 className="text-2xl font-black text-orange-900">{commissionValue.toLocaleString()} <span className="text-xs font-normal">ر.س</span></h4>
+                 <h4 className="text-2xl font-black text-orange-900">{commissionValue.toLocaleString('en-US')} <span className="text-xs font-normal">ر.س</span></h4>
                  <p className="text-[9px] text-orange-600 mt-1">تستحق للمبالغ المحققة فوق التارجت فقط</p>
                </div>
             </div>
@@ -658,11 +663,11 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                    <div className="w-full grid grid-cols-2 gap-4 mt-4">
                      <div className="bg-slate-50 p-3 rounded-lg text-center border border-slate-100">
                         <p className="text-[10px] text-slate-500 mb-1">المبلغ المحصل</p>
-                        <p className="font-bold text-emerald-600">{totalCollectedThisMonth.toLocaleString()} ر.س</p>
+                        <p className="font-bold text-emerald-600">{totalCollectedThisMonth.toLocaleString('en-US')} ر.س</p>
                      </div>
                      <div className="bg-slate-50 p-3 rounded-lg text-center border border-slate-100">
                         <p className="text-[10px] text-slate-500 mb-1">المستحق الدفتري الشامل عليه</p>
-                        <p className="font-bold text-slate-700">{targetForCollection.toLocaleString()} ر.س</p>
+                        <p className="font-bold text-slate-700">{targetForCollection.toLocaleString('en-US')} ر.س</p>
                      </div>
                      <div className="col-span-2 bg-red-50 p-3 rounded-lg flex items-center justify-between border border-red-100">
                        <span className="text-xs text-red-700 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> دفعات متأخرة بالتحصيل بالجدولة</span>
@@ -697,9 +702,9 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                       {/* المبيعات المعتمدة */}
                       <tr className="hover:bg-slate-50/50">
                         <td className="p-3 font-bold text-slate-700">المبيعات المعتمدة (ر.س)</td>
-                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.approvedQuotesValue.toLocaleString()}</td>
+                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.approvedQuotesValue.toLocaleString('en-US')}</td>
                         <td className="p-3 text-center text-slate-600 font-bold font-mono group">
-                          {prevStats.approvedQuotesValue.toLocaleString()}
+                          {prevStats.approvedQuotesValue.toLocaleString('en-US')}
                           {(() => {
                              const p = prev2Stats.approvedQuotesValue;
                              const c = prevStats.approvedQuotesValue;
@@ -709,7 +714,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                           })()}
                         </td>
                         <td className="p-3 text-center text-emerald-700 font-black font-mono bg-emerald-50/30">
-                          {currentStats.approvedQuotesValue.toLocaleString()}
+                          {currentStats.approvedQuotesValue.toLocaleString('en-US')}
                           {(() => {
                              const p = prevStats.approvedQuotesValue;
                              const c = currentStats.approvedQuotesValue;
@@ -738,9 +743,9 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                       {/* التحصيلات */}
                       <tr className="hover:bg-slate-50/50">
                         <td className="p-3 font-bold text-slate-700">التحصيلات النقدية (ر.س)</td>
-                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.collected.toLocaleString()}</td>
+                        <td className="p-3 text-center text-slate-500 font-mono">{prev2Stats.collected.toLocaleString('en-US')}</td>
                         <td className="p-3 text-center text-slate-600 font-bold font-mono group">
-                          {prevStats.collected.toLocaleString()}
+                          {prevStats.collected.toLocaleString('en-US')}
                           {(() => {
                              const p = prev2Stats.collected;
                              const c = prevStats.collected;
@@ -750,7 +755,7 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                           })()}
                         </td>
                         <td className="p-3 text-center text-blue-700 font-black font-mono bg-blue-50/30">
-                          {currentStats.collected.toLocaleString()}
+                          {currentStats.collected.toLocaleString('en-US')}
                           {(() => {
                              const p = prevStats.collected;
                              const c = currentStats.collected;

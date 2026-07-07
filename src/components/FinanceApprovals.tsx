@@ -155,13 +155,13 @@ export default function FinanceApprovals({
               ${suppliers
                 .map((s) => {
                   const suppSpecialty = s.specialty
-                    ? s.specialty.toLowerCase()
+                    ? (s.specialty || '').toLowerCase()
                     : "";
                   const matchedItems =
                     selectedReq.pricingDetails
                       ?.filter((q: any) => {
                         const itemName = q.materialName
-                          ? q.materialName.toLowerCase()
+                          ? (q.materialName || '').toLowerCase()
                           : "";
                         return (
                           suppSpecialty.includes(itemName) ||
@@ -568,13 +568,13 @@ export default function FinanceApprovals({
                         <tbody>
                           {suppliers.map((s) => {
                             const suppSpecialty = s.specialty
-                              ? s.specialty.toLowerCase()
+                              ? (s.specialty || '').toLowerCase()
                               : "";
                             const matchedItems =
                               selectedReq.pricingDetails
                                 ?.filter((q: any) => {
                                   const itemName = q.materialName
-                                    ? q.materialName.toLowerCase()
+                                    ? (q.materialName || '').toLowerCase()
                                     : "";
                                   return (
                                     suppSpecialty.includes(itemName) ||

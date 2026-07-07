@@ -332,7 +332,7 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
           <title>قائمة المواد المحددة</title>
           <style>
             ${sharedPrintStyles}
-            body { font-family: 'Tajawal', Tahoma, Arial; direction: rtl; text-align: right; margin: 0; padding: 0; background: #fff; }
+            body { font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial; direction: rtl; text-align: right; margin: 0; padding: 0; background: #fff; }
             .print-container { padding: 0; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
             .content-wrapper { flex-grow: 1; }
             .page-title { color: #0072BC; text-align: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
@@ -410,14 +410,14 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
         (i) =>
           (i.itemNameAr && i.itemNameAr.includes(searchTerm)) ||
           (i.itemNameEn &&
-            i.itemNameEn.toLowerCase().includes(searchTerm.toLowerCase())),
+            (i.itemNameEn || '').toLowerCase().includes(searchTerm.toLowerCase())),
       );
     }
     if (searchCode) {
       res = res.filter(
         (i) =>
           i.itemCode &&
-          i.itemCode.toLowerCase().includes(searchCode.toLowerCase()),
+          (i.itemCode || '').toLowerCase().includes(searchCode.toLowerCase()),
       );
     }
 

@@ -181,7 +181,7 @@ export default function HrJobManagementTab({ lang }: HrJobManagementTabProps) {
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block">{lang === 'ar' ? 'النطاق الحاكم للراتب المعتمد' : 'Authorized Base Pay Range'}</span>
                 <p className="text-xs font-black text-[#0072BC] font-mono">
-                  SAR {role.basicMin.toLocaleString()} - {role.basicMax.toLocaleString()}
+                  SAR {role.basicMin.toLocaleString('en-US')} - {role.basicMax.toLocaleString('en-US')}
                 </p>
               </div>
             </div>

@@ -254,12 +254,12 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
               ${suppliers
                 .map((s) => {
                   const suppSpecialty = s.specialty
-                    ? s.specialty.toLowerCase()
+                    ? (s.specialty || '').toLowerCase()
                     : "";
                   const matchedItems = quoteDetails
                     .filter((q: any) => {
                       const itemName = q.materialName
-                        ? q.materialName.toLowerCase()
+                        ? (q.materialName || '').toLowerCase()
                         : "";
                       return (
                         suppSpecialty.includes(itemName) ||
@@ -767,11 +767,11 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                       <tbody>
                         {suppliers.map((s) => {
                           const suppSpecialty = s.specialty
-                            ? s.specialty.toLowerCase()
+                            ? (s.specialty || '').toLowerCase()
                             : "";
                           const matchedItems = quoteDetails
                             .filter((q) => {
-                              const itemName = q.materialName.toLowerCase();
+                              const itemName = (q.materialName || '').toLowerCase();
                               return (
                                 suppSpecialty.includes(itemName) ||
                                 itemName.includes(suppSpecialty) ||

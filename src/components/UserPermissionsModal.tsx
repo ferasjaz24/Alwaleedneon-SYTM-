@@ -30,7 +30,8 @@ const buildDefaultAccess = (): UserPermissions['moduleAccess'] => ({
   production: { ...defaultModulePermissions },
   procurement: { ...defaultModulePermissions },
   reports: { ...defaultModulePermissions },
-  settings: { ...defaultModulePermissions }
+  settings: { ...defaultModulePermissions },
+  notifications: { ...defaultModulePermissions }
 });
 
 const legacyRoleMappings: Record<string, Partial<UserPermissions['moduleAccess']>> = {

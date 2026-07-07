@@ -349,7 +349,7 @@ export default function HrDashboardTab({
           <div className="bg-gradient-to-br from-purple-50/90 to-white p-4 rounded-2xl border border-purple-100 flex items-center justify-between shadow-sm hover:shadow transition-all group">
             <div className="space-y-1 text-right">
               <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'إجمالي الرواتب الشهرية' : 'Total Monthly Salaries'}</span>
-              <p className="text-lg font-mono font-black text-purple-900 leading-none">{totalSalariesSum.toLocaleString()} <span className="text-[10px] font-bold">SAR</span></p>
+              <p className="text-lg font-mono font-black text-purple-900 leading-none">{totalSalariesSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
               <span className="text-[9px] text-purple-600 font-semibold block">{lang === 'ar' ? 'شامل الرواتب والبدلات المتراكمة' : 'global gross sum'}</span>
             </div>
             <div className="p-2.5 bg-purple-100/50 rounded-xl group-hover:scale-110 transition-transform">
@@ -361,7 +361,7 @@ export default function HrDashboardTab({
           <div className="bg-gradient-to-br from-rose-50/90 to-white p-4 rounded-2xl border border-rose-100 flex items-center justify-between shadow-sm hover:shadow transition-all group">
             <div className="space-y-1 text-right">
               <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'إجمالي الخصومات' : 'Total Deductions'}</span>
-              <p className="text-lg font-mono font-black text-rose-900 leading-none">-{totalDeductionsSum.toLocaleString()} <span className="text-[10px] font-bold">SAR</span></p>
+              <p className="text-lg font-mono font-black text-rose-900 leading-none">-{totalDeductionsSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
               <span className="text-[9px] text-rose-600 font-bold block">{lang === 'ar' ? 'الخصومات والعقوبات المطبقة' : 'applied penalties'}</span>
             </div>
             <div className="p-2.5 bg-rose-100/50 rounded-xl group-hover:scale-110 transition-transform">
@@ -373,7 +373,7 @@ export default function HrDashboardTab({
           <div className="bg-gradient-to-br from-amber-50/90 to-white p-4 rounded-2xl border border-amber-100 flex items-center justify-between shadow-sm hover:shadow transition-all group">
             <div className="space-y-1 text-right">
               <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'إجمالي السلف' : 'Total Advances'}</span>
-              <p className="text-lg font-mono font-black text-amber-900 leading-none">{totalLoansSum.toLocaleString()} <span className="text-[10px] font-bold">SAR</span></p>
+              <p className="text-lg font-mono font-black text-amber-900 leading-none">{totalLoansSum.toLocaleString('en-US')} <span className="text-[10px] font-bold">SAR</span></p>
               <span className="text-[9px] text-amber-600 font-semibold block">{lang === 'ar' ? 'سلف نشطة قيد السداد' : 'employee current loans'}</span>
             </div>
             <div className="p-2.5 bg-amber-100/50 rounded-xl group-hover:scale-110 transition-transform">

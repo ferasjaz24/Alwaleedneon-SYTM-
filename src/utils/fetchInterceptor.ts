@@ -84,7 +84,6 @@ function mapEmployeeFromDB(row: any): any {
     allowances: row.allowances || {
       housing: Number(row.housing || 0),
       transport: Number(row.transport || 0),
-      phone: Number(row.phone || 0),
       food: Number(row.food || 0),
     },
     homeAddress: row.homeAddress || row.home_address || "",
@@ -95,6 +94,7 @@ function mapEmployeeFromDB(row: any): any {
     department: row.department || "",
     mobile: row.mobile || "",
     nationality: row.nationality || "",
+    company: row.company || "",
     experienceYears: row.experienceYears || row.experience_years,
     classification: row.classification || "",
     contractUrl: row.contractUrl || row.contract_url || "",
@@ -116,6 +116,22 @@ function mapEmployeeFromDB(row: any): any {
     personalPhoto: row.personalPhoto || "",
     iqamaPhoto: row.iqamaPhoto || "",
     passportPhoto: row.passportPhoto || "",
+    bankName: row.bankName || row.bank_name || "",
+    iban: row.iban || "",
+    accountNumber: row.accountNumber || row.account_number || "",
+    swiftCode: row.swiftCode || row.swift_code || "",
+    transferMethod: row.transferMethod || row.transfer_method || "SARIE",
+    accountHolderName: row.accountHolderName || row.account_holder_name || "",
+    bankNotes: row.bankNotes || row.bank_notes || "",
+    bankInfo: row.bankInfo || {
+      bankName: row.bankName || row.bank_name || "",
+      iban: row.iban || "",
+      accountNumber: row.accountNumber || row.account_number || "",
+      swiftCode: row.swiftCode || row.swift_code || "",
+      transferMethod: row.transferMethod || row.transfer_method || "SARIE",
+      accountHolderName: row.accountHolderName || row.account_holder_name || "",
+      bankNotes: row.bankNotes || row.bank_notes || "",
+    },
   };
 }
 

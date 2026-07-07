@@ -288,7 +288,7 @@ export default function DailyProductionFollowup({
                       <td className="p-4">
                         {p.expectedDelivery ? (
                           <div className={`font-bold ${isDelayed ? 'text-red-600 bg-red-50 px-2 py-1 rounded-lg inline-block' : 'text-slate-600'}`}>
-                            {new Date(p.expectedDelivery).toLocaleDateString('ar-SA')}
+                            {new Date(p.expectedDelivery).toLocaleDateString('en-US')}
                           </div>
                         ) : "---"}
                       </td>
@@ -361,7 +361,7 @@ export default function DailyProductionFollowup({
                                             {isCompleted && st.completedAt && (
                                               <p className="text-[10px] font-bold text-emerald-600 mt-1.5 flex items-center gap-1">
                                                 <CheckCircle2 className="w-3 h-3" />
-                                                {lang === "ar" ? "أنجزت في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString('ar-SA')}
+                                                {lang === "ar" ? "أنجزت في:" : "Completed at:"} {new Date(st.completedAt).toLocaleString('en-US')}
                                               </p>
                                             )}
                                           </div>

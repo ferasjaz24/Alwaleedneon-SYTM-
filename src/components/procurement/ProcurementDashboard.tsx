@@ -348,7 +348,7 @@ export default function ProcurementDashboard({
   const monthlyPoValues: any = {};
   approvedPos.forEach((po) => {
     const d = new Date(po.createdAt || po.requestDate);
-    const monthYear = d.toLocaleString("ar-SA", {
+    const monthYear = d.toLocaleString('en-US', {
       month: "short",
       year: "numeric",
     });
@@ -1243,7 +1243,7 @@ export default function ProcurementDashboard({
               <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-bold text-slate-400 font-mono">
-                    {new Date(op.date).toLocaleString()}
+                    {new Date(op.date).toLocaleString('en-US')}
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-indigo-600 border border-indigo-100">
                     {op.user}

@@ -1,0 +1,64 @@
+src/components/finance/cashbank/TransactionsList.tsx-137-
+src/components/finance/cashbank/TransactionsList.tsx-138-  const filtered = transactions.filter(t => 
+src/components/finance/cashbank/TransactionsList.tsx:139:    (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransactionsList.tsx:140:    (t.reference_number || t.transactionNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/TransfersList.tsx-134-
+src/components/finance/cashbank/TransfersList.tsx-135-  const filtered = transfers.filter(t => 
+src/components/finance/cashbank/TransfersList.tsx:136:    (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransfersList.tsx:137:    (t.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/ReconciliationList.tsx-57-
+src/components/finance/cashbank/ReconciliationList.tsx-58-  const filtered = reconciliations.filter(r => 
+src/components/finance/cashbank/ReconciliationList.tsx:59:    (r.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/ReconciliationList.tsx-60-  );
+--
+--
+src/components/finance/cashbank/ArchiveList.tsx-35-
+src/components/finance/cashbank/ArchiveList.tsx-36-  const filtered = archived.filter(a => 
+src/components/finance/cashbank/ArchiveList.tsx:37:    a.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/ArchiveList.tsx:38:    a.description?.toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/AuditLogList.tsx-54-
+src/components/finance/cashbank/AuditLogList.tsx-55-  const filteredLogs = logs.filter(l => 
+src/components/finance/cashbank/AuditLogList.tsx:56:    (l.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/AuditLogList.tsx:57:    (l.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+--
+--
+src/components/finance/cashbank/BankAccountsList.tsx-56-
+src/components/finance/cashbank/BankAccountsList.tsx-57-  const filteredAccounts = bankAccounts.filter((acc) =>
+src/components/finance/cashbank/BankAccountsList.tsx:58:    (lang === "ar" ? acc.bank_name_ar : acc.bank_name_en).toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/BankAccountsList.tsx:59:    (acc.account_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+--
+--
+src/components/finance/cashbank/CashBoxesList.tsx-57-
+src/components/finance/cashbank/CashBoxesList.tsx-58-  const filteredBoxes = cashBoxes.filter((box) =>
+src/components/finance/cashbank/CashBoxesList.tsx:59:    (lang === "ar" ? box.name_ar : box.name_en).toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/CashBoxesList.tsx:60:    (box.code || '').toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/JournalEntries.tsx-33-
+src/components/finance/JournalEntries.tsx-34-  const filteredEntries = entries.filter((e) => {
+src/components/finance/JournalEntries.tsx:35:    const q = searchQuery.toLowerCase();
+src/components/finance/JournalEntries.tsx-36-    const matchesSearch = 
+--
+--
+src/components/finance/CustomerSupplierInvoices.tsx-127-
+src/components/finance/CustomerSupplierInvoices.tsx-128-  const filteredOptions = options.filter((o) =>
+src/components/finance/CustomerSupplierInvoices.tsx:129:    (o.label || "").toLowerCase().includes((search || "").toLowerCase())
+src/components/finance/CustomerSupplierInvoices.tsx-130-  );
+--
+--
+src/components/finance/RevenuesExpenses.tsx-298-
+src/components/finance/RevenuesExpenses.tsx-299-  const filtered = revenues.filter(r => {
+src/components/finance/RevenuesExpenses.tsx:300:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx-301-    const matchesSearch = 
+--
+--
+src/components/finance/RevenuesExpenses.tsx-1400-
+src/components/finance/RevenuesExpenses.tsx-1401-  const filtered = expenses.filter(r => {
+src/components/finance/RevenuesExpenses.tsx:1402:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx-1403-    const matchesSearch = 

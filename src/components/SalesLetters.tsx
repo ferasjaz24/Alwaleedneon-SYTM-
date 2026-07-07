@@ -276,6 +276,11 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
       printWindow.document.write(`
         <html dir="rtl">
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة خطاب المبيعات</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
@@ -284,7 +289,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0; 
                 padding: 0; 
                 background: white; 
-                font-family: 'Tajawal', sans-serif !important;
+                font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
@@ -390,10 +395,10 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           : 'تم التصدير والاعتماد بالختم الرسمي بنجاح في أرشيف المبيعات!';
         alert(successMsg);
       } else {
-        alert('حدث خطأ أثناء الحفظ.');
+        alert(lang === 'ar' ? 'حدث خطأ أثناء الحفظ.' : 'Error saving.');
       }
     } catch(e) {
-      alert('فشل في التصدير، يرجى المحاولة مرة أخرى.');
+      alert(lang === 'ar' ? 'فشل في التصدير، يرجى المحاولة مرة أخرى.' : 'Failed to export, please try again.');
     }
   };
 
@@ -507,6 +512,11 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
       printWindow.document.write(`
         <html dir="rtl">
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة خطاب المبيعات - أرشيف</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
@@ -515,7 +525,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0; 
                 padding: 0; 
                 background: white; 
-                font-family: 'Tajawal', sans-serif !important;
+                font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
@@ -949,7 +959,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                     return (
                       <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition">
                         <td className="p-3 text-slate-400 font-bold font-mono" dir="ltr">
-                          {new Date(log.exportedAt).toLocaleString('ar-SA')}
+                          {new Date(log.exportedAt).toLocaleString('en-US')}
                         </td>
                         <td className="p-3 font-bold text-slate-700">{log.clientName}</td>
                         <td className="p-3 font-bold text-slate-500 font-mono">{log.quotationNumber}</td>
@@ -1176,7 +1186,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
               </div>
               <div>
                 <span className="font-bold text-slate-400">{lang === 'ar' ? 'تاريخ الإصدار: ' : 'Exported At: '}</span>
-                <span className="font-bold font-mono text-slate-700">{new Date(confirmTargetLog.exportedAt).toLocaleDateString('ar-SA')}</span>
+                <span className="font-bold font-mono text-slate-700">{new Date(confirmTargetLog.exportedAt).toLocaleDateString('en-US')}</span>
               </div>
             </div>
 

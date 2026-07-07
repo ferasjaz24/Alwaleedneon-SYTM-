@@ -59,9 +59,9 @@ export default function HrOrgStructureTab({ lang, employees }: HrOrgStructureTab
   // Recalculating employee counting based on actual employee list + mock defaults
   const getEmployeeCountForNode = (node: OrgNode) => {
     // Check if employee department name maps or matches any keywords
-    const deptKeyword = node.name_en.toLowerCase().replace('branch', '').replace('division', '').replace('department', '').trim();
+    const deptKeyword = (node.name_en || '').toLowerCase().replace('branch', '').replace('division', '').replace('department', '').trim();
     const count = employees.filter(emp => {
-      const empDept = emp.department.toLowerCase();
+      const empDept = (emp.department || '').toLowerCase();
       // Simple containing matching
       return empDept.includes(deptKeyword) || deptKeyword.includes(empDept);
     }).length;
@@ -248,7 +248,7 @@ export default function HrOrgStructureTab({ lang, employees }: HrOrgStructureTab
 
             <div>
               <span className="text-[10px] text-slate-400 block">{lang === 'ar' ? 'الميزانية السنوية للقسم' : 'Annual Authorized Budget'}</span>
-              <p className="font-black text-[#0072BC] font-mono">SAR {activeNode.annualBudget.toLocaleString()}</p>
+              <p className="font-black text-[#0072BC] font-mono">SAR {activeNode.annualBudget.toLocaleString('en-US')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">

@@ -1,0 +1,336 @@
+src/components/hr/HrDashboardTab.tsx-120-  // 9. الموظفين تحت التجربة (grade يحتوي على كلمة probation أو تجربة، أو تاريخ التعيين خلال آخر 90 يوم)
+src/components/hr/HrDashboardTab.tsx-121-  const underProbationCount = employees.filter(e => {
+src/components/hr/HrDashboardTab.tsx:122:    const isProbationGrade = e.grade?.toLowerCase().includes('probation') || e.grade?.includes('تجربة');
+src/components/hr/HrDashboardTab.tsx-123-    if (isProbationGrade) return true;
+--
+src/components/hr/HrRecruitmentTab.tsx-143-      jobTitle: candidate.appliedTitle,
+--
+src/components/hr/HrLeavesTab.tsx-133-  const filteredOptions = options.filter(
+src/components/hr/HrLeavesTab.tsx-134-    (o) =>
+src/components/hr/HrLeavesTab.tsx:135:      o.label.toLowerCase().includes(search.toLowerCase()) ||
+--
+--
+src/components/hr/HrPayrollTab.tsx-761-  // Filter employees registry list for search matches
+src/components/hr/HrPayrollTab.tsx-762-  const filteredEmployees = employees.filter(emp => {
+src/components/hr/HrPayrollTab.tsx:763:    const q = searchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:764:    const idMatch = (emp.id || '').toLowerCase().includes(q);
+--
+--
+src/components/hr/HrPayrollTab.tsx-1646-                    </tr>
+src/components/hr/HrPayrollTab.tsx-1647-                  ) : deductionsList.filter(d => {
+src/components/hr/HrPayrollTab.tsx:1648:                    const term = deductionSearchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1649:                    return (d.employeeName || '').toLowerCase().includes(term) || (d.reason || '').toLowerCase().includes(term);
+--
+--
+src/components/hr/HrPayrollTab.tsx-1655-                    </tr>
+src/components/hr/HrPayrollTab.tsx-1656-                  ) : deductionsList.filter(d => {
+src/components/hr/HrPayrollTab.tsx:1657:                    const term = deductionSearchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1658:                    return (d.employeeName || '').toLowerCase().includes(term) || (d.reason || '').toLowerCase().includes(term);
+--
+--
+src/components/hr/HrPayrollTab.tsx-1749-                        {employees
+src/components/hr/HrPayrollTab.tsx-1750-                          .filter(emp => {
+src/components/hr/HrPayrollTab.tsx:1751:                            const query = modalEmpSearch.toLowerCase();
+src/components/hr/HrPayrollTab.tsx-1752-                            return (
+--
+--
+src/components/hr/HrPayrollTab.tsx-1776-                          ))}
+src/components/hr/HrPayrollTab.tsx-1777-                        {employees.filter(emp => {
+src/components/hr/HrPayrollTab.tsx:1778:                          const query = modalEmpSearch.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1779:                          return (emp.arabicName || '').toLowerCase().includes(query) || (emp.englishName || '').toLowerCase().includes(query) || (emp.id || '').toLowerCase().includes(query);
+--
+src/components/hr/HrPayrollTab.tsx-1781-                          <p className="text-center text-slate-400 text-xs py-4">لا توجد نتائج تطابق البحث</p>
+--
+src/components/hr/HrEmployeeDirectoryTab.tsx-52-  const filteredCountries = countries.filter(
+src/components/hr/HrEmployeeDirectoryTab.tsx-53-    (c) =>
+src/components/hr/HrEmployeeDirectoryTab.tsx:54:      c.ar.toLowerCase().includes(search.toLowerCase()) ||
+--
+--
+src/components/hr/HrEmployeeDirectoryTab.tsx-586-  // Handle Search and Filter
+src/components/hr/HrEmployeeDirectoryTab.tsx-587-  const filteredEmployees = employees.filter((emp) => {
+src/components/hr/HrEmployeeDirectoryTab.tsx:588:    const q = searchQuery.toLowerCase().trim();
+src/components/hr/HrEmployeeDirectoryTab.tsx-589-    if (!q) return true;
+--
+src/components/hr/HrOrgStructureTab.tsx-61-    // Check if employee department name maps or matches any keywords
+src/components/hr/HrOrgStructureTab.tsx:62:    const deptKeyword = node.name_en.toLowerCase().replace('branch', '').replace('division', '').replace('department', '').trim();
+src/components/hr/HrOrgStructureTab.tsx-63-    const count = employees.filter(emp => {
+src/components/hr/HrOrgStructureTab.tsx:64:      const empDept = (emp.department || '').toLowerCase();
+src/components/hr/HrOrgStructureTab.tsx-65-      // Simple containing matching
+--
+--
+src/components/hr/HrDocumentTrackingTab.tsx-368-  }).length;
+src/components/hr/HrDocumentTrackingTab.tsx-369-  const expiredCount = [...employeeDocs, ...vehicleDocs].filter(d => getRemainingDays(d.expiryDate) < 0).length;
+src/components/hr/HrDocumentTrackingTab.tsx:370:  const needsFileUpdateCount = [...employeeDocs, ...vehicleDocs].filter(d => !d.docUrl || d.notes?.toLowerCase().includes('تحديث')).length;
+src/components/hr/HrDocumentTrackingTab.tsx-371-
+src/components/hr/HrDocumentTrackingTab.tsx-372-  const employeeDocsCount = employeeDocs.length;
+--
+src/components/hr/HrDocumentTrackingTab.tsx-703-
+--
+src/components/hr/HrDocumentTrackingTab.tsx-986-  const listToDisplay = (activePortal === 'employee' ? employeeDocs : vehicleDocs).filter(docObj => {
+src/components/hr/HrDocumentTrackingTab.tsx-987-    // Search query match
+src/components/hr/HrDocumentTrackingTab.tsx:988:    const q = searchQuery.toLowerCase().trim();
+--
+src/components/hr/HrSelfServiceTab.tsx-257-    return true;
+--
+src/components/production/DailyProductionFollowup.tsx-73-  let filteredProjects = ongoingProjects.filter(p => {
+src/components/production/DailyProductionFollowup.tsx-74-    if (searchTerm) {
+src/components/production/DailyProductionFollowup.tsx:75:      const q = searchTerm.toLowerCase();
+--
+--
+src/components/finance/cashbank/TransactionsList.tsx-137-
+src/components/finance/cashbank/TransactionsList.tsx-138-  const filtered = transactions.filter(t => 
+src/components/finance/cashbank/TransactionsList.tsx:139:    (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransactionsList.tsx:140:    (t.reference_number || t.transactionNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/TransfersList.tsx-134-
+src/components/finance/cashbank/TransfersList.tsx-135-  const filtered = transfers.filter(t => 
+src/components/finance/cashbank/TransfersList.tsx:136:    t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransfersList.tsx:137:    t.reference_number.toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/ReconciliationList.tsx-57-
+src/components/finance/cashbank/ReconciliationList.tsx-58-  const filtered = reconciliations.filter(r => 
+src/components/finance/cashbank/ReconciliationList.tsx:59:    r.reference_number.toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/ReconciliationList.tsx-60-  );
+--
+--
+src/components/finance/cashbank/ArchiveList.tsx-35-
+src/components/finance/cashbank/ArchiveList.tsx-36-  const filtered = archived.filter(a => 
+src/components/finance/cashbank/ArchiveList.tsx:37:    a.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/ArchiveList.tsx:38:    a.description?.toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/cashbank/AuditLogList.tsx-54-
+src/components/finance/cashbank/AuditLogList.tsx-55-  const filteredLogs = logs.filter(l => 
+src/components/finance/cashbank/AuditLogList.tsx:56:    l.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/AuditLogList.tsx:57:    l.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+--
+--
+src/components/finance/cashbank/BankAccountsList.tsx-56-
+src/components/finance/cashbank/BankAccountsList.tsx-57-  const filteredAccounts = bankAccounts.filter((acc) =>
+src/components/finance/cashbank/BankAccountsList.tsx:58:    (lang === "ar" ? acc.bank_name_ar : acc.bank_name_en).toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/BankAccountsList.tsx:59:    acc.account_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+--
+--
+src/components/finance/cashbank/CashBoxesList.tsx-57-
+src/components/finance/cashbank/CashBoxesList.tsx-58-  const filteredBoxes = cashBoxes.filter((box) =>
+src/components/finance/cashbank/CashBoxesList.tsx:59:    (lang === "ar" ? box.name_ar : box.name_en).toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/CashBoxesList.tsx:60:    box.code.toLowerCase().includes(searchTerm.toLowerCase())
+--
+--
+src/components/finance/JournalEntries.tsx-33-
+src/components/finance/JournalEntries.tsx-34-  const filteredEntries = entries.filter((e) => {
+src/components/finance/JournalEntries.tsx:35:    const q = searchQuery.toLowerCase();
+src/components/finance/JournalEntries.tsx-36-    const matchesSearch = 
+--
+--
+src/components/finance/CustomerSupplierInvoices.tsx-127-
+src/components/finance/CustomerSupplierInvoices.tsx-128-  const filteredOptions = options.filter((o) =>
+src/components/finance/CustomerSupplierInvoices.tsx:129:    (o.label || "").toLowerCase().includes((search || "").toLowerCase())
+src/components/finance/CustomerSupplierInvoices.tsx-130-  );
+--
+--
+src/components/finance/RevenuesExpenses.tsx-298-
+src/components/finance/RevenuesExpenses.tsx-299-  const filtered = revenues.filter(r => {
+src/components/finance/RevenuesExpenses.tsx:300:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx-301-    const matchesSearch = 
+--
+--
+src/components/finance/RevenuesExpenses.tsx-1400-
+src/components/finance/RevenuesExpenses.tsx-1401-  const filtered = expenses.filter(r => {
+src/components/finance/RevenuesExpenses.tsx:1402:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx-1403-    const matchesSearch = 
+--
+--
+src/components/FinanceApprovals.tsx-44-
+src/components/FinanceApprovals.tsx-45-  const filteredRequests = requests.filter(r => {
+src/components/FinanceApprovals.tsx:46:    const q = searchQuery.toLowerCase();
+src/components/FinanceApprovals.tsx:47:    const matchSearch = r.projectName?.toLowerCase().includes(q) || r.quotationNumber?.toLowerCase().includes(q);
+--
+src/components/FinanceApprovals.tsx-160-                  const matchedItems =
+--
+src/components/FinanceApprovals.tsx-162-                      ?.filter((q: any) => {
+src/components/FinanceApprovals.tsx-163-                        const itemName = q.materialName
+src/components/FinanceApprovals.tsx:164:                          ? q.materialName.toLowerCase()
+--
+src/components/FinanceApprovals.tsx-573-                            const matchedItems =
+--
+src/components/FinanceApprovals.tsx-575-                                ?.filter((q: any) => {
+src/components/FinanceApprovals.tsx-576-                                  const itemName = q.materialName
+src/components/FinanceApprovals.tsx:577:                                    ? q.materialName.toLowerCase()
+--
+src/components/FinanceApprovals.tsx-579-                                  return (
+--
+src/components/SalesRepsTargets.tsx-473-  const otherUsers = systemUsers.filter(u => {
+src/components/SalesRepsTargets.tsx-474-    if (salesRepsList.includes(u.username)) return false;
+src/components/SalesRepsTargets.tsx:475:    const dispName = getRepDisplayName(u.username).toLowerCase();
+--
+src/components/SalesDashboard.tsx-117-      const clientsScope = getAdvancedPermissionScope(user, 'sales', 'clients', 'view_clients');
+src/components/SalesDashboard.tsx-118-      if (clientsScope === 'own') {
+src/components/SalesDashboard.tsx:119:        clientsData = clientsData.filter((c: any) => c.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesDashboard.tsx-120-      } else if (clientsScope === 'none') {
+src/components/SalesDashboard.tsx-121-        clientsData = [];
+--
+src/components/SalesDashboard.tsx-124-      const quotesScope = getAdvancedPermissionScope(user, 'sales', 'quotations', 'view_quotes');
+src/components/SalesDashboard.tsx-125-      if (quotesScope === 'own') {
+src/components/SalesDashboard.tsx:126:        quotesData = quotesData.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesDashboard.tsx-127-      } else if (quotesScope === 'none') {
+src/components/SalesDashboard.tsx-128-        quotesData = [];
+--
+src/components/SalesDashboard.tsx-132-      if (collectionsScope === 'own') {
+src/components/SalesDashboard.tsx-133-        collectionsData = collectionsData.filter((col: any) => 
+src/components/SalesDashboard.tsx:134:          col.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/SalesDashboard.tsx:135:          col.creatorName?.toLowerCase() === user?.username?.toLowerCase()
+--
+src/components/SalesDashboard.tsx-137-      } else if (collectionsScope === 'none') {
+--
+src/components/SalesDashboard.tsx-143-        reqsData = reqsData.filter(
+src/components/SalesDashboard.tsx-144-          (r: any) =>
+src/components/SalesDashboard.tsx:145:            r.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+--
+src/components/SalesDashboard.tsx-147-        );
+--
+src/components/SalesDashboard.tsx-154-        letterLogsData = letterLogsData.filter(
+src/components/SalesDashboard.tsx-155-          (l: any) =>
+src/components/SalesDashboard.tsx:156:            l.exportedBy?.toLowerCase() === user?.username?.toLowerCase() ||
+--
+src/components/SalesLetters.tsx-136-        const lettersScope = getAdvancedPermissionScope(user, 'sales', 'letters', 'view_letters');
+src/components/SalesLetters.tsx-137-        if (lettersScope === 'own') {
+src/components/SalesLetters.tsx:138:          approved = approved.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesLetters.tsx-139-        } else if (lettersScope === 'none') {
+src/components/SalesLetters.tsx-140-          approved = [];
+--
+src/components/SalesLetters.tsx-763-              <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+src/components/SalesLetters.tsx-764-                {quotes.filter(q => 
+src/components/SalesLetters.tsx:765:                  (q.projectName || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:766:                  (q.quotationNumber || q.id || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+--
+--
+src/components/SalesLetters.tsx-781-                ))}
+src/components/SalesLetters.tsx-782-                {quotes.filter(q => 
+src/components/SalesLetters.tsx:783:                  (q.projectName || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:784:                  (q.quotationNumber || q.id || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+--
+src/components/SalesQuotations.tsx-155-        const viewScope = getAdvancedPermissionScope(user, 'sales', 'quotations', 'view_quotes');
+src/components/SalesQuotations.tsx-156-        if (viewScope === 'own') {
+src/components/SalesQuotations.tsx:157:           loadedQuotes = loadedQuotes.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesQuotations.tsx-158-        } else if (viewScope === 'none') {
+src/components/SalesQuotations.tsx-159-           loadedQuotes = [];
+--
+src/components/SalesQuotations.tsx-970-
+src/components/SalesQuotations.tsx-971-  const filteredQuotes = quotes.filter(q => {
+src/components/SalesQuotations.tsx:972:    if (searchQtn && !q.quotationNumber?.toLowerCase().includes(searchQtn.toLowerCase())) return false;
+src/components/SalesQuotations.tsx:973:    if (searchName && (!q.clientName?.toLowerCase().includes(searchName.toLowerCase()) && !q.projectName?.toLowerCase().includes(searchName.toLowerCase()))) return false;
+--
+src/components/SalesQuotations.tsx-1416-                  placeholder="ابحث بالنص أو اكتب اسماً جديداً..."
+src/components/SalesQuotations.tsx-1417-                />
+src/components/SalesQuotations.tsx:1418:                {!isReadOnly && clientSearchFocused && quote.clientName && clients.filter((c:any) => c.clientName?.toLowerCase().includes(quote.clientName?.toLowerCase() || '')).length > 0 && (
+src/components/SalesQuotations.tsx-1419-                  <div className="absolute z-50 w-full bg-white border border-slate-200 mt-1 rounded-xl shadow-xl max-h-60 overflow-y-auto left-0">
+src/components/SalesQuotations.tsx:1420:                     {clients.filter((c:any) => c.clientName?.toLowerCase().includes(quote.clientName?.toLowerCase() || '')).map((c:any) => (
+src/components/SalesQuotations.tsx-1421-                       <div 
+src/components/SalesQuotations.tsx-1422-                         key={c.id} 
+--
+src/components/ProductionHub.tsx:5645:                    const query = (row.name || "").trim().toLowerCase();
+src/components/ProductionHub.tsx-5646-                    const matches = employees
+src/components/ProductionHub.tsx-5647-                      .filter((emp) => {
+--
+src/components/ProductionHub.tsx-5654-                        // Match if query is empty (show list) or if the employee name includes the query
+--
+--
+src/components/FinancialCollections.tsx-136-        if (viewScope === 'own') {
+src/components/FinancialCollections.tsx-137-          updatedPlans = updatedPlans.filter((p: CollectionPlan) => 
+src/components/FinancialCollections.tsx:138:            p.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/FinancialCollections.tsx:139:            p.creatorName?.toLowerCase() === user?.username?.toLowerCase()
+--
+src/components/FinancialCollections.tsx-141-        } else if (viewScope === 'none') {
+--
+src/components/FinancialCollections.tsx-167-        let visibleQuotes = quotesData.filter((q: any) => q.status === 'معتمد');
+src/components/FinancialCollections.tsx-168-        if (quotesScope === 'own') {
+src/components/FinancialCollections.tsx:169:          visibleQuotes = visibleQuotes.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/FinancialCollections.tsx-170-        } else if (quotesScope === 'none') {
+src/components/FinancialCollections.tsx-171-          visibleQuotes = [];
+--
+src/components/FinancialCollections.tsx-613-      }
+--
+src/components/FinancialCollections.tsx-876-                       {approvedQuotes.filter(q => {
+src/components/FinancialCollections.tsx-877-                         if (!quoteSearch) return true;
+src/components/FinancialCollections.tsx:878:                         const term = quoteSearch.toLowerCase();
+--
+src/components/FinancialCollections.tsx-881-                         <div
+--
+src/components/FinancialCollections.tsx-894-                       {approvedQuotes.filter(q => {
+src/components/FinancialCollections.tsx-895-                         if (!quoteSearch) return true;
+src/components/FinancialCollections.tsx:896:                         const term = quoteSearch.toLowerCase();
+--
+src/components/FinancialCollections.tsx-899-                         <div className="p-3 text-center text-sm text-slate-500 font-bold">
+--
+src/components/FinancialCollections.tsx-1082-                        {[...new Set([...plans.map(p => p.creatorName), ...reportEmployeeNames])].filter(name => {
+src/components/FinancialCollections.tsx-1083-                           if (!reportUserSearch) return true;
+src/components/FinancialCollections.tsx:1084:                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
+--
+src/components/FinancialCollections.tsx-1086-                           <div 
+--
+src/components/FinancialCollections.tsx-1098-                        {[...new Set([...plans.map(p => p.creatorName), ...reportEmployeeNames])].filter(name => {
+src/components/FinancialCollections.tsx-1099-                           if (!reportUserSearch) return true;
+src/components/FinancialCollections.tsx:1100:                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
+--
+src/components/SalesProductionRequests.tsx-146-        const viewScope = getAdvancedPermissionScope(user, 'sales', 'production_requests', 'view_requests');
+src/components/SalesProductionRequests.tsx-147-        if (viewScope === 'own') {
+src/components/SalesProductionRequests.tsx:148:          reqData = reqData.filter((r: any) => r.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesProductionRequests.tsx-149-        } else if (viewScope === 'none') {
+src/components/SalesProductionRequests.tsx-150-          reqData = [];
+--
+src/components/SalesProductionRequests.tsx-436-          return false;
+--
+src/components/SalesProductionRequests.tsx-791-                        .filter((q) => {
+src/components/SalesProductionRequests.tsx-792-                          if (!quoteSearch) return true;
+src/components/SalesProductionRequests.tsx:793:                          const term = quoteSearch.toLowerCase();
+--
+src/components/SalesProductionRequests.tsx-801-                        })
+--
+src/components/SalesProductionRequests.tsx-820-                        approvedQuotes.filter((q) => {
+src/components/SalesProductionRequests.tsx-821-                          if (!quoteSearch) return true;
+src/components/SalesProductionRequests.tsx:822:                          const term = quoteSearch.toLowerCase();
+--
+--
+src/components/SalesReports.tsx-430-
+src/components/SalesReports.tsx-431-    let plans = collections.filter(p => {
+src/components/SalesReports.tsx:432:      const pClientName = (p.clientName || '').trim().toLowerCase();
+src/components/SalesReports.tsx:433:      const targetClientName1 = ((client.clientName || client.name) || '').trim().toLowerCase();
+--
+src/components/SalesReports.tsx-437-             (pClientName && (pClientName === targetClientName1 || pClientName === targetClientName2 || pClientName === targetClientName3));
+--
+src/components/ItemsWarehouse.tsx-473-      res = res.filter(
+src/components/ItemsWarehouse.tsx-474-        (i) =>
+src/components/ItemsWarehouse.tsx:475:          i.itemNameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+--
+src/components/ItemsWarehouse.tsx-478-    }
+src/components/ItemsWarehouse.tsx-479-    if (searchCode) {
+src/components/ItemsWarehouse.tsx-480-      res = res.filter((i) =>
+src/components/ItemsWarehouse.tsx:481:        i.itemCode?.toLowerCase().includes(searchCode.toLowerCase()),
+src/components/ItemsWarehouse.tsx-482-      );
+--
+src/components/SuppliersPricing.tsx-258-                    : "";
+src/components/SuppliersPricing.tsx-259-                  const matchedItems = quoteDetails
+src/components/SuppliersPricing.tsx-260-                    .filter((q: any) => {
+src/components/SuppliersPricing.tsx-261-                      const itemName = q.materialName
+src/components/SuppliersPricing.tsx:262:                        ? q.materialName.toLowerCase()
+--
+src/components/SuppliersPricing.tsx-771-                            : "";
+src/components/SuppliersPricing.tsx-772-                          const matchedItems = quoteDetails
+src/components/SuppliersPricing.tsx-773-                            .filter((q) => {
+src/components/SuppliersPricing.tsx:774:                              const itemName = q.materialName.toLowerCase();
+src/components/SuppliersPricing.tsx-775-                              return (
+--
+--
+src/components/HrSubSections.tsx-831-          // Filtered list for payslip search
+src/components/HrSubSections.tsx-832-          const filteredPayroll = localEmployees.filter(emp => {
+src/components/HrSubSections.tsx:833:            const query = payrollSearchQuery.toLowerCase();
+src/components/HrSubSections.tsx-834-            return (
+--
+src/App.tsx-334-
+--
+src/App.tsx-1113-  const filteredEmployees = employees.filter((emp) => {
+src/App.tsx-1114-    // Exact text queries
+src/App.tsx:1115:    const q = searchQuery.toLowerCase().trim();

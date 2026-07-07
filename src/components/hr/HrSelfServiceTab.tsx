@@ -277,11 +277,16 @@ export default function HrSelfServiceTab({ lang, user, employees }: HrSelfServic
       <!DOCTYPE html>
       <html dir="rtl" lang="ar">
       <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
         <meta charset="utf-8">
         <title>طباعة بيان - ${item.id}</title>
         <style>
           ${sharedPrintStyles}
-          body { padding: 20px; font-family: 'Tajawal', sans-serif, system-ui; }
+          body { padding: 20px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif, system-ui; }
           .document-content { min-height: 50vh; margin-top: 20px; }
           .header-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333;text-align:center;}
           .header-meta { font-size: 12px; color: #666; margin-bottom: 30px; text-align:center;}

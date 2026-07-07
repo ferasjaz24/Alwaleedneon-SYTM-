@@ -1,0 +1,852 @@
+{isEditingSalaryContract ? (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const updatedFields: Partial<Employee> = {
+                          basicSalary:
+                            Number(salaryContractForm.basicSalary) || 0,
+                          allowances: {
+                            housing: Number(salaryContractForm.housing) || 0,
+                            transport:
+                              Number(salaryContractForm.transport) || 0,
+                            loans: Number(salaryContractForm.loans) || 0,
+                            deductions:
+                              Number(salaryContractForm.deductions) || 0,
+                            status: salaryContractForm.status || "Active",
+                          },
+                          contractQiwaNumber:
+                            salaryContractForm.contractQiwaNumber || "",
+                          contractUrl: salaryContractForm.contractUrl || "",
+                          contractExpiry:
+                            salaryContractForm.contractExpiry || "",
+                        };
+                        onUpdateEmployeeFields(selectedEmp.id, updatedFields);
+                        setSelectedEmp((prev) =>
+                          prev ? { ...prev, ...updatedFields } : null,
+                        );
+                        setIsEditingSalaryContract(false);
+                        if (onReloadEmployees) {
+                          await onReloadEmployees();
+                        }
+                        showToast(
+                          lang === "ar"
+                            ? "✓ تم حفظ تعديلات الراتب والعقد بنجاح!"
+                            : "✓ Salary and contract modifications saved!",
+                          "success",
+                        );
+                      }}
+                      className="space-y-4"
+                    >
+                      
+{/* SECTION 1: Compensations & Allowances editing */}
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
+                        <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                          <span>💰</span>
+                          {lang === "ar" ? "تفاصيل الراتب والبدلات" : "Salary & Allowance Items"}
+                        </h5>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 text-right">
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "الراتب الأساسي" : "Basic Salary"}
+                            </label>
+                            <input
+                              type="number"
+                              value={salaryContractForm.basicSalary || ""}
+                              onChange={(e) => setSalaryContractForm({
+                                      basicSalary: selectedEmp.basicSalary || 0,
+                                      housing: selectedEmp.allowances?.housing || 0,
+                                      transport: selectedEmp.allowances?.transport || 0,
+                                      loans: selectedEmp.allowances?.loans || 0,
+                                      deductions: selectedEmp.allowances?.deductions || 0,
+                                      status: selectedEmp.allowances?.status || "Active",
+                                      contractQiwaNumber: selectedEmp.contractQiwaNumber || "",
+                                      contractUrl: selectedEmp.contractUrl || "",
+                                      contractExpiry: selectedEmp.contractExpiry || "",
+                                    });
+                                    setIsEditingSalaryContract(true);
+                                  }}
+                                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-650 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer text-center"
+                                >
+                                  <span>
+                                    ✏️{" "}
+                                    {lang === "ar"
+                                      ? "تعديل / استبدال"
+                                      : "Edit / Replace"}
+                                  </span>
+                                </button>
+                                {/* 4. Delete contract file button */}
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (
+                                      window.confirm(
+                                        lang === "ar"
+                                          ? "هل أنت متأكد من رغبتك في حذف مستند العقد بشكل نهائي؟"
+                                          : "Are you sure you want to delete the contract document permanently?",
+                                      )
+                                    ) {
+                                      try {
+                                        const updatedFields: Partial<Employee> =
+                                          { contractUrl: "" };
+                                        onUpdateEmployeeFields(
+                                          selectedEmp.id,
+                                          updatedFields,
+                                        );
+                                        setSelectedEmp((prev) =>
+                                          prev
+                                            ? { ...prev, ...updatedFields }
+                                            : null,
+                                        );
+                                        if (onReloadEmployees) {
+                                          await onReloadEmployees();
+                                        }
+                                        setIsPreviewingContract(false);
+                                        showToast(
+                                          lang === "ar"
+                                            ? "✓ تم حذف ملف العقد بنجاح!"
+                                            : "✓ Contract file deleted successfully!",
+                                          "success",
+                                        );
+                                      } catch (err) {
+                                        showToast(
+                                          lang === "ar"
+                                            ? "فشل حذف الملف"
+                                            : "Failed to delete file",
+                                          "error",
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                                >
+                                  <span>
+                                    🗑️{" "}
+                                    {lang === "ar"
+                                      ? "حذف العقد"
+                                      : "Delete File"}
+                                  </span>
+                                </button>
+                              </div>
+                              {/* Inline system viewer container */}
+                              {isPreviewingContract && (
+                                <div className="mt-3 border border-slate-150 rounded-2xl overflow-hidden bg-slate-50/50 p-2 shadow-inner space-y-2 animate-fade-in">
+                                  <div className="flex justify-between items-center bg-slate-100 p-2 rounded-xl text-xs font-bold text-slate-700">
+                                    <span className="flex items-center gap-1.5">
+                                      <span>📄</span>
+                                      <span>
+                                        {lang === "ar"
+                                          ? "معاينة مستند عقد العمل داخل النظام"
+                                          : "In-System Employment Contract Preview"}
+                                      </span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setIsPreviewingContract(false)
+                                      }
+                                      className="text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded-md hover:bg-slate-200 transition font-black"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                  <div className="w-full flex justify-center bg-white rounded-xl border p-1 overflow-hidden min-h-[300px]">
+                                    {selectedEmp.contractUrl.startsWith(
+                                      "data:application/pdf",
+                                    ) ? (
+                                      <div className="w-full h-[550px] flex flex-col">
+                                        {contractPdfBlobUrl ? (
+                                          <iframe
+                                            src={contractPdfBlobUrl}
+                                            title="Contract PDF Preview"
+                                            className="w-full flex-1 rounded-lg border-0"
+                                          />
+                                        ) : (
+                                          <div className="p-8 text-center text-slate-400 text-xs">
+                                            {lang === "ar"
+                                              ? "جاري تهيئة معاينة ملف الـ PDF..."
+                                              : "Preparing PDF preview..."}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : selectedEmp.contractUrl.startsWith(
+                                        "data:image/",
+                                      ) ? (
+                                      <div className="p-2 flex justify-center items-center w-full bg-slate-50/25">
+                                        <img
+                                          src={selectedEmp.contractUrl}
+                                          alt="Contract Scan"
+                                          className="max-h-[550px] max-w-full rounded-lg object-contain shadow-md"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full p-6 text-center text-slate-500 text-xs space-y-3 flex flex-col justify-center items-center">
+                                        <p className="font-extrabold text-slate-600">
+                                          {lang === "ar"
+                                            ? "المستند الحالي مخزن كرابط ويب خارجي ولا يمكن معاينته مباشرة هنا."
+                                            : "The current document is stored as a web URL and cannot be displayed inline."}
+                                        </p>
+                                        <a
+                                          href={selectedEmp.contractUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
+                                        >
+                                          {lang === "ar"
+                                            ? "فتح الرابط في نافذة جديدة ↗"
+                                            : "Open External URL ↗"}
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSalaryContractForm({
+                                      basicSalary: selectedEmp.basicSalary || 0,
+                                      housing: selectedEmp.allowances?.housing || 0,
+                                      transport: selectedEmp.allowances?.transport || 0,
+                                      loans: selectedEmp.allowances?.loans || 0,
+                                      deductions: selectedEmp.allowances?.deductions || 0,
+                                      status: selectedEmp.allowances?.status || "Active",
+                                      contractQiwaNumber: selectedEmp.contractQiwaNumber || "",
+                                      contractUrl: selectedEmp.contractUrl || "",
+                                      contractExpiry: selectedEmp.contractExpiry || "",
+                                    });
+                                setIsEditingSalaryContract(true);
+                              }}
+                              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-550 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <span>
+                                ⚠️{" "}
+                                {lang === "ar"
+                                  ? "لم يتم رفع مستند العقد بعد (اضغط لتعديل ورفع ملف PDF أو صورة)"
+                                  : "No Contract Document Uploaded Yet (Click to Upload)"}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* SECTION: Bank & Transfer Information */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4 text-right">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base text-slate-705">🏦</span>
+                      <div>
+                        <h4 className="font-extrabold text-[#0072BC] text-xs">
+                          {lang === "ar"
+                            ? "بيانات البنك والتحويل"
+                            : "Bank & Transfer Information"}
+                        </h4>
+                        <span className="text-[10px] text-slate-400 block">
+                          {lang === "ar"
+                            ? "إدارة الحسابات البنكية، رمز الآيبان الدولي، وطريقة التحويل المعتمدة للموظف."
+                            : "Manage employee bank accounts, IBAN, and preferred transfer methodologies."}
+                        </span>
+                      </div>
+                    </div>
+                    {!isEditingBankInfo && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingBankInfo(true);
+                          const isCustom = !isStandardBank(selectedEmp.bankName || "");
+                          setShowCustomBankInput(isCustom);
+                          setBankInfoForm({
+                            bankName: selectedEmp.bankName || (selectedEmp as any).bankInfo?.bankName || "",
+                            iban: selectedEmp.iban || (selectedEmp as any).bankInfo?.iban || "",
+                            accountNumber: selectedEmp.accountNumber || (selectedEmp as any).bankInfo?.accountNumber || "",
+                            swiftCode: selectedEmp.swiftCode || (selectedEmp as any).bankInfo?.swiftCode || "",
+                            transferMethod: selectedEmp.transferMethod || (selectedEmp as any).bankInfo?.transferMethod || "SARIE",
+                            accountHolderName: selectedEmp.accountHolderName || (selectedEmp as any).bankInfo?.accountHolderName || "",
+                            bankNotes: selectedEmp.bankNotes || (selectedEmp as any).bankInfo?.bankNotes || "",
+                          });
+                        }}
+                        className="px-3 py-1 bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC] font-extrabold text-[11px] rounded-lg transition-all cursor-pointer"
+                      >
+                        {lang === "ar" ? "تعديل الحساب البنكي" : "Edit Bank Details"}
+                      </button>
+                    )}
+                  </div>
+                  {isEditingBankInfo ? (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        // Validate IBAN
+                        const cleanIban = bankInfoForm.iban.replace(/\s+/g, "").toUpperCase();
+                        if (cleanIban && (!cleanIban.startsWith("SA") || cleanIban.length !== 24)) {
+                          showToast(
+                            lang === "ar"
+                              ? "❌ صيغة الآيبان غير صحيحة! يجب أن يبدأ بـ SA ويتكون من 24 حرفاً ورقماً."
+                              : "❌ Invalid IBAN! Must start with 'SA' and be exactly 24 characters long.",
+                            "error"
+                          );
+                          return;
+                        }
+                        const updatedFields: any = {
+                          bankName: bankInfoForm.bankName,
+                          iban: cleanIban,
+                          accountNumber: bankInfoForm.accountNumber,
+                          swiftCode: bankInfoForm.swiftCode,
+                          transferMethod: bankInfoForm.transferMethod,
+                          accountHolderName: bankInfoForm.accountHolderName,
+                          bankNotes: bankInfoForm.bankNotes,
+                          bankInfo: {
+                            bankName: bankInfoForm.bankName,
+                            iban: cleanIban,
+                            accountNumber: bankInfoForm.accountNumber,
+                            swiftCode: bankInfoForm.swiftCode,
+                            transferMethod: bankInfoForm.transferMethod,
+                            accountHolderName: bankInfoForm.accountHolderName,
+                            bankNotes: bankInfoForm.bankNotes,
+                          }
+                        };
+                        onUpdateEmployeeFields(selectedEmp.id, updatedFields);
+                        setSelectedEmp((prev) =>
+                          prev ? { ...prev, ...updatedFields } : null
+                        );
+                        setIsEditingBankInfo(false);
+                        if (onReloadEmployees) {
+                          await onReloadEmployees();
+                        }
+                        showToast(
+                          lang === "ar"
+                            ? "✓ تم حفظ البيانات البنكية والتحويل بنجاح!"
+                            : "✓ Bank and transfer details saved successfully!",
+                          "success"
+                        );
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-right">
+                          {/* Bank Name Selection */}
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "اسم البنك" : "Bank Name"}
+                            </label>
+                            <select
+                              value={showCustomBankInput ? "Other" : bankInfoForm.bankName}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "Other") {
+                                  setShowCustomBankInput(true);
+                                  setBankInfoForm({
+                                    ...bankInfoForm,
+                                    bankName: "",
+                                  });
+                                } else {
+                                  setShowCustomBankInput(false);
+                                  const matched = [
+                                    { nameAr: "مصرف الراجحي", nameEn: "Al Rajhi Bank", swift: "RJHIYARI" },
+                                    { nameAr: "البنك الأهلي السعودي (SNB)", nameEn: "Saudi National Bank (SNB)", swift: "NCBKSARI" },
+                                    { nameAr: "بنك الرياض", nameEn: "Riyadh Bank", swift: "RYADKARI" },
+                                    { nameAr: "مصرف الإنماء", nameEn: "Alinma Bank", swift: "ALBIKARI" },
+                                    { nameAr: "البنك العربي الوطني", nameEn: "Arab National Bank", swift: "ARABKARI" },
+                                    { nameAr: "البنك السعودي الأول (SAB)", nameEn: "Saudi First Bank (SAB)", swift: "SABBKSRI" },
+                                    { nameAr: "بنك البلاد", nameEn: "Bank Albilad", swift: "ALBIKARI" },
+                                    { nameAr: "بنك الجزيرة", nameEn: "Bank AlJazira", swift: "BJAZKARI" },
+                                    { nameAr: "البنك السعودي للاستثمار", nameEn: "Saudi Investment Bank", swift: "BSFKKARI" },
+                                    { nameAr: "بنك الخليج الدولي", nameEn: "Gulf International Bank", swift: "GIBKKARI" },
+                                  ].find(b => b.nameAr === val || b.nameEn === val);
+                                  setBankInfoForm({
+                                    ...bankInfoForm,
+                                    bankName: val,
+                                    swiftCode: matched ? matched.swift : bankInfoForm.swiftCode,
+                                  });
+                                }
+                              }}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold"
+                            >
+                              <option value="">{lang === "ar" ? "-- اختر البنك --" : "-- Select Bank --"}</option>
+                              {[
+                                { nameAr: "مصرف الراجحي", nameEn: "Al Rajhi Bank" },
+                                { nameAr: "البنك الأهلي السعودي (SNB)", nameEn: "Saudi National Bank (SNB)" },
+                                { nameAr: "بنك الرياض", nameEn: "Riyadh Bank" },
+                                { nameAr: "مصرف الإنماء", nameEn: "Alinma Bank" },
+                                { nameAr: "البنك العربي الوطني", nameEn: "Arab National Bank" },
+                                { nameAr: "البنك السعودي الأول (SAB)", nameEn: "Saudi First Bank (SAB)" },
+                                { nameAr: "بنك البلاد", nameEn: "Bank Albilad" },
+                                { nameAr: "بنك الجزيرة", nameEn: "Bank AlJazira" },
+                                { nameAr: "البنك السعودي للاستثمار", nameEn: "Saudi Investment Bank" },
+                                { nameAr: "بنك الخليج الدولي", nameEn: "Gulf International Bank" },
+                              ].map((b, idx) => (
+                                <option key={idx} value={lang === "ar" ? b.nameAr : b.nameEn}>
+                                  {lang === "ar" ? b.nameAr : b.nameEn}
+                                </option>
+                              ))}
+                              <option value="Other">{lang === "ar" ? "بنك آخر / غير مدرج" : "Other / Not Listed"}</option>
+                            </select>
+                            {showCustomBankInput && (
+                              <input
+                                type="text"
+                                placeholder={lang === "ar" ? "أدخل اسم البنك يدوياً" : "Enter bank name manually"}
+                                value={bankInfoForm.bankName}
+                                onChange={(e) => setBankInfoForm({ ...bankInfoForm, bankName: e.target.value })}
+                                className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold mt-1.5"
+                              />
+                            )}
+                          </div>
+                          {/* Account Holder Name */}
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "اسم صاحب الحساب" : "Account Holder Name"}
+                            </label>
+                            <input
+                              type="text"
+                              value={bankInfoForm.accountHolderName}
+                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, accountHolderName: e.target.value })}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                              placeholder={selectedEmp.arabicName}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right">
+                          {/* IBAN */}
+                          <div className="md:col-span-2">
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "رقم الآيبان (IBAN - يبدأ بـ SA و 24 حرف)" : "IBAN (Must start with SA)"}
+                            </label>
+                            <input
+                              type="text"
+                              value={bankInfoForm.iban}
+                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, iban: e.target.value })}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-left"
+                              placeholder="SA..."
+                              maxLength={34}
+                            />
+                            {bankInfoForm.iban && bankInfoForm.iban.replace(/\s+/g, "").length !== 24 && (
+                              <span className="text-[9px] text-amber-600 block mt-0.5">
+                                {lang === "ar"
+                                  ? `⚠️ طول الآيبان الحالي: ${bankInfoForm.iban.replace(/\s+/g, "").length} من 24 حرفاً.`
+                                  : `⚠️ Current length: ${bankInfoForm.iban.replace(/\s+/g, "").length} out of 24 characters.`}
+                              </span>
+                            )}
+                          </div>
+                          {/* Account Number */}
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "رقم الحساب المحلي" : "Account Number"}
+                            </label>
+                            <input
+                              type="text"
+                              value={bankInfoForm.accountNumber}
+                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, accountNumber: e.target.value })}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                              placeholder="e.g. 108031580001"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-right">
+                          {/* SWIFT Code */}
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "رمز السويفت كود (SWIFT Code)" : "SWIFT Code"}
+                            </label>
+                            <input
+                              type="text"
+                              value={bankInfoForm.swiftCode}
+                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, swiftCode: e.target.value })}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold font-mono text-center"
+                              placeholder="e.g. RJHIYARI"
+                            />
+                          </div>
+                          {/* Transfer Method */}
+                          <div>
+                            <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                              {lang === "ar" ? "طريقة التحويل المفضلة" : "Preferred Transfer Method"}
+                            </label>
+                            <select
+                              value={bankInfoForm.transferMethod}
+                              onChange={(e) => setBankInfoForm({ ...bankInfoForm, transferMethod: e.target.value })}
+                              className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold"
+                            >
+                              <option value="SARIE">{lang === "ar" ? "تحويل نظام سريع (SARIE)" : "SARIE Bank Transfer"}</option>
+                              <option value="Local Transfer">{lang === "ar" ? "تحويل محلي عادي" : "Local Transfer"}</option>
+                              <option value="Cash">{lang === "ar" ? "تسليم نقدي (Cash)" : "Cash Handover"}</option>
+                              <option value="Cheque">{lang === "ar" ? "شيك بنكي (Cheque)" : "Bank Cheque"}</option>
+                            </select>
+                          </div>
+                        </div>
+                        {/* Bank Notes */}
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+                            {lang === "ar" ? "ملاحظات إضافية حول الحساب والتحويل" : "Bank Transfer Notes"}
+                          </label>
+                          <textarea
+                            value={bankInfoForm.bankNotes}
+                            onChange={(e) => setBankInfoForm({ ...bankInfoForm, bankNotes: e.target.value })}
+                            rows={2}
+                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-semibold"
+                            placeholder={lang === "ar" ? "أي ملاحظات خاصة بالتحويل والعمولات..." : "Any routing or fee constraints..."}
+                          />
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex gap-2 text-xs font-black pt-2">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>{lang === "ar" ? "حفظ البيانات البنكية" : "Save Bank Details"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingBankInfo(false)}
+                          className="px-4 bg-slate-100 text-slate-600 py-2 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+                        >
+                          {lang === "ar" ? "إلغاء" : "Cancel"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    /* Read Only View */
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-right">
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "اسم البنك:" : "Bank Name:"}
+                          </span>
+                          <p className="font-bold text-slate-800 mt-0.5 text-xs">
+                            {selectedEmp.bankName || (lang === "ar" ? "غير مسجل" : "N/A")}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "اسم صاحب الحساب:" : "Account Holder:"}
+                          </span>
+                          <p className="font-bold text-slate-800 mt-0.5 text-xs">
+                            {selectedEmp.accountHolderName || selectedEmp.arabicName}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "طريقة التحويل المالي:" : "Transfer Method:"}
+                          </span>
+                          <p className="font-bold text-[#0072BC] mt-0.5 text-xs">
+                            {selectedEmp.transferMethod === "SARIE"
+                              ? lang === "ar" ? "نظام سريع (SARIE)" : "SARIE Transfer"
+                              : selectedEmp.transferMethod === "Cash"
+                              ? lang === "ar" ? "تسليم نقدي" : "Cash"
+                              : selectedEmp.transferMethod === "Cheque"
+                              ? lang === "ar" ? "شيك بنكي" : "Cheque"
+                              : selectedEmp.transferMethod || (lang === "ar" ? "تحويل بنكي عادي" : "Bank Transfer")}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "سويفت كود (SWIFT):" : "SWIFT Code:"}
+                          </span>
+                          <p className="font-mono font-bold text-slate-700 mt-0.5 text-xs">
+                            {selectedEmp.swiftCode || (lang === "ar" ? "غير مسجل" : "N/A")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-right">
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70 md:col-span-2">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "رقم الآيبان الدولي (IBAN):" : "IBAN Number:"}
+                          </span>
+                          <p className="font-mono font-black text-slate-800 mt-0.5 text-xs tracking-wider text-left">
+                            {selectedEmp.iban ? (
+                              <span className="text-emerald-700">
+                                {selectedEmp.iban.match(/.{1,4}/g)?.join(" ")}
+                              </span>
+                            ) : (
+                              <span className="text-rose-500 font-bold">
+                                {lang === "ar" ? "⚠️ الآيبان مطلوب لضمان مسير الرواتب!" : "⚠️ Missing IBAN!"}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-100/70">
+                          <span className="block text-[10px] text-slate-400 font-bold">
+                            {lang === "ar" ? "رقم الحساب:" : "Account Number:"}
+                          </span>
+                          <p className="font-mono font-bold text-slate-800 mt-0.5 text-xs">
+                            {selectedEmp.accountNumber || (lang === "ar" ? "غير مسجل" : "N/A")}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedEmp.bankNotes && (
+                        <div className="p-3 bg-blue-50/30 rounded-xl border border-blue-100/30 text-right">
+                          <span className="block text-[10px] text-[#0072BC] font-bold">
+                            {lang === "ar" ? "ملاحظات الدفع والتحويل:" : "Transfer Notes:"}
+                          </span>
+                          <p className="text-slate-600 text-xs mt-1 leading-relaxed">
+                            {selectedEmp.bankNotes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* SECTION: Custody Assets ("العهد المسجلة لدى الموظف" تكتب يدوياً) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-150 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+                    <span className="text-base text-slate-700">🛡️</span>
+                    <div>
+                      <h4 className="font-extrabold text-slate-800 text-xs">
+                        {lang === "ar"
+                          ? "العهد المسجلة لدى الموظف"
+                          : "Registered Employee Custody List"}
+                      </h4>
+                      <span className="text-[10px] text-slate-400 block">
+                        {lang === "ar"
+                          ? "إضافة عهد يدوية مع تتبع تواريخ الاستلام وتصنيف العهدة بالتفصيل."
+                          : "A complete manual record of tools, laptops, or cars allocated to this staff."}
+                      </span>
+                    </div>
+                  </div>
+                  {/* List of custom assets inside selected employee */}
+                  <div className="space-y-2">
+                    {selectedEmp.custodyAssets &&
+                    selectedEmp.custodyAssets.length > 0 ? (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden text-right">
+                        <table className="w-full text-[11px] border-collapse bg-slate-50/50">
+                          <thead>
+                            <tr className="bg-slate-100/60 text-slate-500 text-[9px] uppercase font-bold border-b border-slate-150">
+                              <th className="p-2 font-black">
+                                {lang === "ar" ? "العهدة" : "Asset"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar"
+                                  ? "تاريخ الاستلام"
+                                  : "Receipt Date"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar" ? "تصنيف العهدة" : "Category"}
+                              </th>
+                              <th className="p-2 font-black">
+                                {lang === "ar"
+                                  ? "معلومات إضافية"
+                                  : "Additional Info"}
+                              </th>
+                              <th className="p-2 text-center font-black">
+                                {lang === "ar" ? "حذف" : "Remove"}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-150">
+                            {selectedEmp.custodyAssets.map((asset, idx) => (
+                              <tr
+                                key={idx}
+                                className="hover:bg-white transition-colors text-slate-700 font-bold"
+                              >
+                                <td className="p-2 text-indigo-700">
+                                  {asset.name}
+                                </td>
+                                <td className="p-2 font-mono text-[10px]">
+                                  {asset.receivedDate}
+                                </td>
+                                <td className="p-2">
+                                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-[9px]">
+                                    {asset.category}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-slate-500 font-medium">
+                                  {asset.additionalInfo || "—"}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveCustodyAsset(idx)
+                                    }
+                                    className="p-1 hover:bg-rose-50 text-rose-500 rounded-lg transition-all"
+                                    title={
+                                      lang === "ar"
+                                        ? "مسح العهدة"
+                                        : "Delete asset"
+                                    }
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div
+                        id="no-custody"
+                        className="p-6 bg-slate-50 rounded-xl text-center text-slate-400 font-bold border border-dashed border-slate-200"
+                      >
+                        {lang === "ar"
+                          ? "✕ لا توجد أي عهد مسجلة مخصصة لهذا الموظف حالياً."
+                          : "No manual custody registry found for this individual."}
+                      </div>
+                    )}
+                  </div>
+                  {/* Manuel Asset Registration Form */}
+                  <form
+                    onSubmit={handleAddCustodyAsset}
+                    className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/55 space-y-4 text-right"
+                  >
+                    <h5 className="font-extrabold text-xs text-slate-700">
+                      ➕{" "}
+                      {lang === "ar"
+                        ? "إضافة عهدة للموظف يدوياً:"
+                        : "Register New Custom Custody Area:"}
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "العهدة المستلمة" : "Asset"}
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          placeholder={
+                            lang === "ar"
+                              ? "مثال: لابتوب، جهاز معيرة"
+                              : "e.g. Dell Latitue L54"
+                          }
+                          value={newAsset.name}
+                          onChange={(e) =>
+                            setNewAsset({ ...newAsset, name: e.target.value })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "تاريخ الاستلام" : "Receipt Date"}
+                        </label>
+                        <input
+                          type="date"
+                          value={newAsset.receivedDate}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              receivedDate: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar" ? "تصنيف العهدة" : "Category"}
+                        </label>
+                        <select
+                          value={newAsset.category}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              category: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right text-slate-700"
+                        >
+                          <option value="أجهزة ومعدات">
+                            {lang === "ar"
+                              ? "أجهزة ومعدات ومستلزمات"
+                              : "IT/Electronic hardware"}
+                          </option>
+                          <option value="سيارات ونقل">
+                            {lang === "ar"
+                              ? "سيارات وشاحنات نقل"
+                              : "Vehicles / Mobility"}
+                          </option>
+                          <option value="أدوات ورش ومصنع">
+                            {lang === "ar"
+                              ? "أدوات ورش ومصنع نيون"
+                              : "Shopfloor Mechanical tools"}
+                          </option>
+                          <option value="أثاث ومجهوزات">
+                            {lang === "ar"
+                              ? "أثاث ومجهوزات مكتبية"
+                              : "Furniture & Office supplies"}
+                          </option>
+                          <option value="أخرى">
+                            {lang === "ar" ? "تصنيفات أخرى" : "Other"}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-[10px] font-bold mb-1">
+                          {lang === "ar"
+                            ? "معلومات إضافية ومحضر الاستلام"
+                            : "Additional details"}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={
+                            lang === "ar"
+                              ? "مثال: رقم تسلسلي، قطع إضافية"
+                              : "Serial tag or status description"
+                          }
+                          value={newAsset.additionalInfo}
+                          onChange={(e) =>
+                            setNewAsset({
+                              ...newAsset,
+                              additionalInfo: e.target.value,
+                            })
+                          }
+                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-xl font-bold text-right"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-[#0072BC] hover:bg-[#0072BC]/95 text-white font-black text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      ⚡{" "}
+                      {lang === "ar"
+                        ? "إضافة وتسجيل العهدة فوراً للسيستم"
+                        : "Commit Asset Handover & Save"}
+                    </button>
+                  </form>
+                </div>
+                {/* REMOVE EMPLOYEE FROM TABLE TRIGGER (إزالة الموظف من الجدول) */}
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEmployee(selectedEmp.id)}
+                    className="px-5 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-600" />
+                    <span>
+                      {lang === "ar"
+                        ? "إزالة هذا الموظف من الجدول"
+                        : "Remove Employee From Table"}
+                    </span>
+                  </button>
+                </div>
+              </div>{" "}
+              {/* CLOSE TAB 1: INFO CONTENT */}
+              {/* TAB 2: ATTACHMENTS CONTENT */}
+              <div
+                className={`w-full mt-8 bg-slate-50 rounded-2xl border border-slate-100 p-6 print:w-full print:border-none print:break-before-page ${modalTab === "attachments" ? "block" : "hidden"} print:block`}
+              >
+                <h3 className="font-black text-slate-800 text-lg mb-6 border-b border-slate-200 pb-3">
+                  {lang === "ar"
+                    ? "المرفقات والمستندات"
+                    : "Attachments & Documents"}
+                </h3>
+                <EmployeeAttachmentsPanel
+                  lang={lang}
+                  showToast={showToast}
+                  emp={selectedEmp}
+                  onUpdate={(fields) => {
+                    onUpdateEmployeeFields(selectedEmp.id, fields);
+                    setSelectedEmp({ ...selectedEmp, ...fields });
+                  }}
+                />
+              </div>
+            </div>{" "}
+            {/* Close Scrollable Content Wrapper */}
+          </div>{" "}
+          {/* Close Flex container */}
+        </div>
+      )}
+      

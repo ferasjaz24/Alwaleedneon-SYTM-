@@ -1,0 +1,10 @@
+src/components/finance/MonthlyPayrollRuns.tsx(3852,96): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3852,102): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(4445,59): error TS1005: ',' expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(2387,24): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/hr/HrEmployeeDirectoryTab.tsx(2769,23): error TS1005: ')' expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(3198,20): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/hr/HrEmployeeDirectoryTab.tsx(3812,17): error TS1005: ')' expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4597,5): error TS1128: Declaration or statement expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4598,3): error TS1109: Expression expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4599,1): error TS1128: Declaration or statement expected.

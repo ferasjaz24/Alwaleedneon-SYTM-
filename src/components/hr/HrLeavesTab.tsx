@@ -1200,7 +1200,7 @@ export default function HrLeavesTab({
                       {req.durationDays} {lang === "ar" ? "يوم" : "days"}
                     </td>
                     <td className="py-3 px-2 text-center font-bold text-emerald-600">
-                      {req.totalEntitlements ? `${Number(req.totalEntitlements).toLocaleString()} SAR` : "-"}
+                      {req.totalEntitlements ? `${Number(req.totalEntitlements).toLocaleString('en-US')} SAR` : "-"}
                     </td>
                     <td className="py-3 px-2 text-center text-[10px]">
                       {(req.routeFrom || req.routeTo) && (

@@ -623,7 +623,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
 
           <div class="section-title">أكثر 3 عملاء بناءً على الطلبات المعتمدة (قيمة التحصيلات)</div>
           <ul class="clean-list">
-             ${comprehensiveStats.top3ByValue.map(c => `<li>${c.name} - ${c.value.toLocaleString()} ريال</li>`).join('')}
+             ${comprehensiveStats.top3ByValue.map(c => `<li>${c.name} - ${(c.value || 0).toLocaleString('en-US')} ريال</li>`).join('')}
              ${comprehensiveStats.top3ByValue.length === 0 ? '<li>لا يوجد تحصيلات</li>' : ''}
           </ul>
         `;
@@ -641,9 +641,9 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
 
           <div class="section-title">الإحصائيات المالية والبيعية</div>
           <table class="data-table">
-             <tr><th>عدد عروض الأسعار</th><td>${quotesCount} عرض</td><th>إجمالي قيمة العروض</th><td>${totalQuotesValue.toLocaleString()} ريال</td></tr>
-             <tr><th>إجمالي المعتمد</th><td>${totalApprovedValue.toLocaleString()} ريال</td><th>إجمالي المدفوع</th><td>${totalPaid.toLocaleString()} ريال</td></tr>
-             <tr><th>إجمالي المتبقي</th><td>${totalRemaining.toLocaleString()} ريال</td><th>آخر تعامل</th><td>${lastInteractionDate ? lastInteractionDate.toLocaleDateString('en-GB') : 'لا يوجد تعاملات'}</td></tr>
+             <tr><th>عدد عروض الأسعار</th><td>${quotesCount} عرض</td><th>إجمالي قيمة العروض</th><td>${totalQuotesValue.toLocaleString('en-US')} ريال</td></tr>
+             <tr><th>إجمالي المعتمد</th><td>${totalApprovedValue.toLocaleString('en-US')} ريال</td><th>إجمالي المدفوع</th><td>${totalPaid.toLocaleString('en-US')} ريال</td></tr>
+             <tr><th>إجمالي المتبقي</th><td>${totalRemaining.toLocaleString('en-US')} ريال</td><th>آخر تعامل</th><td>${lastInteractionDate ? lastInteractionDate.toLocaleDateString('en-GB') : 'لا يوجد تعاملات'}</td></tr>
           </table>
 
           <div class="section-title">أكثر المناديب تعاملاً وأعدوا له عروضًا</div>
@@ -658,10 +658,10 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
         contentHtml = `
           <div class="print-title">التقرير الشامل للتحصيل</div>
           <div class="grid-layout">
-             <div class="stat-box"><strong>إجمالي قيمة المعتمد:</strong> ${collectionsComprehensiveStats.totalProjectsValue.toLocaleString()} ريال</div>
-             <div class="stat-box"><strong>المحصل:</strong> ${collectionsComprehensiveStats.totalCollected.toLocaleString()} ريال</div>
-             <div class="stat-box"><strong>المتبقي:</strong> ${collectionsComprehensiveStats.totalRemaining.toLocaleString()} ريال</div>
-             <div class="stat-box"><strong>المتأخر:</strong> ${collectionsComprehensiveStats.totalDelayed.toLocaleString()} ريال</div>
+             <div class="stat-box"><strong>إجمالي قيمة المعتمد:</strong> ${collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} ريال</div>
+             <div class="stat-box"><strong>المحصل:</strong> ${collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} ريال</div>
+             <div class="stat-box"><strong>المتبقي:</strong> ${collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} ريال</div>
+             <div class="stat-box"><strong>المتأخر:</strong> ${collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} ريال</div>
           </div>
 
           <div class="grid-layout">
@@ -673,13 +673,13 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           
           <div class="section-title">أعلى 5 مديونيات</div>
           <ul class="clean-list">
-             ${collectionsComprehensiveStats.top5Debtors.map(c => `<li>${c.name} - ${c.remaining.toLocaleString()} ريال</li>`).join('')}
+             ${collectionsComprehensiveStats.top5Debtors.map(c => `<li>${c.name} - ${c.remaining.toLocaleString('en-US')} ريال</li>`).join('')}
              ${collectionsComprehensiveStats.top5Debtors.length === 0 ? '<li>لا يوجد مديونيات</li>' : ''}
           </ul>
 
           <div class="section-title">آخر دفعات مسجلة</div>
           <ul class="clean-list">
-             ${collectionsComprehensiveStats.topLatestPayments.map(p => `<li>${p.clientName} - +${p.amount.toLocaleString()} ريال - ${new Date(p.date).toLocaleDateString('en-GB')}</li>`).join('')}
+             ${collectionsComprehensiveStats.topLatestPayments.map(p => `<li>${p.clientName} - +${(p.amount || 0).toLocaleString('en-US')} ريال - ${new Date(p.date).toLocaleDateString('en-GB')}</li>`).join('')}
              ${collectionsComprehensiveStats.topLatestPayments.length === 0 ? '<li>لا يوجد دفعات مسجلة</li>' : ''}
           </ul>
         `;
@@ -690,8 +690,8 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           ${specificClientCollections.map(plan => `
             <div class="section-title">المشروع: ${plan.projectName} - حالة الدفع: ${plan.paymentStatusDesc} (${plan.collectionPercentage.toFixed(1)}%)</div>
             <table class="data-table">
-               <tr><th>قيمة المشروع</th><td>${plan.totalAmount.toLocaleString()} ريال</td><th>المدفوع</th><td>${plan.totalCollected.toLocaleString()} ريال</td></tr>
-               <tr><th>المتبقي</th><td>${plan.remaining.toLocaleString()} ريال</td><th>تاريخ آخر دفعة</th><td>${plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td></tr>
+               <tr><th>قيمة المشروع</th><td>${(plan.totalAmount || 0).toLocaleString('en-US')} ريال</td><th>المدفوع</th><td>${(plan.totalCollected || 0).toLocaleString('en-US')} ريال</td></tr>
+               <tr><th>المتبقي</th><td>${(plan.remaining || 0).toLocaleString('en-US')} ريال</td><th>تاريخ آخر دفعة</th><td>${plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td></tr>
             </table>
           `).join('')}
           ${specificClientCollections.length === 0 ? '<p>لا يوجد مشاريع مسجلة.</p>' : ''}
@@ -700,7 +700,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
          contentHtml = `
           <div class="print-title">تقرير الدفعات المتأخرة</div>
           <div class="grid-layout">
-             <div class="stat-box"><strong>إجمالي الدفعات المتأخرة المستحقة:</strong> ${overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString()} ريال</div>
+             <div class="stat-box"><strong>إجمالي الدفعات المتأخرة المستحقة:</strong> ${overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} ريال</div>
              <div class="stat-box"><strong>عدد الدفعات المتأخرة:</strong> ${overduePayments.length}</div>
           </div>
           <table class="data-table" style="margin-top: 20px;">
@@ -712,7 +712,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                  <tr>
                    <td><strong>${p.projectName}</strong><br><small style="color:#64748b;">${p.clientName}</small></td>
                    <td>${p.repName}</td>
-                   <td style="color:#dc2626; font-weight:bold;">${p.amount.toLocaleString()} ريال</td>
+                   <td style="color:#dc2626; font-weight:bold;">${(p.amount || 0).toLocaleString('en-US')} ريال</td>
                    <td>${new Date(p.dueDate).toLocaleDateString('en-GB')}</td>
                    <td><span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:12px;">${p.daysOverdue} يوم</span></td>
                  </tr>
@@ -730,12 +730,17 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
       <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
         <meta charset="UTF-8">
         <title>طباعة التقرير</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
           @page { size: A4; margin: 20mm; }
-          body { font-family: 'Tajawal', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
+          body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
           
           .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 30px; color: #0072BC; border-bottom: 2px dashed #e2e8f0; padding-bottom: 15px;}
           .section-title { font-size: 18px; font-weight: bold; color: #334155; margin-top: 30px; margin-bottom: 15px; background: #f1f5f9; padding: 10px 15px; border-right: 4px solid #0072BC; border-radius: 4px;}
@@ -1065,7 +1070,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                              {comprehensiveStats.top3ByValue.map((c, idx) => (
                                <div key={idx} className="flex justify-between border-b border-dashed border-slate-200 pb-2 last:border-0 last:pb-0">
                                  <span className="text-slate-600 font-medium">{c.name}</span>
-                                 <span className="font-bold text-blue-600">{c.value.toLocaleString()} ريال</span>
+                                 <span className="font-bold text-blue-600">{(c.value || 0).toLocaleString('en-US')} ريال</span>
                                </div>
                              ))}
                            </div>
@@ -1092,11 +1097,11 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                         <h3 className="font-bold text-slate-700 mt-6 mb-3">الإحصائيات المالية والبيعية</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                            <div className="bg-white border border-slate-200 p-4 rounded-xl"><div className="text-xs text-slate-500 font-bold">عروض الأسعار</div><div className="text-lg font-black mt-1 text-slate-800">{specificClientStats.quotesCount}</div></div>
-                           <div className="bg-white border text-blue-800 border-blue-200 bg-blue-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي قيمة العروض</div><div className="text-lg font-black mt-1">{specificClientStats.totalQuotesValue.toLocaleString()}</div></div>
-                           <div className="bg-white border text-emerald-800 border-emerald-200 bg-emerald-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المعتمد</div><div className="text-lg font-black mt-1">{specificClientStats.totalApprovedValue.toLocaleString()}</div></div>
+                           <div className="bg-white border text-blue-800 border-blue-200 bg-blue-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي قيمة العروض</div><div className="text-lg font-black mt-1">{specificClientStats.totalQuotesValue.toLocaleString('en-US')}</div></div>
+                           <div className="bg-white border text-emerald-800 border-emerald-200 bg-emerald-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المعتمد</div><div className="text-lg font-black mt-1">{specificClientStats.totalApprovedValue.toLocaleString('en-US')}</div></div>
                            <div className="bg-white border text-slate-800 border-slate-200 bg-slate-100 p-4 rounded-xl"><div className="text-xs font-bold">آخر تعامل</div><div className="text-sm font-black mt-1 px-1 py-0.5">{specificClientStats.lastInteractionDate ? specificClientStats.lastInteractionDate.toLocaleDateString('en-GB') : '-'}</div></div>
-                           <div className="bg-white border text-teal-800 border-teal-200 bg-teal-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المدفوع</div><div className="text-lg font-black mt-1">{specificClientStats.totalPaid.toLocaleString()}</div></div>
-                           <div className="bg-white border text-red-800 border-red-200 bg-red-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المتبقي</div><div className="text-lg font-black mt-1">{specificClientStats.totalRemaining.toLocaleString()}</div></div>
+                           <div className="bg-white border text-teal-800 border-teal-200 bg-teal-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المدفوع</div><div className="text-lg font-black mt-1">{specificClientStats.totalPaid.toLocaleString('en-US')}</div></div>
+                           <div className="bg-white border text-red-800 border-red-200 bg-red-50 p-4 rounded-xl"><div className="text-xs font-bold">إجمالي المتبقي</div><div className="text-lg font-black mt-1">{specificClientStats.totalRemaining.toLocaleString('en-US')}</div></div>
                         </div>
 
                         <h3 className="font-bold text-slate-700 mt-6 mb-3">أكثر المناديب تعاملاً وأعدوا له عروضًا</h3>
@@ -1119,19 +1124,19 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="bg-blue-50 text-blue-900 border border-blue-200 p-5 rounded-2xl">
                              <div className="text-sm font-bold mb-2">إجمالي المعتمد</div>
-                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalProjectsValue.toLocaleString()} ر.س</div>
+                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} ر.س</div>
                           </div>
                           <div className="bg-emerald-50 text-emerald-900 border border-emerald-200 p-5 rounded-2xl">
                              <div className="text-sm font-bold mb-2">المحصل</div>
-                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalCollected.toLocaleString()} ر.س</div>
+                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} ر.س</div>
                           </div>
                           <div className="bg-orange-50 text-orange-900 border border-orange-200 p-5 rounded-2xl">
                              <div className="text-sm font-bold mb-2">المتبقي</div>
-                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalRemaining.toLocaleString()} ر.س</div>
+                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} ر.س</div>
                           </div>
                           <div className="bg-red-50 text-red-900 border border-red-200 p-5 rounded-2xl">
                              <div className="text-sm font-bold mb-2">المتأخر</div>
-                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalDelayed.toLocaleString()} ر.س</div>
+                             <div className="text-2xl font-black">{collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} ر.س</div>
                           </div>
                        </div>
                        
@@ -1162,7 +1167,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                                 {collectionsComprehensiveStats.top5Debtors.map((c, idx) => (
                                    <div key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
                                       <div className="font-bold text-slate-700">{c.name}</div>
-                                      <div className="font-black text-orange-600">{c.remaining.toLocaleString()} ر.س</div>
+                                      <div className="font-black text-orange-600">{c.remaining.toLocaleString('en-US')} ر.س</div>
                                    </div>
                                 ))}
                                 {collectionsComprehensiveStats.top5Debtors.length === 0 && <div className="text-sm text-slate-500">لا يوجد مديونيات.</div>}
@@ -1179,7 +1184,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                                          <div className="font-bold text-emerald-900">{p.clientName}</div>
                                          <div className="text-xs text-emerald-700">{p.projectName} - {new Date(p.date).toLocaleDateString('en-GB')}</div>
                                       </div>
-                                      <div className="font-black text-emerald-700">+{p.amount.toLocaleString()} ر.س</div>
+                                      <div className="font-black text-emerald-700">+{(p.amount || 0).toLocaleString('en-US')} ر.س</div>
                                    </div>
                                 ))}
                                 {collectionsComprehensiveStats.topLatestPayments.length === 0 && <div className="text-sm text-slate-500">لا يوجد تحصيلات مسجلة.</div>}
@@ -1198,11 +1203,11 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                                 >
                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
-                                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(value) => `${value.toLocaleString()}`} />
+                                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(value) => `${(value || 0).toLocaleString('en-US')}`} />
                                    <RechartsTooltip 
                                       cursor={{ fill: '#F8FAFC' }}
                                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                      formatter={(value: number) => [`${value.toLocaleString()} ر.س`]}
+                                      formatter={(value: number) => [`${(value || 0).toLocaleString('en-US')} ر.س`]}
                                    />
                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                    <Bar dataKey="collected" name="المحصل" stackId="a" fill="#10B981" radius={[0, 0, 4, 4]} />
@@ -1236,9 +1241,9 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                                     </div>
                                  </div>
                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">قيمة العرض/المشروع</div><div className="font-bold mt-1 text-slate-800">{plan.totalAmount.toLocaleString()} ر.س</div></div>
-                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">إجمالي المدفوع</div><div className="font-bold mt-1 text-emerald-600">{plan.totalCollected.toLocaleString()} ر.س</div></div>
-                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">المتبقي</div><div className="font-bold mt-1 text-red-600">{plan.remaining.toLocaleString()} ر.س</div></div>
+                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">قيمة العرض/المشروع</div><div className="font-bold mt-1 text-slate-800">{(plan.totalAmount || 0).toLocaleString('en-US')} ر.س</div></div>
+                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">إجمالي المدفوع</div><div className="font-bold mt-1 text-emerald-600">{(plan.totalCollected || 0).toLocaleString('en-US')} ر.س</div></div>
+                                    <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">المتبقي</div><div className="font-bold mt-1 text-red-600">{(plan.remaining || 0).toLocaleString('en-US')} ر.س</div></div>
                                     <div className="bg-white p-3 rounded-lg border border-slate-200"><div className="text-xs text-slate-500 font-bold">تاريخ الدفعة الأخيرة</div><div className="font-bold mt-1 text-slate-700">{plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</div></div>
                                  </div>
                               </div>
@@ -1253,7 +1258,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                        <div className="bg-red-50 text-red-800 p-6 rounded-2xl border border-red-200 flex justify-between items-center">
                          <div>
                            <div className="text-sm font-bold mb-1">إجمالي الدفعات المتأخرة المستحقة</div>
-                           <div className="text-3xl font-black">{overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString()} ر.س</div>
+                           <div className="text-3xl font-black">{overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} ر.س</div>
                          </div>
                          <div className="text-left">
                            <div className="text-sm font-bold mb-1">عدد الدفعات</div>
@@ -1281,7 +1286,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                                        <div className="text-xs text-slate-500">{p.clientName}</div>
                                     </td>
                                     <td className="px-4 py-3">{p.repName}</td>
-                                    <td className="px-4 py-3 font-bold text-red-600">{p.amount.toLocaleString()} ر.س</td>
+                                    <td className="px-4 py-3 font-bold text-red-600">{(p.amount || 0).toLocaleString('en-US')} ر.س</td>
                                     <td className="px-4 py-3">{new Date(p.dueDate).toLocaleDateString('en-GB')}</td>
                                     <td className="px-4 py-3"><span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">{p.daysOverdue} يوم</span></td>
                                   </tr>
@@ -1327,15 +1332,15 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                <div className="bg-white p-5 border border-slate-200 rounded-xl text-center shadow-sm">
                                   <div className="text-sm font-bold text-slate-500 mb-2">إجمالي قيمة العروض</div>
-                                  <div className="text-2xl font-black text-blue-600">{salesRepsStats[selectedRep].totalQuotesValue.toLocaleString()}</div>
+                                  <div className="text-2xl font-black text-blue-600">{(salesRepsStats[selectedRep]?.totalQuotesValue || 0).toLocaleString('en-US')}</div>
                                </div>
                                <div className="bg-white p-5 border border-slate-200 rounded-xl text-center shadow-sm">
                                   <div className="text-sm font-bold text-slate-500 mb-2">إجمالي المعتمد</div>
-                                  <div className="text-2xl font-black text-emerald-600">{salesRepsStats[selectedRep].totalApprovedValue.toLocaleString()}</div>
+                                  <div className="text-2xl font-black text-emerald-600">{(salesRepsStats[selectedRep]?.totalApprovedValue || 0).toLocaleString('en-US')}</div>
                                </div>
                                <div className="bg-white p-5 border border-slate-200 rounded-xl text-center shadow-sm">
                                   <div className="text-sm font-bold text-slate-500 mb-2">التحصيل المرتبط</div>
-                                  <div className="text-2xl font-black text-indigo-600">{salesRepsStats[selectedRep].totalCollectionLinked.toLocaleString()}</div>
+                                  <div className="text-2xl font-black text-indigo-600">{(salesRepsStats[selectedRep]?.totalCollectionLinked || 0).toLocaleString('en-US')}</div>
                                </div>
                             </div>
                          </div>
@@ -1348,7 +1353,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                            <div className="text-xs text-slate-500 font-bold mb-1">الأفضل (قيمة العروض)</div>
                            <div className="font-black text-slate-800">{bestRepByQuotesValue?.name || '-'}</div>
-                           <div className="text-xs mt-1 text-slate-500">{bestRepByQuotesValue?.totalQuotesValue?.toLocaleString() || 0} ر.س</div>
+                           <div className="text-xs mt-1 text-slate-500">{bestRepByQuotesValue?.totalQuotesValue?.toLocaleString('en-US') || 0} ر.س</div>
                         </div>
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                            <div className="text-xs text-slate-500 font-bold mb-1">الأفضل (العروض المعتمدة)</div>
@@ -1358,7 +1363,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                            <div className="text-xs text-slate-500 font-bold mb-1">الأفضل (التحصيل)</div>
                            <div className="font-black text-slate-800">{bestRepByCollection?.name || '-'}</div>
-                           <div className="text-xs mt-1 text-slate-500">{bestRepByCollection?.totalCollectionLinked?.toLocaleString() || 0} ر.س</div>
+                           <div className="text-xs mt-1 text-slate-500">{bestRepByCollection?.totalCollectionLinked?.toLocaleString('en-US') || 0} ر.س</div>
                         </div>
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                            <div className="text-xs text-slate-500 font-bold mb-1">الأقل نشاطاً (بناءً على العروض)</div>

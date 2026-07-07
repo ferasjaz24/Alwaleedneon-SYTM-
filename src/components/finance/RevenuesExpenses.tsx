@@ -71,6 +71,8 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   const [revenues, setRevenues] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -94,6 +96,8 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
     projectName: "",
     amount: "",
     paymentMethod: "تحويل بنكي",
+    cashBoxId: "",
+    bankAccountId: "",
     reference: "",
     attachmentData: "",
     status: "مسجل",
@@ -102,19 +106,25 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
 
   const fetchData = async () => {
     try {
-      const [revRes, cliRes, quoRes] = await Promise.all([
+      const [revRes, cliRes, quoRes, cbRes, baRes] = await Promise.all([
         fetch("/api/revenues"),
         fetch("/api/clients"),
-        fetch("/api/sales_quotations")
+        fetch("/api/sales_quotations"),
+        fetch("/api/dynamic/cash_boxes"),
+        fetch("/api/dynamic/bank_accounts")
       ]);
-      const [revData, cliData, quoData] = await Promise.all([
+      const [revData, cliData, quoData, cbData, baData] = await Promise.all([
         revRes.json(),
         cliRes.json(),
-        quoRes.json()
+        quoRes.json(),
+        cbRes.json(),
+        baRes.json()
       ]);
       setRevenues(Array.isArray(revData) ? revData : []);
       setClients(Array.isArray(cliData) ? cliData : []);
       setQuotes(Array.isArray(quoData) ? quoData : []);
+      setCashBoxes(Array.isArray(cbData) ? cbData : []);
+      setBankAccounts(Array.isArray(baData) ? baData : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -150,6 +160,14 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
     }
     if (parseFloat(formData.amount) <= 0) {
       alert("يرجى إدخال مبلغ صحيح أكبر من صفر.");
+      return;
+    }
+    if (formData.paymentMethod === "نقدي" && !formData.cashBoxId) {
+      alert("يرجى اختيار الصندوق المستلم لقيمة الإيراد.");
+      return;
+    }
+    if (formData.paymentMethod === "تحويل بنكي" && !formData.bankAccountId) {
+      alert("يرجى اختيار الحساب البنكي المستلم لقيمة الإيراد.");
       return;
     }
 
@@ -237,6 +255,10 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   };
 
   const handleDelete = (item: any) => {
+    if (item.status === "معتمد") {
+      alert("لا يمكن حذف الإيرادات المعتمدة. يرجى إلغاؤها بدلاً من ذلك لعكس القيود المحاسبية.");
+      return;
+    }
     setDeleteConfirmItem(item);
   };
 
@@ -290,7 +312,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <div className="space-y-1.5 text-right">
             <div className="text-xs font-bold text-slate-500">الإيرادات المعتمدة</div>
             <div className="text-2xl font-black text-emerald-600">
-              {totalRevenues.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {totalRevenues.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-emerald-500 font-semibold">المبالغ المقبولة والمرحلة للأرصدة</div>
           </div>
@@ -304,7 +326,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <div className="space-y-1.5 text-right">
             <div className="text-xs font-bold text-slate-500">بانتظار الاعتماد</div>
             <div className="text-2xl font-black text-amber-500">
-              {pendingRevenues.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {pendingRevenues.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-amber-500 font-semibold">تتطلب مراجعة واعتماد المحاسب</div>
           </div>
@@ -386,6 +408,8 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               projectName: "",
               amount: "",
               paymentMethod: "تحويل بنكي",
+              cashBoxId: "",
+              bankAccountId: "",
               reference: "",
               attachmentData: "",
               status: "مسجل",
@@ -427,10 +451,10 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                     <td className="p-4 font-mono text-sm">{item.id}</td>
                     <td className="p-4">{item.date}</td>
                     <td className="p-4">{item.client || '-'}</td>
-                    <td className="p-4 font-bold text-emerald-600">{parseFloat(item.amount).toLocaleString()}</td>
+                    <td className="p-4 font-bold text-emerald-600">{parseFloat(item.amount).toLocaleString('en-US')}</td>
                     <td className="p-4">{item.paymentMethod}</td>
                     <td className="p-4">
-                      <div className="flex flex-col gap-1 items-start">
+                      <div className="flex flex-col gap-1.5 items-start">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           item.status === 'معتمد' ? 'bg-emerald-100 text-emerald-700' :
                           item.status === 'بانتظار اعتماد' ? 'bg-amber-100 text-amber-700' :
@@ -439,17 +463,45 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                         }`}>
                           {item.status}
                         </span>
+                        {item.journalStatus === 'failed' && (
+                          <div className="flex flex-col gap-1 items-start bg-rose-50 text-rose-800 text-[10px] p-2 rounded-lg border border-rose-100 max-w-[200px]">
+                            <span className="font-bold">فشل القيد التلقائي ❌</span>
+                            <span className="break-words line-clamp-2">{item.journalError}</span>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("هل تريد إعادة محاولة إنشاء القيد المحاسبي لهذا السجل؟")) {
+                                  try {
+                                    const res = await fetch(`/api/finance/retry/revenues/${item.id}`, { method: "POST" });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      alert("تم إنشاء القيد المحاسبي بنجاح ورقم القيد: " + data.journalEntryId);
+                                      await fetchData();
+                                    } else {
+                                      alert("فشلت إعادة المحاولة: " + (data.error || "خطأ مجهول"));
+                                    }
+                                  } catch (err: any) {
+                                    alert("خطأ: " + err.message);
+                                  }
+                                }
+                              }}
+                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[9px] mt-1 cursor-pointer transition active:scale-95"
+                            >
+                              إعادة المحاولة 🔄
+                            </button>
+                          </div>
+                        )}
                         {item.approvedBy && (
                           <div className="text-[10px] text-slate-500 whitespace-nowrap">
                             بواسطة: {item.approvedBy}<br/>
-                            {item.approvedAt && new Date(item.approvedAt).toLocaleDateString('ar-SA')}
+                            {item.approvedAt && new Date(item.approvedAt).toLocaleDateString('en-US')}
                           </div>
                         )}
                       </div>
                     </td>
                     <td className="p-4 flex gap-1">
                       <button onClick={() => setShowDetails(item)} className="p-1.5 text-slate-500 hover:bg-slate-200 rounded-lg transition active:scale-90 duration-100" title="عرض التفاصيل"><Eye className="w-4 h-4" /></button>
-                      <button onClick={() => { setFormData(item); setEditingItem(item); setShowAddModal(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition active:scale-95 duration-100" title="تعديل"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => { setFormData({ cashBoxId: "", bankAccountId: "", ...item }); setEditingItem(item); setShowAddModal(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition active:scale-95 duration-100" title="تعديل"><Edit className="w-4 h-4" /></button>
                       {item.status !== 'معتمد' && (
                         <button 
                           disabled={processingId !== null} 
@@ -574,6 +626,27 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 </div>
               </div>
 
+              {/* Conditional Bank/Cash Select */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.paymentMethod === "نقدي" ? (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">صندوق النقدية المستلم <span className="text-rose-500">*</span></label>
+                    <select value={formData.cashBoxId || ""} onChange={e => setFormData({...formData, cashBoxId: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none">
+                      <option value="">-- اختر الصندوق --</option>
+                      {cashBoxes.map(cb => <option key={cb.id} value={cb.id}>{cb.name || cb.id}</option>)}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">الحساب البنكي للشركة المستلم <span className="text-rose-500">*</span></label>
+                    <select value={formData.bankAccountId || ""} onChange={e => setFormData({...formData, bankAccountId: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none">
+                      <option value="">-- اختر الحساب البنكي --</option>
+                      {bankAccounts.map(ba => <option key={ba.id} value={ba.id}>{ba.bankName || ba.name || ba.id} - {ba.accountNumber}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Row 4 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -661,7 +734,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 <div><span className="text-slate-500 block mb-1">رقم عرض السعر:</span> <strong className="text-slate-800">{showDetails.quoteNumber || '-'}</strong></div>
                 <div><span className="text-slate-500 block mb-1">رقم الفاتورة:</span> <strong className="text-slate-800">{showDetails.invoiceNumber || '-'}</strong></div>
                 <div><span className="text-slate-500 block mb-1">اسم المشروع:</span> <strong className="text-slate-800">{showDetails.projectName || '-'}</strong></div>
-                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-emerald-600 text-lg">{parseFloat(showDetails.amount).toLocaleString()} ر.س</strong></div>
+                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-emerald-600 text-lg">{parseFloat(showDetails.amount).toLocaleString('en-US')} ر.س</strong></div>
                 <div><span className="text-slate-500 block mb-1">طريقة الدفع:</span> <strong className="text-slate-800">{showDetails.paymentMethod}</strong></div>
                 <div><span className="text-slate-500 block mb-1">رقم المرجع:</span> <strong className="text-slate-800">{showDetails.reference || '-'}</strong></div>
               </div>
@@ -671,17 +744,17 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="border-b border-slate-100 pb-4">
                 <span className="text-slate-500 block mb-1">تاريخ الإنشاء:</span>
-                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('ar-SA')} ({showDetails.createdBy})</p>
+                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('en-US')} ({showDetails.createdBy})</p>
                 {showDetails.approvedBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الاعتماد:</span>
-                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('ar-SA')} ({showDetails.approvedBy})</p>
+                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('en-US')} ({showDetails.approvedBy})</p>
                   </>
                 )}
                 {showDetails.canceledBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الإلغاء:</span>
-                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('ar-SA')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
+                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('en-US')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
                   </>
                 )}
               </div>
@@ -712,6 +785,11 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                   printWindow.document.write(`
                     <html dir="rtl" lang="ar">
                       <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
                         <title>طباعة سند إيراد - ${showDetails.id}</title>
                         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
                         <style>
@@ -796,7 +874,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                                 <tr><th>رقم عرض السعر</th><td>${showDetails.quoteNumber || '-'}</td></tr>
                                 <tr><th>رقم الفاتورة</th><td>${showDetails.invoiceNumber || '-'}</td></tr>
                                 <tr><th>اسم المشروع</th><td>${showDetails.projectName || '-'}</td></tr>
-                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #16a34a; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('ar-SA', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
+                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #16a34a; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
                                 <tr><th>طريقة الدفع</th><td>${showDetails.paymentMethod}</td></tr>
                                 <tr><th>رقم المرجع / الحوالة</th><td>${showDetails.reference || '-'}</td></tr>
                                 <tr><th>ملاحظات</th><td>${showDetails.notes || '-'}</td></tr>
@@ -807,13 +885,13 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                               <div class="signature-block">
                                 <p><strong>المنشئ والمدقق:</strong></p>
                                 <p>الاسم: ${showDetails.createdBy || 'تلقائي'}</p>
-                                <p>التاريخ: ${showDetails.createdAt ? new Date(showDetails.createdAt).toLocaleDateString('ar-SA') : showDetails.date}</p>
+                                <p>التاريخ: ${showDetails.createdAt ? new Date(showDetails.createdAt).toLocaleDateString('en-US') : showDetails.date}</p>
                                 <p>التوقيع: ............................</p>
                               </div>
                               <div class="signature-block" style="text-align: left; direction: ltr;">
                                 <p dir="rtl"><strong>الاعتماد والموافقة المعتمدة:</strong></p>
                                 <p dir="rtl">الاسم: ${showDetails.approvedBy || '............................'}</p>
-                                <p dir="rtl">التاريخ: ${showDetails.approvedAt ? new Date(showDetails.approvedAt).toLocaleDateString('ar-SA') : '............................'}</p>
+                                <p dir="rtl">التاريخ: ${showDetails.approvedAt ? new Date(showDetails.approvedAt).toLocaleDateString('en-US') : '............................'}</p>
                                 <p dir="rtl">التوقيع والختم الرسمي: ............................</p>
                               </div>
                             </div>
@@ -873,7 +951,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-emerald-600">{Number(approveConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-emerald-600">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
               {approveConfirmItem.client && (
                 <div className="flex justify-between">
@@ -943,7 +1021,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
               {deleteConfirmItem.client && (
                 <div className="flex justify-between">
@@ -997,6 +1075,8 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterMonth, setFilterMonth] = useState("");
+  const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -1022,6 +1102,8 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
     projectName: "",
     amount: "",
     paymentMethod: "تحويل بنكي",
+    cashBoxId: "",
+    bankAccountId: "",
     reference: "",
     attachmentData: "",
     status: "مسجل",
@@ -1033,19 +1115,25 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
 
   const fetchData = async () => {
     try {
-      const [expRes, supRes, projRes] = await Promise.all([
+      const [expRes, supRes, projRes, cbRes, baRes] = await Promise.all([
         fetch("/api/expenses"),
         fetch("/api/dynamic/suppliers"),
-        fetch("/api/dynamic/production_projects")
+        fetch("/api/dynamic/production_projects"),
+        fetch("/api/dynamic/cash_boxes"),
+        fetch("/api/dynamic/bank_accounts")
       ]);
-      const [expData, supData, projData] = await Promise.all([
+      const [expData, supData, projData, cbData, baData] = await Promise.all([
         expRes.json(),
         supRes.json(),
-        projRes.json()
+        projRes.json(),
+        cbRes.json(),
+        baRes.json()
       ]);
       setExpenses(Array.isArray(expData) ? expData : []);
       setSuppliers(Array.isArray(supData) ? supData : []);
       setProjects(Array.isArray(projData) ? projData : []);
+      setCashBoxes(Array.isArray(cbData) ? cbData : []);
+      setBankAccounts(Array.isArray(baData) ? baData : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -1081,6 +1169,17 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
     }
     if (parseFloat(formData.amount) <= 0) {
       alert("يرجى إدخال مبلغ صحيح أكبر من صفر.");
+      return;
+    }
+
+    const isCashPayment = ["نقدي", "من الصندوق"].includes(formData.paymentMethod);
+    if (isCashPayment && !formData.cashBoxId) {
+      alert("يرجى اختيار الصندوق المدفوع منه قيمة المصروف.");
+      return;
+    }
+    const isBankPayment = ["تحويل بنكي", "من البنك", "شيك", "بطاقة", "مدى"].includes(formData.paymentMethod);
+    if (isBankPayment && !formData.bankAccountId) {
+      alert("يرجى اختيار الحساب البنكي المدفوع منه قيمة المصروف.");
       return;
     }
 
@@ -1216,6 +1315,10 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
   };
 
   const handleDelete = (item: any) => {
+    if (item.status === "معتمد" || item.status === "مدفوع") {
+      alert("لا يمكن حذف المصروفات المعتمدة أو المدفوعة. يرجى إلغاؤها بدلاً من ذلك لعكس القيود المحاسبية.");
+      return;
+    }
     setDeleteConfirmItem(item);
   };
 
@@ -1271,7 +1374,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <div className="space-y-1.5 text-right">
             <div className="text-xs font-bold text-slate-500">مصروفات مدفوعة</div>
             <div className="text-2xl font-black text-blue-600">
-              {totalPaid.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {totalPaid.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-blue-500 font-semibold">المبالغ المسددة بالكامل للجهات والموردين</div>
           </div>
@@ -1285,7 +1388,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <div className="space-y-1.5 text-right">
             <div className="text-xs font-bold text-slate-500">معتمد (بانتظار الصرف)</div>
             <div className="text-2xl font-black text-emerald-600">
-              {(totalApproved - totalPaid).toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {(totalApproved - totalPaid).toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-emerald-500 font-semibold">مبالغ معتمدة وجاهزة لأمر الصرف والتحويل</div>
           </div>
@@ -1299,7 +1402,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <div className="space-y-1.5 text-right">
             <div className="text-xs font-bold text-slate-500">بانتظار الاعتماد</div>
             <div className="text-2xl font-black text-amber-500">
-              {pendingExpenses.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {pendingExpenses.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-amber-500 font-semibold">طلبات صرف معلقة تطلب موافقة المحاسب</div>
           </div>
@@ -1368,6 +1471,8 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               projectName: "",
               amount: "",
               paymentMethod: "تحويل بنكي",
+              cashBoxId: "",
+              bankAccountId: "",
               reference: "",
               attachmentData: "",
               status: "مسجل",
@@ -1412,10 +1517,10 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                       <div className="font-bold text-slate-800">{item.description}</div>
                       <div className="text-xs text-slate-500">{item.supplier} - {item.expenseType}</div>
                     </td>
-                    <td className="p-4 font-bold text-rose-600">{parseFloat(item.amount).toLocaleString()}</td>
+                    <td className="p-4 font-bold text-rose-600">{parseFloat(item.amount).toLocaleString('en-US')}</td>
                     <td className="p-4">{item.paymentMethod}</td>
                     <td className="p-4">
-                      <div className="flex flex-col gap-1 items-start">
+                      <div className="flex flex-col gap-1.5 items-start">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           item.status === 'مدفوع' ? 'bg-blue-100 text-blue-700' :
                           item.status === 'معتمد' ? 'bg-emerald-100 text-emerald-700' :
@@ -1425,17 +1530,45 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                         }`}>
                           {item.status}
                         </span>
+                        {item.journalStatus === 'failed' && (
+                          <div className="flex flex-col gap-1 items-start bg-rose-50 text-rose-800 text-[10px] p-2 rounded-lg border border-rose-100 max-w-[200px]">
+                            <span className="font-bold">فشل القيد التلقائي ❌</span>
+                            <span className="break-words line-clamp-2">{item.journalError}</span>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("هل تريد إعادة محاولة إنشاء القيد المحاسبي لهذا السجل؟")) {
+                                  try {
+                                    const res = await fetch(`/api/finance/retry/expenses/${item.id}`, { method: "POST" });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      alert("تم إنشاء القيد المحاسبي بنجاح ورقم القيد: " + data.journalEntryId);
+                                      await fetchData();
+                                    } else {
+                                      alert("فشلت إعادة المحاولة: " + (data.error || "خطأ مجهول"));
+                                    }
+                                  } catch (err: any) {
+                                    alert("خطأ: " + err.message);
+                                  }
+                                }
+                              }}
+                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[9px] mt-1 cursor-pointer transition active:scale-95"
+                            >
+                              إعادة المحاولة 🔄
+                            </button>
+                          </div>
+                        )}
                         {item.approvedBy && (
                           <div className="text-[10px] text-slate-500 whitespace-nowrap">
                             بواسطة: {item.approvedBy}<br/>
-                            {item.approvedAt && new Date(item.approvedAt).toLocaleDateString('ar-SA')}
+                            {item.approvedAt && new Date(item.approvedAt).toLocaleDateString('en-US')}
                           </div>
                         )}
                       </div>
                     </td>
                     <td className="p-4 flex gap-1">
                       <button onClick={() => setShowDetails(item)} className="p-1.5 text-slate-500 hover:bg-slate-200 rounded-lg transition active:scale-90 duration-100" title="عرض التفاصيل"><Eye className="w-4 h-4" /></button>
-                      <button onClick={() => { setFormData(item); setEditingItem(item); setShowAddModal(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition active:scale-95 duration-100" title="تعديل"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => { setFormData({ cashBoxId: "", bankAccountId: "", ...item }); setEditingItem(item); setShowAddModal(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition active:scale-95 duration-100" title="تعديل"><Edit className="w-4 h-4" /></button>
                       {(item.status === 'بانتظار اعتماد' || item.status === 'مسجل') && (
                         <button 
                           disabled={processingId !== null} 
@@ -1588,6 +1721,27 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 </div>
               </div>
 
+              {/* Conditional Bank/Cash Select */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {["نقدي", "من الصندوق"].includes(formData.paymentMethod) ? (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">صندوق النقدية المدفوع منه <span className="text-rose-500">*</span></label>
+                    <select value={formData.cashBoxId || ""} onChange={e => setFormData({...formData, cashBoxId: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none">
+                      <option value="">-- اختر الصندوق --</option>
+                      {cashBoxes.map(cb => <option key={cb.id} value={cb.id}>{cb.name || cb.id}</option>)}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">الحساب البنكي المدفوع منه <span className="text-rose-500">*</span></label>
+                    <select value={formData.bankAccountId || ""} onChange={e => setFormData({...formData, bankAccountId: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none">
+                      <option value="">-- اختر الحساب البنكي --</option>
+                      {bankAccounts.map(ba => <option key={ba.id} value={ba.id}>{ba.bankName || ba.name || ba.id} - {ba.accountNumber}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Row 4 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1669,7 +1823,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 <div><span className="text-slate-500 block mb-1">الوصف:</span> <strong className="text-slate-800">{showDetails.description}</strong></div>
                 <div><span className="text-slate-500 block mb-1">المورد / الجهة:</span> <strong className="text-slate-800">{showDetails.supplier || '-'}</strong></div>
                 <div><span className="text-slate-500 block mb-1">المشروع المرتبط:</span> <strong className="text-slate-800">{showDetails.projectName || '-'}</strong></div>
-                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-rose-600 text-lg">{parseFloat(showDetails.amount).toLocaleString()} ر.س</strong></div>
+                <div><span className="text-slate-500 block mb-1">المبلغ:</span> <strong className="text-rose-600 text-lg">{parseFloat(showDetails.amount).toLocaleString('en-US')} ر.س</strong></div>
                 <div><span className="text-slate-500 block mb-1">طريقة الدفع:</span> <strong className="text-slate-800">{showDetails.paymentMethod}</strong></div>
                 <div><span className="text-slate-500 block mb-1">رقم المرجع:</span> <strong className="text-slate-800">{showDetails.reference || '-'}</strong></div>
               </div>
@@ -1679,29 +1833,29 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="border-b border-slate-100 pb-4">
                 <span className="text-slate-500 block mb-1">تاريخ الإنشاء:</span>
-                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('ar-SA')} ({showDetails.createdBy})</p>
+                <p className="text-slate-800">{new Date(showDetails.createdAt).toLocaleString('en-US')} ({showDetails.createdBy})</p>
                 {showDetails.approvedBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الاعتماد:</span>
-                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('ar-SA')} ({showDetails.approvedBy})</p>
+                    <p className="text-slate-800">{new Date(showDetails.approvedAt).toLocaleString('en-US')} ({showDetails.approvedBy})</p>
                   </>
                 )}
                 {showDetails.paidBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الدفع:</span>
-                    <p className="text-slate-800">{new Date(showDetails.paidAt).toLocaleString('ar-SA')} ({showDetails.paidBy})</p>
+                    <p className="text-slate-800">{new Date(showDetails.paidAt).toLocaleString('en-US')} ({showDetails.paidBy})</p>
                   </>
                 )}
                 {showDetails.canceledBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الإلغاء:</span>
-                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('ar-SA')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
+                    <p className="text-slate-800">{new Date(showDetails.canceledAt).toLocaleString('en-US')} ({showDetails.canceledBy}) - السبب: {showDetails.cancelReason}</p>
                   </>
                 )}
                 {showDetails.rejectedBy && (
                   <>
                     <span className="text-slate-500 block mt-2 mb-1">الرفض:</span>
-                    <p className="text-slate-800">{new Date(showDetails.rejectedAt).toLocaleString('ar-SA')} ({showDetails.rejectedBy}) - السبب: {showDetails.rejectReason}</p>
+                    <p className="text-slate-800">{new Date(showDetails.rejectedAt).toLocaleString('en-US')} ({showDetails.rejectedBy}) - السبب: {showDetails.rejectReason}</p>
                   </>
                 )}
               </div>
@@ -1732,6 +1886,11 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                   printWindow.document.write(`
                     <html dir="rtl" lang="ar">
                       <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
                         <title>طباعة سند مصروف - ${showDetails.id}</title>
                         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
                         <style>
@@ -1815,7 +1974,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                                 <tr><th>الوصف</th><td>${showDetails.description}</td></tr>
                                 <tr><th>المورد / الجهة</th><td>${showDetails.supplier || '-'}</td></tr>
                                 <tr><th>المشروع المرتبط</th><td>${showDetails.projectName || '-'}</td></tr>
-                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #e11d48; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('ar-SA', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
+                                <tr><th>المبلغ الإجمالي</th><td><strong style="color: #e11d48; font-size: 16px;">${parseFloat(showDetails.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ر.س</strong></td></tr>
                                 <tr><th>طريقة الدفع</th><td>${showDetails.paymentMethod}</td></tr>
                                 <tr><th>رقم المرجع</th><td>${showDetails.reference || '-'}</td></tr>
                                 <tr><th>ملاحظات</th><td>${showDetails.notes || '-'}</td></tr>
@@ -1826,13 +1985,13 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                               <div class="signature-block">
                                 <p><strong>المنشئ والمدقق:</strong></p>
                                 <p>الاسم: ${showDetails.createdBy || 'تلقائي'}</p>
-                                <p>التاريخ: ${showDetails.createdAt ? new Date(showDetails.createdAt).toLocaleDateString('ar-SA') : showDetails.date}</p>
+                                <p>التاريخ: ${showDetails.createdAt ? new Date(showDetails.createdAt).toLocaleDateString('en-US') : showDetails.date}</p>
                                 <p>التوقيع: ............................</p>
                               </div>
                               <div class="signature-block" style="text-align: left; direction: ltr;">
                                 <p dir="rtl"><strong>الاعتماد والموافقة المعتمدة:</strong></p>
                                 <p dir="rtl">الاسم: ${showDetails.approvedBy || '............................'}</p>
-                                <p dir="rtl">التاريخ: ${showDetails.approvedAt ? new Date(showDetails.approvedAt).toLocaleDateString('ar-SA') : '............................'}</p>
+                                <p dir="rtl">التاريخ: ${showDetails.approvedAt ? new Date(showDetails.approvedAt).toLocaleDateString('en-US') : '............................'}</p>
                                 <p dir="rtl">التوقيع والختم الرسمي: ............................</p>
                               </div>
                             </div>
@@ -1892,7 +2051,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-rose-600">{Number(approveConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-rose-600">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">النوع:</span>
@@ -1970,7 +2129,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-rose-600">{parseFloat(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
               {deleteConfirmItem.supplier && (
                 <div className="flex justify-between">

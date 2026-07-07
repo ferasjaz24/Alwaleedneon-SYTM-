@@ -428,6 +428,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
     const html = `
       <html dir="${isAr ? 'rtl' : 'ltr'}">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>دراسة تسعير مشروع - ${formData.projectName}</title>
           <style>
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
@@ -512,7 +517,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
           </div>
 
           <div class="footer">
-            تم إنشاء هذه الدراسة تلقائياً بواسطة نظام تسعير المشاريع الذكي. التاريخ: ${new Date().toLocaleDateString('ar-SA')}
+            تم إنشاء هذه الدراسة تلقائياً بواسطة نظام تسعير المشاريع الذكي. التاريخ: ${new Date().toLocaleDateString('en-US')}
           </div>
           <script>
             window.onload = () => {
@@ -921,7 +926,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
                 <div className="opacity-60 pointer-events-none">
                   <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "السعر شامل الضريبة" : "Total w/ VAT"}</label>
                   <div className="w-full p-3 rounded-xl border border-slate-200 bg-slate-100 text-sm font-black text-slate-800">
-                    {totalWithVat.toLocaleString()}
+                    {totalWithVat.toLocaleString('en-US')}
                   </div>
                 </div>
               </div>
@@ -1036,8 +1041,8 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-sm font-black text-slate-800 border-b pb-3">{isAr ? "ملخص التكلفة" : "Cost Summary"}</h4>
               <div className="space-y-3 text-sm font-bold">
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة المواد" : "Material"}</span><span className="text-slate-800">{studyResult.costs.material.toLocaleString()} SAR</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "التكاليف التشغيلية" : "Operational"}</span><span className="text-slate-800">{studyResult.costs.operational.toLocaleString()} SAR</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة المواد" : "Material"}</span><span className="text-slate-800">{studyResult.costs.material.toLocaleString('en-US')} SAR</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "التكاليف التشغيلية" : "Operational"}</span><span className="text-slate-800">{studyResult.costs.operational.toLocaleString('en-US')} SAR</span></div>
                 {canViewLaborCost && <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة العمالة" : "Labor"}</span><span className="text-slate-800">{studyResult.costs.labor.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>}
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "المخاطر الإضافية" : "Risks"}</span><span className="text-slate-800">{studyResult.costs.risk.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between border-t pt-2 text-lg font-black text-indigo-600"><span className="text-slate-800">{isAr ? "الإجمالي" : "Total"}</span><span>{studyResult.costs.total.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
@@ -1048,7 +1053,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-sm font-black text-slate-800 border-b pb-3">{isAr ? "ملخص التسعير" : "Pricing Summary"}</h4>
               <div className="space-y-3 text-sm font-bold">
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر الحالي (للمستخدم)" : "User Price"}</span><span className="text-slate-800">{studyResult.pricing.userPrice.toLocaleString()} SAR</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر الحالي (للمستخدم)" : "User Price"}</span><span className="text-slate-800">{studyResult.pricing.userPrice.toLocaleString('en-US')} SAR</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر المقترح" : "Suggested Price"}</span><span className="text-slate-800">{studyResult.pricing.targetPrice.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between border-t pt-2 mt-2"><span className="text-slate-500">{isAr ? "الفرق" : "Difference"}</span><span className={studyResult.pricing.userPrice < studyResult.pricing.targetPrice ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>{(studyResult.pricing.userPrice - studyResult.pricing.targetPrice).toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "نسبة الخطأ" : "Error Margin"}</span><span className={Math.abs(studyResult.pricing.errorMargin) > 10 ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>{studyResult.pricing.errorMargin.toFixed(2)}%</span></div>

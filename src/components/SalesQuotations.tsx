@@ -19,6 +19,7 @@ import {
   Trash2, Edit2, Check, AlertCircle, XCircle 
 } from 'lucide-react';
 import { Client, WarehouseItem } from '../types';
+import { searchQuotationsIndexed } from '../lib/searchIndex';
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from '../utils/PrintShared';
 import { numberToArabicWords } from '../utils/Tafqeet';
 
@@ -181,7 +182,7 @@ export default function SalesQuotations({ lang, user }: Props) {
     e.stopPropagation();
     const qtn = quotes.find(q => q.id === id);
     if (qtn?.status === 'معتمد') {
-       showToast('لا يمكن حذف عرض سعر معتمد', 'error');
+       showToast(lang === 'ar' ? 'لا يمكن حذف عرض سعر معتمد' : 'Cannot delete approved quotation', 'error');
        return;
     }
     if (!isUserPrivileged) return;
@@ -195,9 +196,9 @@ export default function SalesQuotations({ lang, user }: Props) {
           const res = await fetch(`/api/sales_quotations/${id}`, { method: 'DELETE' });
           if (res.ok) {
             setQuotes(prev => prev.filter(q => q.id !== id));
-            showToast('تم حذف عرض السعر بنجاح', 'success');
+            showToast(lang === 'ar' ? 'تم حذف عرض السعر بنجاح' : 'Quotation deleted successfully', 'success');
           }
-        } catch(err) { showToast('فشل الحذف', 'error'); }
+        } catch(err) { showToast(lang === 'ar' ? 'فشل الحذف' : 'Deletion failed', 'error'); }
         setDialogConfig(prev => ({...prev, isOpen: false}));
       }
     });
@@ -228,8 +229,8 @@ export default function SalesQuotations({ lang, user }: Props) {
           }
           setQuotes(prev => prev.filter(q => !selectedQuotes.includes(q.id)));
           setSelectedQuotes([]);
-          showToast('تم حذف عروض الأسعار المحددة بنجاح', 'success');
-        } catch(err) { showToast('فشل الحذف', 'error'); }
+          showToast(lang === 'ar' ? 'تم حذف عروض الأسعار المحددة بنجاح' : 'Selected quotations deleted successfully', 'success');
+        } catch(err) { showToast(lang === 'ar' ? 'فشل الحذف' : 'Deletion failed', 'error'); }
         setDialogConfig(prev => ({...prev, isOpen: false}));
       }
     });
@@ -248,7 +249,7 @@ body {
   margin: 0;
   padding: 0;
   background: #ffffff;
-  font-family: 'Cairo', Arial, Tahoma, sans-serif;
+  font-family: 'GE SS Two', 'Gotham Pro', Arial, Tahoma, sans-serif;
   color: #111;
   direction: rtl;
 }
@@ -559,10 +560,10 @@ body {
 .ql-align-right { text-align: right; }
 .ql-align-left { text-align: left; }
 .ql-align-justify { text-align: justify; }
-.ql-font-tajawal { font-family: 'Tajawal', sans-serif; }
+.ql-font-tajawal { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; }
 .ql-font-arial { font-family: 'Arial', sans-serif; }
 .ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
-.ql-font-cairo { font-family: 'Cairo', sans-serif; }
+.ql-font-cairo { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; }
 .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
 .terms-content ul { padding-right: 20px; list-style-type: disc; }
 .terms-content ol { padding-right: 20px; list-style-type: decimal; }
@@ -607,7 +608,7 @@ body {
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 8px; margin-bottom: 20px; user-select: none; direction: ltr;">
                 <!-- معلومات الشركة -->
                 <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
-                  <h2 style="font-size: 20px; font-weight: 900; color: #374151; margin: 0; font-family: 'Tajawal', sans-serif;" dir="rtl">
+                  <h2 style="font-size: 20px; font-weight: 900; color: #374151; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
                     شركة فنون الوليد للصناعة
                   </h2>
                   <h3 style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
@@ -617,7 +618,7 @@ body {
                 
                 <!-- الحالة في منتصف رأس الصفحة -->
                 <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
-                  <span style="font-size: 15px; font-weight: 800; padding: 4px 14px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'Cairo', 'Tajawal', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
+                  <span style="font-size: 15px; font-weight: 800; padding: 4px 14px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
                     ${statusText}
                   </span>
                 </div>
@@ -770,6 +771,11 @@ body {
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
           <title>${title}</title>
           <style>${getPrintStyles()}</style>
@@ -852,11 +858,11 @@ body {
         setEditorQtn(saved.item);
         if (showAlerts) {
            if (forceStatus === 'معتمد' && !skipConfirm) {
-              showToast(`تم اعتماد عرض السعر رقم ${payload.quotationNumber}`, 'success');
+              showToast(lang === 'ar' ? `تم اعتماد عرض السعر رقم ${payload.quotationNumber}` : `Quotation ${payload.quotationNumber} approved successfully`, 'success');
            } else if (skipConfirm && forceStatus === 'مسودة') {
-              showToast('تم إلغاء الاعتماد وتحويله إلى مسودة', 'success');
+              showToast(lang === 'ar' ? 'تم إلغاء الاعتماد وتحويله إلى مسودة' : 'Approval canceled and converted to draft', 'success');
            } else {
-              showToast('تم الحفظ بنجاح', 'success');
+              showToast(lang === 'ar' ? 'تم الحفظ بنجاح' : 'Saved successfully', 'success');
            }
         }
         if (forceStatus === 'مسودة' && !skipConfirm) {
@@ -963,16 +969,22 @@ body {
 
 
 
-  const filteredQuotes = quotes.filter(q => {
-    if (searchQtn && !q.quotationNumber?.toLowerCase().includes(searchQtn.toLowerCase())) return false;
-    if (searchName && (!q.clientName?.toLowerCase().includes(searchName.toLowerCase()) && !q.projectName?.toLowerCase().includes(searchName.toLowerCase()))) return false;
-    if (statusFilter !== 'الكل' && q.status !== statusFilter) return false;
-    return true;
-  }).sort((a,b) => {
-    const tA = new Date(a.dateCreated).getTime();
-    const tB = new Date(b.dateCreated).getTime();
-    return sortOrder === 'desc' ? tB - tA : tA - tB;
-  });
+  const filteredQuotes = React.useMemo(() => {
+    let baseList = quotes;
+    if (searchName.trim()) {
+      const { results } = searchQuotationsIndexed(searchName, quotes);
+      baseList = results;
+    }
+    return baseList.filter(q => {
+      if (searchQtn && !q.quotationNumber?.toLowerCase().includes(searchQtn.toLowerCase())) return false;
+      if (statusFilter !== 'الكل' && q.status !== statusFilter) return false;
+      return true;
+    }).sort((a,b) => {
+      const tA = new Date(a.dateCreated).getTime();
+      const tB = new Date(b.dateCreated).getTime();
+      return sortOrder === 'desc' ? tB - tA : tA - tB;
+    });
+  }, [quotes, searchName, searchQtn, statusFilter, sortOrder]);
 
   if (loading) return <div className="p-10 text-center text-indigo-500 font-bold">جاري التحميل...</div>;
 
@@ -1143,7 +1155,7 @@ body {
            </div>
         </div>
       ) : (
-        <EditorScreen 
+        <EditorScreen lang={lang} 
            quote={editorQtn as SalesQuotation} 
            onChange={setEditorQtn as any} 
            onBack={handleBackFromEditor}
@@ -1191,10 +1203,10 @@ body {
                    const res = await fetch(`/api/sales_quotations/${editorQtn!.id}`, { method: 'DELETE' });
                    if (res.ok) {
                      setQuotes(prev => prev.filter(q => q.id !== editorQtn!.id));
-                     showToast('تم حذف عرض السعر بنجاح', 'success');
+                     showToast(lang === 'ar' ? 'تم حذف عرض السعر بنجاح' : 'Quotation deleted successfully', 'success');
                      setMode('list');
                    }
-                 } catch(err) { showToast('فشل الحذف', 'error'); }
+                 } catch(err) { showToast(lang === 'ar' ? 'فشل الحذف' : 'Deletion failed', 'error'); }
                  setDialogConfig(prev => ({...prev, isOpen: false}));
                }
              });
@@ -1205,7 +1217,7 @@ body {
   );
 }
 
-function EditorScreen({quote, onChange, onBack, onSave, onPreview, onCopy, clients, warehouseItems, allQuotes, termsTemplate, termsTemplates, setTermsTemplates, user, onUnapprove, onDelete, showToast, setDialogConfig}: any) {
+function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy, clients, warehouseItems, allQuotes, termsTemplate, termsTemplates, setTermsTemplates, user, onUnapprove, onDelete, showToast, setDialogConfig}: any) {
   const [tab, setTab] = useState<'basic' | 'print'>('basic');
   const [qtnGenType, setQtnGenType] = useState<'auto'|'manual'>('manual');
   
@@ -1215,12 +1227,12 @@ function EditorScreen({quote, onChange, onBack, onSave, onPreview, onCopy, clien
 
   const handleSaveTemplate = async () => {
     if (!newTplName && (!selectedTpl || selectedTpl === 'contract')) {
-        showToast('الرجاء إضافة نموذج جديد أولاً أو اختيار نموذج مخصص لتحديثه', 'error');
+        showToast(lang === 'ar' ? 'الرجاء إضافة نموذج جديد أولاً أو اختيار نموذج مخصص لتحديثه' : 'Please add a new template first or select a custom one to update', 'error');
         return;
     }
     const isNew = isAddingTpl || !selectedTpl || selectedTpl === 'contract';
     if (selectedTpl === 'contract' && !isAddingTpl) {
-       showToast('لا يمكن تعديل نموذج العقد القياسي الافتراضي. استخدم "إضافة نموذج جديد"', 'error');
+       showToast(lang === 'ar' ? 'لا يمكن تعديل نموذج العقد القياسي الافتراضي. استخدم "إضافة نموذج جديد"' : 'Cannot edit the default standard contract template. Use "Add new template"', 'error');
        return;
     }
 
@@ -1242,10 +1254,10 @@ function EditorScreen({quote, onChange, onBack, onSave, onPreview, onCopy, clien
          } else {
             setTermsTemplates((prev:any) => prev.map((t:any) => t.id === tplId ? {...t, content: quote.termsText||''} : t));
          }
-         showToast('تم حفظ النموذج بنجاح', 'success');
+         showToast(lang === 'ar' ? 'تم حفظ النموذج بنجاح' : 'Template saved successfully', 'success');
       }
     } catch(e) {
-      showToast('فشل الحفظ', 'error');
+      showToast(lang === 'ar' ? 'فشل الحفظ' : 'Saving failed', 'error');
     }
   };
 
@@ -1261,10 +1273,10 @@ function EditorScreen({quote, onChange, onBack, onSave, onPreview, onCopy, clien
           if (res.ok) {
              setTermsTemplates((prev:any) => prev.filter((t:any) => t.id !== selectedTpl));
              setSelectedTpl('');
-             showToast('تم الحذف بنجاح', 'success');
+             showToast(lang === 'ar' ? 'تم الحذف بنجاح' : 'Deleted successfully', 'success');
           }
         } catch(e) {
-          showToast('فشل الحذف', 'error');
+          showToast(lang === 'ar' ? 'فشل الحذف' : 'Deletion failed', 'error');
         }
         setDialogConfig((p:any) => ({...p, isOpen: false}));
       }

@@ -1,0 +1,67 @@
+src/components/finance/MonthlyPayrollRuns.tsx(562,9): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(570,99): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(795,54): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(965,11): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(972,92): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1282,9): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1289,99): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1454,9): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1461,99): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1749,36): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1750,38): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1752,34): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1797,14): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1829,34): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1830,36): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1832,32): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(1876,43): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2364,32): error TS1005: '}' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2364,33): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2364,44): error TS1005: '}' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2364,45): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2364,46): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2365,35): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2366,19): error TS17002: Expected corresponding JSX closing tag for 'select'.
+src/components/finance/MonthlyPayrollRuns.tsx(2367,17): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2368,15): error TS17002: Expected corresponding JSX closing tag for 'div'.
+src/components/finance/MonthlyPayrollRuns.tsx(2422,7): error TS1005: ')' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2537,14): error TS17008: JSX element 'form' has no corresponding closing tag.
+src/components/finance/MonthlyPayrollRuns.tsx(2559,38): error TS1005: '}' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2559,39): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2559,50): error TS1005: '}' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2559,51): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2559,52): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2560,41): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2561,25): error TS17002: Expected corresponding JSX closing tag for 'select'.
+src/components/finance/MonthlyPayrollRuns.tsx(2562,23): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/finance/MonthlyPayrollRuns.tsx(2563,21): error TS17002: Expected corresponding JSX closing tag for 'div'.
+src/components/finance/MonthlyPayrollRuns.tsx(2646,15): error TS17002: Expected corresponding JSX closing tag for 'div'.
+src/components/finance/MonthlyPayrollRuns.tsx(2647,11): error TS1005: ')' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2648,9): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2649,7): error TS1109: Expression expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2920,92): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2929,60): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2929,72): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2929,81): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2929,93): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(2929,102): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3525,29): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3526,29): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3528,29): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3542,49): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3570,60): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3595,84): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3601,65): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3619,64): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3864,96): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(3864,102): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(4457,59): error TS1005: ',' expected.
+src/components/finance/MonthlyPayrollRuns.tsx(4653,5): error TS1128: Declaration or statement expected.
+src/components/finance/MonthlyPayrollRuns.tsx(4654,3): error TS1109: Expression expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(2387,24): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/hr/HrEmployeeDirectoryTab.tsx(2769,23): error TS1005: ')' expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(3198,20): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/hr/HrEmployeeDirectoryTab.tsx(3812,17): error TS1005: ')' expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4597,5): error TS1128: Declaration or statement expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4598,3): error TS1109: Expression expected.
+src/components/hr/HrEmployeeDirectoryTab.tsx(4599,1): error TS1128: Declaration or statement expected.

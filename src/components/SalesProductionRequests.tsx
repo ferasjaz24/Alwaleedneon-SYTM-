@@ -339,6 +339,11 @@ export default function SalesProductionRequests({
       printWindow.document.write(`
         <html>
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
               body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -358,6 +363,11 @@ export default function SalesProductionRequests({
       printWindow.document.write(`
         <html>
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
               body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
@@ -419,9 +429,9 @@ export default function SalesProductionRequests({
       if (searchQuery) {
         const t = searchQuery.toLowerCase();
         if (
-          !r.requestNumber?.toLowerCase().includes(t) &&
-          !r.projectName?.toLowerCase().includes(t) &&
-          !r.quotationNumber?.toLowerCase().includes(t)
+          !(r.requestNumber || '').toLowerCase().includes(t) &&
+          !(r.projectName || '').toLowerCase().includes(t) &&
+          !(r.quotationNumber || '').toLowerCase().includes(t)
         ) {
           return false;
         }
@@ -575,7 +585,7 @@ export default function SalesProductionRequests({
                 <Clock className="w-4 h-4 text-slate-400" />
                 <span className="text-xs text-slate-500">
                   آخر تحديث:{" "}
-                  {new Date(req.statusUpdatedAt).toLocaleDateString("ar-SA")}
+                  {new Date(req.statusUpdatedAt).toLocaleDateString('en-US')}
                 </span>
               </div>
 
@@ -676,7 +686,7 @@ export default function SalesProductionRequests({
                     <p className="text-[10px] text-slate-400">
                       بواسطة {req.heldBy} في{" "}
                       {req.heldAt
-                        ? new Date(req.heldAt).toLocaleString("ar-SA")
+                        ? new Date(req.heldAt).toLocaleString('en-US')
                         : ""}
                     </p>
                   )}
@@ -702,7 +712,7 @@ export default function SalesProductionRequests({
                   <p className="text-[11px] text-slate-500 font-extrabold">
                     تم تأكيده بواسطة {req.confirmedBy} في{" "}
                     {req.completedAt
-                      ? new Date(req.completedAt).toLocaleString("ar-SA")
+                      ? new Date(req.completedAt).toLocaleString('en-US')
                       : ""}
                   </p>
                 </div>
@@ -784,9 +794,9 @@ export default function SalesProductionRequests({
                           return (
                             q.quotationNumber?.toLowerCase().includes(term) ||
                             (q.projectName &&
-                              q.projectName.toLowerCase().includes(term)) ||
+                              (q.projectName || '').toLowerCase().includes(term)) ||
                             (q.clientName &&
-                              q.clientName.toLowerCase().includes(term))
+                              (q.clientName || '').toLowerCase().includes(term))
                           );
                         })
                         .map((q) => (
@@ -813,9 +823,9 @@ export default function SalesProductionRequests({
                           return (
                             q.quotationNumber?.toLowerCase().includes(term) ||
                             (q.projectName &&
-                              q.projectName.toLowerCase().includes(term)) ||
+                              (q.projectName || '').toLowerCase().includes(term)) ||
                             (q.clientName &&
-                              q.clientName.toLowerCase().includes(term))
+                              (q.clientName || '').toLowerCase().includes(term))
                           );
                         }).length === 0 && (
                           <div className="p-3 text-center text-sm text-slate-500 font-bold">

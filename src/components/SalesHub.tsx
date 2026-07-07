@@ -291,7 +291,7 @@ export default function SalesHub({ lang, user, quotations }: SalesHubProps) {
     const clientQuotes = salesQuotes.filter(q => (q.clientId === client.id || q.clientName === client.clientName) && q.status === 'معتمد');
 
     const printContent = `
-      <div style="font-family: 'Tajawal', Tahoma, Arial; direction: rtl; text-align: right; padding: 20px;">
+      <div style="font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial; direction: rtl; text-align: right; padding: 20px;">
         <h2 style="color: #0072BC; text-align: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px;">سجل وملخص العميل</h2>
         
         <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
@@ -382,7 +382,7 @@ export default function SalesHub({ lang, user, quotations }: SalesHubProps) {
           <title>سجل العميل - ${client.clientName}</title>
           <style>${sharedPrintStyles}</style>
         </head>
-        <body style="background: #fff; direction: rtl; text-align: right; font-family: 'Tajawal', sans-serif;">
+        <body style="background: #fff; direction: rtl; text-align: right; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
           ${sharedPrintHeader}
           ${printContent}
           ${sharedPrintFooter}

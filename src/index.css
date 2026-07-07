@@ -1,28 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+@import url('https://fonts.cdnfonts.com/css/gotham-pro');
 @import "tailwindcss";
 
+/* Prepared @font-face structures for licensed fonts */
+@font-face {
+  font-family: "GE SS";
+  src: local("GE SS"), local("GE-SS");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Gotham Pro";
+  src: local("Gotham Pro"), local("GothamPro");
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Tajawal", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Gotham Pro", "GE SS Two", "GE SS", sans-serif;
+  --font-arabic: "Gotham Pro", "GE SS Two", "GE SS", sans-serif;
+  --font-english: "Gotham Pro", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
+  --font-arabic: "Gotham Pro", "GE SS Two", "GE SS", sans-serif;
+  --font-english: "Gotham Pro", sans-serif;
   --primary-color: #0072BC;
   --accent-color: #00AEEF;
   --bg-dark-accent: #0f172a;
 }
 
 /* Quill Fonts */
-.ql-font-tajawal { font-family: 'Tajawal', sans-serif; }
+.ql-font-tajawal { font-family: 'GE SS Two', sans-serif; }
 .ql-font-arial { font-family: 'Arial', sans-serif; }
 .ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
 .ql-font-cairo { font-family: 'Cairo', sans-serif; }
 .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
 
 .ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item:not([data-value])::before { content: 'الخط الافتراضي'; font-family: 'Tajawal'; }
+.ql-snow .ql-picker.ql-font .ql-picker-item:not([data-value])::before { content: 'الخط الافتراضي'; font-family: 'GE SS Two'; }
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before { content: 'Tajawal'; font-family: 'Tajawal'; }
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before { content: 'GE SS Two'; font-family: 'GE SS Two'; }
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before { content: 'Arial'; font-family: 'Arial'; }
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tahoma"]::before,
@@ -39,6 +57,15 @@ body {
   overflow-x: hidden;
   line-height: 1.75;
 }
+
+[dir="rtl"], [dir="rtl"] * {
+  font-family: "Gotham Pro", "GE SS", "GE SS Two", "Cairo", sans-serif !important;
+}
+
+[dir="ltr"], [dir="ltr"] * {
+  font-family: "Gotham Pro", "Gotham", sans-serif !important;
+}
+
 
 /* Glassmorphism custom classes */
 .glass-panel {
@@ -219,3 +246,4 @@ body {
   color: #c00000 !important;
   font-weight: 800 !important;
 }
+

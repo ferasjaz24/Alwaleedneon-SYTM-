@@ -1,0 +1,254 @@
+src/components/hr/HrDashboardTab.tsx:122:    const isProbationGrade = e.grade?.toLowerCase().includes('probation') || e.grade?.includes('تجربة');
+src/components/hr/HrDashboardTab.tsx:263:    if (inquiryDashName && !i.name?.toLowerCase().includes(inquiryDashName.toLowerCase())) return false;
+src/components/hr/HrRecruitmentTab.tsx:141:      iqamaId: candidate.nationality.toLowerCase().includes('saudi') ? `1${Math.floor(100000000 + Math.random() * 900000000)}` : `2${Math.floor(100000000 + Math.random() * 900000000)}`,
+src/components/hr/HrLeavesTab.tsx:135:      o.label.toLowerCase().includes(search.toLowerCase()) ||
+src/components/hr/HrLeavesTab.tsx:136:      o.id.toLowerCase().includes(search.toLowerCase()),
+src/components/hr/HrPayrollTab.tsx:763:    const q = searchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:764:    const idMatch = (emp.id || '').toLowerCase().includes(q);
+src/components/hr/HrPayrollTab.tsx:765:    const iqamaMatch = (emp.iqamaId || '').toLowerCase().includes(q);
+src/components/hr/HrPayrollTab.tsx:766:    const nameArMatch = (emp.arabicName || '').toLowerCase().includes(q);
+src/components/hr/HrPayrollTab.tsx:767:    const nameEnMatch = (emp.englishName || '').toLowerCase().includes(q);
+src/components/hr/HrPayrollTab.tsx:768:    const titleMatch = (emp.jobTitle || '').toLowerCase().includes(q);
+src/components/hr/HrPayrollTab.tsx:1648:                    const term = deductionSearchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1649:                    return (d.employeeName || '').toLowerCase().includes(term) || (d.reason || '').toLowerCase().includes(term);
+src/components/hr/HrPayrollTab.tsx:1657:                    const term = deductionSearchQuery.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1658:                    return (d.employeeName || '').toLowerCase().includes(term) || (d.reason || '').toLowerCase().includes(term);
+src/components/hr/HrPayrollTab.tsx:1751:                            const query = modalEmpSearch.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1753:                              (emp.arabicName || '').toLowerCase().includes(query) ||
+src/components/hr/HrPayrollTab.tsx:1754:                              (emp.englishName || '').toLowerCase().includes(query) ||
+src/components/hr/HrPayrollTab.tsx:1755:                              (emp.id || '').toLowerCase().includes(query) ||
+src/components/hr/HrPayrollTab.tsx:1756:                              (emp.iqamaId || '').toLowerCase().includes(query) ||
+src/components/hr/HrPayrollTab.tsx:1757:                              (emp.jobTitle || '').toLowerCase().includes(query)
+src/components/hr/HrPayrollTab.tsx:1778:                          const query = modalEmpSearch.toLowerCase();
+src/components/hr/HrPayrollTab.tsx:1779:                          return (emp.arabicName || '').toLowerCase().includes(query) || (emp.englishName || '').toLowerCase().includes(query) || (emp.id || '').toLowerCase().includes(query);
+src/components/hr/HrEmployeeDirectoryTab.tsx:54:      c.ar.toLowerCase().includes(search.toLowerCase()) ||
+src/components/hr/HrEmployeeDirectoryTab.tsx:55:      c.en.toLowerCase().includes(search.toLowerCase()),
+src/components/hr/HrEmployeeDirectoryTab.tsx:588:    const q = searchQuery.toLowerCase().trim();
+src/components/hr/HrEmployeeDirectoryTab.tsx:591:      (emp.arabicName || "").toLowerCase().includes(q) ||
+src/components/hr/HrEmployeeDirectoryTab.tsx:592:      (emp.englishName || "").toLowerCase().includes(q) ||
+src/components/hr/HrEmployeeDirectoryTab.tsx:593:      (emp.mobile || "").toLowerCase().includes(q) ||
+src/components/hr/HrEmployeeDirectoryTab.tsx:594:      (emp.jobTitle || "").toLowerCase().includes(q) ||
+src/components/hr/HrEmployeeDirectoryTab.tsx:595:      (emp.iqamaId || "").toLowerCase().includes(q)
+src/components/hr/HrOrgStructureTab.tsx:62:    const deptKeyword = node.name_en.toLowerCase().replace('branch', '').replace('division', '').replace('department', '').trim();
+src/components/hr/HrOrgStructureTab.tsx:64:      const empDept = (emp.department || '').toLowerCase();
+src/components/hr/HrDocumentTrackingTab.tsx:370:  const needsFileUpdateCount = [...employeeDocs, ...vehicleDocs].filter(d => !d.docUrl || d.notes?.toLowerCase().includes('تحديث')).length;
+src/components/hr/HrDocumentTrackingTab.tsx:393:      (d.employeeId.trim().toLowerCase() === addEmpForm.employeeId.trim().toLowerCase() && 
+src/components/hr/HrDocumentTrackingTab.tsx:394:       d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+src/components/hr/HrDocumentTrackingTab.tsx:395:      (addEmpForm.docNumber && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === addEmpForm.docNumber.trim().toLowerCase())
+src/components/hr/HrDocumentTrackingTab.tsx:481:      (d.plateNumber.trim().toLowerCase() === addVehForm.plateNumber.trim().toLowerCase() && 
+src/components/hr/HrDocumentTrackingTab.tsx:482:       d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+src/components/hr/HrDocumentTrackingTab.tsx:483:      (addVehForm.docNumber && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === addVehForm.docNumber.trim().toLowerCase())
+src/components/hr/HrDocumentTrackingTab.tsx:694:          (d.employeeId.trim().toLowerCase() === (editEmpForm.employeeId || (activeDoc as EmployeeDoc).employeeId || '').trim().toLowerCase() && 
+src/components/hr/HrDocumentTrackingTab.tsx:695:           d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+src/components/hr/HrDocumentTrackingTab.tsx:696:          (finalDocNo && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === finalDocNo.trim().toLowerCase())
+src/components/hr/HrDocumentTrackingTab.tsx:699:          (d.plateNumber.trim().toLowerCase() === (editVehForm.plateNumber || (activeDoc as VehicleDoc).plateNumber || '').trim().toLowerCase() && 
+src/components/hr/HrDocumentTrackingTab.tsx:700:           d.docType.trim().toLowerCase() === finalType.trim().toLowerCase()) ||
+src/components/hr/HrDocumentTrackingTab.tsx:701:          (finalDocNo && d.docNumber.trim() && d.docNumber.trim().toLowerCase() === finalDocNo.trim().toLowerCase())
+src/components/hr/HrDocumentTrackingTab.tsx:988:    const q = searchQuery.toLowerCase().trim();
+src/components/hr/HrDocumentTrackingTab.tsx:993:          d.employeeName.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:994:          d.employeeId.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:995:          d.docType.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:996:          d.docNumber.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:997:          (d.notes && d.notes.toLowerCase().includes(q));
+src/components/hr/HrDocumentTrackingTab.tsx:1002:          d.vehicleName.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:1003:          d.plateNumber.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:1004:          d.docType.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:1005:          d.docNumber.toLowerCase().includes(q) ||
+src/components/hr/HrDocumentTrackingTab.tsx:1006:          (d.driverName && d.driverName.toLowerCase().includes(q)) ||
+src/components/hr/HrDocumentTrackingTab.tsx:1007:          (d.notes && d.notes.toLowerCase().includes(q));
+src/components/hr/HrSelfServiceTab.tsx:255:    if (inquiryNameFilter && !i.name?.toLowerCase().includes(inquiryNameFilter.toLowerCase())) return false;
+src/components/production/DailyProductionFollowup.tsx:75:      const q = searchTerm.toLowerCase();
+src/components/production/DailyProductionFollowup.tsx:77:        (p.id && p.id.toLowerCase().includes(q)) ||
+src/components/production/DailyProductionFollowup.tsx:78:        (p.projectName && p.projectName.toLowerCase().includes(q)) ||
+src/components/production/DailyProductionFollowup.tsx:79:        (p.clientName && p.clientName.toLowerCase().includes(q)) ||
+src/components/production/DailyProductionFollowup.tsx:80:        (p.quotationNumber && p.quotationNumber.toLowerCase().includes(q))
+src/components/finance/cashbank/TransactionsList.tsx:139:    (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransactionsList.tsx:140:    (t.reference_number || t.transactionNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/TransfersList.tsx:136:    (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/TransfersList.tsx:137:    (t.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/ReconciliationList.tsx:59:    (r.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/ArchiveList.tsx:37:    a.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/ArchiveList.tsx:38:    a.description?.toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/AuditLogList.tsx:56:    (l.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/AuditLogList.tsx:57:    (l.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/AuditLogList.tsx:58:    (l.user_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/BankAccountsList.tsx:58:    ((lang === 'ar' ? acc.bank_name_ar : acc.bank_name_en) || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/BankAccountsList.tsx:59:    (acc.account_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/BankAccountsList.tsx:60:    (acc.iban || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/cashbank/CashBoxesList.tsx:59:    ((lang === 'ar' ? box.name_ar : box.name_en) || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/finance/cashbank/CashBoxesList.tsx:60:    (box.code || '').toLowerCase().includes(searchTerm.toLowerCase())
+src/components/finance/MonthlyPayrollRuns.tsx:57:  const n = name ? name.toLowerCase() : "";
+src/components/finance/MonthlyPayrollRuns.tsx:349:    user.username?.toLowerCase() === "feras" ||
+src/components/finance/MonthlyPayrollRuns.tsx:350:    user.role?.toLowerCase() === "super admin" ||
+src/components/finance/MonthlyPayrollRuns.tsx:353:    user.role?.toLowerCase() === "manager" ||
+src/components/finance/MonthlyPayrollRuns.tsx:354:    user.role?.toLowerCase() === "admin" ||
+src/components/finance/MonthlyPayrollRuns.tsx:362:    user.jobTitle?.toLowerCase().includes("accountant") ||
+src/components/finance/MonthlyPayrollRuns.tsx:363:    user.jobTitle?.toLowerCase().includes("accounting") ||
+src/components/finance/MonthlyPayrollRuns.tsx:364:    user.jobTitle?.toLowerCase().includes("محاسب") ||
+src/components/finance/MonthlyPayrollRuns.tsx:365:    user.role?.toLowerCase() === "accountant" ||
+src/components/finance/MonthlyPayrollRuns.tsx:371:    user.jobTitle?.toLowerCase().includes("manager") ||
+src/components/finance/MonthlyPayrollRuns.tsx:372:    user.jobTitle?.toLowerCase().includes("director") ||
+src/components/finance/MonthlyPayrollRuns.tsx:373:    user.jobTitle?.toLowerCase().includes("مدير") ||
+src/components/finance/MonthlyPayrollRuns.tsx:374:    user.role?.toLowerCase() === "reviewer" ||
+src/components/finance/MonthlyPayrollRuns.tsx:375:    user.role?.toLowerCase() === "admin";
+src/components/finance/MonthlyPayrollRuns.tsx:379:    user.jobTitle?.toLowerCase().includes("treasurer") ||
+src/components/finance/MonthlyPayrollRuns.tsx:380:    user.jobTitle?.toLowerCase().includes("payer") ||
+src/components/finance/MonthlyPayrollRuns.tsx:381:    user.jobTitle?.toLowerCase().includes("financial controller") ||
+src/components/finance/MonthlyPayrollRuns.tsx:382:    user.jobTitle?.toLowerCase().includes("مدير مالي");
+src/components/finance/MonthlyPayrollRuns.tsx:2006:    const query = (searchQuery || '').trim().toLowerCase();
+src/components/finance/MonthlyPayrollRuns.tsx:2008:      (run.payrollNumber || '').toLowerCase().includes(query) ||
+src/components/finance/MonthlyPayrollRuns.tsx:2009:      (run.notes || '').toLowerCase().includes(query) ||
+src/components/finance/MonthlyPayrollRuns.tsx:2010:      (run.department || '').toLowerCase().includes(query);
+src/components/finance/JournalEntries.tsx:35:    const q = searchQuery.toLowerCase();
+src/components/finance/JournalEntries.tsx:37:      e.id?.toLowerCase().includes(q) ||
+src/components/finance/JournalEntries.tsx:38:      e.description?.toLowerCase().includes(q) ||
+src/components/finance/JournalEntries.tsx:39:      e.reference?.toLowerCase().includes(q) ||
+src/components/finance/JournalEntries.tsx:40:      e.sourceModule?.toLowerCase().includes(q) ||
+src/components/finance/JournalEntries.tsx:41:      e.sourceRecordId?.toLowerCase().includes(q);
+src/components/finance/JournalEntries.tsx:123:  const isAdminUser = user && (user.username?.toLowerCase() === 'feras' || user.username?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'super admin' || user.role?.toLowerCase() === 'general admin director' || user.role?.toLowerCase().includes('الادارة العليا'));
+src/components/finance/JournalEntries.tsx:501:    const un = u.username?.toLowerCase() || '';
+src/components/finance/JournalEntries.tsx:502:    const rn = u.role?.toLowerCase() || '';
+src/components/finance/CashAndBankTab.tsx:25:    const un = u.username?.toLowerCase() || '';
+src/components/finance/CashAndBankTab.tsx:26:    const rn = u.role?.toLowerCase() || '';
+src/components/finance/CustomerSupplierInvoices.tsx:17:  const role = u.role?.toLowerCase() || '';
+src/components/finance/CustomerSupplierInvoices.tsx:18:  const title = u.jobTitle?.toLowerCase() || '';
+src/components/finance/CustomerSupplierInvoices.tsx:19:  const un = u.username?.toLowerCase() || '';
+src/components/finance/CustomerSupplierInvoices.tsx:129:    (o.label || "").toLowerCase().includes((search || "").toLowerCase())
+src/components/finance/CustomerSupplierInvoices.tsx:1611:      (inv.id || '').toString().toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+src/components/finance/CustomerSupplierInvoices.tsx:1612:      ((inv.partyName || '').toLowerCase().includes((searchQuery || '').toLowerCase())) ||
+src/components/finance/CustomerSupplierInvoices.tsx:1613:      ((inv.referenceId || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
+src/components/finance/RevenuesExpenses.tsx:7:  const un = u.username?.toLowerCase() || '';
+src/components/finance/RevenuesExpenses.tsx:8:  const rn = u.role?.toLowerCase() || '';
+src/components/finance/RevenuesExpenses.tsx:13:  const role = u.role?.toLowerCase() || '';
+src/components/finance/RevenuesExpenses.tsx:14:  const title = u.jobTitle?.toLowerCase() || '';
+src/components/finance/RevenuesExpenses.tsx:300:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx:302:      (r.id || '').toString().toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:303:      (r.client || '').toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:304:      (r.projectName || '').toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:305:      (r.reference || '').toLowerCase().includes(q);
+src/components/finance/RevenuesExpenses.tsx:1402:    const q = (search || '').toLowerCase();
+src/components/finance/RevenuesExpenses.tsx:1404:      (r.id || '').toString().toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:1405:      (r.description || '').toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:1406:      (r.supplier || '').toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:1407:      (r.projectName || '').toLowerCase().includes(q) ||
+src/components/finance/RevenuesExpenses.tsx:1408:      (r.reference || '').toLowerCase().includes(q);
+src/components/FinanceApprovals.tsx:46:    const q = searchQuery.toLowerCase();
+src/components/FinanceApprovals.tsx:47:    const matchSearch = r.projectName?.toLowerCase().includes(q) || r.quotationNumber?.toLowerCase().includes(q);
+src/components/FinanceApprovals.tsx:158:                    ? s.specialty.toLowerCase()
+src/components/FinanceApprovals.tsx:164:                          ? q.materialName.toLowerCase()
+src/components/FinanceApprovals.tsx:571:                              ? s.specialty.toLowerCase()
+src/components/FinanceApprovals.tsx:577:                                    ? q.materialName.toLowerCase()
+src/components/SalesRepsTargets.tsx:475:    const dispName = getRepDisplayName(u.username).toLowerCase();
+src/components/SalesRepsTargets.tsx:476:    return dispName.includes(repSearch.toLowerCase()) || (u.username || '').toLowerCase().includes(repSearch.toLowerCase());
+src/components/SalesDashboard.tsx:119:        clientsData = clientsData.filter((c: any) => c.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesDashboard.tsx:126:        quotesData = quotesData.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesDashboard.tsx:134:          col.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/SalesDashboard.tsx:135:          col.creatorName?.toLowerCase() === user?.username?.toLowerCase()
+src/components/SalesDashboard.tsx:145:            r.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/SalesDashboard.tsx:156:            l.exportedBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/SalesLetters.tsx:138:          approved = approved.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesLetters.tsx:765:                  (q.projectName || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:766:                  (q.quotationNumber || q.id || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:767:                  (q.clientName || '').toLowerCase().includes(quoteSearch.toLowerCase())
+src/components/SalesLetters.tsx:783:                  (q.projectName || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:784:                  (q.quotationNumber || q.id || '').toLowerCase().includes(quoteSearch.toLowerCase()) ||
+src/components/SalesLetters.tsx:785:                  (q.clientName || '').toLowerCase().includes(quoteSearch.toLowerCase())
+src/components/ProcurementRequests.tsx:351:        !req.requestNumber?.toLowerCase().includes(searchPRQ.toLowerCase())
+src/components/ProcurementRequests.tsx:358:        !req.requestedBy?.toLowerCase().includes(searchRep.toLowerCase())
+src/components/SalesQuotations.tsx:157:           loadedQuotes = loadedQuotes.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesQuotations.tsx:972:    if (searchQtn && !q.quotationNumber?.toLowerCase().includes(searchQtn.toLowerCase())) return false;
+src/components/SalesQuotations.tsx:973:    if (searchName && (!q.clientName?.toLowerCase().includes(searchName.toLowerCase()) && !q.projectName?.toLowerCase().includes(searchName.toLowerCase()))) return false;
+src/components/SalesQuotations.tsx:1280:  const isUserPrivileged = user ? ['admin', 'manager', 'super admin', 'senior management', 'الادارة العليا'].includes(user.role?.toLowerCase() || '') : false;
+src/components/SalesQuotations.tsx:1418:                {!isReadOnly && clientSearchFocused && quote.clientName && clients.filter((c:any) => c.clientName?.toLowerCase().includes(quote.clientName?.toLowerCase() || '')).length > 0 && (
+src/components/SalesQuotations.tsx:1420:                     {clients.filter((c:any) => c.clientName?.toLowerCase().includes(quote.clientName?.toLowerCase() || '')).map((c:any) => (
+src/components/ProductionHub.tsx:66:  const roleStr = user?.role?.toLowerCase() || "";
+src/components/ProductionHub.tsx:67:  const userStr = user?.username?.toLowerCase() || "";
+src/components/ProductionHub.tsx:2381:            ?.toLowerCase()
+src/components/ProductionHub.tsx:2382:            .includes(inboundSearchCode.toLowerCase()) ||
+src/components/ProductionHub.tsx:2384:            ?.toLowerCase()
+src/components/ProductionHub.tsx:2385:            .includes(inboundSearchCode.toLowerCase())
+src/components/ProductionHub.tsx:2392:          ?.toLowerCase()
+src/components/ProductionHub.tsx:2393:          .includes(inboundSearchProject.toLowerCase())
+src/components/ProductionHub.tsx:2421:        !req.orderNumber?.toLowerCase().includes(orderSearchNo.toLowerCase())
+src/components/ProductionHub.tsx:2427:          ?.toLowerCase()
+src/components/ProductionHub.tsx:2428:          .includes(orderSearchQuote.toLowerCase())
+src/components/ProductionHub.tsx:2460:        !req.projectName?.toLowerCase().includes(activeSearch.toLowerCase())
+src/components/ProductionHub.tsx:2466:          ?.toLowerCase()
+src/components/ProductionHub.tsx:2467:          .includes(activeQuoteSearch.toLowerCase())
+src/components/ProductionHub.tsx:2495:      !req.projectName?.toLowerCase().includes(installSearch.toLowerCase())
+src/components/ProductionHub.tsx:5645:                    const query = (row.name || "").trim().toLowerCase();
+src/components/ProductionHub.tsx:5656:                          !query || empName.toLowerCase().includes(query);
+src/components/FinancialCollections.tsx:138:            p.createdBy?.toLowerCase() === user?.username?.toLowerCase() ||
+src/components/FinancialCollections.tsx:139:            p.creatorName?.toLowerCase() === user?.username?.toLowerCase()
+src/components/FinancialCollections.tsx:169:          visibleQuotes = visibleQuotes.filter((q: any) => q.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/FinancialCollections.tsx:226:    const canEdit = editPlanScope === 'all' || (editPlanScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:285:      const canEdit = editPlanScope === 'all' || (editPlanScope === 'own' && plan?.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:290:      const canAdd = addPlanScope === 'all' || (addPlanScope === 'own' && quote.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:340:    const canDelete = isOwnerOrAdmin || deleteScope === 'all' || (deleteScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:364:    const canMark = addPaymentScope === 'all' || (addPaymentScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:450:    const canApprove = approvePaymentScope === 'all' || (approvePaymentScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase());
+src/components/FinancialCollections.tsx:607:      const term = searchQuery.toLowerCase();
+src/components/FinancialCollections.tsx:608:      if (!p.clientName?.toLowerCase().includes(term) && 
+src/components/FinancialCollections.tsx:609:          !p.quotationNumber?.toLowerCase().includes(term) && 
+src/components/FinancialCollections.tsx:610:          !p.creatorName?.toLowerCase().includes(term) &&
+src/components/FinancialCollections.tsx:611:          !p.createdBy?.toLowerCase().includes(term)) {
+src/components/FinancialCollections.tsx:878:                         const term = quoteSearch.toLowerCase();
+src/components/FinancialCollections.tsx:879:                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && (q.clientName || '').toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
+src/components/FinancialCollections.tsx:896:                         const term = quoteSearch.toLowerCase();
+src/components/FinancialCollections.tsx:897:                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && (q.clientName || '').toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
+src/components/FinancialCollections.tsx:1084:                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
+src/components/FinancialCollections.tsx:1100:                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
+src/components/FinancialCollections.tsx:1138:                           return (empName || '').toLowerCase().includes(addNewUserSearch.toLowerCase());
+src/components/FinancialCollections.tsx:1173:                           return (empName || '').toLowerCase().includes(addNewUserSearch.toLowerCase());
+src/components/MaterialsWarehouse.tsx:413:            i.itemNameEn.toLowerCase().includes(searchTerm.toLowerCase())),
+src/components/MaterialsWarehouse.tsx:420:          i.itemCode.toLowerCase().includes(searchCode.toLowerCase()),
+src/components/SalesProductionRequests.tsx:148:          reqData = reqData.filter((r: any) => r.createdBy?.toLowerCase() === user?.username?.toLowerCase());
+src/components/SalesProductionRequests.tsx:430:        const t = searchQuery.toLowerCase();
+src/components/SalesProductionRequests.tsx:432:          !(r.requestNumber || '').toLowerCase().includes(t) &&
+src/components/SalesProductionRequests.tsx:433:          !(r.projectName || '').toLowerCase().includes(t) &&
+src/components/SalesProductionRequests.tsx:434:          !(r.quotationNumber || '').toLowerCase().includes(t)
+src/components/SalesProductionRequests.tsx:793:                          const term = quoteSearch.toLowerCase();
+src/components/SalesProductionRequests.tsx:795:                            q.quotationNumber?.toLowerCase().includes(term) ||
+src/components/SalesProductionRequests.tsx:797:                              (q.projectName || '').toLowerCase().includes(term)) ||
+src/components/SalesProductionRequests.tsx:799:                              (q.clientName || '').toLowerCase().includes(term))
+src/components/SalesProductionRequests.tsx:822:                          const term = quoteSearch.toLowerCase();
+src/components/SalesProductionRequests.tsx:824:                            q.quotationNumber?.toLowerCase().includes(term) ||
+src/components/SalesProductionRequests.tsx:826:                              (q.projectName || '').toLowerCase().includes(term)) ||
+src/components/SalesProductionRequests.tsx:828:                              (q.clientName || '').toLowerCase().includes(term))
+src/components/SalesReports.tsx:432:      const pClientName = (p.clientName || '').trim().toLowerCase();
+src/components/SalesReports.tsx:433:      const targetClientName1 = ((client.clientName || client.name) || '').trim().toLowerCase();
+src/components/SalesReports.tsx:434:      const targetClientName2 = (client.name || '').trim().toLowerCase();
+src/components/SalesReports.tsx:435:      const targetClientName3 = (client.clientName || '').trim().toLowerCase();
+src/components/ItemsWarehouse.tsx:475:          i.itemNameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+src/components/ItemsWarehouse.tsx:476:          i.itemNameEn?.toLowerCase().includes(searchTerm.toLowerCase()),
+src/components/ItemsWarehouse.tsx:481:        i.itemCode?.toLowerCase().includes(searchCode.toLowerCase()),
+src/components/SuppliersPricing.tsx:257:                    ? s.specialty.toLowerCase()
+src/components/SuppliersPricing.tsx:262:                        ? q.materialName.toLowerCase()
+src/components/SuppliersPricing.tsx:770:                            ? s.specialty.toLowerCase()
+src/components/SuppliersPricing.tsx:774:                              const itemName = q.materialName.toLowerCase();
+src/components/HrSubSections.tsx:833:            const query = payrollSearchQuery.toLowerCase();
+src/components/HrSubSections.tsx:835:              (emp.arabicName || '').toLowerCase().includes(query) ||
+src/components/HrSubSections.tsx:836:              (emp.englishName || '').toLowerCase().includes(query) ||
+src/components/HrSubSections.tsx:837:              (emp.jobTitle || '').toLowerCase().includes(query) ||
+src/components/SalesHub.tsx:136:    const role = user.role?.toLowerCase() || '';
+src/components/SalesHub.tsx:137:    const name = user.username?.toLowerCase() || '';
+src/components/SalesHub.tsx:254:    if (searchTerm && !c.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) && !c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+src/components/SalesHub.tsx:255:    if (cityFilter && !c.city?.toLowerCase().includes(cityFilter.toLowerCase())) return false;
+src/utils/countries.ts:144:  const lowered = nationality.trim().toLowerCase();
+src/utils/countries.ts:147:  const found = countries.find(c => lowered === c.ar.toLowerCase() || lowered === c.en.toLowerCase());
+src/utils/countries.ts:151:  const subMatch = countries.find(c => lowered.includes(c.ar.toLowerCase()) || c.ar.toLowerCase().includes(lowered));
+src/utils/fetchInterceptor.ts:377:          (e.englishName && e.englishName.toLowerCase().includes("ahmed")),
+src/lib/permissions.ts:11:  const username = user.username?.toLowerCase() || '';
+src/lib/permissions.ts:12:  const roleName = user.role?.toLowerCase() || '';
+src/lib/permissions.ts:40:  const username = user.username?.toLowerCase() || '';
+src/lib/permissions.ts:41:  const roleName = user.role?.toLowerCase() || '';
+src/lib/permissions.ts:72:  const roleName = user.role?.toLowerCase() || '';
+src/lib/permissions.ts:141:  const roleName = user.role?.toLowerCase() || '';
+src/lib/permissions.ts:182:  const username = user.username?.toLowerCase() || '';
+src/lib/permissions.ts:183:  const roleName = user.role?.toLowerCase() || '';
+src/lib/permissions.ts:213:        const title = (user.jobTitle || "").toLowerCase();
+src/App.tsx:331:    const username = user.username?.toLowerCase() || '';
+src/App.tsx:332:    const roleName = user.role?.toLowerCase() || '';
+src/App.tsx:1115:    const q = searchQuery.toLowerCase().trim();
+src/App.tsx:1123:      ).toLowerCase();
+src/App.tsx:1659:                            const title = (user.jobTitle || "").toLowerCase();

@@ -138,7 +138,7 @@ export default function HrRecruitmentTab({ lang, onAddEmployeeLocally }: HrRecru
       id: newEmpId,
       arabicName: candidate.name, // Bilingual map
       englishName: candidate.name,
-      iqamaId: candidate.nationality.toLowerCase().includes('saudi') ? `1${Math.floor(100000000 + Math.random() * 900000000)}` : `2${Math.floor(100000000 + Math.random() * 900000000)}`,
+      iqamaId: (candidate.nationality || '').toLowerCase().includes('saudi') ? `1${Math.floor(100000000 + Math.random() * 900000000)}` : `2${Math.floor(100000000 + Math.random() * 900000000)}`,
       passportDetails: `SA${Math.floor(1000000 + Math.random() * 9000000)}`,
       jobTitle: candidate.appliedTitle,
       grade: 'PROBATION', // Starts active probation
@@ -146,7 +146,6 @@ export default function HrRecruitmentTab({ lang, onAddEmployeeLocally }: HrRecru
       allowances: {
         housing: Math.floor(candidate.expectedSalary * 0.25),
         transport: 500,
-        phone: 200
       },
       homeAddress: 'Saudi Arabia, Riyadh Branch Quarter Workspace',
       custody: {

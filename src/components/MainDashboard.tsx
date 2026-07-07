@@ -1671,7 +1671,7 @@ function KpiCard({
           <h3
             className={`text-2xl font-black text-slate-800 ${isCurrency ? "tracking-tight" : ""}`}
           >
-            {isCurrency ? Number(value).toLocaleString() : value}{" "}
+            {isCurrency ? Number(value).toLocaleString('en-US') : value}{" "}
             {isCurrency && (
               <span className="text-xs font-bold text-slate-500 ml-1">
                 ريال

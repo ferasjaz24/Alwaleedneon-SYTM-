@@ -496,9 +496,14 @@ export default function FinancialCollections({ lang, user }: FCProps) {
     let html = `
       <html dir="rtl">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>تقرير التحصيل الشهري - ${selectedReportEmployee}</title>
           <style>
-            body { font-family: 'Cairo', 'Tajawal', sans-serif; padding: 40px; margin: 0; background: #fff; color: #1e293b; }
+            body { font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; padding: 40px; margin: 0; background: #fff; color: #1e293b; }
             .header-sec { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
             .header-sec h1 { color: #0072BC; font-size: 24px; margin-bottom: 10px; }
             .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
@@ -519,6 +524,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
           </style>
         </head>
         <body>
+          <div style="text-align: center;"><img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;" /></div>
           <div class="header-sec">
             <h1>تقرير التحصيل الشهري</h1>
             <p><strong>الموظف/المندوب:</strong> ${selectedReportEmployee} &nbsp;|&nbsp; <strong>الشهر:</strong> ${reportMonth}</p>
@@ -571,7 +577,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
             <td>${ph.stageName} (${ph.percentage}%)</td>
             <td>${ph.dueDate}</td>
             <td><span class="status-badge ${badgeClass}">${ph.status}</span></td>
-            <td>${ph.amount.toLocaleString()} ر.س</td>
+            <td>${ph.amount.toLocaleString('en-US')} ر.س</td>
           </tr>
         `;
       });
@@ -870,7 +876,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                        {approvedQuotes.filter(q => {
                          if (!quoteSearch) return true;
                          const term = quoteSearch.toLowerCase();
-                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && q.clientName.toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
+                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && (q.clientName || '').toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
                        }).map(q => (
                          <div
                            key={q.id}
@@ -888,7 +894,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                        {approvedQuotes.filter(q => {
                          if (!quoteSearch) return true;
                          const term = quoteSearch.toLowerCase();
-                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && q.clientName.toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
+                         return q.quotationNumber?.toLowerCase().includes(term) || (q.clientName && (q.clientName || '').toLowerCase().includes(term)) || q.id?.toLowerCase().includes(term);
                        }).length === 0 && (
                          <div className="p-3 text-center text-sm text-slate-500 font-bold">
                            لا توجد نتائج
@@ -1075,7 +1081,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                       <div className="flex flex-col gap-1">
                         {[...new Set([...plans.map(p => p.creatorName), ...reportEmployeeNames])].filter(name => {
                            if (!reportUserSearch) return true;
-                           return name.toLowerCase().includes(reportUserSearch.toLowerCase());
+                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
                         }).map(name => (
                            <div 
                              key={name}
@@ -1091,7 +1097,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                         
                         {[...new Set([...plans.map(p => p.creatorName), ...reportEmployeeNames])].filter(name => {
                            if (!reportUserSearch) return true;
-                           return name.toLowerCase().includes(reportUserSearch.toLowerCase());
+                           return (name || '').toLowerCase().includes(reportUserSearch.toLowerCase());
                         }).length === 0 && (
                            <div className="p-3 text-sm text-slate-500 text-center">لا توجد نتائج</div>
                         )}
@@ -1129,7 +1135,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                            if (knownNames.includes(empName)) return false;
 
                            if (!addNewUserSearch) return true;
-                           return empName.toLowerCase().includes(addNewUserSearch.toLowerCase());
+                           return (empName || '').toLowerCase().includes(addNewUserSearch.toLowerCase());
                         }).map(emp => {
                            const empName = emp.arabicName || emp.englishName;
                            
@@ -1164,7 +1170,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                            const knownNames = [...new Set([...plans.map(p => p.creatorName), ...reportEmployeeNames])];
                            if (knownNames.includes(empName)) return false;
                            if (!addNewUserSearch) return true;
-                           return empName.toLowerCase().includes(addNewUserSearch.toLowerCase());
+                           return (empName || '').toLowerCase().includes(addNewUserSearch.toLowerCase());
                         }).length === 0 && (
                            <div className="p-3 text-sm text-slate-500 text-center">لا توجد نتائج</div>
                         )}

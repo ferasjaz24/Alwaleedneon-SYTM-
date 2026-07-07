@@ -888,7 +888,7 @@ export default function HrDocumentTrackingTab({
           <title>${title}</title>
           <style>
             ${sharedPrintStyles}
-            body { font-family: 'Tajawal', Tahoma, Arial, sans-serif; padding: 30px; direction: ${isAr ? 'rtl' : 'ltr'}; text-align: ${isAr ? 'right' : 'left'}; }
+            body { font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial, sans-serif; padding: 30px; direction: ${isAr ? 'rtl' : 'ltr'}; text-align: ${isAr ? 'right' : 'left'}; }
             h2 { color: #0072BC; text-align: center; margin-bottom: 5px; }
             p.meta { text-align: center; font-size: 12px; color: #666; margin-bottom: 30px; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -1691,7 +1691,7 @@ export default function HrDocumentTrackingTab({
         <div className="max-h-48 overflow-y-auto space-y-2">
           {activityLogs.map(log => (
             <div key={log.id} className="text-[10px] bg-white p-2.5 rounded-xl border border-slate-100 flex justify-between items-center gap-4">
-              <span className="font-mono text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+              <span className="font-mono text-slate-400">{new Date(log.timestamp).toLocaleString('en-US')}</span>
               <div className="flex-1 text-slate-700">
                 <strong>{log.user}</strong>{' '}
                 {log.actionType === 'ADD_DOC' && (isAr ? 'أضاف وثيقة جديدة' : 'added a new compliance paper')}

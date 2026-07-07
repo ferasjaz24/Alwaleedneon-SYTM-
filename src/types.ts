@@ -36,6 +36,8 @@ export interface UserPermissions {
 }
 
 export interface User {
+  id?: string;
+  uid?: string;
   username: string;
   role: string;
   jobTitle: string;
@@ -55,8 +57,8 @@ export interface CustodyRecord {
 export interface Allowance {
   housing: number;
   transport: number;
-  phone?: number;
   food?: number;
+  muddah?: number;
   loans?: number;       // سلفة مالية
   deductions?: number;  // خصومات
   overtime?: number;    // إضافي
@@ -90,6 +92,7 @@ export interface Employee {
   mobile?: string;
   experienceYears?: number;
   nationality?: string;
+  company?: string; // الشركة: شركة فنون الوليد أو شركة ساين اكس
   iqamaExpiryDate?: string;
   passportExpiryDate?: string;
   insurancePolicyNumber?: string;
@@ -107,6 +110,157 @@ export interface Employee {
   iqamaPhoto?: string;
   passportPhoto?: string;
   religion?: string;
+
+  // بيانات البنك والتحويل
+  bankName?: string;
+  iban?: string;
+  accountNumber?: string;
+  swiftCode?: string;
+  transferMethod?: string;
+  accountHolderName?: string;
+  bankNotes?: string;
+}
+
+export type PayrollRunStatus =
+  | "Draft"
+  | "Pending Review"
+  | "Needs Modification"
+  | "Under Modification"
+  | "Reviewed"
+  | "Pending Final Approval"
+  | "Approved"
+  | "Ready for Transfer"
+  | "Transferred"
+  | "Partially Paid"
+  | "Rejected"
+  | "Cancelled";
+
+export interface PayrollRun {
+  id: string;
+  payrollNumber: string;
+  month: number;
+  year: number;
+  salaryPeriod: string;
+  department: string;
+  status: PayrollRunStatus;
+  notes?: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy?: string;
+  employeesCount: number;
+  totalBasicSalary: number;
+  totalAllowances: number;
+  totalDeductions: number;
+  totalNetSalary: number;
+  approvedAt?: string;
+  approvedBy?: string;
+  transferredAt?: string;
+  transferredBy?: string;
+  transferDetails?: {
+    bankName: string;
+    referenceNumber: string;
+    transferDate: string;
+    notes?: string;
+  };
+  isDeleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+  deleteReason?: string;
+  auditLogs?: PayrollAuditLog[];
+  modificationRequests?: PayrollModificationRequest[];
+  totalOvertimeHours?: number;
+  totalOvertimeAmount?: number;
+  employees?: PayrollRunEmployee[];
+}
+
+export interface DeductionItem {
+  id: string;
+  type: "Absence Deduction" | "Late Deduction" | "Loan Deduction" | "Penalty Deduction" | "Other Deduction";
+  amount: number;
+  reason: string;
+  notes?: string;
+  source?: "HR" | "Manual";
+  sourceDeductionId?: string;
+  attachmentUrl?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface PayrollRunEmployee {
+  id: string;
+  payrollRunId: string;
+  employeeId: string;
+  arabicName: string;
+  englishName: string;
+  jobTitle: string;
+  department: string;
+  company?: string; // الشركة: شركة فنون الوليد أو شركة ساين اكس
+  iqamaId: string;
+  basicSalary: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  foodAllowance: number;
+  muddahAmount: number;
+  overtimeHours: number;
+  overtimeAmount: number;
+  otherAllowances: number;
+  otherAllowancesReason?: string;
+  loansDeduction: number;
+  gosiDeduction: number;
+  absenceDeduction?: number;
+  lateDeduction?: number;
+  penaltyDeduction?: number;
+  otherDeductions: number;
+  deductionsReason?: string;
+  absenceDeductionReason?: string;
+  lateDeductionReason?: string;
+  loanDeductionReason?: string;
+  penaltyDeductionReason?: string;
+  bankName: string;
+  iban: string;
+  accountNumber: string;
+  swiftCode?: string;
+  transferMethod: string;
+  accountHolderName: string;
+  bankInfo?: {
+    bankName: string;
+    iban: string;
+    accountNumber: string;
+    swiftCode: string;
+    transferMethod: string;
+    accountHolderName: string;
+  };
+  totalEntitlements: number;
+  totalDeductions: number;
+  netSalary: number;
+  deductionsList?: DeductionItem[];
+  isTransferred?: boolean;
+}
+
+export interface PayrollAuditLog {
+  id: string;
+  payrollRunId: string;
+  timestamp: string;
+  operatorName: string;
+  action: string;
+  details: string;
+}
+
+export interface PayrollModificationRequest {
+  id: string;
+  payrollRunId: string;
+  employeeId?: string;
+  employeeName?: string;
+  requestedBy: string;
+  requestedAt: string;
+  notes: string;
+  status: "Open" | "Closed";
+  responseNotes?: string;
+  respondedBy?: string;
+  respondedAt?: string;
 }
 
 export interface SignageItem {

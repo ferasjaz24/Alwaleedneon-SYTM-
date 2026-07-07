@@ -8,521 +8,474 @@ import {
 // Define the exact sub-sections and their unique permissions mentioned by the user
 const PERMISSIONS_SCHEMA = {
   dashboard: {
-    ar: 'لوحة المؤشرات',
+    ar: 'لوحة المؤشرات', en: 'لوحة المؤشرات',
     icon: <LayoutDashboard className="w-5 h-5"/>,
     sub: {
       metrics: {
-        ar: 'مؤشرات النظام الرئيسية',
+        ar: 'مؤشرات النظام الرئيسية', en: 'مؤشرات النظام الرئيسية',
         perms: [
-          { id: 'view_main', label: 'عرض لوحة المؤشرات الرئيسية', type: 'view' },
-          { id: 'view_hr', label: 'عرض مؤشرات الموارد البشرية', type: 'view' },
-          { id: 'view_sales', label: 'عرض مؤشرات المبيعات والتحصيل', type: 'view' },
-          { id: 'view_procurement', label: 'عرض مؤشرات المشتريات والمستودع', type: 'view' },
-          { id: 'view_production', label: 'عرض مؤشرات الإنتاج', type: 'view' },
-          { id: 'view_alerts', label: 'عرض التنبيهات الحرجة', type: 'sensitive' },
-          { id: 'view_logs', label: 'عرض آخر العمليات', type: 'view' },
-          { id: 'filter_date', label: 'استخدام فلتر الشهر والسنة', type: 'edit' },
-          { id: 'view_financial', label: 'عرض الأرقام المالية', type: 'financial' },
-          { id: 'view_payroll', label: 'عرض مؤشرات الرواتب', type: 'financial' },
-          { id: 'view_inventory', label: 'عرض مؤشرات المخزون', type: 'view' },
-          { id: 'export_metrics', label: 'تصدير ملخص لوحة المؤشرات', type: 'export' }
+          { id: 'view_main', labelAr: 'عرض لوحة المؤشرات الرئيسية', labelEn: 'عرض لوحة المؤشرات الرئيسية', type: 'view' },
+          { id: 'view_hr', labelAr: 'عرض مؤشرات الموارد البشرية', labelEn: 'عرض مؤشرات الموارد البشرية', type: 'view' },
+          { id: 'view_sales', labelAr: 'عرض مؤشرات المبيعات والتحصيل', labelEn: 'عرض مؤشرات المبيعات والتحصيل', type: 'view' },
+          { id: 'view_procurement', labelAr: 'عرض مؤشرات المشتريات والمستودع', labelEn: 'عرض مؤشرات المشتريات والمستودع', type: 'view' },
+          { id: 'view_production', labelAr: 'عرض مؤشرات الإنتاج', labelEn: 'عرض مؤشرات الإنتاج', type: 'view' },
+          { id: 'view_alerts', labelAr: 'عرض التنبيهات الحرجة', labelEn: 'عرض التنبيهات الحرجة', type: 'sensitive' },
+          { id: 'view_logs', labelAr: 'عرض آخر العمليات', labelEn: 'عرض آخر العمليات', type: 'view' },
+          { id: 'filter_date', labelAr: 'استخدام فلتر الشهر والسنة', labelEn: 'استخدام فلتر الشهر والسنة', type: 'edit' },
+          { id: 'view_financial', labelAr: 'عرض الأرقام المالية', labelEn: 'عرض الأرقام المالية', type: 'financial' },
+          { id: 'view_payroll', labelAr: 'عرض مؤشرات الرواتب', labelEn: 'عرض مؤشرات الرواتب', type: 'financial' },
+          { id: 'view_inventory', labelAr: 'عرض مؤشرات المخزون', labelEn: 'عرض مؤشرات المخزون', type: 'view' },
+          { id: 'export_metrics', labelAr: 'تصدير ملخص لوحة المؤشرات', labelEn: 'تصدير ملخص لوحة المؤشرات', type: 'export' }
         ]
       },
       quick_shortcuts: {
-        ar: 'الاختصارات السريعة للعمليات',
+        ar: 'الاختصارات السريعة للعمليات', en: 'الاختصارات السريعة للعمليات',
         perms: [
-          { id: 'view_main_shortcuts', label: 'عرض واستخدام الاختصارات السريعة في لوحة المؤشرات الرئيسية', type: 'view' },
-          { id: 'view_procurement_shortcuts', label: 'عرض واستخدام الاختصارات السريعة في لوحة المشتريات والمستودع', type: 'view' },
-          { id: 'view_production_shortcuts', label: 'عرض واستخدام الاختصارات السريعة في لوحة التحكم بالإنتاج', type: 'view' }
+          { id: 'view_main_shortcuts', labelAr: 'عرض واستخدام الاختصارات السريعة في لوحة المؤشرات الرئيسية', labelEn: 'عرض واستخدام الاختصارات السريعة في لوحة المؤشرات الرئيسية', type: 'view' },
+          { id: 'view_procurement_shortcuts', labelAr: 'عرض واستخدام الاختصارات السريعة في لوحة المشتريات والمستودع', labelEn: 'عرض واستخدام الاختصارات السريعة في لوحة المشتريات والمستودع', type: 'view' },
+          { id: 'view_production_shortcuts', labelAr: 'عرض واستخدام الاختصارات السريعة في لوحة التحكم بالإنتاج', labelEn: 'عرض واستخدام الاختصارات السريعة في لوحة التحكم بالإنتاج', type: 'view' }
         ]
       }
     }
   },
   hr: {
-    ar: 'الموارد البشرية',
+    ar: 'الموارد البشرية', en: 'Human Resources',
     icon: <Users className="w-5 h-5"/>,
     sub: {
       dashboard: {
-        ar: 'لوحة القيادة والمؤشرات',
+        ar: 'لوحة القيادة والمؤشرات', en: 'لوحة القيادة والمؤشرات',
         perms: [
-          { id: 'view_dashboard', label: 'عرض لوحة الموارد البشرية', type: 'view' },
-          { id: 'view_total_emp', label: 'عرض إجمالي الموظفين', type: 'view' },
-          { id: 'view_active_emp', label: 'عرض الموظفين النشطين', type: 'view' },
-          { id: 'view_leave_emp', label: 'عرض الموظفين في إجازة', type: 'view' },
-          { id: 'view_attendance', label: 'عرض الحضور والغياب', type: 'view' },
-          { id: 'view_total_salaries', label: 'عرض إجمالي الرواتب الشهرية', type: 'financial' },
-          { id: 'view_total_deductions', label: 'عرض إجمالي الخصومات', type: 'financial' },
-          { id: 'view_total_loans', label: 'عرض إجمالي السلف', type: 'financial' },
-          { id: 'view_expiries', label: 'عرض العقود والإقامات القريبة من الانتهاء', type: 'view' }
+          { id: 'view_dashboard', labelAr: 'عرض لوحة الموارد البشرية', labelEn: 'عرض لوحة الموارد البشرية', type: 'view' },
+          { id: 'view_total_emp', labelAr: 'عرض إجمالي الموظفين', labelEn: 'عرض إجمالي الموظفين', type: 'view' },
+          { id: 'view_active_emp', labelAr: 'عرض الموظفين النشطين', labelEn: 'عرض الموظفين النشطين', type: 'view' },
+          { id: 'view_leave_emp', labelAr: 'عرض الموظفين في إجازة', labelEn: 'عرض الموظفين في إجازة', type: 'view' },
+          { id: 'view_attendance', labelAr: 'عرض الحضور والغياب', labelEn: 'عرض الحضور والغياب', type: 'view' },
+          { id: 'view_total_salaries', labelAr: 'عرض إجمالي الرواتب الشهرية', labelEn: 'عرض إجمالي الرواتب الشهرية', type: 'financial' },
+          { id: 'view_total_deductions', labelAr: 'عرض إجمالي الخصومات', labelEn: 'عرض إجمالي الخصومات', type: 'financial' },
+          { id: 'view_total_loans', labelAr: 'عرض إجمالي السلف', labelEn: 'عرض إجمالي السلف', type: 'financial' },
+          { id: 'view_expiries', labelAr: 'عرض العقود والإقامات القريبة من الانتهاء', labelEn: 'عرض العقود والإقامات القريبة من الانتهاء', type: 'view' }
         ]
       },
       self_service: {
-        ar: 'الخدمة الذاتية والاستعلامات',
+        ar: 'الخدمة الذاتية والاستعلامات', en: 'الخدمة الذاتية والاستعلامات',
         perms: [
-          { id: 'view_inquiries', label: 'عرض استعلامات الموظفين', type: 'view' },
-          { id: 'reply_inquiry', label: 'الرد على استعلام موظف', type: 'edit' },
-          { id: 'close_inquiry', label: 'إغلاق استعلام', type: 'edit' },
-          { id: 'forward_inquiry', label: 'تحويل استعلام', type: 'edit' },
-          { id: 'delete_inquiry', label: 'حذف استعلام', type: 'delete' },
-          { id: 'view_attachments', label: 'عرض/تحميل مرفقات الاستعلام', type: 'view' },
-          { id: 'print_inquiry', label: 'طباعة/تصدير الاستعلام', type: 'export' }
+          { id: 'view_inquiries', labelAr: 'عرض استعلامات الموظفين', labelEn: 'عرض استعلامات الموظفين', type: 'view' },
+          { id: 'reply_inquiry', labelAr: 'الرد على استعلام موظف', labelEn: 'الرد على استعلام موظف', type: 'edit' },
+          { id: 'close_inquiry', labelAr: 'إغلاق استعلام', labelEn: 'إغلاق استعلام', type: 'edit' },
+          { id: 'forward_inquiry', labelAr: 'تحويل استعلام', labelEn: 'تحويل استعلام', type: 'edit' },
+          { id: 'delete_inquiry', labelAr: 'حذف استعلام', labelEn: 'حذف استعلام', type: 'delete' },
+          { id: 'view_attachments', labelAr: 'عرض/تحميل مرفقات الاستعلام', labelEn: 'عرض/تحميل مرفقات الاستعلام', type: 'view' },
+          { id: 'print_inquiry', labelAr: 'طباعة/تصدير الاستعلام', labelEn: 'طباعة/تصدير الاستعلام', type: 'export' }
         ]
       },
       employees: {
-        ar: 'بيانات الموظفين',
+        ar: 'بيانات الموظفين', en: 'بيانات الموظفين',
         perms: [
-          { id: 'view_emp', label: 'عرض قائمة الموظفين', type: 'view' },
-          { id: 'add_emp', label: 'إضافة موظف جديد', type: 'add' },
-          { id: 'edit_emp', label: 'تعديل بيانات الموظف', type: 'edit' },
-          { id: 'delete_emp', label: 'حذف موظف', type: 'delete' },
-          { id: 'disable_emp', label: 'تعطيل / تفعيل موظف', type: 'sensitive' },
-          { id: 'view_salary', label: 'عرض بيانات الراتب', type: 'financial' },
-          { id: 'edit_salary', label: 'تعديل بيانات الراتب', type: 'sensitive' },
-          { id: 'manage_files', label: 'إدارة ملفات الموظف', type: 'edit' },
-          { id: 'qiwa_muqeem', label: 'فتح بوابة قوى ومقيم', type: 'exec' }
+          { id: 'view_emp', labelAr: 'عرض قائمة الموظفين', labelEn: 'عرض قائمة الموظفين', type: 'view' },
+          { id: 'add_emp', labelAr: 'إضافة موظف جديد', labelEn: 'إضافة موظف جديد', type: 'add' },
+          { id: 'edit_emp', labelAr: 'تعديل بيانات الموظف', labelEn: 'تعديل بيانات الموظف', type: 'edit' },
+          { id: 'delete_emp', labelAr: 'حذف موظف', labelEn: 'حذف موظف', type: 'delete' },
+          { id: 'disable_emp', labelAr: 'تعطيل / تفعيل موظف', labelEn: 'تعطيل / تفعيل موظف', type: 'sensitive' },
+          { id: 'view_salary', labelAr: 'عرض بيانات الراتب', labelEn: 'عرض بيانات الراتب', type: 'financial' },
+          { id: 'edit_salary', labelAr: 'تعديل بيانات الراتب', labelEn: 'تعديل بيانات الراتب', type: 'sensitive' },
+          { id: 'manage_files', labelAr: 'إدارة ملفات الموظف', labelEn: 'إدارة ملفات الموظف', type: 'edit' },
+          { id: 'qiwa_muqeem', labelAr: 'فتح بوابة قوى ومقيم', labelEn: 'فتح بوابة قوى ومقيم', type: 'exec' }
         ]
       },
       leaves: {
-        ar: 'الإجازات والأرصدة',
+        ar: 'الإجازات والأرصدة', en: 'الإجازات والأرصدة',
         perms: [
-          { id: 'view_balances', label: 'عرض أرصدة الإجازات', type: 'view' },
-          { id: 'edit_balances', label: 'تعديل الرصيد السنوي والمستخدم', type: 'sensitive' },
-          { id: 'add_leave', label: 'إنشاء طلب إجازة', type: 'add' },
-          { id: 'edit_leave', label: 'تعديل طلب إجازة', type: 'edit' },
-          { id: 'delete_leave', label: 'حذف طلب إجازة', type: 'delete' },
-          { id: 'approve_leave', label: 'اعتماد / رفض طلب إجازة', type: 'approve' }
+          { id: 'view_balances', labelAr: 'عرض أرصدة الإجازات', labelEn: 'عرض أرصدة الإجازات', type: 'view' },
+          { id: 'edit_balances', labelAr: 'تعديل الرصيد السنوي والمستخدم', labelEn: 'تعديل الرصيد السنوي والمستخدم', type: 'sensitive' },
+          { id: 'add_leave', labelAr: 'إنشاء طلب إجازة', labelEn: 'إنشاء طلب إجازة', type: 'add' },
+          { id: 'edit_leave', labelAr: 'تعديل طلب إجازة', labelEn: 'تعديل طلب إجازة', type: 'edit' },
+          { id: 'delete_leave', labelAr: 'حذف طلب إجازة', labelEn: 'حذف طلب إجازة', type: 'delete' },
+          { id: 'approve_leave', labelAr: 'اعتماد / رفض طلب إجازة', labelEn: 'اعتماد / رفض طلب إجازة', type: 'approve' }
         ]
       },
       payroll: {
-        ar: 'مسير الرواتب',
+        ar: 'مسير الرواتب', en: 'مسير الرواتب',
         perms: [
-          { id: 'view_payroll', label: 'عرض مسير الرواتب', type: 'financial' },
-          { id: 'edit_components', label: 'تعديل الرواتب الأساسية والبدلات', type: 'sensitive' },
-          { id: 'create_payroll', label: 'إنشاء مسير راتب شهري', type: 'add' },
-          { id: 'approve_payroll', label: 'اعتماد مسير راتب', type: 'approve' },
-          { id: 'print_payroll', label: 'طباعة/تصدير مسير الرواتب', type: 'export' },
-          { id: 'post_mudad', label: 'تسجيل دفعة راتب لبوابة مدد', type: 'exec' }
+          { id: 'view_payroll', labelAr: 'عرض مسير الرواتب', labelEn: 'عرض مسير الرواتب', type: 'financial' },
+          { id: 'edit_components', labelAr: 'تعديل الرواتب الأساسية والبدلات', labelEn: 'تعديل الرواتب الأساسية والبدلات', type: 'sensitive' },
+          { id: 'create_payroll', labelAr: 'إنشاء مسير راتب شهري', labelEn: 'إنشاء مسير راتب شهري', type: 'add' },
+          { id: 'approve_payroll', labelAr: 'اعتماد مسير راتب', labelEn: 'اعتماد مسير راتب', type: 'approve' },
+          { id: 'print_payroll', labelAr: 'طباعة/تصدير مسير الرواتب', labelEn: 'طباعة/تصدير مسير الرواتب', type: 'export' },
+          { id: 'post_mudad', labelAr: 'تسجيل دفعة راتب لبوابة مدد', labelEn: 'تسجيل دفعة راتب لبوابة مدد', type: 'exec' }
         ]
       },
       deductions: {
-        ar: 'الخصومات والجزاءات',
+        ar: 'الخصومات والجزاءات', en: 'الخصومات والجزاءات',
         perms: [
-          { id: 'view_deductions', label: 'عرض الخصومات والجزاءات', type: 'view' },
-          { id: 'add_deduction', label: 'إضافة خصم/جزاء', type: 'add' },
-          { id: 'edit_deduction', label: 'تعديل/إلغاء خصم', type: 'edit' },
-          { id: 'approve_deduction', label: 'اعتماد خصم', type: 'approve' }
+          { id: 'view_deductions', labelAr: 'عرض الخصومات والجزاءات', labelEn: 'عرض الخصومات والجزاءات', type: 'view' },
+          { id: 'add_deduction', labelAr: 'إضافة خصم/جزاء', labelEn: 'إضافة خصم/جزاء', type: 'add' },
+          { id: 'edit_deduction', labelAr: 'تعديل/إلغاء خصم', labelEn: 'تعديل/إلغاء خصم', type: 'edit' },
+          { id: 'approve_deduction', labelAr: 'اعتماد خصم', labelEn: 'اعتماد خصم', type: 'approve' }
         ]
       },
       performance: {
-        ar: 'الكفاءات والأداء',
+        ar: 'الكفاءات والأداء', en: 'الكفاءات والأداء',
         perms: [
-          { id: 'view_perf', label: 'عرض تقييمات الأداء', type: 'view' },
-          { id: 'add_perf', label: 'إضافة تقييم أداء', type: 'add' },
-          { id: 'approve_perf', label: 'اعتماد تقييم أداء', type: 'approve' }
+          { id: 'view_perf', labelAr: 'عرض تقييمات الأداء', labelEn: 'عرض تقييمات الأداء', type: 'view' },
+          { id: 'add_perf', labelAr: 'إضافة تقييم أداء', labelEn: 'إضافة تقييم أداء', type: 'add' },
+          { id: 'approve_perf', labelAr: 'اعتماد تقييم أداء', labelEn: 'اعتماد تقييم أداء', type: 'approve' }
         ]
       },
       letters: {
-        ar: 'مستندات الخطابات الفورية',
+        ar: 'مستندات الخطابات الفورية', en: 'مستندات الخطابات الفورية',
         perms: [
-          { id: 'view_letters', label: 'عرض مستندات الخطابات', type: 'view' },
-          { id: 'create_letter', label: 'إنشاء خطاب موظف', type: 'add' },
-          { id: 'edit_letter_template', label: 'إدارة قوالب الخطابات', type: 'sensitive' }
+          { id: 'view_letters', labelAr: 'عرض مستندات الخطابات', labelEn: 'عرض مستندات الخطابات', type: 'view' },
+          { id: 'create_letter', labelAr: 'إنشاء خطاب موظف', labelEn: 'إنشاء خطاب موظف', type: 'add' },
+          { id: 'edit_letter_template', labelAr: 'إدارة قوالب الخطابات', labelEn: 'إدارة قوالب الخطابات', type: 'sensitive' }
         ]
       }
     }
   },
   sales: {
-    ar: 'المبيعات والتحصيل',
+    ar: 'المبيعات والتحصيل', en: 'المبيعات والتحصيل',
     icon: <Briefcase className="w-5 h-5"/>,
     sub: {
       dashboard: {
-        ar: 'لوحة القيادة والمؤشرات',
+        ar: 'لوحة القيادة والمؤشرات', en: 'لوحة القيادة والمؤشرات',
         perms: [
-          { id: 'view_dashboard', label: 'عرض لوحة مؤشرات المبيعات', type: 'view' },
-          { id: 'view_financial', label: 'عرض إجمالي التحصيل والمتبقي والمتأخرات', type: 'financial' }
+          { id: 'view_dashboard', labelAr: 'عرض لوحة مؤشرات المبيعات', labelEn: 'عرض لوحة مؤشرات المبيعات', type: 'view' },
+          { id: 'view_financial', labelAr: 'عرض إجمالي التحصيل والمتبقي والمتأخرات', labelEn: 'عرض إجمالي التحصيل والمتبقي والمتأخرات', type: 'financial' }
         ]
       },
       clients: {
-        ar: 'العملاء',
+        ar: 'العملاء', en: 'العملاء',
         perms: [
-          { id: 'view_clients', label: 'عرض قائمة العملاء', type: 'view' },
-          { id: 'add_client', label: 'إضافة عميل جديد', type: 'add' },
-          { id: 'edit_client', label: 'تعديل بيانات العميل', type: 'edit' },
-          { id: 'delete_client', label: 'حذف عميل', type: 'delete' },
-          { id: 'import_clients', label: 'استيراد عملاء', type: 'add' }
+          { id: 'view_clients', labelAr: 'عرض قائمة العملاء', labelEn: 'عرض قائمة العملاء', type: 'view' },
+          { id: 'add_client', labelAr: 'إضافة عميل جديد', labelEn: 'إضافة عميل جديد', type: 'add' },
+          { id: 'edit_client', labelAr: 'تعديل بيانات العميل', labelEn: 'تعديل بيانات العميل', type: 'edit' },
+          { id: 'delete_client', labelAr: 'حذف عميل', labelEn: 'حذف عميل', type: 'delete' },
+          { id: 'import_clients', labelAr: 'استيراد عملاء', labelEn: 'استيراد عملاء', type: 'add' }
         ]
       },
       quotations: {
-        ar: 'عروض الأسعار',
+        ar: 'عروض الأسعار', en: 'عروض الأسعار',
         perms: [
-          { id: 'view_quotes', label: 'عرض قائمة عروض الأسعار', type: 'view' },
-          { id: 'add_quote', label: 'إضافة عرض سعر', type: 'add' },
-          { id: 'edit_quote', label: 'تعديل عرض سعر', type: 'edit' },
-          { id: 'delete_quote', label: 'حذف عرض سعر مسودة', type: 'delete' },
-          { id: 'delete_approved_quote', label: 'حذف عرض سعر معتمد*', type: 'sensitive' },
-          { id: 'approve_quote', label: 'اعتماد عرض سعر', type: 'approve' },
-          { id: 'unapprove_quote', label: 'إلغاء اعتماد عرض سعر*', type: 'sensitive' },
-          { id: 'send_production', label: 'إرسال العرض للإنتاج', type: 'exec' }
+          { id: 'view_quotes', labelAr: 'عرض قائمة عروض الأسعار', labelEn: 'عرض قائمة عروض الأسعار', type: 'view' },
+          { id: 'add_quote', labelAr: 'إضافة عرض سعر', labelEn: 'إضافة عرض سعر', type: 'add' },
+          { id: 'edit_quote', labelAr: 'تعديل عرض سعر', labelEn: 'تعديل عرض سعر', type: 'edit' },
+          { id: 'delete_quote', labelAr: 'حذف عرض سعر مسودة', labelEn: 'حذف عرض سعر مسودة', type: 'delete' },
+          { id: 'delete_approved_quote', labelAr: 'حذف عرض سعر معتمد*', labelEn: 'حذف عرض سعر معتمد*', type: 'sensitive' },
+          { id: 'approve_quote', labelAr: 'اعتماد عرض سعر', labelEn: 'اعتماد عرض سعر', type: 'approve' },
+          { id: 'unapprove_quote', labelAr: 'إلغاء اعتماد عرض سعر*', labelEn: 'إلغاء اعتماد عرض سعر*', type: 'sensitive' },
+          { id: 'send_production', labelAr: 'إرسال العرض للإنتاج', labelEn: 'إرسال العرض للإنتاج', type: 'exec' }
         ]
       },
       collection: {
-        ar: 'قسم التحصيل المالي',
+        ar: 'قسم التحصيل المالي', en: 'قسم التحصيل المالي',
         perms: [
-          { id: 'view_collection', label: 'عرض قسم التحصيل المالي', type: 'view' },
-          { id: 'add_plan', label: 'إضافة خطة تحصيل', type: 'add' },
-          { id: 'edit_plan', label: 'تعديل خطة تحصيل', type: 'edit' },
-          { id: 'add_payment', label: 'تسجيل دفعة', type: 'add' },
-          { id: 'approve_payment', label: 'اعتماد دفعة مالية', type: 'approve' },
-          { id: 'unapprove_payment', label: 'إلغاء اعتماد دفعة مالية*', type: 'sensitive' },
-          { id: 'delete_payment', label: 'حذف دفعة*', type: 'sensitive' }
+          { id: 'view_collection', labelAr: 'عرض قسم التحصيل المالي', labelEn: 'عرض قسم التحصيل المالي', type: 'view' },
+          { id: 'add_plan', labelAr: 'إضافة خطة تحصيل', labelEn: 'إضافة خطة تحصيل', type: 'add' },
+          { id: 'edit_plan', labelAr: 'تعديل خطة تحصيل', labelEn: 'تعديل خطة تحصيل', type: 'edit' },
+          { id: 'add_payment', labelAr: 'تسجيل دفعة', labelEn: 'تسجيل دفعة', type: 'add' },
+          { id: 'approve_payment', labelAr: 'اعتماد دفعة مالية', labelEn: 'اعتماد دفعة مالية', type: 'approve' },
+          { id: 'unapprove_payment', labelAr: 'إلغاء اعتماد دفعة مالية*', labelEn: 'إلغاء اعتماد دفعة مالية*', type: 'sensitive' },
+          { id: 'delete_payment', labelAr: 'حذف دفعة*', labelEn: 'حذف دفعة*', type: 'sensitive' }
         ]
       },
       prod_orders: {
-        ar: 'طلبات الإنتاج المرسلة',
+        ar: 'طلبات الإنتاج المرسلة', en: 'طلبات الإنتاج المرسلة',
         perms: [
-          { id: 'view_prod_orders', label: 'عرض طلبات الإنتاج المرسلة', type: 'view' },
-          { id: 'resend_prod', label: 'إعادة إرسال طلب للإنتاج', type: 'exec' },
-          { id: 'delete_prod_order', label: 'حذف طلب إنتاج', type: 'delete' }
+          { id: 'view_prod_orders', labelAr: 'عرض طلبات الإنتاج المرسلة', labelEn: 'عرض طلبات الإنتاج المرسلة', type: 'view' },
+          { id: 'resend_prod', labelAr: 'إعادة إرسال طلب للإنتاج', labelEn: 'إعادة إرسال طلب للإنتاج', type: 'exec' },
+          { id: 'delete_prod_order', labelAr: 'حذف طلب إنتاج', labelEn: 'حذف طلب إنتاج', type: 'delete' }
         ]
       },
       letters: {
-        ar: 'خطابات المبيعات',
+        ar: 'خطابات المبيعات', en: 'خطابات المبيعات',
         perms: [
-          { id: 'view_letters', label: 'عرض خطابات المبيعات', type: 'view' },
-          { id: 'add_letter', label: 'إنشاء/تعديل خطاب', type: 'add' },
-          { id: 'send_letter', label: 'إرسال خطاب عبر واتساب/إيميل', type: 'exec' }
+          { id: 'view_letters', labelAr: 'عرض خطابات المبيعات', labelEn: 'عرض خطابات المبيعات', type: 'view' },
+          { id: 'add_letter', labelAr: 'إنشاء/تعديل خطاب', labelEn: 'إنشاء/تعديل خطاب', type: 'add' },
+          { id: 'send_letter', labelAr: 'إرسال خطاب عبر واتساب/إيميل', labelEn: 'إرسال خطاب عبر واتساب/إيميل', type: 'exec' }
         ]
       },
       reports: {
-        ar: 'التقارير',
+        ar: 'التقارير', en: 'التقارير',
         perms: [
-          { id: 'view_reports', label: 'عرض مركز التقارير المبيعات', type: 'view' },
-          { id: 'export_reports', label: 'تصدير التقارير', type: 'export' }
+          { id: 'view_reports', labelAr: 'عرض مركز التقارير المبيعات', labelEn: 'عرض مركز التقارير المبيعات', type: 'view' },
+          { id: 'export_reports', labelAr: 'تصدير التقارير', labelEn: 'تصدير التقارير', type: 'export' }
         ]
       },
       reps: {
-        ar: 'المندوبين والأهداف',
+        ar: 'المندوبين والأهداف', en: 'المندوبين والأهداف',
         perms: [
-          { id: 'view_reps', label: 'عرض المندوبين والأهداف', type: 'view' },
-          { id: 'manage_targets', label: 'تعديل الأهداف والعمولات', type: 'edit' },
-          { id: 'approve_comission', label: 'اعتماد عمولة', type: 'approve' }
+          { id: 'view_reps', labelAr: 'عرض المندوبين والأهداف', labelEn: 'عرض المندوبين والأهداف', type: 'view' },
+          { id: 'manage_targets', labelAr: 'تعديل الأهداف والعمولات', labelEn: 'تعديل الأهداف والعمولات', type: 'edit' },
+          { id: 'approve_comission', labelAr: 'اعتماد عمولة', labelEn: 'اعتماد عمولة', type: 'approve' }
         ]
       },
       pricing_study: {
-        ar: 'دراسة تسعير المشاريع',
+        ar: 'دراسة تسعير المشاريع', en: 'دراسة تسعير المشاريع',
         perms: [
-          { id: 'view_pricing_study', label: 'عرض دراسة تسعير المشاريع وحساب تكاليفها', type: 'view' },
-          { id: 'edit_pricing_study', label: 'إنشاء وتعديل دراسة تسعير المشاريع والكميات والأسعار', type: 'edit' }
+          { id: 'view_pricing_study', labelAr: 'عرض دراسة تسعير المشاريع وحساب تكاليفها', labelEn: 'عرض دراسة تسعير المشاريع وحساب تكاليفها', type: 'view' },
+          { id: 'edit_pricing_study', labelAr: 'إنشاء وتعديل دراسة تسعير المشاريع والكميات والأسعار', labelEn: 'إنشاء وتعديل دراسة تسعير المشاريع والكميات والأسعار', type: 'edit' }
         ]
       }
     }
   },
   procurement: {
-    ar: 'المشتريات والمستودع',
+    ar: 'المشتريات والمستودع', en: 'المشتريات والمستودع',
     icon: <Package className="w-5 h-5"/>,
     sub: {
       dashboard: {
-        ar: 'لوحة القيادة والمؤشرات للمستودع',
+        ar: 'لوحة القيادة والمؤشرات للمستودع', en: 'لوحة القيادة والمؤشرات للمستودع',
         perms: [
-          { id: 'view_dashboard', label: 'عرض لوحة المؤشرات للمشتريات والمستودع', type: 'view' }
+          { id: 'view_dashboard', labelAr: 'عرض لوحة المؤشرات للمشتريات والمستودع', labelEn: 'عرض لوحة المؤشرات للمشتريات والمستودع', type: 'view' }
         ]
       },
       items: {
-        ar: 'مستودع الأصناف',
+        ar: 'مستودع الأصناف', en: 'مستودع الأصناف',
         perms: [
-          { id: 'view_items', label: 'عرض مستودع الأصناف', type: 'view' },
-          { id: 'manage_items', label: 'إضافة وتعديل وحذف صنف', type: 'edit' },
-          { id: 'approve_item', label: 'اعتماد صنف', type: 'approve' }
+          { id: 'view_items', labelAr: 'عرض مستودع الأصناف', labelEn: 'عرض مستودع الأصناف', type: 'view' },
+          { id: 'manage_items', labelAr: 'إضافة وتعديل وحذف صنف', labelEn: 'إضافة وتعديل وحذف صنف', type: 'edit' },
+          { id: 'approve_item', labelAr: 'اعتماد صنف', labelEn: 'اعتماد صنف', type: 'approve' }
         ]
       },
       materials: {
-        ar: 'مستودع المواد',
+        ar: 'مستودع المواد', en: 'مستودع المواد',
         perms: [
-          { id: 'view_materials', label: 'عرض مستودع المواد', type: 'view' },
-          { id: 'manage_materials', label: 'إضافة/تعديل مادة', type: 'edit' },
-          { id: 'adjust_qty', label: 'تعديل الرصيد يدويا/صرف مادة', type: 'sensitive' },
-          { id: 'inventory_audit', label: 'جرد المواد واعتماده', type: 'approve' }
+          { id: 'view_materials', labelAr: 'عرض مستودع المواد', labelEn: 'عرض مستودع المواد', type: 'view' },
+          { id: 'manage_materials', labelAr: 'إضافة/تعديل مادة', labelEn: 'إضافة/تعديل مادة', type: 'edit' },
+          { id: 'adjust_qty', labelAr: 'تعديل الرصيد يدويا/صرف مادة', labelEn: 'تعديل الرصيد يدويا/صرف مادة', type: 'sensitive' },
+          { id: 'inventory_audit', labelAr: 'جرد المواد واعتماده', labelEn: 'جرد المواد واعتماده', type: 'approve' }
         ]
       },
       requests: {
-        ar: 'طلبات شراء المواد',
+        ar: 'طلبات شراء المواد', en: 'طلبات شراء المواد',
         perms: [
-          { id: 'view_requests', label: 'عرض طلبات شراء المواد', type: 'view' },
-          { id: 'add_request', label: 'إنشاء/تعديل طلب شراء', type: 'add' },
-          { id: 'approve_request', label: 'اعتماد/رفض طلب شراء', type: 'approve' },
-          { id: 'send_pricing', label: 'إرسال للموردين والتسعير', type: 'exec' }
+          { id: 'view_requests', labelAr: 'عرض طلبات شراء المواد', labelEn: 'عرض طلبات شراء المواد', type: 'view' },
+          { id: 'add_request', labelAr: 'إنشاء/تعديل طلب شراء', labelEn: 'إنشاء/تعديل طلب شراء', type: 'add' },
+          { id: 'approve_request', labelAr: 'اعتماد/رفض طلب شراء', labelEn: 'اعتماد/رفض طلب شراء', type: 'approve' },
+          { id: 'send_pricing', labelAr: 'إرسال للموردين والتسعير', labelEn: 'إرسال للموردين والتسعير', type: 'exec' }
         ]
       },
       suppliers: {
-        ar: 'الموردين والتسعير',
+        ar: 'الموردين والتسعير', en: 'الموردين والتسعير',
         perms: [
-          { id: 'view_suppliers', label: 'عرض الموردين', type: 'view' },
-          { id: 'manage_suppliers', label: 'إضافة/تعديل مورد', type: 'edit' },
-          { id: 'issue_rfq', label: 'إصدار/تعديل عرض سعر شراء', type: 'add' }
+          { id: 'view_suppliers', labelAr: 'عرض الموردين', labelEn: 'عرض الموردين', type: 'view' },
+          { id: 'manage_suppliers', labelAr: 'إضافة/تعديل مورد', labelEn: 'إضافة/تعديل مورد', type: 'edit' },
+          { id: 'issue_rfq', labelAr: 'إصدار/تعديل عرض سعر شراء', labelEn: 'إصدار/تعديل عرض سعر شراء', type: 'add' }
         ]
       },
       finance_approval: {
-        ar: 'بوابة تعميد المشتريات المالية',
+        ar: 'بوابة تعميد المشتريات المالية', en: 'بوابة تعميد المشتريات المالية',
         perms: [
-          { id: 'view_finance_po', label: 'عرض بوابات التعميد المالي', type: 'view' },
-          { id: 'approve_finance_po', label: 'اعتماد مالياً و إنشاء أمر شراء', type: 'financial' },
-          { id: 'undo_po', label: 'التراجع عن أمر شراء بعد إنشائه', type: 'sensitive' },
-          { id: 'reject_finance_po', label: 'إعادة الطلب/الرفض المالي', type: 'edit' }
+          { id: 'view_finance_po', labelAr: 'عرض بوابات التعميد المالي', labelEn: 'عرض بوابات التعميد المالي', type: 'view' },
+          { id: 'approve_finance_po', labelAr: 'اعتماد مالياً و إنشاء أمر شراء', labelEn: 'اعتماد مالياً و إنشاء أمر شراء', type: 'financial' },
+          { id: 'undo_po', labelAr: 'التراجع عن أمر شراء بعد إنشائه', labelEn: 'التراجع عن أمر شراء بعد إنشائه', type: 'sensitive' },
+          { id: 'reject_finance_po', labelAr: 'إعادة الطلب/الرفض المالي', labelEn: 'إعادة الطلب/الرفض المالي', type: 'edit' }
         ]
       },
       approved_po: {
-        ar: 'أوامر شراء المواد المعتمدة',
+        ar: 'أوامر شراء المواد المعتمدة', en: 'أوامر شراء المواد المعتمدة',
         perms: [
-          { id: 'view_pos', label: 'عرض أوامر الشراء المعتمدة', type: 'view' },
-          { id: 'receive_items', label: 'تسجيل استلام المواد', type: 'add' },
-          { id: 'cancel_po', label: 'التراجع عن أمر الشراء', type: 'sensitive' }
+          { id: 'view_pos', labelAr: 'عرض أوامر الشراء المعتمدة', labelEn: 'عرض أوامر الشراء المعتمدة', type: 'view' },
+          { id: 'receive_items', labelAr: 'تسجيل استلام المواد', labelEn: 'تسجيل استلام المواد', type: 'add' },
+          { id: 'cancel_po', labelAr: 'التراجع عن أمر الشراء', labelEn: 'التراجع عن أمر الشراء', type: 'sensitive' }
         ]
       }
     }
   },
   production: {
-    ar: 'مركز التحكم بالإنتاج',
+    ar: 'مركز التحكم بالإنتاج', en: 'مركز التحكم بالإنتاج',
     icon: <Box className="w-5 h-5"/>,
     sub: {
       dashboard: {
-        ar: 'لوحة القيادة والمؤشرات للإنتاج',
+        ar: 'لوحة القيادة والمؤشرات للإنتاج', en: 'لوحة القيادة والمؤشرات للإنتاج',
         perms: [
-          { id: 'view_dashboard', label: 'عرض لوحة المؤشرات في مركز التحكم بالإنتاج', type: 'view' }
+          { id: 'view_dashboard', labelAr: 'عرض لوحة المؤشرات في مركز التحكم بالإنتاج', labelEn: 'عرض لوحة المؤشرات في مركز التحكم بالإنتاج', type: 'view' }
         ]
       },
       daily_followup: {
-        ar: 'متابعة الإنتاج اليومية',
+        ar: 'متابعة الإنتاج اليومية', en: 'متابعة الإنتاج اليومية',
         perms: [
-          { id: 'view_daily_followup', label: 'عرض متابعة الإنتاج اليومية', type: 'view' },
-          { id: 'edit_daily_followup', label: 'تعديل متابعة الإنتاج اليومية', type: 'edit' },
-          { id: 'manage_daily_followup', label: 'إدارة متابعة الإنتاج اليومية', type: 'approve' },
-          { id: 'delete_daily_followup', label: 'حذف مشروع من المتابعة', type: 'delete' }
+          { id: 'view_daily_followup', labelAr: 'عرض متابعة الإنتاج اليومية', labelEn: 'عرض متابعة الإنتاج اليومية', type: 'view' },
+          { id: 'edit_daily_followup', labelAr: 'تعديل متابعة الإنتاج اليومية', labelEn: 'تعديل متابعة الإنتاج اليومية', type: 'edit' },
+          { id: 'manage_daily_followup', labelAr: 'إدارة متابعة الإنتاج اليومية', labelEn: 'إدارة متابعة الإنتاج اليومية', type: 'approve' },
+          { id: 'delete_daily_followup', labelAr: 'حذف مشروع من المتابعة', labelEn: 'حذف مشروع من المتابعة', type: 'delete' }
         ]
       },
       received: {
-        ar: 'طلبات الإنتاج المستلمة',
+        ar: 'طلبات الإنتاج المستلمة', en: 'طلبات الإنتاج المستلمة',
         perms: [
-          { id: 'view_received', label: 'عرض طلبات الإنتاج المستلمة', type: 'view' },
-          { id: 'accept_reject', label: 'استلام أو رفض طلب الإنتاج', type: 'approve' },
-          { id: 'create_order', label: 'إنشاء أمر إنتاج من الطلب', type: 'add' },
-          { id: 'view_cost_pricing', label: 'عرض تفاصيل الأسعار والأصناف بالفاتورة', type: 'financial' }
+          { id: 'view_received', labelAr: 'عرض طلبات الإنتاج المستلمة', labelEn: 'عرض طلبات الإنتاج المستلمة', type: 'view' },
+          { id: 'accept_reject', labelAr: 'استلام أو رفض طلب الإنتاج', labelEn: 'استلام أو رفض طلب الإنتاج', type: 'approve' },
+          { id: 'create_order', labelAr: 'إنشاء أمر إنتاج من الطلب', labelEn: 'إنشاء أمر إنتاج من الطلب', type: 'add' },
+          { id: 'view_cost_pricing', labelAr: 'عرض تفاصيل الأسعار والأصناف بالفاتورة', labelEn: 'عرض تفاصيل الأسعار والأصناف بالفاتورة', type: 'financial' }
         ]
       },
       orders: {
-        ar: 'أوامر الإنتاج',
+        ar: 'أوامر الإنتاج', en: 'أوامر الإنتاج',
         perms: [
-          { id: 'view_orders', label: 'عرض أوامر الإنتاج', type: 'view' },
-          { id: 'manage_orders', label: 'تعديل وحذف أمر إنتاج', type: 'edit' },
-          { id: 'approve_orders', label: 'اعتماد / إلغاء تعميد أمر إنتاج', type: 'approve' }
+          { id: 'view_orders', labelAr: 'عرض أوامر الإنتاج', labelEn: 'عرض أوامر الإنتاج', type: 'view' },
+          { id: 'manage_orders', labelAr: 'تعديل وحذف أمر إنتاج', labelEn: 'تعديل وحذف أمر إنتاج', type: 'edit' },
+          { id: 'approve_orders', labelAr: 'اعتماد / إلغاء تعميد أمر إنتاج', labelEn: 'اعتماد / إلغاء تعميد أمر إنتاج', type: 'approve' }
         ]
       },
       projects: {
-        ar: 'مشاريع الإنتاج القائمة',
+        ar: 'مشاريع الإنتاج القائمة', en: 'مشاريع الإنتاج القائمة',
         perms: [
-          { id: 'view_projects', label: 'عرض مشاريع الإنتاج', type: 'view' },
-          { id: 'manage_stages', label: 'إضافة/تعديل/بدء مراحل الإنتاج', type: 'exec' },
-          { id: 'mark_ready', label: 'تحويل المشروع لجاهز للتركيب', type: 'approve' },
-          { id: 'mark_complete_no_auth', label: 'تحويل لمكتمل بدون اعتماد النهائي*', type: 'sensitive' }
+          { id: 'view_projects', labelAr: 'عرض مشاريع الإنتاج', labelEn: 'عرض مشاريع الإنتاج', type: 'view' },
+          { id: 'manage_stages', labelAr: 'إضافة/تعديل/بدء مراحل الإنتاج', labelEn: 'إضافة/تعديل/بدء مراحل الإنتاج', type: 'exec' },
+          { id: 'mark_ready', labelAr: 'تحويل المشروع لجاهز للتركيب', labelEn: 'تحويل المشروع لجاهز للتركيب', type: 'approve' },
+          { id: 'mark_complete_no_auth', labelAr: 'تحويل لمكتمل بدون اعتماد النهائي*', labelEn: 'تحويل لمكتمل بدون اعتماد النهائي*', type: 'sensitive' }
         ]
       },
       installation: {
-        ar: 'قسم التركيب والتشغيل',
+        ar: 'قسم التركيب والتشغيل', en: 'قسم التركيب والتشغيل',
         perms: [
-          { id: 'view_install', label: 'عرض طلبات/أوامر التركيب', type: 'view' },
-          { id: 'schedule_install', label: 'جدولة و تعيين فريق تركيب', type: 'exec' },
-          { id: 'complete_install', label: 'إكمال وإغلاق ملف التركيب', type: 'approve' }
+          { id: 'view_install', labelAr: 'عرض طلبات/أوامر التركيب', labelEn: 'عرض طلبات/أوامر التركيب', type: 'view' },
+          { id: 'schedule_install', labelAr: 'جدولة و تعيين فريق تركيب', labelEn: 'جدولة و تعيين فريق تركيب', type: 'exec' },
+          { id: 'complete_install', labelAr: 'إكمال وإغلاق ملف التركيب', labelEn: 'إكمال وإغلاق ملف التركيب', type: 'approve' }
         ]
       }
     }
   },
   finance: {
-    ar: 'المحاسبة والمالية',
+    ar: 'المحاسبة والمالية', en: 'Accounting & Finance',
     icon: <DollarSign className="w-5 h-5"/>,
     sub: {
-      journal: {
-        ar: 'القيود اليومية العامة',
+      dashboard: {
+        ar: 'لوحة القيادة والمؤشرات حقة المحاسبة', en: 'Accounting Dashboard',
         perms: [
-          { id: 'view_entries', label: 'عرض دفتر القيود اليومية', type: 'view' },
-          { id: 'add_entry', label: 'إضافة قيد جديد', type: 'add' },
-          { id: 'edit_entry', label: 'تعديل قيد يومية', type: 'edit' },
-          { id: 'submit_approval', label: 'إرسال القيد للاعتماد', type: 'exec' },
-          { id: 'approve_entry', label: 'اعتماد قيد اليومية', type: 'approve' },
-          { id: 'print_entry', label: 'طباعة/تصدير القيد', type: 'export' },
-          { id: 'view_projects', label: 'عرض المشاريع بالقيود', type: 'view' },
-          { id: 'upload_attachment', label: 'رفع مرفقات القيود', type: 'add' }
+          { id: 'view_dashboard', labelAr: 'عرض لوحة قيادة المؤشرات المالية', labelEn: 'View Accounting Dashboard', type: 'view' },
+          { id: 'edit_dashboard', labelAr: 'تحديث بيانات المؤشرات والتحكم باللوحة', labelEn: 'تحديث بيانات المؤشرات والتحكم باللوحة', type: 'edit' }
+        ]
+      },
+      journal: {
+        ar: 'القيود اليومية العامة', en: 'General Journal',
+        perms: [
+          { id: 'view_entries', labelAr: 'عرض دفتر القيود اليومية', labelEn: 'View Journal Entries', type: 'view' },
+          { id: 'add_entry', labelAr: 'إضافة قيد جديد', labelEn: 'Add New Entry', type: 'add' },
+          { id: 'edit_entry', labelAr: 'تعديل قيد يومية', labelEn: 'Edit Journal Entry', type: 'edit' },
+          { id: 'submit_approval', labelAr: 'إرسال القيد للاعتماد', labelEn: 'Submit Entry for Approval', type: 'exec' },
+          { id: 'approve_entry', labelAr: 'اعتماد قيد اليومية', labelEn: 'Approve Journal Entry', type: 'approve' },
+          { id: 'print_entry', labelAr: 'طباعة/تصدير القيد', labelEn: 'طباعة/تصدير القيد', type: 'export' },
+          { id: 'view_projects', labelAr: 'عرض المشاريع بالقيود', labelEn: 'عرض المشاريع بالقيود', type: 'view' },
+          { id: 'upload_attachment', labelAr: 'رفع مرفقات القيود', labelEn: 'رفع مرفقات القيود', type: 'add' }
         ]
       },
       customer_invoices: {
-        ar: 'فواتير العملاء',
+        ar: 'فواتير العملاء', en: 'Customer Invoices',
         perms: [
-          { id: 'view_portal', label: 'عرض بوابة فواتير العملاء', type: 'view' },
-          { id: 'view_table', label: 'عرض جدول فواتير العملاء', type: 'view' },
-          { id: 'view_details', label: 'عرض تفاصيل فاتورة عميل', type: 'view' },
-          { id: 'search_invoices', label: 'البحث في فواتير العملاء', type: 'view' },
-          { id: 'use_filters', label: 'استخدام فلاتر فواتير العملاء', type: 'view' },
-          { id: 'view_attachment', label: 'عرض مرفق فاتورة العميل', type: 'view' },
-          { id: 'view_log', label: 'عرض سجل عمليات الفاتورة', type: 'view' },
-          { id: 'add_invoice', label: 'إضافة فاتورة عميل جديدة', type: 'add' },
-          { id: 'open_add_modal', label: 'فتح نافذة إضافة فاتورة عميل', type: 'add' },
-          { id: 'save_draft', label: 'حفظ فاتورة عميل كمسودة', type: 'add' },
-          { id: 'send_approval', label: 'إرسال فاتورة عميل للاعتماد', type: 'exec' },
-          { id: 'create_from_quote', label: 'إنشاء فاتورة من عرض سعر', type: 'add' },
-          { id: 'upload_attachment', label: 'رفع مرفق فاتورة عميل', type: 'add' },
-          { id: 'edit_invoice', label: 'تعديل فاتورة عميل', type: 'edit' },
-          { id: 'edit_draft', label: 'تعديل فاتورة عميل مسودة', type: 'edit' },
-          { id: 'edit_pending', label: 'تعديل فاتورة عميل بانتظار اعتماد', type: 'edit' },
-          { id: 'edit_amount', label: 'تعديل مبلغ فاتورة عميل', type: 'edit' },
-          { id: 'edit_due_date', label: 'تعديل تاريخ الاستحقاق', type: 'edit' },
-          { id: 'edit_attachment', label: 'تعديل مرفق الفاتورة', type: 'edit' },
-          { id: 'approve_invoice', label: 'اعتماد فاتورة عميل', type: 'approve' },
-          { id: 'reject_invoice', label: 'رفض اعتماد فاتورة عميل', type: 'approve' },
-          { id: 'unapprove_invoice', label: 'إلغاء اعتماد فاتورة عميل', type: 'sensitive' },
-          { id: 'issue_invoice', label: 'إصدار فاتورة عميل', type: 'approve' },
-          { id: 'register_payment', label: 'تسجيل دفعة على فاتورة عميل', type: 'financial' },
-          { id: 'edit_payment', label: 'تعديل دفعة فاتورة عميل', type: 'edit' },
-          { id: 'delete_payment', label: 'حذف دفعة فاتورة عميل', type: 'delete' },
-          { id: 'upload_receipt', label: 'رفع سند دفع عميل', type: 'add' },
-          { id: 'cancel_invoice', label: 'إلغاء فاتورة عميل', type: 'delete' },
-          { id: 'delete_unapproved', label: 'حذف فاتورة عميل غير معتمدة', type: 'delete' },
-          { id: 'delete_draft', label: 'حذف فاتورة عميل مسودة', type: 'delete' },
-          { id: 'edit_approved', label: 'تعديل فاتورة عميل معتمدة', type: 'sensitive' },
-          { id: 'delete_approved', label: 'حذف فاتورة عميل معتمدة', type: 'sensitive' },
-          { id: 'delete_paid', label: 'حذف فاتورة عميل مدفوعة', type: 'sensitive' },
-          { id: 'edit_paid_amount', label: 'تعديل مبلغ فاتورة مدفوعة', type: 'sensitive' },
-          { id: 'unapprove_issued', label: 'إلغاء اعتماد فاتورة صادرة', type: 'sensitive' },
-          { id: 'delete_approved_attachment', label: 'حذف مرفق فاتورة معتمدة', type: 'sensitive' },
-          { id: 'register_unapproved_payment', label: 'تسجيل دفعة على فاتورة غير معتمدة', type: 'sensitive' },
-          { id: 'export_all', label: 'تصدير كامل فواتير العملاء', type: 'export' },
-          
-          { id: 'preview_invoice', label: 'معاينة فاتورة عميل', type: 'view' },
-          { id: 'print_invoice', label: 'طباعة فاتورة عميل', type: 'export' },
-          { id: 'export_pdf', label: 'تصدير فاتورة عميل PDF', type: 'export' },
-          { id: 'view_qr', label: 'عرض QR فاتورة عميل', type: 'view' },
-          { id: 'zatca_settings', label: 'إدارة إعدادات زاتكا ZATCA', type: 'sensitive' },
-          { id: 'zatca_monitor', label: 'عرض لوحة زاتكا ZATCA Monitor', type: 'view' },
-          { id: 'zatca_generate_qr', label: 'توليد QR متوافق مع زاتكا', type: 'exec' },
-          { id: 'zatca_generate_xml', label: 'توليد XML لزاتكا', type: 'exec' },
-          { id: 'zatca_validate', label: 'التحقق الضريبي للفاتورة', type: 'exec' },
-          { id: 'zatca_send', label: 'إرسال الفاتورة إلى زاتكا', type: 'approve' },
-          { id: 'zatca_resend', label: 'إعادة إرسال لزاتكا', type: 'sensitive' },
-          { id: 'zatca_view_log', label: 'عرض سجل زاتكا للفاتورة', type: 'view' },
-          { id: 'zatca_export_xml', label: 'تصدير XML زاتكا', type: 'export' },
-          { id: 'edit_before_approval', label: 'تعديل بيانات فاتورة عميل قبل الاعتماد', type: 'edit' },
-          { id: 'edit_approved_invoice', label: 'تعديل بيانات فاتورة عميل معتمدة', type: 'sensitive' },
-          { id: 'edit_items', label: 'تعديل الأصناف داخل فاتورة عميل', type: 'edit' },
-          { id: 'edit_vat', label: 'تعديل الضريبة داخل فاتورة عميل', type: 'edit' },
-          { id: 'edit_discount', label: 'تعديل الخصم داخل فاتورة عميل', type: 'edit' },
-          
-          { id: 'edit_template', label: 'تعديل قالب الفاتورة', type: 'sensitive' },
-          { id: 'edit_company_data', label: 'تعديل بيانات شركة داخل الفاتورة', type: 'sensitive' },
-          { id: 'edit_tax_data', label: 'تعديل بيانات ضريبية داخل الفاتورة', type: 'sensitive' },
-          { id: 'export_approved', label: 'تصدير فاتورة معتمدة', type: 'sensitive' },
-          { id: 'export_cancelled', label: 'تصدير فاتورة ملغاة', type: 'sensitive' },
-          { id: 'print_cancelled', label: 'طباعة فاتورة ملغاة', type: 'sensitive' },
-          { id: 'modify_qr', label: 'حذف أو تعديل QR Code', type: 'sensitive' }
+          { id: 'view_portal', labelAr: 'عرض بوابة فواتير العملاء', labelEn: 'View Customer Invoices', type: 'view' },
+          { id: 'add_invoice', labelAr: 'إضافة فاتورة عميل جديدة', labelEn: 'Add New Customer Invoice', type: 'add' },
+          { id: 'edit_invoice', labelAr: 'تعديل فاتورة عميل', labelEn: 'Edit Customer Invoice', type: 'edit' },
+          { id: 'approve_invoice', labelAr: 'اعتماد فاتورة عميل', labelEn: 'Approve Customer Invoice', type: 'approve' },
+          { id: 'export_all', labelAr: 'تصدير كامل فواتير العملاء', labelEn: 'تصدير كامل فواتير العملاء', type: 'export' },
+          { id: 'preview_invoice', labelAr: 'معاينة وطباعة فاتورة عميل', labelEn: 'معاينة وطباعة فاتورة عميل', type: 'view' }
+        ]
+      },
+      revenues: {
+        ar: 'الإيرادات والمستحقات', en: 'Revenues',
+        perms: [
+          { id: 'view_revenues', labelAr: 'عرض الإيرادات المستحقة', labelEn: 'عرض الإيرادات المستحقة', type: 'view' },
+          { id: 'edit_revenues', labelAr: 'تعديل الإيرادات والمستحقات المضافة', labelEn: 'تعديل الإيرادات والمستحقات المضافة', type: 'edit' }
         ]
       },
       supplier_invoices: {
-        ar: 'فواتير الموردين',
+        ar: 'فواتير الموردين', en: 'Supplier Invoices',
         perms: [
-          { id: 'view_portal', label: 'عرض بوابة فواتير الموردين', type: 'view' },
-          { id: 'view_table', label: 'عرض جدول فواتير الموردين', type: 'view' },
-          { id: 'view_details', label: 'عرض تفاصيل فاتورة مورد', type: 'view' },
-          { id: 'search_invoices', label: 'البحث في فواتير الموردين', type: 'view' },
-          { id: 'use_filters', label: 'استخدام فلاتر فواتير الموردين', type: 'view' },
-          { id: 'view_attachment', label: 'عرض مرفق فاتورة المورد', type: 'view' },
-          { id: 'view_log', label: 'عرض سجل عمليات فاتورة المورد', type: 'view' },
-          { id: 'add_invoice', label: 'إضافة فاتورة مورد جديدة', type: 'add' },
-          { id: 'open_add_modal', label: 'فتح نافذة إضافة فاتورة مورد', type: 'add' },
-          { id: 'save_recorded', label: 'حفظ فاتورة مورد كمسجلة', type: 'add' },
-          { id: 'send_approval', label: 'إرسال فاتورة مورد للاعتماد', type: 'exec' },
-          { id: 'create_from_po', label: 'إنشاء فاتورة من أمر شراء', type: 'add' },
-          { id: 'upload_attachment', label: 'رفع مرفق فاتورة مورد', type: 'add' },
-          { id: 'edit_invoice', label: 'تعديل فاتورة مورد', type: 'edit' },
-          { id: 'edit_recorded', label: 'تعديل فاتورة مورد مسجلة', type: 'edit' },
-          { id: 'edit_pending', label: 'تعديل فاتورة مورد بانتظار اعتماد', type: 'edit' },
-          { id: 'edit_amount', label: 'تعديل مبلغ فاتورة مورد', type: 'edit' },
-          { id: 'edit_due_date', label: 'تعديل تاريخ الاستحقاق', type: 'edit' },
-          { id: 'edit_attachment', label: 'تعديل مرفق فاتورة المورد', type: 'edit' },
-          { id: 'approve_invoice', label: 'اعتماد فاتورة مورد', type: 'approve' },
-          { id: 'reject_invoice', label: 'رفض فاتورة مورد', type: 'approve' },
-          { id: 'unapprove_invoice', label: 'إلغاء اعتماد فاتورة مورد', type: 'sensitive' },
-          { id: 'request_revision', label: 'طلب تعديل فاتورة مورد', type: 'edit' },
-          { id: 'register_payment', label: 'تسجيل دفع لفاتورة مورد', type: 'financial' },
-          { id: 'edit_payment', label: 'تعديل دفع فاتورة مورد', type: 'edit' },
-          { id: 'delete_payment', label: 'حذف دفع فاتورة مورد', type: 'delete' },
-          { id: 'upload_receipt', label: 'رفع سند دفع مورد', type: 'add' },
-          { id: 'link_payment_account', label: 'ربط الدفع بالصندوق أو البنك', type: 'financial' },
-          { id: 'cancel_invoice', label: 'إلغاء فاتورة مورد', type: 'delete' },
-          { id: 'delete_unapproved', label: 'حذف فاتورة مورد غير معتمدة', type: 'delete' },
-          { id: 'delete_recorded', label: 'حذف فاتورة مورد مسجلة', type: 'delete' },
-          { id: 'edit_approved', label: 'تعديل فاتورة مورد معتمدة', type: 'sensitive' },
-          { id: 'delete_approved', label: 'حذف فاتورة مورد معتمدة', type: 'sensitive' },
-          { id: 'delete_paid', label: 'حذف فاتورة مورد مدفوعة', type: 'sensitive' },
-          { id: 'edit_paid_amount', label: 'تعديل مبلغ فاتورة مورد مدفوعة', type: 'sensitive' },
-          { id: 'unapprove_paid', label: 'إلغاء اعتماد فاتورة مورد مدفوعة', type: 'sensitive' },
-          { id: 'pay_unapproved', label: 'تسجيل دفع لفاتورة مورد غير معتمدة', type: 'sensitive' },
-          { id: 'delete_approved_attachment', label: 'حذف مرفق فاتورة مورد معتمدة', type: 'sensitive' },
-          { id: 'export_all', label: 'تصدير كامل فواتير الموردين', type: 'export' },
-          
-          { id: 'preview_invoice', label: 'معاينة فاتورة مورد', type: 'view' },
-          { id: 'print_invoice', label: 'طباعة فاتورة مورد', type: 'export' },
-          { id: 'export_pdf', label: 'تصدير فاتورة مورد PDF', type: 'export' },
-          { id: 'view_qr', label: 'عرض QR فاتورة مورد', type: 'view' },
-          { id: 'edit_before_approval', label: 'تعديل بيانات فاتورة مورد قبل الاعتماد', type: 'edit' },
-          { id: 'edit_approved_invoice', label: 'تعديل بيانات فاتورة مورد معتمدة', type: 'sensitive' },
-          { id: 'edit_items', label: 'تعديل الأصناف داخل فاتورة مورد', type: 'edit' },
-          { id: 'edit_vat', label: 'تعديل الضريبة داخل فاتورة مورد', type: 'edit' },
-          { id: 'edit_discount', label: 'تعديل الخصم داخل فاتورة مورد', type: 'edit' }
+          { id: 'view_portal', labelAr: 'عرض بوابة فواتير الموردين', labelEn: 'View Supplier Invoices', type: 'view' },
+          { id: 'add_invoice', labelAr: 'إضافة فاتورة مورد جديدة', labelEn: 'Add New Supplier Invoice', type: 'add' },
+          { id: 'edit_invoice', labelAr: 'تعديل فاتورة مورد', labelEn: 'Edit Supplier Invoice', type: 'edit' },
+          { id: 'approve_invoice', labelAr: 'اعتماد فاتورة مورد', labelEn: 'Approve Supplier Invoice', type: 'approve' }
+        ]
+      },
+      expenses: {
+        ar: 'المصروفات والمستحقات', en: 'Expenses',
+        perms: [
+          { id: 'view_expenses', labelAr: 'عرض المصروفات والمستحقات', labelEn: 'View Expenses', type: 'view' },
+          { id: 'edit_expenses', labelAr: 'تعديل المصروفات المستحقة', labelEn: 'Edit Expenses', type: 'edit' }
+        ]
+      },
+      payroll: {
+        ar: 'الرواتب الشهرية للأقسام', en: 'Monthly Payroll',
+        perms: [
+          { id: 'view_payroll', labelAr: 'الاطلاع على الرواتب الشهرية فقط', labelEn: 'View Payroll Only', type: 'view' },
+          { id: 'edit_payroll', labelAr: 'تعديل ومعالجة الرواتب الشهرية بالكامل', labelEn: 'Process & Edit Payroll', type: 'edit' }
+        ]
+      },
+      cash_bank: {
+        ar: 'الصندوق والبنك', en: 'Banks & Cash',
+        perms: [
+          { id: 'view_portal', labelAr: 'الاطلاع على الصندوق والبنك', labelEn: 'الاطلاع على الصندوق والبنك', type: 'view' },
+          { id: 'manage_cash_boxes', labelAr: 'إدارة الحسابات والحركات المالية بالكامل', labelEn: 'إدارة الحسابات والحركات المالية بالكامل', type: 'edit' }
+        ]
+      },
+      zakat_tax: {
+        ar: 'قسم الزكاة والضريبة', en: 'قسم الزكاة والضريبة',
+        perms: [
+          { id: 'view_zakat_tax', labelAr: 'عرض قسم الزكاة والضريبة', labelEn: 'عرض قسم الزكاة والضريبة', type: 'view' },
+          { id: 'register_tax_payment', labelAr: 'تسجيل سداد الضريبة أو الزكاة', labelEn: 'تسجيل سداد الضريبة أو الزكاة', type: 'financial' },
+          { id: 'export_zakat_tax', labelAr: 'تصدير كشف الزكاة والضريبة', labelEn: 'تصدير كشف الزكاة والضريبة', type: 'export' }
+        ]
+      },
+      reports: {
+        ar: 'التقارير الحسابية', en: 'التقارير الحسابية',
+        perms: [
+          { id: 'view_reports', labelAr: 'عرض صفحة التقارير الحسابية', labelEn: 'عرض صفحة التقارير الحسابية', type: 'view' },
+          { id: 'export_reports', labelAr: 'تصدير التقارير الحسابية والأرباح والخسائر', labelEn: 'تصدير التقارير الحسابية والأرباح والخسائر', type: 'export' }
+        ]
+      },
+      zatca: {
+        ar: 'إعدادات الزكاة والضريبة ZATCA', en: 'إعدادات الزكاة والضريبة ZATCA',
+        perms: [
+          { id: 'view_zatca', labelAr: 'عرض إعدادات زاتكا وتكامل الفواتير', labelEn: 'عرض إعدادات زاتكا وتكامل الفواتير', type: 'view' },
+          { id: 'edit_zatca', labelAr: 'تعديل إعدادات زاتكا والربط الضريبي', labelEn: 'تعديل إعدادات زاتكا والربط الضريبي', type: 'sensitive' }
         ]
       }
     }
   },
   settings: {
-    ar: 'المستخدمين والإعدادات',
+    ar: 'المستخدمين والإعدادات', en: 'المستخدمين والإعدادات',
     icon: <Settings className="w-5 h-5"/>,
     sub: {
       users: {
-        ar: 'بوابة الصلاحيات والمستخدمين',
+        ar: 'بوابة الصلاحيات والمستخدمين', en: 'بوابة الصلاحيات والمستخدمين',
         perms: [
-          { id: 'view_users', label: 'عرض بوابة المستخدمين', type: 'view' },
-          { id: 'add_user', label: 'إضافة مستخدم جديد', type: 'add' },
-          { id: 'edit_user', label: 'تعديل/حذف مستخدم', type: 'sensitive' },
-          { id: 'manage_permissions', label: 'تعديل الصلاحيات للمستخدمين', type: 'sensitive' }
+          { id: 'view_users', labelAr: 'عرض بوابة المستخدمين', labelEn: 'عرض بوابة المستخدمين', type: 'view' },
+          { id: 'add_user', labelAr: 'إضافة مستخدم جديد', labelEn: 'إضافة مستخدم جديد', type: 'add' },
+          { id: 'edit_user', labelAr: 'تعديل/حذف مستخدم', labelEn: 'تعديل/حذف مستخدم', type: 'sensitive' },
+          { id: 'manage_permissions', labelAr: 'تعديل الصلاحيات للمستخدمين', labelEn: 'تعديل الصلاحيات للمستخدمين', type: 'sensitive' }
         ]
       },
       general: {
-        ar: 'الإعدادات العامة',
+        ar: 'الإعدادات العامة', en: 'الإعدادات العامة',
         perms: [
-          { id: 'view_settings', label: 'عرض الإعدادات العامة', type: 'view' },
-          { id: 'edit_settings', label: 'تعديل بيانات الشركة وإعدادات النظام', type: 'edit' },
-          { id: 'database_backup', label: 'تصدير/استيراد نسخة احتياطية', type: 'sensitive' }
+          { id: 'view_settings', labelAr: 'عرض الإعدادات العامة', labelEn: 'عرض الإعدادات العامة', type: 'view' },
+          { id: 'edit_settings', labelAr: 'تعديل بيانات الشركة وإعدادات النظام', labelEn: 'تعديل بيانات الشركة وإعدادات النظام', type: 'edit' },
+          { id: 'database_backup', labelAr: 'تصدير/استيراد نسخة احتياطية', labelEn: 'تصدير/استيراد نسخة احتياطية', type: 'sensitive' }
         ]
       },
       audit: {
-        ar: 'سجل العمليات والتدقيق',
+        ar: 'سجل العمليات والتدقيق', en: 'سجل العمليات والتدقيق',
         perms: [
-          { id: 'view_audit', label: 'عرض سجل التدقيق بالكامل', type: 'view' },
-          { id: 'delete_audit', label: 'حذف أو تفريغ السجل', type: 'sensitive' }
+          { id: 'view_audit', labelAr: 'عرض سجل التدقيق بالكامل', labelEn: 'عرض سجل التدقيق بالكامل', type: 'view' },
+          { id: 'delete_audit', labelAr: 'حذف أو تفريغ السجل', labelEn: 'حذف أو تفريغ السجل', type: 'sensitive' }
         ]
       }
     }
   },
   notifications: {
-    ar: 'إشعارات النظام',
+    ar: 'إشعارات النظام', en: 'إشعارات النظام',
     icon: <Settings className="w-5 h-5"/>,
     sub: {
       general: {
-        ar: 'عرض الإشعارات',
+        ar: 'عرض الإشعارات', en: 'عرض الإشعارات',
         perms: [
-          { id: 'view_all', label: 'عرض جميع إشعارات النظام', type: 'view' },
-          { id: 'view_hr', label: 'عرض إشعارات الموارد البشرية', type: 'view' },
-          { id: 'view_sales', label: 'عرض إشعارات المبيعات', type: 'view' },
-          { id: 'view_purchasing', label: 'عرض إشعارات المشتريات', type: 'view' },
-          { id: 'view_production', label: 'عرض إشعارات الانتاج', type: 'view' },
-          { id: 'view_finance', label: 'عرض إشعارات المحاسبة المالية', type: 'view' },
-          { id: 'view_public', label: 'عرض الاشعارات العامة', type: 'view' },
-          { id: 'view_private', label: 'عرض الاشعارات الخاصة', type: 'view' }
+          { id: 'view_all', labelAr: 'عرض جميع إشعارات النظام', labelEn: 'عرض جميع إشعارات النظام', type: 'view' },
+          { id: 'view_hr', labelAr: 'عرض إشعارات الموارد البشرية', labelEn: 'عرض إشعارات الموارد البشرية', type: 'view' },
+          { id: 'view_sales', labelAr: 'عرض إشعارات المبيعات', labelEn: 'عرض إشعارات المبيعات', type: 'view' },
+          { id: 'view_purchasing', labelAr: 'عرض إشعارات المشتريات', labelEn: 'عرض إشعارات المشتريات', type: 'view' },
+          { id: 'view_production', labelAr: 'عرض إشعارات الانتاج', labelEn: 'عرض إشعارات الانتاج', type: 'view' },
+          { id: 'view_finance', labelAr: 'عرض إشعارات المحاسبة المالية', labelEn: 'عرض إشعارات المحاسبة المالية', type: 'view' },
+          { id: 'view_public', labelAr: 'عرض الاشعارات العامة', labelEn: 'عرض الاشعارات العامة', type: 'view' },
+          { id: 'view_private', labelAr: 'عرض الاشعارات الخاصة', labelEn: 'عرض الاشعارات الخاصة', type: 'view' }
         ]
       }
     }
@@ -541,11 +494,11 @@ const COLOR_MAP: Record<string, string> = {
   export: 'text-slate-700 bg-slate-100 border-slate-300 accent-slate-600'
 };
 
-const BADGE_MAP: Record<string, { label: string, color: string }> = {
-  sensitive: { label: 'حساسة وخطرة ⚠️', color: 'bg-rose-100 text-rose-800 border-rose-300' },
-  financial: { label: 'مالية 💵', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-  approve: { label: 'اعتماد ✍️', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-  delete: { label: 'حذف 🗑️', color: 'bg-red-100 text-red-800 border-red-300' }
+const BADGE_MAP: Record<string, { labelAr: string, labelEn: string, color: string }> = {
+  sensitive: { labelAr: 'حساسة وخطرة ⚠️', labelEn: 'Sensitive ⚠️', color: 'bg-rose-100 text-rose-800 border-rose-300' },
+  financial: { labelAr: 'مالية 💵', labelEn: 'Financial 💵', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  approve: { labelAr: 'اعتماد ✍️', labelEn: 'Approval ✍️', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  delete: { labelAr: 'حذف 🗑️', labelEn: 'Delete 🗑️', color: 'bg-red-100 text-red-800 border-red-300' }
 };
 
 export default function AdvancedPermissionsPortal({ 
@@ -848,8 +801,8 @@ export default function AdvancedPermissionsPortal({
                                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isChecked ? 'left-1' : 'left-5'}`}></div>
                                         </div>
                                         <div className="text-right flex items-center justify-end gap-2 flex-wrap">
-                                           <span className={`text-sm font-bold ${isChecked ? colorClasses.split(' ')[0] : 'text-slate-700'}`}>{perm.label}</span>
-                                           {badge && <span className={`mr-2 px-1.5 py-0.5 rounded text-[9px] font-black ${badge.color}`}>{badge.label}</span>}
+                                           <span className={`text-sm font-bold ${isChecked ? colorClasses.split(' ')[0] : 'text-slate-700'}`}>{lang === "ar" ? perm.labelAr : (perm.labelEn || perm.labelAr)}</span>
+                                           {badge && <span className={`mr-2 px-1.5 py-0.5 rounded text-[9px] font-black ${badge.color}`}>{lang === "ar" ? badge.labelAr : badge.labelEn}</span>}
                                         </div>
                                      </div>
                                      

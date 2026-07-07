@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, FileText, AlertCircle, Clock, AlertTriangle, UserPlus, FileWarning, Wallet } from 'lucide-react';
 import { User } from '../types';
 import { hasAdvancedPermission } from '../lib/permissions';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 interface NotificationsBellProps {
   user: User | null;
@@ -100,10 +102,10 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
             }
           };
 
-          checkExpiry(emp.iqamaExpiryDate, emp.arabicName, 'الإقامة');
-          checkExpiry(emp.passportExpiryDate, emp.arabicName, 'جواز السفر');
-          checkExpiry(emp.insuranceExpiryDate, emp.arabicName, 'التأمين الطبي');
-          checkExpiry(emp.contractExpiry, emp.arabicName, 'عقد العمل');
+          checkExpiry(emp.iqamaExpiryDate, lang === 'ar' ? emp.arabicName : (emp.englishName || emp.name || emp.arabicName), lang === 'ar' ? 'الإقامة' : 'Iqama');
+          checkExpiry(emp.passportExpiryDate, lang === 'ar' ? emp.arabicName : (emp.englishName || emp.name || emp.arabicName), lang === 'ar' ? 'جواز السفر' : 'Passport');
+          checkExpiry(emp.insuranceExpiryDate, lang === 'ar' ? emp.arabicName : (emp.englishName || emp.name || emp.arabicName), lang === 'ar' ? 'التأمين الطبي' : 'Medical Insurance');
+          checkExpiry(emp.contractExpiry, lang === 'ar' ? emp.arabicName : (emp.englishName || emp.name || emp.arabicName), lang === 'ar' ? 'عقد العمل' : 'Employment Contract');
         });
       } catch (e) {}
 
@@ -128,6 +130,7 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
 
     // 2. Finance: Late payments
     if (checkPermissions('finance')) {
+      // Overdue customer invoices for collections
       try {
         const invRes = await fetch('/api/customer-invoices');
         const invoices = await invRes.json();
@@ -141,11 +144,36 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
           newNotifs.push({
             id: 'fin-late',
             type: 'finance',
-            title: lang === 'ar' ? 'دفعات متأخرة' : 'Late Payments',
-            message: lang === 'ar' ? `يوجد ${lateCount} فواتير عملاء متأخرة الدفع` : `There are ${lateCount} overdue customer invoices`,
+            title: lang === 'ar' ? 'تحصيلات فواتير متأخرة' : 'Overdue Customer Collections',
+            message: lang === 'ar' ? `يوجد ${lateCount} فواتير عملاء متأخرة التحصيل` : `There are ${lateCount} overdue customer invoices for collection`,
             date: todayStr,
             isRead: false,
             icon: <Wallet className="w-5 h-5 text-red-500" />
+          });
+        }
+      } catch (e) {}
+
+      // Overdue supplier payments
+      try {
+        const supSnap = await getDocs(collection(db, "supplier_invoices"));
+        const supInvoices = supSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        let lateSupCount = 0;
+        supInvoices.forEach((sinv: any) => {
+          const ms = todayMs - new Date(sinv.invoiceDate || sinv.createdAt).getTime();
+          const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+          if (sinv.status === 'Draft' && days > 30) {
+            lateSupCount++;
+          }
+        });
+        if (lateSupCount > 0) {
+          newNotifs.push({
+            id: 'fin-sup-late',
+            type: 'finance',
+            title: lang === 'ar' ? 'فواتير موردين متأخرة السداد' : 'Overdue Supplier Invoices',
+            message: lang === 'ar' ? `يوجد ${lateSupCount} فواتير موردين غير مسددة منذ أكثر من ٣٠ يوماً` : `There are ${lateSupCount} supplier invoices unpaid for over 30 days`,
+            date: todayStr,
+            isRead: false,
+            icon: <FileText className="w-5 h-5 text-amber-500" />
           });
         }
       } catch (e) {}
@@ -159,10 +187,20 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
         
         let delayedCount = 0;
         let approachingInst = 0;
+        let stageDelayCount = 0;
 
         quotes.forEach((q: any) => {
-           if (q.productionStatus === 'Halted') delayedCount++;
+           if (q.productionStatus === 'Halted' || q.productionStatus === 'Delayed') delayedCount++;
            if (q.stage === 'Ready' || q.productionStatus === 'Ready') approachingInst++;
+           
+           // Production stage delay: project is active in production, not ready or halted, but has been in production for over 15 days
+           if (q.stage === 'Approved' && q.productionStatus !== 'Ready' && q.productionStatus !== 'Halted') {
+             const ms = todayMs - new Date(q.dateCreated).getTime();
+             const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+             if (days > 15) {
+               stageDelayCount++;
+             }
+           }
         });
 
         if (delayedCount > 0) {
@@ -177,6 +215,18 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
           });
         }
 
+        if (stageDelayCount > 0) {
+          newNotifs.push({
+            id: 'prod-stage-delay',
+            type: 'production',
+            title: lang === 'ar' ? 'تأخر في مراحل التصنيع' : 'Manufacturing Stage Delay',
+            message: lang === 'ar' ? `يوجد ${stageDelayCount} مشاريع إنتاج تجاوزت ١٥ يوماً دون اكتمال` : `There are ${stageDelayCount} production projects active for over 15 days`,
+            date: todayStr,
+            isRead: false,
+            icon: <Clock className="w-5 h-5 text-orange-500" />
+          });
+        }
+
         if (approachingInst > 0) {
           newNotifs.push({
             id: 'prod-inst',
@@ -186,6 +236,37 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
             date: todayStr,
             isRead: false,
             icon: <AlertCircle className="w-5 h-5 text-emerald-500" />
+          });
+        }
+      } catch (e) {}
+    }
+
+    // 4. Sales: Pipeline / Sales reps targets delays
+    if (checkPermissions('sales')) {
+      try {
+        const sqRes = await fetch('/api/sales_quotations');
+        const quotes = await sqRes.json();
+        
+        let salesDelayCount = 0;
+        quotes.forEach((q: any) => {
+          if (q.stage !== 'Approved' && q.stage !== 'Ready' && q.stage !== 'Completed' && q.stage !== 'Rejected') {
+            const ms = todayMs - new Date(q.dateCreated).getTime();
+            const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+            if (days > 14) {
+              salesDelayCount++;
+            }
+          }
+        });
+
+        if (salesDelayCount > 0) {
+          newNotifs.push({
+            id: 'sales-pipeline-delay',
+            type: 'sales',
+            title: lang === 'ar' ? 'ركود في دورة المبيعات' : 'Sales Pipeline Stagnant',
+            message: lang === 'ar' ? `يوجد ${salesDelayCount} عروض أسعار معلقة منذ أكثر من ١٤ يوماً` : `There are ${salesDelayCount} quotations pending for over 14 days`,
+            date: todayStr,
+            isRead: false,
+            icon: <AlertTriangle className="w-5 h-5 text-amber-500" />
           });
         }
       } catch (e) {}

@@ -89,7 +89,7 @@ export default function HrSubSections({
       jobTitle: newEmp.jobTitle || 'Technician',
       grade: newEmp.grade || 'PROBATION',
       basicSalary: newEmp.basicSalary || 5000,
-      allowances: newEmp.allowances || { housing: 1500, transport: 500, phone: 0 },
+      allowances: newEmp.allowances || { housing: 1500, transport: 500 },
       homeAddress: newEmp.homeAddress || '',
       custody: newEmp.custody || {},
       birthDate: newEmp.birthDate || '',
@@ -624,7 +624,7 @@ export default function HrSubSections({
                     experienceYears: expYears,
                     iqamaId: `24${Math.floor(10000000 + Math.random() * 90000000)}`,
                     passportDetails: `AC${Math.floor(100000 + Math.random() * 900000)}`,
-                    allowances: { housing: 1000, transport: 400, phone: 0 },
+                    allowances: { housing: 1000, transport: 400 },
                     grade: 'Grade 1'
                   };
 
@@ -832,9 +832,9 @@ export default function HrSubSections({
           const filteredPayroll = localEmployees.filter(emp => {
             const query = payrollSearchQuery.toLowerCase();
             return (
-              emp.arabicName.toLowerCase().includes(query) ||
-              emp.englishName.toLowerCase().includes(query) ||
-              emp.jobTitle.toLowerCase().includes(query) ||
+              (emp.arabicName || '').toLowerCase().includes(query) ||
+              (emp.englishName || '').toLowerCase().includes(query) ||
+              (emp.jobTitle || '').toLowerCase().includes(query) ||
               emp.iqamaId.includes(query)
             );
           });
@@ -880,38 +880,38 @@ export default function HrSubSections({
                 <tbody>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">الراتب الأساسي</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-weight: bold;">SAR ${emp.basicSalary.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-weight: bold;">SAR ${(emp.basicSalary || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">بدل السكن (25%)</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${h.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${(h || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">بدل الانتقال والترحيل</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${t.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${(t || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">العمل الإضافي والساعات المعتمدة</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${extra.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${(extra || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">المكافآت التشجيعية والإنتاجية</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${b.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${(b || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr style="background: #fff1f2;">
                     <td style="padding: 10px; border: 1px solid #fecdd3; color: #be123c;">الخصومات والجزاءات الإدارية</td>
-                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${ded.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${(ded || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr style="background: #fff1f2;">
                     <td style="padding: 10px; border: 1px solid #fecdd3; color: #be123c;">أقساط السلف والتسويات المستقطعة</td>
-                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${loan.toLocaleString()}</td>
+                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${(loan || 0).toLocaleString('en-US')}</td>
                   </tr>
                 </tbody>
               </table>
 
               <div style="border: 2px dashed #0072BC; font-size: 18px; font-weight: bold; padding: 15px; text-align: center; margin-top: 25px; background: #f0f9ff; text-align: right; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #0072BC;">صافي الراتب المستحق والصرف البنكي:</span>
-                <span style="font-family: monospace; font-size: 22px; color: #0072BC;">SAR ${net.toLocaleString()}</span>
+                <span style="font-family: monospace; font-size: 22px; color: #0072BC;">SAR ${(net || 0).toLocaleString('en-US')}</span>
               </div>
 
               <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
@@ -929,7 +929,7 @@ export default function HrSubSections({
                     <title>كشف مسير راتب أفراد - ${emp.arabicName}</title>
                     <style>
                       ${sharedPrintStyles}
-                      body { padding: 0; font-family: 'Tajawal', Tahoma, Arial, sans-serif; direction: rtl; text-align: right; background: #fff; }
+                      body { padding: 0; font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial, sans-serif; direction: rtl; text-align: right; background: #fff; }
                       .payslip-box { padding: 0 10px; }
                       table { width: 100%; border-collapse: collapse; margin-top: 15px; }
                       th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: right; font-size: 13px; }
@@ -977,7 +977,7 @@ export default function HrSubSections({
                   name: emp.arabicName,
                   category_ar: 'كشف الراتب الشهري المعتمد 💵',
                   category_en: 'Official Certified E-Payslip 💵',
-                  details: `عزيزي الموظف الموقر، تم إصدار كشف مسير راتب وورد ستاير WPS الخاص بك لشهر يونيو 2026 بنجاح.\n\nالراتب الأساسي: SAR ${emp.basicSalary.toLocaleString()}\nبدل السكن: SAR ${h.toLocaleString()}\nبدل النقل: SAR ${t.toLocaleString()}\nإضافي ومكافآت الساعات: SAR ${(extra + b).toLocaleString()}\nمستقطع السلف والخصومات: SAR ${(ded + loan).toLocaleString()}\nصافي الراتب المستحق صرفه بنكياً: SAR ${net.toLocaleString()}\n\nالحالة: معتمد ومنفّذ ✓`,
+                  details: `عزيزي الموظف الموقر، تم إصدار كشف مسير راتب وورد ستاير WPS الخاص بك لشهر يونيو 2026 بنجاح.\n\nالراتب الأساسي: SAR ${(emp.basicSalary || 0).toLocaleString('en-US')}\nبدل السكن: SAR ${(h || 0).toLocaleString('en-US')}\nبدل النقل: SAR ${(t || 0).toLocaleString('en-US')}\nإضافي ومكافآت الساعات: SAR ${((extra || 0) + (b || 0)).toLocaleString('en-US')}\nمستقطع السلف والخصومات: SAR ${((ded || 0) + (loan || 0)).toLocaleString('en-US')}\nصافي الراتب المستحق صرفه بنكياً: SAR ${(net || 0).toLocaleString('en-US')}\n\nالحالة: معتمد ومنفّذ ✓`,
                   status: 'RESOLVED',
                   hrNotes: `أهلاً بك، تم إرسال كشف الراتب الرسمي وإيداعه بمسير ووردستار البنكي لشهر يونيو 2026 بنجاح. رمز تفويض النقد البنكي الوطني: BK-WPS-2026-AR`
                 })
@@ -986,7 +986,7 @@ export default function HrSubSections({
               if (response.ok) {
                 alert(`✓ تم إرسال مسير الراتب بنجاح إلى الموظف '${emp.arabicName}' وسيظهر فوراً في استعلامات خدمته الذاتية!`);
               } else {
-                alert('عذراً، فشل رفع الرسالة وخوادم الاستعلام.');
+                alert(lang === 'ar' ? 'عذراً، فشل رفع الرسالة وخوادم الاستعلام.' : 'Sorry, failed to upload message to servers.');
               }
             } catch (err) {
               console.error('Failed to post pay slip e-record:', err);
@@ -1002,19 +1002,19 @@ export default function HrSubSections({
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">مجموع الرواتب الأساسية</span>
-                  <p className="text-xl font-mono font-black text-indigo-950">SAR {totalBasics.toLocaleString()}</p>
+                  <p className="text-xl font-mono font-black text-indigo-950">SAR {(totalBasics || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-slate-400 block">لكافة موظفي الشركة المسجلين</span>
                 </div>
 
                 <div className="bg-gradient-to-br from-sky-50 to-white p-4 rounded-2xl border border-sky-100 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">مجموع البدلات (سكن ونقل)</span>
-                  <p className="text-xl font-mono font-black text-slate-900">SAR {totalAllowances.toLocaleString()}</p>
+                  <p className="text-xl font-mono font-black text-slate-900">SAR {(totalAllowances || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-slate-400 block">السكن 25% والتنقل المتغير للجميع</span>
                 </div>
 
                 <div className="bg-gradient-to-br from-[#0072BC]/5 to-white p-4 rounded-2xl border border-[#0072BC]/20 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">إجمالي الرواتب شاملة البدلات</span>
-                  <p className="text-xl font-mono font-black text-[#0072BC]">SAR {grandTotalSalaries.toLocaleString()}</p>
+                  <p className="text-xl font-mono font-black text-[#0072BC]">SAR {(grandTotalSalaries || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-[#0072BC] font-semibold block">مغطي بمسير WPS البنكي 💸</span>
                 </div>
 
@@ -1128,9 +1128,9 @@ export default function HrSubSections({
                               <p className="font-bold text-slate-600">{emp.jobTitle}</p>
                               <span className="text-[9px] bg-slate-100 p-0.5 rounded px-1 text-slate-500 font-mono">{emp.grade}</span>
                             </td>
-                            <td className="p-2 font-mono font-bold text-slate-800">{emp.basicSalary.toLocaleString()}</td>
-                            <td className="p-2 font-mono text-slate-500">{h.toLocaleString()}</td>
-                            <td className="p-2 font-mono text-slate-500">{t.toLocaleString()}</td>
+                            <td className="p-2 font-mono font-bold text-slate-800">{(emp.basicSalary || 0).toLocaleString('en-US')}</td>
+                            <td className="p-2 font-mono text-slate-500">{(h || 0).toLocaleString('en-US')}</td>
+                            <td className="p-2 font-mono text-slate-500">{(t || 0).toLocaleString('en-US')}</td>
                             
                             {/* Editable Additions */}
                             <td className="p-2">
@@ -1167,12 +1167,12 @@ export default function HrSubSections({
 
                             {/* ERP Loans integration */}
                             <td className="p-2 font-mono text-rose-500 font-bold">
-                              {loans ? `-${loans.toLocaleString()}` : '0'}
+                              {loans ? `-${(loans || 0).toLocaleString('en-US')}` : '0'}
                             </td>
 
                             {/* NET SALARY RESULT */}
                             <td className="p-2 font-mono font-black text-[#0072BC] text-xs">
-                              {netVal.toLocaleString()}
+                              {(netVal || 0).toLocaleString('en-US')}
                             </td>
 
                             {/* Controls */}
@@ -1247,38 +1247,38 @@ export default function HrSubSections({
                           <tbody className="bg-white">
                             <tr className="border-b">
                               <td className="p-2">الرتب الأساسي المفصل</td>
-                              <td className="p-2 text-left font-mono font-bold">SAR {emp.basicSalary.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono font-bold">SAR {(emp.basicSalary || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2">بدل السكن القانوني (25% من الأساسي)</td>
-                              <td className="p-2 text-left font-mono text-slate-500">SAR {h.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono text-slate-500">SAR {(h || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2">بدل النقل وتغطية السفر والموقع</td>
-                              <td className="p-2 text-left font-mono text-slate-500">SAR {t.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono text-slate-500">SAR {(t || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2 text-emerald-600">القيمة والإنتاجية الإضافية للشهر</td>
-                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {extra.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {(extra || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2 text-emerald-600">المكافآت والبدلات الميدانية الخاصة</td>
-                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {b.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {(b || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b text-rose-600 bg-rose-50/30">
                               <td className="p-2">الخصومات والجزاءات المستقطعة</td>
-                              <td className="p-2 text-left font-mono">-SAR {ded.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono">-SAR {(ded || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b text-rose-600 bg-rose-50/50">
                               <td className="p-2">مستنزلات أقساط السلف (ERP)</td>
-                              <td className="p-2 text-left font-mono font-black">-SAR {loan.toLocaleString()}</td>
+                              <td className="p-2 text-left font-mono font-black">-SAR {(loan || 0).toLocaleString('en-US')}</td>
                             </tr>
                           </tbody>
                         </table>
 
                         <div className="p-3 bg-[#0072BC]/10 border border-all border-[#0072BC]/20 rounded-xl flex justify-between items-center font-bold text-xs">
                           <span className="text-[#0072BC]">إجمالي صافي الراتب المستلم للبنك:</span>
-                          <span className="text-[#0072BC] font-mono text-sm">SAR {net.toLocaleString()}</span>
+                          <span className="text-[#0072BC] font-mono text-sm">SAR {(net || 0).toLocaleString('en-US')}</span>
                         </div>
                       </div>
 
@@ -1618,7 +1618,7 @@ export default function HrSubSections({
               <div className="p-5 bg-[#0072BC] text-white rounded-2xl flex flex-col justify-between text-xs">
                 <div>
                   <span className="text-[10px] uppercase text-cyan-200 font-extrabold block">{lang === 'ar' ? 'قيمة مكافأة نهاية الخدمة الشرعية' : 'Calculated Saudi Labor EOS Award'}</span>
-                  <p className="text-3xl font-black font-mono mt-1">SAR {calculateSaudiEos().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-black font-mono mt-1">SAR {(calculateSaudiEos() || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
                 <div className="space-y-1.5 text-[11px] text-cyan-100 pt-3 border-t border-cyan-800">
                   <p>⚖️ {lang === 'ar' ? 'نظام الاحتساب مأخوذ من ملخص المادة ٨٤ لقانون العمل السعودي.' : 'Based strictly on Saudi Article 84 rule: 0.5 salary for first 5 years, 1.0 salary for subsequent years, pro-rated.'}</p>

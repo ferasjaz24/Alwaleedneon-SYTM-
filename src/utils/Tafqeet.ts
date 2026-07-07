@@ -59,3 +59,5 @@ export const numberToArabicWords = (number: number): string => {
 
   return words.join(" ").trim().replace(/\s+/g, ' ');
 };
+
+export const tafqeet = numberToArabicWords;

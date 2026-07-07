@@ -3,6 +3,8 @@ import { PlusCircle, Search, Filter, Eye, Edit, CheckCircle, XCircle, Printer, F
 import { User } from "../../types";
 import { hasAdvancedPermission } from "../../lib/permissions";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../../utils/PrintShared";
+import { db } from "../../firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 interface JournalEntryProps {
   lang: "ar" | "en";
@@ -20,19 +22,43 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<any>(null);
   const [approveConfirmItem, setApproveConfirmItem] = useState<any>(null);
 
+  const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+
   const filteredEntries = entries.filter((e) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = 
       e.id?.toLowerCase().includes(q) ||
       e.description?.toLowerCase().includes(q) ||
-      e.reference?.toLowerCase().includes(q);
+      e.reference?.toLowerCase().includes(q) ||
+      e.sourceModule?.toLowerCase().includes(q) ||
+      e.sourceRecordId?.toLowerCase().includes(q);
     const matchesMonth = filterMonth ? e.date?.startsWith(filterMonth) : true;
     return matchesSearch && matchesMonth;
   });
 
   useEffect(() => {
     fetchEntries();
+    fetchCashBoxesAndBankAccounts();
   }, []);
+
+  const fetchCashBoxesAndBankAccounts = async () => {
+    try {
+      const cbRes = await fetch("/api/dynamic/cash_boxes");
+      if (cbRes.ok) {
+        const cbData = await cbRes.json();
+        setCashBoxes(cbData);
+      }
+
+      const baRes = await fetch("/api/dynamic/bank_accounts");
+      if (baRes.ok) {
+        const baData = await baRes.json();
+        setBankAccounts(baData);
+      }
+    } catch (err) {
+      console.error("Error fetching sub accounts: ", err);
+    }
+  };
 
   const fetchEntries = async () => {
     try {
@@ -56,6 +82,8 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     status: "مسودة",
     debitAccount: "",
     creditAccount: "",
+    debitSubId: "",
+    creditSubId: "",
     amount: "",
     reference: "",
     project: "",
@@ -96,6 +124,8 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
       status: "مسودة",
       debitAccount: "",
       creditAccount: "",
+      debitSubId: "",
+      creditSubId: "",
       amount: "",
       reference: "",
       project: "",
@@ -115,6 +145,20 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     if (!entryForm.creditAccount) return "يرجى اختيار الحساب الدائن.";
     if (entryForm.debitAccount === entryForm.creditAccount) return "لا يمكن أن يكون الحساب المدين نفس الحساب الدائن.";
     if (!entryForm.amount || Number(entryForm.amount) <= 0) return "يرجى إدخال مبلغ صحيح أكبر من صفر.";
+
+    if (entryForm.debitAccount === "الصندوق" && !entryForm.debitSubId) {
+      return "يرجى اختيار الصندوق للحساب المدين.";
+    }
+    if (entryForm.debitAccount === "البنك" && !entryForm.debitSubId) {
+      return "يرجى اختيار الحساب البنكي للحساب المدين.";
+    }
+    if (entryForm.creditAccount === "الصندوق" && !entryForm.creditSubId) {
+      return "يرجى اختيار الصندوق للحساب الدائن.";
+    }
+    if (entryForm.creditAccount === "البنك" && !entryForm.creditSubId) {
+      return "يرجى اختيار الحساب البنكي للحساب الدائن.";
+    }
+
     if (!entryForm.description.trim()) return "يرجى كتابة وصف القيد.";
     return "";
   };
@@ -173,6 +217,8 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
           status: "مسودة",
           debitAccount: "",
           creditAccount: "",
+          debitSubId: "",
+          creditSubId: "",
           amount: "",
           reference: "",
           project: "",
@@ -190,6 +236,30 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     }
   };
 
+  const [testing, setTesting] = useState(false);
+
+  const handleTestCreate = async () => {
+    setTesting(true);
+    try {
+      const res = await fetch("/api/journal-entries/test-create", {
+        method: "POST"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(`تم إنشاء القيد التجريبي بنجاح! رقم القيد: ${data.jvId}\nالمدين: الصندوق بقيمة 100 ر.س\nالدائن: الإيرادات بقيمة 100 ر.س`);
+        fetchEntries();
+      } else {
+        const data = await res.json();
+        alert(`فشل إنشاء القيد التجريبي: ${data.error}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`خطأ: ${err.message}`);
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleEdit = (entry: any) => {
     setEditingEntryId(entry.id);
     setEntryForm({
@@ -198,6 +268,8 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
       status: entry.status || "مسودة",
       debitAccount: entry.debitAccount || "",
       creditAccount: entry.creditAccount || "",
+      debitSubId: entry.debitSubId || "",
+      creditSubId: entry.creditSubId || "",
       amount: entry.amount || "",
       reference: entry.reference || "",
       project: entry.project || "",
@@ -226,11 +298,17 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
       return; // Handled in UI (button disabled)
     }
     try {
-      await fetch(`/api/journal-entries/${deleteConfirmItem.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/journal-entries/${deleteConfirmItem.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "فشل إلغاء أو حذف القيد اليومي.");
+        return;
+      }
       setDeleteConfirmItem(null);
       fetchEntries();
     } catch (err) {
       console.error(err);
+      alert("حدث خطأ غير متوقع أثناء معالجة القيد المحاسبي.");
     }
   };
 
@@ -240,10 +318,15 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     printWindow.document.write(`
       <html dir="${lang === "ar" ? "rtl" : "ltr"}">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <title>قيد يومي - ${entry.id}</title>
           <style>${sharedPrintStyles}</style>
           <style>
-            body { font-family: 'Tajawal', sans-serif; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; }
+            body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; }
             .entry-header { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0072BC; }
             .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
             .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
@@ -292,12 +375,12 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
             <div class="account-box debit">
               <span class="label" style="color: #be123c;">الحساب المدين (Debit)</span>
               <span class="value" style="color: #881337; font-size: 18px;">${entry.debitAccount}</span>
-              <div class="amount" style="color: #be123c;">${Number(entry.amount).toLocaleString()} SAR</div>
+              <div class="amount" style="color: #be123c;">${Number(entry.amount).toLocaleString('en-US')} SAR</div>
             </div>
             <div class="account-box credit">
               <span class="label" style="color: #047857;">الحساب الدائن (Credit)</span>
               <span class="value" style="color: #064e3b; font-size: 18px;">${entry.creditAccount}</span>
-              <div class="amount" style="color: #047857;">${Number(entry.amount).toLocaleString()} SAR</div>
+              <div class="amount" style="color: #047857;">${Number(entry.amount).toLocaleString('en-US')} SAR</div>
             </div>
           </div>
 
@@ -354,14 +437,23 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
       {/* Header and Summary Cards */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-slate-800">القيود اليومية</h2>
-        {canAddEntry && (
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors"
+            onClick={handleTestCreate}
+            disabled={testing}
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-amber-700 transition-colors disabled:opacity-50"
           >
-            <PlusCircle className="w-5 h-5" /> إضافة قيد يومي
+            {testing ? "جاري الإنشاء..." : "Test Create Journal Entry"}
           </button>
-        )}
+          {canAddEntry && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors"
+            >
+              <PlusCircle className="w-5 h-5" /> إضافة قيد يومي
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -411,11 +503,11 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               <tr>
                 <th className="p-4">رقم القيد</th>
                 <th className="p-4">تاريخ القيد</th>
-                <th className="p-4">النوع</th>
+                <th className="p-4">نموذج المصدر</th>
+                <th className="p-4">سجل المصدر</th>
                 <th className="p-4">وصف القيد</th>
-                <th className="p-4">الحساب المدين</th>
-                <th className="p-4">الحساب الدائن</th>
-                <th className="p-4">المبلغ</th>
+                <th className="p-4">إجمالي المدين</th>
+                <th className="p-4">إجمالي الدائن</th>
                 <th className="p-4">الحالة</th>
                 <th className="p-4">الإجراء</th>
               </tr>
@@ -426,42 +518,77 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                   <td colSpan={9} className="p-8 text-center text-slate-500">لا توجد قيود يومية مسجلة</td>
                 </tr>
               ) : (
-                filteredEntries.map((entry, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="p-4 font-mono text-blue-600 font-bold">{entry.id}</td>
-                    <td className="p-4">{entry.date}</td>
-                    <td className="p-4 text-slate-600">{entry.type}</td>
-                    <td className="p-4">{entry.description}</td>
-                    <td className="p-4 text-rose-600">{entry.debitAccount}</td>
-                    <td className="p-4 text-emerald-600">{entry.creditAccount}</td>
-                    <td className="p-4 font-bold">{Number(entry.amount).toLocaleString()}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        entry.status === 'معتمد' ? 'bg-emerald-100 text-emerald-700' :
-                        entry.status === 'بانتظار اعتماد' ? 'bg-amber-100 text-amber-700' :
-                        entry.status === 'ملغي' ? 'bg-rose-100 text-rose-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {entry.status}
-                      </span>
-                    </td>
-                    <td className="p-4 flex items-center gap-1">
-                      {entry.attachmentData && <button onClick={() => setPreviewFile(entry.attachmentData)} className="text-purple-500 hover:bg-purple-50 p-1.5 rounded transition-colors" title="معاينة المرفق"><Eye className="w-4 h-4" /></button>}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'edit_entry') && <button onClick={() => handleEdit(entry)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors" title="تعديل"><Edit className="w-4 h-4" /></button>}
-                      {entry.status !== 'معتمد' && (
-                        <button 
-                          onClick={() => handleApprove(entry)} 
-                          className="text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition active:scale-95 duration-100" 
-                          title="اعتماد"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                      {hasAdvancedPermission(user, 'finance', 'journal', 'print_entry') && <button onClick={() => handlePrintPdf(entry)} className="text-indigo-500 hover:bg-indigo-50 p-1.5 rounded transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>}
-                      <button onClick={() => handleDelete(entry)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition active:scale-95 duration-100" title="حذف"><Trash2 className="w-4 h-4" /></button>
-                    </td>
-                  </tr>
-                ))
+                filteredEntries.map((entry, idx) => {
+                  const getSourceModuleLabel = (mod: string) => {
+                    switch (mod) {
+                      case "revenues": return "الإيرادات";
+                      case "expenses": return "المصروفات";
+                      case "customer_invoices": return "فواتير العملاء";
+                      case "supplier_invoices": return "فواتير الموردين";
+                      case "payments": return "المدفوعات والقبض";
+                      case "payroll": return "الرواتب والأجور";
+                      case "test_debug": return "فحص تجريبي 🧪";
+                      default: return "قيد يدوي";
+                    }
+                  };
+
+                  const totalDebit = Number(entry.totalDebit || entry.amount || 0);
+                  const totalCredit = Number(entry.totalCredit || entry.amount || 0);
+
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="p-4 font-mono text-blue-600 font-bold">{entry.id}</td>
+                      <td className="p-4 text-slate-600">{entry.date}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          entry.sourceModule ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'
+                        }`}>
+                          {getSourceModuleLabel(entry.sourceModule)}
+                        </span>
+                      </td>
+                      <td className="p-4 font-mono text-slate-600">{entry.sourceRecordId || "-"}</td>
+                      <td className="p-4">
+                        <div className="font-semibold text-slate-800">{entry.description}</div>
+                        {(entry.debitAccount || entry.creditAccount) && (
+                          <div className="text-xs text-slate-400 mt-1">
+                            {entry.debitAccount} (مدين) ➔ {entry.creditAccount} (دائن)
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 font-bold text-rose-600">
+                        {totalDebit.toLocaleString('en-US')}
+                      </td>
+                      <td className="p-4 font-bold text-emerald-600">
+                        {totalCredit.toLocaleString('en-US')}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          entry.status === 'معتمد' ? 'bg-emerald-100 text-emerald-700' :
+                          entry.status === 'بانتظار اعتماد' ? 'bg-amber-100 text-amber-700' :
+                          entry.status === 'ملغي' ? 'bg-rose-100 text-rose-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {entry.status}
+                        </span>
+                      </td>
+                      <td className="p-4 flex items-center gap-1">
+                        {entry.attachmentData && <button onClick={() => setPreviewFile(entry.attachmentData)} className="text-purple-500 hover:bg-purple-50 p-1.5 rounded transition-colors" title="معاينة المرفق"><Eye className="w-4 h-4" /></button>}
+                        {hasAdvancedPermission(user, 'finance', 'journal', 'edit_entry') && <button onClick={() => handleEdit(entry)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors" title="تعديل"><Edit className="w-4 h-4" /></button>}
+                        {entry.status !== 'معتمد' && (
+                          <button 
+                            onClick={() => handleApprove(entry)} 
+                            className="text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition active:scale-95 duration-100" 
+                            title="اعتماد"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        {hasAdvancedPermission(user, 'finance', 'journal', 'print_entry') && <button onClick={() => handlePrintPdf(entry)} className="text-indigo-500 hover:bg-indigo-50 p-1.5 rounded transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>}
+                        <button onClick={() => handleDelete(entry)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition active:scale-95 duration-100" title="حذف"><Trash2 className="w-4 h-4" /></button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -518,17 +645,53 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <div>
                   <label className="block text-sm font-bold text-rose-700 mb-2">الحساب المدين <span className="text-rose-500">*</span></label>
-                  <select value={entryForm.debitAccount} onChange={(e) => setEntryForm({...entryForm, debitAccount: e.target.value})} className="w-full p-2.5 border border-rose-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 outline-none bg-white">
+                  <select value={entryForm.debitAccount} onChange={(e) => setEntryForm({...entryForm, debitAccount: e.target.value, debitSubId: ""})} className="w-full p-2.5 border border-rose-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 outline-none bg-white">
                     <option value="">اختر الحساب المدين</option>
                     {accounts.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
+                  {entryForm.debitAccount === "الصندوق" && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-rose-600 mb-1">اختر الصندوق المدين <span className="text-rose-500">*</span></label>
+                      <select value={entryForm.debitSubId} onChange={(e) => setEntryForm({...entryForm, debitSubId: e.target.value})} className="w-full p-2 border border-rose-300 rounded-lg text-xs outline-none bg-white">
+                        <option value="">اختر الصندوق...</option>
+                        {cashBoxes.map(b => <option key={b.id} value={b.id}>{lang === "ar" ? b.name_ar : b.name_en} ({b.code})</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {entryForm.debitAccount === "البنك" && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-rose-600 mb-1">اختر الحساب البنكي المدين <span className="text-rose-500">*</span></label>
+                      <select value={entryForm.debitSubId} onChange={(e) => setEntryForm({...entryForm, debitSubId: e.target.value})} className="w-full p-2 border border-rose-300 rounded-lg text-xs outline-none bg-white">
+                        <option value="">اختر الحساب البنكي...</option>
+                        {bankAccounts.map(b => <option key={b.id} value={b.id}>{lang === "ar" ? b.bank_name_ar : b.bank_name_en} - {b.account_number}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-emerald-700 mb-2">الحساب الدائن <span className="text-rose-500">*</span></label>
-                  <select value={entryForm.creditAccount} onChange={(e) => setEntryForm({...entryForm, creditAccount: e.target.value})} className="w-full p-2.5 border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                  <select value={entryForm.creditAccount} onChange={(e) => setEntryForm({...entryForm, creditAccount: e.target.value, creditSubId: ""})} className="w-full p-2.5 border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                     <option value="">اختر الحساب الدائن</option>
                     {accounts.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
+                  {entryForm.creditAccount === "الصندوق" && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-emerald-600 mb-1">اختر الصندوق الدائن <span className="text-rose-500">*</span></label>
+                      <select value={entryForm.creditSubId} onChange={(e) => setEntryForm({...entryForm, creditSubId: e.target.value})} className="w-full p-2 border border-emerald-300 rounded-lg text-xs outline-none bg-white">
+                        <option value="">اختر الصندوق...</option>
+                        {cashBoxes.map(b => <option key={b.id} value={b.id}>{lang === "ar" ? b.name_ar : b.name_en} ({b.code})</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {entryForm.creditAccount === "البنك" && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-emerald-600 mb-1">اختر الحساب البنكي الدائن <span className="text-rose-500">*</span></label>
+                      <select value={entryForm.creditSubId} onChange={(e) => setEntryForm({...entryForm, creditSubId: e.target.value})} className="w-full p-2 border border-emerald-300 rounded-lg text-xs outline-none bg-white">
+                        <option value="">اختر الحساب البنكي...</option>
+                        {bankAccounts.map(b => <option key={b.id} value={b.id}>{lang === "ar" ? b.bank_name_ar : b.bank_name_en} - {b.account_number}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">المبلغ <span className="text-rose-500">*</span></label>
@@ -650,8 +813,12 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">تأكيد حذف القيد اليومي</h3>
-                <p className="text-sm text-slate-500">لا يمكن التراجع عن هذا الإجراء</p>
+                <h3 className="text-lg font-bold text-slate-800">
+                  {deleteConfirmItem.status === "معتمد" ? "تأكيد إلغاء وعكس القيد اليومي" : "تأكيد حذف مسودة القيد"}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {deleteConfirmItem.status === "معتمد" ? "سيتم عكس التأثيرات المالية بالكامل" : "لا يمكن التراجع عن هذا الإجراء"}
+                </p>
               </div>
             </div>
 
@@ -670,7 +837,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-rose-600">{Number(deleteConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-rose-600">{Number(deleteConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">الحالة:</span>
@@ -683,13 +850,17 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               </div>
             </div>
 
-            {deleteConfirmItem.status === "معتمد" && !isAdmin(user) ? (
+            {deleteConfirmItem.status === "معتمد" && isAdmin(user) ? (
               <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs mb-6 leading-relaxed">
-                عذراً، هذا القيد اليومي معتمد ومثبت محاسبياً. لا يمكن حذف القيود المعتمدة إلا من قبل الإدارة العليا أو المخولين بالصلاحيات الإدارية الكاملة.
+                تنبيه: هذا القيد معتمد ومثبت محاسبياً. بدلاً من حذفه بشكل نهائي، سيقوم النظام تلقائياً بإنشاء حركة عكسية وإلغائه محاسبياً للحفاظ على سلامة القيود والتسلسل المالي للتدقيق القانوني.
+              </div>
+            ) : deleteConfirmItem.status === "معتمد" && !isAdmin(user) ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs mb-6 leading-relaxed">
+                عذراً، هذا القيد اليومي معتمد ومثبت محاسبياً. لا يمكن إلغاء القيود المعتمدة إلا من قبل الإدارة العليا أو المخولين بالصلاحيات الإدارية الكاملة.
               </div>
             ) : (
               <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                هل أنت متأكد تماماً من رغبتك في حذف هذا القيد اليومي بشكل نهائي من قاعدة البيانات؟ سيتم مسح كافة الأرصدة المرتبطة به.
+                هل أنت متأكد تماماً من رغبتك في حذف مسودة هذا القيد اليومي بشكل نهائي من قاعدة البيانات؟
               </p>
             )}
 
@@ -706,7 +877,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                     : "bg-rose-600 hover:bg-rose-700 shadow-rose-100"
                 }`}
               >
-                نعم، احذف القيد
+                {deleteConfirmItem.status === "معتمد" ? "نعم، الغِ واعكس القيد" : "نعم، احذف المسودة"}
               </button>
             </div>
           </div>
@@ -750,7 +921,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">المبلغ:</span>
-                <span className="font-bold text-slate-800">{Number(approveConfirmItem.amount).toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-bold text-slate-800">{Number(approveConfirmItem.amount).toLocaleString('en-US')} ر.س</span>
               </div>
             </div>
 

@@ -36,6 +36,9 @@ import {
   ChevronRight,
   ChevronDown,
   Accessibility,
+  Terminal,
+  Activity,
+  Cpu,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import NotificationsBell from "./components/NotificationsBell";
@@ -62,9 +65,24 @@ import FinanceApprovals from "./components/FinanceApprovals";
 import AdvancedPermissionsPortal from "./components/AdvancedPermissionsPortal";
 import AISettingsModal from "./components/AISettingsModal";
 import MainDashboard from "./components/MainDashboard";
-import JournalEntries from "./components/finance/JournalEntries";
-import RevenuesExpenses from "./components/finance/RevenuesExpenses";
-import CustomerSupplierInvoices from "./components/finance/CustomerSupplierInvoices";
+
+// System Error Logging & Performance Indexing Optimization
+import { logSystemError, logSystemAudit, setActiveLoggerUser } from "./lib/logger";
+import { rebuildSystemIndex, searchEmployeesIndexed, searchQuotationsIndexed } from "./lib/searchIndex";
+import type { IndexStats } from "./lib/searchIndex";
+
+import MonthlyPayrollRuns from "./components/finance/MonthlyPayrollRuns";
+import CashAndBankTab from "./components/finance/CashAndBankTab";
+import CustomerInvoicesTab from "./components/finance/CustomerInvoicesTab";
+import SupplierInvoicesTab from "./components/finance/SupplierInvoicesTab";
+import ExpensesTab from "./components/finance/ExpensesTab";
+import RevenuesTab from "./components/finance/RevenuesTab";
+import JournalEntriesTab from "./components/finance/JournalEntriesTab";
+import ZatcaSettingsTab from "./components/finance/ZatcaSettingsTab";
+import ZakatTaxCalculatorTab from "./components/finance/ZakatTaxCalculatorTab";
+import AccountingReportsTab from "./components/finance/AccountingReportsTab";
+import AccountingDashboard from "./components/finance/AccountingDashboard";
+
 
 export const hrSubmenus = [
   { id: "dashboard", ar: "📊 لوحة القيادة والمؤشرات", en: "📊 HR Dashboard" },
@@ -160,19 +178,59 @@ export const productionSubmenus = [
 
 export const financeSubmenus = [
   {
-    id: "finance_journal",
+    id: "accounting_dashboard",
+    ar: "📊 لوحة القيادة والمؤشرات",
+    en: "📊 Accounting Dashboard"
+  },
+  {
+    id: "accounting_journal",
     ar: "📒 القيود اليومية",
     en: "📒 Journal Entries"
   },
   {
-    id: "finance_revenues_expenses",
-    ar: "💰 الإيرادات والمصروفات",
-    en: "💰 Revenues & Expenses"
+    id: "accounting_invoices",
+    ar: "🧾 فواتير العملاء",
+    en: "🧾 Customer Invoices"
   },
   {
-    id: "finance_customer_supplier_invoices",
-    ar: "🧾 فواتير العملاء والموردين",
-    en: "🧾 Customer & Supplier Invoices"
+    id: "accounting_revenues",
+    ar: "💰 الإيرادات والمستحقات",
+    en: "💰 Revenues"
+  },
+  {
+    id: "accounting_supplier_invoices",
+    ar: "🧾 فواتير الموردين",
+    en: "🧾 Supplier Invoices"
+  },
+  {
+    id: "accounting_expenses",
+    ar: "💸 المصروفات والمستحقات",
+    en: "💸 Expenses & Liabilities"
+  },
+  {
+    id: "accounting_payroll",
+    ar: "💵 الرواتب الشهرية",
+    en: "💵 Monthly Payroll"
+  },
+  {
+    id: "accounting_cash_bank",
+    ar: "🏦 الصندوق والبنك",
+    en: "🏦 Cash & Bank"
+  },
+  {
+    id: "accounting_zakat_tax",
+    ar: "📊 قسم الزكاة والضريبة",
+    en: "📊 Zakat & Tax Section"
+  },
+  {
+    id: "accounting_reports",
+    ar: "📈 التقارير الحسابية",
+    en: "📈 Accounting Reports"
+  },
+  {
+    id: "accounting_zatca",
+    ar: "⚙️ إعدادات الزكاة والضريبة",
+    en: "⚙️ ZATCA Settings"
   }
 ];
 
@@ -210,6 +268,35 @@ export default function App() {
   const [logPerPage, setLogPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
 
+  // Global Toast & Action State Managers
+  const [toasts, setToasts] = useState<{ id: string; message: string; type: "success" | "error" | "info" }[]>([]);
+  const [errorLogs, setErrorLogs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isActionLoading, setIsActionLoading] = useState<Record<string, boolean>>({});
+  
+  // Client-side Database Indexing telemetry
+  const [indexStats, setIndexStats] = useState<IndexStats>({
+    totalIndexedItems: 0,
+    indexedSearchTimeMs: 0,
+    standardSearchTimeMs: 0,
+    compressionRatio: "1:1x",
+    cacheHits: 0,
+    healthStatus: "Excellent",
+    lastRebuilt: "Never"
+  });
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
+
+  const setButtonLoading = (buttonId: string, isLoading: boolean) => {
+    setIsActionLoading((prev) => ({ ...prev, [buttonId]: isLoading }));
+  };
+
   // Active module tab
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
@@ -242,7 +329,7 @@ export default function App() {
   const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
 
   // Active Finance Sub-Tabs and collapsible states
-  const [activeFinanceSubTab, setActiveFinanceSubTab] = useState("finance_journal");
+  const [activeFinanceSubTab, setActiveFinanceSubTab] = useState("accounting_dashboard");
   const [isFinanceDropdownOpen, setIsFinanceDropdownOpen] = useState(false);
 
   // Directory Filters
@@ -265,7 +352,7 @@ export default function App() {
     jobTitle: "Senior Signage Technician",
     grade: "Grade 3",
     basicSalary: 6000,
-    allowances: { housing: 1500, transport: 800, phone: 0 },
+    allowances: { housing: 1500, transport: 800 },
     homeAddress: "",
     custody: { laptop: "", tools: "", vehicles: "", other: "" },
     birthDate: "1995-01-01",
@@ -356,6 +443,15 @@ export default function App() {
       if (!canAccessModule(user, "production")) return false;
       if (activeProductionSubTab) {
         return canShowSubmenu(user, "production", activeProductionSubTab);
+      }
+      return true;
+    }
+
+    // 5. Finance module
+    if (activeTab === "finance") {
+      if (!canAccessModule(user, "finance")) return false;
+      if (activeFinanceSubTab) {
+        return canShowSubmenu(user, "finance", activeFinanceSubTab);
       }
       return true;
     }
@@ -526,28 +622,85 @@ export default function App() {
     async function loadData() {
       try {
         setLoading(true);
-        const [uRes, eRes, qRes, lLogsRes] = await Promise.all([
+        const [uRes, eRes, qRes, lLogsRes, errLogsRes, audLogsRes] = await Promise.all([
           fetch("/api/users"),
           fetch("/api/employees"),
           fetch("/api/quotations"),
           fetch("/api/login-logs").catch(() => null),
+          fetch("/api/error-logs").catch(() => null),
+          fetch("/api/audit-logs").catch(() => null),
         ]);
+        
+        let loadedEmployees: Employee[] = [];
+        let loadedQuotations: Quotation[] = [];
+
         if (uRes.ok) setUsers(await uRes.json());
-        if (eRes.ok) setEmployees(await eRes.json());
-        if (qRes.ok) setQuotations(await qRes.json());
+        if (eRes.ok) {
+          loadedEmployees = await eRes.json();
+          setEmployees(loadedEmployees);
+        }
+        if (qRes.ok) {
+          loadedQuotations = await qRes.json();
+          setQuotations(loadedQuotations);
+        }
         if (lLogsRes && lLogsRes.ok) setLoginLogs(await lLogsRes.json());
+        if (errLogsRes && errLogsRes.ok) setErrorLogs(await errLogsRes.json());
+        if (audLogsRes && audLogsRes.ok) setAuditLogs(await audLogsRes.json());
+
+        // Initial search indexing of system datasets
+        const initialStats = rebuildSystemIndex(loadedEmployees, loadedQuotations);
+        setIndexStats(initialStats);
 
         // Load initial live telemetry indices
         await handleReloadMetrics();
         await handleReloadClearances();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Unable to load Al-Waleed data endpoints: ", err);
+        logSystemError({
+          code: "ERR-500-INIT",
+          message: err.message || "Failed initial application bootstrap loading",
+          page: "App Entry",
+          action: "loadData Bootstrapper",
+          stack: err.stack
+        });
       } finally {
         setLoading(false);
       }
     }
     loadData();
   }, []);
+
+  // Update setActiveLoggerUser whenever active user state changes
+  useEffect(() => {
+    if (user?.username) {
+      setActiveLoggerUser(user.username);
+    }
+  }, [user]);
+
+  // Index rebuild helper
+  const handleRebuildIndex = (emps = employees, quos = quotations) => {
+    const stats = rebuildSystemIndex(emps, quos);
+    setIndexStats(stats);
+    return stats;
+  };
+
+  const handleReloadErrorLogs = async () => {
+    try {
+      const res = await fetch("/api/error-logs");
+      if (res.ok) setErrorLogs(await res.json());
+    } catch (err) {
+      console.error("Failed to load error logs:", err);
+    }
+  };
+
+  const handleReloadAuditLogs = async () => {
+    try {
+      const res = await fetch("/api/audit-logs");
+      if (res.ok) setAuditLogs(await res.json());
+    } catch (err) {
+      console.error("Failed to load audit logs:", err);
+    }
+  };
 
   // Auto-expand HR dropdown when the HR tab becomes active
   useEffect(() => {
@@ -562,6 +715,26 @@ export default function App() {
       setIsSalesDropdownOpen(true);
     }
   }, [activeTab]);
+
+  // Smoothly scroll to the top whenever active tab or any sub-tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+    document.body.scrollTo({ top: 0, behavior: "smooth" });
+    
+    // Fallback: search for first scrollable parent or main container and scroll to top
+    const mainContent = document.getElementById("main-content-area") || document.querySelector("main");
+    if (mainContent) {
+      mainContent.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [
+    activeTab,
+    activeHrSubTab,
+    activeSalesSubTab,
+    activeProductionSubTab,
+    activeWarehouseSubTab,
+    activeFinanceSubTab
+  ]);
 
   // Update list functions
   const handleReloadLoginLogs = async () => {
@@ -641,63 +814,99 @@ export default function App() {
   };
 
   // Standard login trigger
-  const handleRegularLogin = (e: React.FormEvent) => {
+  const handleRegularLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
+    setButtonLoading("login", true);
     const uName = loginUsername.toUpperCase().trim();
-    // Validate from loaded system users
-    const matched = users.find((u) => u.username.toUpperCase() === uName);
-    if (matched) {
-      if (
-        loginPassword &&
-        matched.password &&
-        matched.password !== loginPassword
-      ) {
+    
+    try {
+      // Validate from loaded system users
+      const matched = users.find((u) => u.username.toUpperCase() === uName);
+      if (matched) {
+        if (
+          loginPassword &&
+          matched.password &&
+          matched.password !== loginPassword
+        ) {
+          setLoginError(
+            lang === "ar"
+              ? "كلمة المرور غير صحيحة"
+              : "Incorrect passcode entered.",
+          );
+          logSystemError({
+            code: "ERR-401-AUTH",
+            message: `محاولة تسجيل دخول فاشلة بكلمة مرور خاطئة للمستخدم: ${uName}`,
+            page: "Login Gateway",
+            action: "handleRegularLogin"
+          });
+          setButtonLoading("login", false);
+          return;
+        }
+        
+        setUser(matched);
+        logLoginEvent(matched.username);
+        logSystemAudit({
+          user: matched.username,
+          action: "دخول",
+          department: "General",
+          description: "تسجيل دخول ناجح إلى النظام"
+        });
+        showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! مرحباً بك في النظام." : "Successfully logged in! Welcome back.");
+
+        // Auto assign tabs based on roles/permissions
+        const isTopLevel = 
+          hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
+          matched.username?.toUpperCase() === "FERAS" ||
+          matched.username?.toUpperCase() === "فراس" ||
+          matched.username?.toUpperCase() === "ADMIN" ||
+          matched.role === "الادارة العليا" ||
+          matched.role === "الإدارة العليا" ||
+          matched.role === "top_management" ||
+          matched.role === "Super Admin" ||
+          matched.role === "Admin";
+
+        if (isTopLevel) {
+          setActiveTab("dashboard");
+        } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
+          setActiveTab("production");
+          setActiveProductionSubTab("prod_dashboard");
+        } else if (canAccessModule(matched, 'procurement')) {
+          setActiveTab("warehouse");
+          setActiveWarehouseSubTab("warehouse_dashboard");
+        } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
+          setActiveTab("sales");
+          setActiveSalesSubTab("sales_dashboard");
+        } else if (canAccessModule(matched, 'hr')) {
+          setActiveTab("hr");
+          setActiveHrSubTab("dashboard");
+        } else {
+          setActiveTab("dashboard");
+        }
+      } else {
         setLoginError(
           lang === "ar"
-            ? "كلمة المرور غير صحيحة"
-            : "Incorrect passcode entered.",
+            ? "اسم المستخدم المكتوب غير موجود بصندوق النظام"
+            : "Username not registered in the system.",
         );
-        return;
+        logSystemError({
+          code: "ERR-404-AUTH",
+          message: `محاولة دخول فاشلة باسم مستخدم غير مسجل: ${uName}`,
+          page: "Login Gateway",
+          action: "handleRegularLogin"
+        });
       }
-      setUser(matched);
-      logLoginEvent(matched.username);
-
-      // Auto assign tabs based on roles/permissions
-      const isTopLevel = 
-        hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
-        matched.username?.toUpperCase() === "FERAS" ||
-        matched.username?.toUpperCase() === "فراس" ||
-        matched.username?.toUpperCase() === "ADMIN" ||
-        matched.role === "الادارة العليا" ||
-        matched.role === "الإدارة العليا" ||
-        matched.role === "top_management" ||
-        matched.role === "Super Admin" ||
-        matched.role === "Admin";
-
-      if (isTopLevel) {
-        setActiveTab("dashboard");
-      } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
-        setActiveTab("production");
-        setActiveProductionSubTab("prod_dashboard");
-      } else if (canAccessModule(matched, 'procurement')) {
-        setActiveTab("warehouse");
-        setActiveWarehouseSubTab("warehouse_dashboard");
-      } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
-        setActiveTab("sales");
-        setActiveSalesSubTab("sales_dashboard");
-      } else if (canAccessModule(matched, 'hr')) {
-        setActiveTab("hr");
-        setActiveHrSubTab("dashboard");
-      } else {
-        setActiveTab("dashboard");
-      }
-    } else {
-      setLoginError(
-        lang === "ar"
-          ? "اسم المستخدم المكتوب غير موجود بصندوق النظام"
-          : "Username not registered in the system.",
-      );
+    } catch (err: any) {
+      console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Unknown login error",
+        page: "Login",
+        action: "handleRegularLogin",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading("login", false);
     }
   };
 
@@ -705,6 +914,7 @@ export default function App() {
   const handleF24Login = (e: React.FormEvent) => {
     e.preventDefault();
     setF24Error("");
+    setButtonLoading("f24Login", true);
     if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
       const superAdmin: User = {
         username: "FERAS",
@@ -714,6 +924,13 @@ export default function App() {
       };
       setUser(superAdmin);
       logLoginEvent("FERAS");
+      logSystemAudit({
+        user: "FERAS",
+        action: "دخول",
+        department: "General",
+        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor)"
+      });
+      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
       setShowF24Modal(false);
       setActiveTab("dashboard");
     } else {
@@ -722,7 +939,14 @@ export default function App() {
           ? "رمز المعلم أو كلمة المرور خاطئة"
           : "Invalid master developer key or password.",
       );
+      logSystemError({
+        code: "ERR-403-AUTH",
+        message: `محاولة دخول فاشلة غير مصرح بها للبوابة الفائقة F24 بكلمة المرور: ${f24Pass}`,
+        page: "F24 Master Access",
+        action: "handleF24Login"
+      });
     }
+    setButtonLoading("f24Login", false);
   };
 
   // Super Admin adds new user mapped instantly
@@ -738,6 +962,7 @@ export default function App() {
       );
       return;
     }
+    setButtonLoading("addUser", true);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -747,41 +972,90 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) {
         setUserCreationError(data.error || "Server rejected registration");
+        logSystemError({
+          code: "ERR-400-API",
+          message: data.error || "Failed to register user account",
+          page: "Super Admin",
+          action: "handleAddUser"
+        });
+        showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
       } else {
         setUserCreationSuccess(
           lang === "ar"
             ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user.role}`
             : `Success. Assigned role level: ${data.user.role}`,
         );
+        logSystemAudit({
+          user: user?.username || "FERAS",
+          action: "أضاف",
+          department: "HR",
+          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${newAdminUser.username} ودور: ${newAdminUser.role}`
+        });
+        showToast(lang === "ar" ? "تم إنشاء الحساب بنجاح وتأكيده على السيرفر" : "Account registered successfully!");
         setNewAdminUser({
           username: "",
           password: "",
           jobTitle: "HR Assistant",
         });
         handleReloadUsers();
+        handleReloadAuditLogs();
       }
     } catch (err: any) {
       setUserCreationError(err.message || "Error occurred");
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to register account",
+        page: "Super Admin",
+        action: "handleAddUser",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading("addUser", false);
     }
   };
 
   // Super Admin deletes user
   const handleDeleteUser = async (uName: string) => {
     if (uName.toUpperCase() === "FERAS") return;
+    setButtonLoading(`deleteUser-${uName}`, true);
     try {
       const res = await fetch(`/api/users/${uName}`, { method: "DELETE" });
       if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "FERAS",
+          action: "حذف",
+          department: "HR",
+          description: `تم إلغاء حساب وسحب صلاحيات مستخدم النظام: ${uName}`
+        });
+        showToast(lang === "ar" ? "تم سحب صلاحيات الحساب وحذفه بنجاح" : "User credentials revoked and deleted.");
         handleReloadUsers();
+        handleReloadAuditLogs();
       } else {
         const errorData = await res.json();
-        alert(errorData.error || "تحديث فاشل");
+        alert(errorData.error || (lang === 'ar' ? 'تحديث فاشل' : 'Update failed'));
+        logSystemError({
+          code: "ERR-400-API",
+          message: errorData.error || "Failed to delete user",
+          page: "Super Admin",
+          action: "handleDeleteUser"
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to delete user",
+        page: "Super Admin",
+        action: "handleDeleteUser",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading(`deleteUser-${uName}`, false);
     }
   };
 
   const handleUpdateUser = async (username: string, updatedFields: any) => {
+    setButtonLoading(`updateUser-${username}`, true);
     try {
       const res = await fetch(`/api/users/${username}`, {
         method: "PUT",
@@ -789,30 +1063,77 @@ export default function App() {
         body: JSON.stringify(updatedFields),
       });
       if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "FERAS",
+          action: "عدّل",
+          department: "HR",
+          description: `تحديث بيانات وصلاحيات الحساب: ${username}`
+        });
+        showToast(lang === "ar" ? "تم تحديث صلاحيات وبيانات المستخدم بنجاح" : "User permissions updated successfully.");
         handleReloadUsers();
+        handleReloadAuditLogs();
+      } else {
+        showToast(lang === "ar" ? "فشل تحديث البيانات" : "Failed to update user", "error");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to update user",
+        page: "Super Admin",
+        action: "handleUpdateUser",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading(`updateUser-${username}`, false);
     }
   };
 
   // Create or Update Employee profiles (HR module)
   const handleSaveEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+    setButtonLoading("saveEmployee", true);
+    const payload = editingEmp ? { ...editingEmp } : { ...newEmp };
     try {
-      const payload = editingEmp ? { ...editingEmp } : { ...newEmp };
       const res = await fetch("/api/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "Guest",
+          action: editingEmp ? "عدّل" : "أضاف",
+          department: "HR",
+          description: `${editingEmp ? "تحديث بيانات" : "إضافة ملف"} الموظف: ${payload.arabicName || payload.englishName}`
+        });
+        showToast(lang === "ar" ? "تم حفظ وتحديث ملف الموظف في قواعد البيانات بنجاح" : "Employee saved and indexed successfully.");
         setShowEmpForm(false);
         setEditingEmp(null);
-        handleReloadEmployees();
+        
+        // Fetch fresh employee list and update local search index immediately
+        const freshEmpsRes = await fetch("/api/employees");
+        if (freshEmpsRes.ok) {
+          const freshEmps = await freshEmpsRes.json();
+          setEmployees(freshEmps);
+          handleRebuildIndex(freshEmps, quotations);
+        }
+        await handleReloadAuditLogs();
+      } else {
+        showToast(lang === "ar" ? "حدث خطأ أثناء حفظ الملف" : "Failed to save employee profile.", "error");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to save employee",
+        page: "HR Directory",
+        action: "handleSaveEmployee",
+        stack: err.stack
+      });
+      showToast(lang === "ar" ? "فشل حفظ الملف" : "Error saving file", "error");
+    } finally {
+      setButtonLoading("saveEmployee", false);
     }
   };
 
@@ -825,19 +1146,45 @@ export default function App() {
       )
     )
       return;
+    setButtonLoading(`deleteEmployee-${empId}`, true);
     try {
       const res = await fetch(`/api/employees/${empId}`, { method: "DELETE" });
       if (res.ok) {
-        handleReloadEmployees();
+        logSystemAudit({
+          user: user?.username || "Guest",
+          action: "حذف",
+          department: "HR",
+          description: `حذف ملف الموظف الرقم الوظيفي: ${empId}`
+        });
+        showToast(lang === "ar" ? "تم حذف ملف الموظف من السيرفر والفهرس بنجاح" : "Employee file deleted from server.");
+        
+        // Fetch fresh employee list and update index
+        const freshEmpsRes = await fetch("/api/employees");
+        if (freshEmpsRes.ok) {
+          const freshEmps = await freshEmpsRes.json();
+          setEmployees(freshEmps);
+          handleRebuildIndex(freshEmps, quotations);
+        }
+        await handleReloadAuditLogs();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to delete employee",
+        page: "HR Directory",
+        action: "handleDeleteEmployee",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading(`deleteEmployee-${empId}`, false);
     }
   };
 
   // Sales and collection creation
   const handleSaveQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
+    setButtonLoading("saveQuotation", true);
     try {
       // Calculate milestone costs automatically based on 50/30/20% rules
       const sumItems = (newQuo.items || []).reduce(
@@ -880,6 +1227,13 @@ export default function App() {
       });
 
       if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "Guest",
+          action: "أضاف",
+          department: "Sales",
+          description: `إنشاء عرض أسعار جديد للعميل: ${newQuo.clientName} - المشروع: ${newQuo.projectTitle} بقيمة إجمالية شاملة الضريبة: ${grossTotal.toFixed(2)} ر.س`
+        });
+        showToast(lang === "ar" ? "تم تسجيل عرض الأسعار الجديد وبناء الدفعات التلقائية بنجاح" : "Quotation saved and milestone schedules structured.");
         setShowQuoForm(false);
         setNewQuo({
           clientName: "",
@@ -897,10 +1251,30 @@ export default function App() {
             },
           ],
         });
-        handleReloadQuotations();
+        
+        // Fetch fresh quotations and update search index
+        const freshQRes = await fetch("/api/quotations");
+        if (freshQRes.ok) {
+          const freshQuos = await freshQRes.json();
+          setQuotations(freshQuos);
+          handleRebuildIndex(employees, freshQuos);
+        }
+        await handleReloadAuditLogs();
+      } else {
+        showToast(lang === "ar" ? "فشل حفظ عرض الأسعار" : "Failed to register quotation", "error");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to save quotation",
+        page: "Sales quotations",
+        action: "handleSaveQuotation",
+        stack: err.stack
+      });
+      showToast(lang === "ar" ? "خطأ أثناء حفظ العرض" : "Error saving quotation", "error");
+    } finally {
+      setButtonLoading("saveQuotation", false);
     }
   };
 
@@ -1814,15 +2188,9 @@ export default function App() {
                 {/* Nested Accordion Submenus */}
                 {isFinanceDropdownOpen && (
                   <div className="mt-1 mr-2 ml-2 pr-4 text-[13px] flex flex-col gap-2 border-r-2 border-[#0072BC]/30 py-2">
-                    {financeSubmenus.filter((sub) => {
-                      if (sub.id === "finance_journal") {
-                        return canShowSubmenu(user!, "finance", "journal");
-                      }
-                      if (sub.id === "finance_customer_supplier_invoices") {
-                        return canShowSubmenu(user!, "finance", "invoices");
-                      }
-                      return true;
-                    }).map((sub) => {
+                    {financeSubmenus
+                      .filter((sub) => canShowSubmenu(user, "finance", sub.id))
+                      .map((sub) => {
                       const isSubActive =
                         activeTab === "finance" &&
                         activeFinanceSubTab === sub.id;
@@ -2733,6 +3101,226 @@ export default function App() {
                       })()}
                     </div>
                   </div>
+
+                  {/* --- ADVANCED ADMINISTRATION MODULES: SENTRY LOGS, AUDIT TRAIL, INDEX ENGINE --- */}
+                  <div className="lg:col-span-3 grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+                    
+                    {/* Sentry-like Error Tracking System */}
+                    <div className="glass-panel rounded-3xl p-6 bg-white shadow-xl border border-rose-100 flex flex-col gap-4">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="p-1.5 bg-rose-50 rounded-lg text-rose-600">
+                              <Terminal className="w-5 h-5" />
+                            </span>
+                            <h3 className="font-bold text-lg text-slate-800">
+                              {lang === "ar" ? "🚨 مركز تتبع الأخطاء البرمجية (Sentry)" : "🚨 Incident & Error Tracking (Sentry)"}
+                            </h3>
+                          </div>
+                          <p className="text-xs text-stone-400 mt-1">
+                            {lang === "ar"
+                              ? "رصد وتحليل الاستثناءات البرمجية والأكواد المعطلة تلقائياً."
+                              : "Centralized monitoring of all runtime exceptions, DB issues, & auth failures."}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isActionLoading["reloadErrors"]}
+                          onClick={async () => {
+                            setButtonLoading("reloadErrors", true);
+                            await handleReloadErrorLogs();
+                            setButtonLoading("reloadErrors", false);
+                            showToast(lang === "ar" ? "تم تحديث سجل الأخطاء" : "Error database synchronized.");
+                          }}
+                          className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isActionLoading["reloadErrors"] ? "animate-spin" : ""}`} />
+                        </button>
+                      </div>
+
+                      {/* Error codes list */}
+                      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                        {errorLogs.length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">✓</div>
+                            <span>{lang === "ar" ? "النظام يعمل بكفاءة 100% - لا توجد أخطاء مرصودة" : "No errors detected. Perfect system integrity."}</span>
+                          </div>
+                        ) : (
+                          [...errorLogs].reverse().map((err, i) => (
+                            <div key={err.id || i} className="p-3 bg-rose-50/50 rounded-2xl border border-rose-100 text-xs flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono font-black text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded text-[10px]">
+                                  {err.code}
+                                </span>
+                                <span className="text-[10px] text-stone-400 font-mono">
+                                  {err.timestamp ? new Date(err.timestamp).toLocaleTimeString() : ""}
+                                </span>
+                              </div>
+                              <p className="font-bold text-slate-800 break-words">{err.message}</p>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-stone-500 font-mono border-t border-rose-100/50 pt-1.5">
+                                <span>📍 {lang === "ar" ? "الصفحة" : "Page"}: <strong className="text-slate-700 font-sans">{err.page}</strong></span>
+                                <span>⚡ {lang === "ar" ? "الحدث" : "Action"}: <strong className="text-slate-700 font-sans">{err.action}</strong></span>
+                              </div>
+                              {err.stack && (
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-[9px] text-rose-600 font-bold hover:underline select-none">
+                                    {lang === "ar" ? "عرض تفاصيل الـ Stack Trace" : "View Stack Trace"}
+                                  </summary>
+                                  <pre className="mt-1 p-2 bg-slate-900 text-emerald-400 rounded-lg text-[9px] font-mono overflow-x-auto whitespace-pre-wrap max-h-40 leading-relaxed text-left" dir="ltr">
+                                    {err.stack}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Operational Audit Trail Logs */}
+                    <div className="glass-panel rounded-3xl p-6 bg-white shadow-xl border border-slate-100 flex flex-col gap-4">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="p-1.5 bg-slate-50 rounded-lg text-slate-600">
+                              <Activity className="w-5 h-5" />
+                            </span>
+                            <h3 className="font-bold text-lg text-slate-800">
+                              {lang === "ar" ? "📑 سجل تدقيق العمليات (Audit Trail)" : "📑 Operational Audit Trail"}
+                            </h3>
+                          </div>
+                          <p className="text-xs text-stone-400 mt-1">
+                            {lang === "ar"
+                              ? "توثيق فوري لجميع حركات الإضافة، التعديل، والحذف للأمان المتقدم."
+                              : "Historical log of records modification, security updates, and administrative activities."}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isActionLoading["reloadAudit"]}
+                          onClick={async () => {
+                            setButtonLoading("reloadAudit", true);
+                            await handleReloadAuditLogs();
+                            setButtonLoading("reloadAudit", false);
+                            showToast(lang === "ar" ? "تم تحديث سجل التدقيق" : "Audit trail synchronized.");
+                          }}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isActionLoading["reloadAudit"] ? "animate-spin" : ""}`} />
+                        </button>
+                      </div>
+
+                      {/* Audit logs List */}
+                      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                        {auditLogs.length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-xs">
+                            {lang === "ar" ? "لا توجد عمليات مسجلة حالياً" : "No audit logs available."}
+                          </div>
+                        ) : (
+                          [...auditLogs].reverse().map((item, i) => (
+                            <div key={item.id || i} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs flex flex-col gap-1.5 hover:bg-slate-100/50 transition-all">
+                              <div className="flex justify-between items-center">
+                                <span className="font-sans font-black text-slate-800 flex items-center gap-1">
+                                  👤 {item.user}
+                                </span>
+                                <span className="text-[10px] text-stone-400 font-mono">
+                                  {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ""}
+                                </span>
+                              </div>
+                              <p className="text-slate-600 font-semibold">{item.description}</p>
+                              <div className="flex items-center gap-3 text-[10px] font-mono mt-1 pt-1 border-t border-slate-100">
+                                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-sans rounded-md font-bold">
+                                  {item.action}
+                                </span>
+                                <span className="text-stone-400">
+                                  💼 {item.department}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Database Search Indexing & Performance Analyzer */}
+                    <div className="glass-panel rounded-3xl p-6 bg-white shadow-xl border border-sky-100 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 bg-sky-50 rounded-lg text-sky-600">
+                          <Cpu className="w-5 h-5" />
+                        </span>
+                        <div>
+                          <h3 className="font-bold text-lg text-slate-800">
+                            {lang === "ar" ? "⚡ مسرع الأداء وفهرسة قواعد البيانات" : "⚡ Search Indexing Optimizer"}
+                          </h3>
+                        </div>
+                      </div>
+                      <p className="text-xs text-stone-400">
+                        {lang === "ar"
+                          ? "تقنية الفهرسة المتطورة لتسريع عمليات البحث والتصفية المباشرة للموظفين وعروض المبيعات دون بطء."
+                          : "Real-time client-side indices that optimize and bypass linear sequential scan lags."}
+                      </p>
+
+                      {/* Performance Indicators Grid */}
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <div className="p-3 bg-sky-50/50 rounded-2xl border border-sky-100/50 flex flex-col">
+                          <span className="text-[10px] text-stone-400 font-bold">{lang === "ar" ? "العناصر المفهرسة" : "Indexed Records"}</span>
+                          <span className="font-mono text-lg font-black text-sky-800">{indexStats.totalIndexedItems}</span>
+                        </div>
+                        <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 flex flex-col">
+                          <span className="text-[10px] text-stone-400 font-bold">{lang === "ar" ? "حالة المؤشرات" : "Index Health"}</span>
+                          <span className="font-sans text-sm font-black text-emerald-700 flex items-center gap-1">
+                            ● {lang === "ar" ? "ممتازة" : "Excellent"}
+                          </span>
+                        </div>
+                        <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex flex-col">
+                          <span className="text-[10px] text-stone-400 font-bold">{lang === "ar" ? "سرعة الاستعلام المباشر" : "Indexed Query"}</span>
+                          <span className="font-mono text-sm font-black text-indigo-700">{indexStats.indexedSearchTimeMs.toFixed(3)} ms</span>
+                        </div>
+                        <div className="p-3 bg-rose-50/50 rounded-2xl border border-rose-100/50 flex flex-col">
+                          <span className="text-[10px] text-stone-400 font-bold">{lang === "ar" ? "الاستعلام التقليدي (الخطي)" : "Sequential Scan"}</span>
+                          <span className="font-mono text-sm font-black text-rose-700">{indexStats.standardSearchTimeMs.toFixed(2)} ms</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 flex flex-col gap-1 mt-1">
+                        <div className="flex justify-between">
+                          <span>🚀 {lang === "ar" ? "معدل مضاعفة السرعة" : "Speed Gain Factor"}:</span>
+                          <strong className="text-emerald-600 font-mono text-xs">{indexStats.compressionRatio}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>💾 {lang === "ar" ? "الاستعلامات المخزنة (Cache)" : "Query Cache Hits"}:</span>
+                          <strong className="text-indigo-600 font-mono">{indexStats.cacheHits} Hits</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>🕒 {lang === "ar" ? "آخر تحديث للفهرس" : "Last Index Rebuild"}:</span>
+                          <span className="text-stone-400 font-mono text-[10px]">{indexStats.lastRebuilt}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isActionLoading["rebuildIndex"]}
+                        onClick={() => {
+                          setButtonLoading("rebuildIndex", true);
+                          setTimeout(() => {
+                            const stats = handleRebuildIndex();
+                            setButtonLoading("rebuildIndex", false);
+                            showToast(
+                              lang === "ar"
+                                ? `تم إعادة الفهرسة بنجاح! تم فحص ${stats.totalIndexedItems} سجل.`
+                                : `System Index rebuilt! Optimized ${stats.totalIndexedItems} nodes.`
+                            );
+                          }, 600);
+                        }}
+                        className="w-full mt-2 py-2.5 bg-[#0072BC] hover:bg-[#005B94] disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md shadow-sky-100"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isActionLoading["rebuildIndex"] ? "animate-spin" : ""}`} />
+                        <span>{lang === "ar" ? "إعادة بناء الفهرس وتسريع الاستعلامات" : "Force Index Rebuild & Flush Cache"}</span>
+                      </button>
+                    </div>
+
+                  </div>
+
                 </div>
               </div>
             )}
@@ -3300,41 +3888,7 @@ export default function App() {
                                     className="w-full px-3 py-2 border rounded-xl font-mono"
                                   />
                                 </div>
-                                <div>
-                                  <label className="block mb-1 font-bold text-slate-300">
-                                    {lang === "ar"
-                                      ? "بدل اتصالات وجوال ورش"
-                                      : "Phone Allowance (SAR)"}
-                                  </label>
-                                  <input
-                                    type="number"
-                                    value={
-                                      editingEmp
-                                        ? editingEmp.allowances.phone
-                                        : newEmp.allowances?.phone
-                                    }
-                                    onChange={(e) => {
-                                      editingEmp
-                                        ? setEditingEmp({
-                                            ...editingEmp,
-                                            allowances: {
-                                              ...editingEmp.allowances,
-                                              phone: Number(e.target.value),
-                                            },
-                                          })
-                                        : setNewEmp({
-                                            ...newEmp,
-                                            allowances: {
-                                              ...newEmp.allowances!,
-                                              phone: Number(e.target.value),
-                                            },
-                                          });
-                                    }}
-                                    className="w-full px-3 py-2 border rounded-xl font-mono"
-                                  />
-                                </div>
                               </div>
-
                               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-250/60 space-y-3">
                                 <p className="font-bold text-xs text-[#0072BC]">
                                   📦{" "}
@@ -3723,7 +4277,7 @@ export default function App() {
                               </span>
                               <h4 className="text-base font-black text-white font-mono mt-1">
                                 SAR{" "}
-                                {metrics.financialBurnAnnualProjection.currentMonthWPSPayrollTotal.toLocaleString(
+                                {(metrics.financialBurnAnnualProjection.currentMonthWPSPayrollTotal || 0).toLocaleString(
                                   undefined,
                                   { maximumFractionDigits: 0 },
                                 )}
@@ -3733,7 +4287,7 @@ export default function App() {
                               <span>Loans Active:</span>
                               <span className="font-mono text-[#00AEEF]">
                                 SAR{" "}
-                                {metrics.financialBurnAnnualProjection.pendingApprovedLoansActiveVal.toLocaleString()}
+                                {(metrics.financialBurnAnnualProjection.pendingApprovedLoansActiveVal || 0).toLocaleString('en-US')}
                               </span>
                             </div>
                           </div>
@@ -4135,8 +4689,7 @@ export default function App() {
                                   const totalSalary =
                                     emp.basicSalary +
                                     emp.allowances.housing +
-                                    emp.allowances.transport +
-                                    emp.allowances.phone;
+                                    emp.allowances.transport;
                                   return (
                                     <tr
                                       key={emp.id}
@@ -4165,13 +4718,12 @@ export default function App() {
                                       {/* Financial break downs */}
                                       <td className="py-2 font-mono p-1">
                                         <p className="font-extrabold text-[#0072BC]">
-                                          SAR {totalSalary.toLocaleString()}
+                                          SAR {(totalSalary || 0).toLocaleString('en-US')}
                                         </p>
                                         <p className="text-[8px] text-slate-400">
                                           Basic: {emp.basicSalary} | Allaw:{" "}
                                           {emp.allowances.housing +
-                                            emp.allowances.transport +
-                                            emp.allowances.phone}
+                                            emp.allowances.transport}
                                         </p>
                                       </td>
 
@@ -4365,8 +4917,8 @@ export default function App() {
                               : "Optimal Monthy Salary Ladder (SAR)"}
                           </p>
                           <p className="text-lg font-black font-mono text-emerald-600 mt-1">
-                            SAR {aiResult.salaryMin.toLocaleString()} - SAR{" "}
-                            {aiResult.salaryMax.toLocaleString()}
+                            SAR {(aiResult?.salaryMin || 0).toLocaleString('en-US')} - SAR{" "}
+                            {(aiResult?.salaryMax || 0).toLocaleString('en-US')}
                           </p>
                           <p className="text-[11px] text-slate-400">
                             {lang === "ar"
@@ -4577,19 +5129,69 @@ export default function App() {
               )}
 
             {/* TAB: FINANCIAL ACCOUNTING */}
-            {activeTab === "finance" && activeFinanceSubTab === "finance_journal" && (
-              <div id="content-tab-finance-journal" className="space-y-6">
-                <JournalEntries lang={lang} user={user!} />
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_dashboard" && (
+              <div id="content-tab-finance-dashboard" className="space-y-6">
+                <AccountingDashboard lang={lang} user={user!} />
               </div>
             )}
-            {activeTab === "finance" && activeFinanceSubTab === "finance_revenues_expenses" && (
-              <div id="content-tab-finance-revenues" className="space-y-6">
-                <RevenuesExpenses lang={lang} user={user!} />
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_payroll" && (
+              <div id="content-tab-finance-payroll" className="space-y-6">
+                <MonthlyPayrollRuns lang={lang} user={user!} employees={employees} />
               </div>
             )}
-            {activeTab === "finance" && activeFinanceSubTab === "finance_customer_supplier_invoices" && (
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_cash_bank" && (
+              <div id="content-tab-finance-cash-bank" className="space-y-6">
+                <CashAndBankTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_invoices" && (
               <div id="content-tab-finance-invoices" className="space-y-6">
-                <CustomerSupplierInvoices lang={lang} user={user!} />
+                <CustomerInvoicesTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_supplier_invoices" && (
+              <div id="content-tab-finance-supplier-invoices" className="space-y-6">
+                <SupplierInvoicesTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_expenses" && (
+              <div id="content-tab-finance-expenses" className="space-y-6">
+                <ExpensesTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_revenues" && (
+              <div id="content-tab-finance-revenues" className="space-y-6">
+                <RevenuesTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_journal" && (
+              <div id="content-tab-finance-journal" className="space-y-6">
+                <JournalEntriesTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_zakat_tax" && (
+              <div id="content-tab-finance-zakat-tax" className="space-y-6">
+                <ZakatTaxCalculatorTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_reports" && (
+              <div id="content-tab-finance-reports" className="space-y-6">
+                <AccountingReportsTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_zatca" && (
+              <div id="content-tab-finance-zatca" className="space-y-6">
+                <ZatcaSettingsTab lang={lang} user={user!} />
               </div>
             )}
 
@@ -4661,6 +5263,27 @@ export default function App() {
       </footer>
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: sharedPrintFooter }} />
       {user && <AIAssistant lang={lang} />}
+
+      {/* Floating Toast notification stack */}
+      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none select-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto p-4 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 transform translate-y-0 ${
+              t.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : t.type === "error"
+                ? "bg-rose-50 border-rose-200 text-rose-800"
+                : "bg-blue-50 border-blue-200 text-blue-800"
+            }`}
+          >
+            <div className={`w-2 h-2 rounded-full ${
+              t.type === "success" ? "bg-emerald-500 animate-pulse" : t.type === "error" ? "bg-rose-500 animate-pulse" : "bg-blue-500 animate-pulse"
+            }`} />
+            <span className="text-xs font-black leading-tight">{t.message}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

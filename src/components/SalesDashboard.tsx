@@ -648,8 +648,8 @@ export default function SalesDashboard({
       alerts.push({
         text:
           lang === "ar"
-            ? `⚠️ توجد عدد ${card5Stats.count} دفعة متأخرة مستحقة هذا الشهر بقيمة إجمالية ${card5Stats.amount.toLocaleString()} ريال.`
-            : `⚠️ There are ${card5Stats.count} overdue payments this month amounting to ${card5Stats.amount.toLocaleString()} SAR.`,
+            ? `⚠️ توجد عدد ${card5Stats.count} دفعة متأخرة مستحقة هذا الشهر بقيمة إجمالية ${card5Stats.amount.toLocaleString('en-US')} ريال.`
+            : `⚠️ There are ${card5Stats.count} overdue payments this month amounting to ${card5Stats.amount.toLocaleString('en-US')} SAR.`,
         type: "error",
       });
     }
@@ -724,8 +724,8 @@ export default function SalesDashboard({
       alerts.push({
         text:
           lang === "ar"
-            ? `👤 العميل "${largeOutstanding.name}" لديه رصيد متبقي مستحق كبير وهو قدره ${largeOutstanding.remaining.toLocaleString()} ريال.`
-            : `👤 Client "${largeOutstanding.name}" has a high outstanding balance of ${largeOutstanding.remaining.toLocaleString()} SAR.`,
+            ? `👤 العميل "${largeOutstanding.name}" لديه رصيد متبقي مستحق كبير وهو قدره ${largeOutstanding.remaining.toLocaleString('en-US')} ريال.`
+            : `👤 Client "${largeOutstanding.name}" has a high outstanding balance of ${largeOutstanding.remaining.toLocaleString('en-US')} SAR.`,
         type: "info",
       });
     }
@@ -1032,7 +1032,7 @@ export default function SalesDashboard({
                   : "Total Sales"}
               </span>
               <h3 className="text-2xl font-black text-slate-800">
-                {card1Stats.value.toLocaleString()}{" "}
+                {card1Stats.value.toLocaleString('en-US')}{" "}
                 <span className="text-xs font-bold text-slate-500">ريال</span>
               </h3>
             </div>
@@ -1071,7 +1071,7 @@ export default function SalesDashboard({
                   : "Approved Quotations"}
               </span>
               <h3 className="text-2xl font-black text-slate-800">
-                {card2Stats.value.toLocaleString()}{" "}
+                {card2Stats.value.toLocaleString('en-US')}{" "}
                 <span className="text-xs font-bold text-slate-500">ريال</span>
               </h3>
             </div>
@@ -1102,7 +1102,7 @@ export default function SalesDashboard({
                   : "Sent to Production"}
               </span>
               <h3 className="text-2xl font-black text-slate-800">
-                {card3Stats.value.toLocaleString()}{" "}
+                {card3Stats.value.toLocaleString('en-US')}{" "}
                 <span className="text-xs font-bold text-slate-500">ريال</span>
               </h3>
             </div>
@@ -1133,7 +1133,7 @@ export default function SalesDashboard({
                   : "Collections & Balances"}
               </span>
               <h3 className="text-2xl font-black text-emerald-650">
-                {card4Stats.collected.toLocaleString()}{" "}
+                {card4Stats.collected.toLocaleString('en-US')}{" "}
                 <span className="text-xs font-bold text-slate-500">
                   ريال محصل
                 </span>
@@ -1146,8 +1146,8 @@ export default function SalesDashboard({
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
             <span className="text-rose-600">
               {lang === "ar"
-                ? `المتبقي: ${card4Stats.remaining.toLocaleString()} ريال`
-                : `Outstanding: ${card4Stats.remaining.toLocaleString()}`}
+                ? `المتبقي: ${card4Stats.remaining.toLocaleString('en-US')} ريال`
+                : `Outstanding: ${card4Stats.remaining.toLocaleString('en-US')}`}
             </span>
             <span className="text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-lg text-[10px] b-teal-200">
               {lang === "ar" ? "نسبة التحصيل" : "Collection Rate"}{" "}
@@ -1166,7 +1166,7 @@ export default function SalesDashboard({
                   : "Overdue"}
               </span>
               <h3 className="text-2xl font-black text-rose-600">
-                {card5Stats.amount.toLocaleString()}{" "}
+                {card5Stats.amount.toLocaleString('en-US')}{" "}
                 <span className="text-xs font-bold text-slate-500">
                   ريال متأخر
                 </span>
@@ -1558,10 +1558,10 @@ export default function SalesDashboard({
                         {rep.approvedCount}
                       </td>
                       <td className="p-3.5 text-slate-700">
-                        {rep.approvedVal.toLocaleString()} ريال
+                        {rep.approvedVal.toLocaleString('en-US')} ريال
                       </td>
                       <td className="p-3.5 text-emerald-600 font-black">
-                        {rep.collected.toLocaleString()} ريال
+                        {rep.collected.toLocaleString('en-US')} ريال
                       </td>
                     </tr>
                   ))}
@@ -1633,15 +1633,15 @@ export default function SalesDashboard({
                         {c.quotesCount}
                       </td>
                       <td className="p-3.5 text-slate-700">
-                        {c.totalVal.toLocaleString()} ريال
+                        {c.totalVal.toLocaleString('en-US')} ريال
                       </td>
                       <td className="p-3.5 text-teal-600 font-black">
-                        {c.paid.toLocaleString()} ريال
+                        {c.paid.toLocaleString('en-US')} ريال
                       </td>
                       <td
                         className={`p-3.5 font-black ${c.remaining > 0 ? "text-rose-600" : "text-slate-400"}`}
                       >
-                        {c.remaining.toLocaleString()} ريال
+                        {c.remaining.toLocaleString('en-US')} ريال
                       </td>
                     </tr>
                   ))}
@@ -1706,7 +1706,7 @@ export default function SalesDashboard({
                 {latestActionsList.map((log, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 transition">
                     <td className="p-3.5 text-slate-400 text-[11px] font-mono">
-                      {new Date(log.date).toLocaleString("ar-SA", {
+                      {new Date(log.date).toLocaleString('en-US', {
                         hour12: true,
                         dateStyle: "short",
                         timeStyle: "short",

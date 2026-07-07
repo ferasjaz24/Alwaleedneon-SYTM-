@@ -101,11 +101,10 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
   const getTemplateText = () => {
     if (!selectedDocEmp) return lang === 'ar' ? 'يرجى تحديد موظف أولاً من قائمة الاختيار' : 'Please select an employee profile to populate details.';
     
-    const d = new Date().toLocaleDateString('ar-SA');
-    const totalSalary = selectedDocEmp.basicSalary + selectedDocEmp.allowances.housing + selectedDocEmp.allowances.transport + selectedDocEmp.allowances.phone;
+    const d = new Date().toLocaleDateString('en-US');
+    const totalSalary = selectedDocEmp.basicSalary + selectedDocEmp.allowances.housing + selectedDocEmp.allowances.transport;
 
     switch(docTemplate) {
-      case 'salary_cert': return `الرقم المرجعي: CERT-FAW-${selectedDocEmp.id}-26\nالتاريخ: ${d}\n\nالموضوع: مشهد إثبات وتعريف بالراتب والمستحقات المالية\n\nإلى الجهة التي يهمها الأمر المحترمين،\nالسلام عليكم ورحمة الله وبركاته، وبعد:\n\nبناءً على طلب الموظف المذكورة تفاصيله أدناه، تشهد إدارة الموارد البشرية في "شركة فنون الوليد للصناعة" (شركة ذات مسؤولية محدودة)، بأن المذكور أحد منسوبي شركتنا الفاعلين، ويعمل تحت إدارتنا وكفالتنا المستمرة اعتبارا من تاريخ انضمامه الفعلي، ولا يزال على رأس العمل ومستمرا في أداء مهامه الوظيفية الموكلة إليه بكل أمانة واقتدار.\n\nالبيانات الشخصية والوظيفية الأساسية:\n-------------------------\n• الاسم الكامل للموظف: ${selectedDocEmp['arabicName']}\n• رقم الهوية الوطنية / الإقامة: ${selectedDocEmp.iqamaId}\n• الرقم الوظيفي المعتمد: ${selectedDocEmp.id}\n• المسمى الوظيفي الحالي: ${selectedDocEmp.jobTitle}\n• الإدارة / القسم المختص: ${selectedDocEmp.department || 'العمليات والإنتاج'}\n• تاريخ المباشرة الفعلية للعمل: ${selectedDocEmp.dateOfJoining}\n\nتفاصيل الأجر الشهري والمستحقات المالية:\n-----------------------------\n• الراتب الأساسي: ${selectedDocEmp.basicSalary} ريال سعودي\n• بدل السكن المعتمد: ${selectedDocEmp.allowances.housing} ريال سعودي\n• بدل النقل والمواصلات: ${selectedDocEmp.allowances.transport} ريال سعودي\n• بدل الاتصالات والبدلات الأخرى: ${selectedDocEmp.allowances.phone} ريال سعودي\n-----------------------------\nالإجمالي الشهري الشامل: ${totalSalary} ريال سعودي فقط لا غير.\n(ويُصرف هذا الراتب بنهاية كل شهر ميلادي وبشكل دوري منتظم إلى الحساب البنكي المعتمد للموظف).\n\nهذا وقد أُعطي هذا المشهد الإداري بناءً على رغبته الشخصية وطلبه المباشر لتقديمه للجهات المختصة لاستكمال إجراءاته الخاصة دون أن تتحمل "شركة فنون الوليد" أدنى مسؤولية مالية أو قانونية تجاه الغير.\nكما لا يُعتبر هذا الخطاب كفالة غرم وأداء، ولا يخول حامله أو أي جهة أخرى للمطالبة بتثبيت أي حقوق، ولا يحق استخدامه للحصول على أي اعتمادات ائتمانية من البنوك أو شركات التمويل دون خطاب التزام مخصص.\n\nوتفضلوا بقبول فائق الاحترام والتقدير وموصول التحية،،،\n\nإدارة الموارد البشرية وشؤون الأفراد\nشركة فنون الوليد للصناعة بالدمام`;
       
       case 'employee_intro': return `الرقم المرجعي: INTRO-FAW-${selectedDocEmp.id}-26\nالتاريخ: ${d}\n\nالموضوع: إفادة رسمية على رأس العمل للجهات المعنية\n\nإلى الجهة التي يهمها الأمر المحترمين،\nتحية طيبة وبعد،\n\nانطلاقاً من مبدأ التعاون وسعياً لتسهيل المعاملات الإجرائية لمنسوبيها، يسرنا في "شركة فنون الوليد للصناعة"، بصفتنا إحدى الشركات الرائدة بمجال صناعة اللوحات الإعلانية ومجسمات النيون في المملكة العربية السعودية، أن نفيدكم بصفة رسمية وموثقة بأن الموظف الموضحة بياناته أدناه، هو أحد الكوادر الأساسية المسجلة والمعتمدة لدينا في قواعد بيانات الشركة، ولا يزال على رأس العمل يباشر مهامه بشكل يومي ومنتظم.\n\nالبيانات التعريفية للموظف:\n-------------------------\n• الاسم الرباعي الموثق: ${selectedDocEmp['arabicName']}\n• رقم الإثبات (هوية وطنية / إقامة): ${selectedDocEmp.iqamaId}\n• الرقم الوظيفي لدى الشركة: ${selectedDocEmp.id}\n• المسمى الوظيفي المعتمد: ${selectedDocEmp.jobTitle}\n• مكان العمل والإدارة: ${selectedDocEmp.department || 'إدارة المشاريع الميدانية والعمليات'}\n• تاريخ بداية الخدمة والانضمام: ${selectedDocEmp.dateOfJoining}\n\nونحيطكم علماً بأن الغرض من إصدار هذه الإفادة هو إثبات تبعية المذكور المهنية لشركتنا للاستخدام الإجرائي الروتيني الذي يتطلب إثبات الحالة الوظيفية، ولا يُشكل هذا المستند أو ينطوي على أي تثبيت لحقوق طرف ثالث، أو التزام مالي مترتب علينا، ولا يعد كفالة بنكية أو شخصية أو تضمن من قبل الشركة تجاه أي التزامات قد يبرمها المذكور.\n\nشاكرين ومقدرين حسن تعاونكم الدائم ولكم جزيل الشكر،،،\n\nلجنة شؤون الموظفين والامتثال الإداري\nشركة فنون الوليد للصناعة`;
       
@@ -184,6 +183,11 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
       printWindow.document.write(`
         <html dir="rtl">
           <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
             <title>طباعة مستند</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
@@ -192,7 +196,7 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
                 margin: 0; 
                 padding: 0; 
                 background: white; 
-                font-family: 'Tajawal', sans-serif !important;
+                font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
@@ -275,7 +279,7 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
         body: JSON.stringify(payload)
       });
       loadLogs();
-      alert('تم التصدير والحفظ بنجاح!');
+      alert(lang === 'ar' ? 'تم التصدير والحفظ بنجاح!' : 'Exported and saved successfully!');
     } catch(e) {
       alert('Failed to export. Please try again.');
     }
@@ -436,7 +440,7 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
               <tbody className="divide-y divide-slate-100">
                 {exportLogs.map(log => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition">
-                    <td className="p-3 font-mono text-slate-500">{new Date(log.exportedAt).toLocaleString('ar-SA')}</td>
+                    <td className="p-3 font-mono text-slate-500">{new Date(log.exportedAt).toLocaleString('en-US')}</td>
                     <td className="p-3 font-bold text-[#0072BC]">{log.employeeName}</td>
                     <td className="p-3 text-slate-600">{log.title}</td>
                     <td className="p-3 flex items-center gap-2">

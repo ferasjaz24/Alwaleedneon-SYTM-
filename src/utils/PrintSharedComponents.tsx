@@ -3,10 +3,10 @@ import React from 'react';
 export const DocumentHeader = () => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0072BC', paddingBottom: '16px', marginBottom: '32px', userSelect: 'none', direction: 'ltr' }}>
     <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#374151', margin: 0, fontFamily: '"Tajawal", sans-serif' }} dir="rtl">
+      <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#374151', margin: 0, fontFamily: "'GE SS Two', 'Gotham Pro', sans-serif" }} dir="rtl">
         شركة فنون الوليد للصناعة
       </h2>
-      <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#6b7280', margin: '4px 0 0 0', letterSpacing: '0.1em', fontFamily: 'sans-serif' }}>
+      <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#6b7280', margin: '4px 0 0 0', letterSpacing: '0.1em', fontFamily: "'Gotham Pro', sans-serif" }}>
         FONOUN ALWALEED INDUSTRIAL CO.
       </h3>
     </div>

@@ -18,6 +18,7 @@ import {
   deleteDoc,
   updateDoc,
   getDoc,
+  serverTimestamp,
 } from "firebase/firestore"; // Shared types
 
 // Firestore Helpers
@@ -25,8 +26,9 @@ const getCollectionDocs = async (colName) => {
   try {
     const snap = await getDocs(collection(db, colName));
     return snap.docs.map((d) => d.data());
-  } catch (err) {
+  } catch (err: any) {
     console.error(`Firebase error reading colName ${colName}:`, err);
+    fs.appendFileSync('server-errors.txt', `Firebase error reading colName ${colName}: ${err.message}\n`);
     return [];
   }
 };
@@ -529,6 +531,84 @@ export async function startServer() {
     }
   });
 
+  // ERP System Error Logs (Sentry-like tracker)
+  app.get("/api/error-logs", async (req, res) => {
+    try {
+      const logs = await getCollectionDocs("error_logs");
+      logs.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+      res.json(logs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/error-logs", async (req, res) => {
+    try {
+      const { code, message, page, action, user, stack } = req.body;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-CA');
+      const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+      const logId = `ERR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      const logData = {
+        id: logId,
+        code: code || "ERR-500-GEN",
+        message: message || "Unknown system error",
+        page: page || "System",
+        action: action || "None",
+        user: user || "System / Guest",
+        timestamp: Date.now(),
+        date: dateStr,
+        time: timeStr,
+        stack: stack || ""
+      };
+
+      await setDoc(doc(db, "error_logs", logId), logData);
+      res.json({ success: true, log: logData });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ERP Global System Operations Audit Logs
+  app.get("/api/audit-logs", async (req, res) => {
+    try {
+      const logs = await getCollectionDocs("system_audit_logs");
+      logs.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+      res.json(logs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/audit-logs", async (req, res) => {
+    try {
+      const { user, action, department, description, originalValue, newValue } = req.body;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-CA');
+      const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+      const logId = `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      const logData = {
+        id: logId,
+        user: user || "System",
+        action: action || "Unknown",
+        department: department || "General",
+        description: description || "",
+        date: dateStr,
+        time: timeStr,
+        timestamp: Date.now(),
+        originalValue: originalValue || "",
+        newValue: newValue || ""
+      };
+
+      await setDoc(doc(db, "system_audit_logs", logId), logData);
+      res.json({ success: true, log: logData });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.post("/api/users", async (req, res) => {
     const newUser = req.body;
     if (!newUser.username) {
@@ -667,6 +747,76 @@ export async function startServer() {
     };
     await setDoc(doc(db, "salaries", finalRecord.id), finalRecord);
     res.json({ success: true, record: finalRecord });
+  });
+
+  // REST Monthly Payroll Runs Endpoints
+  app.get("/api/payroll_runs", async (req, res) => {
+    try {
+      const runs = await getCollectionDocs("payroll_runs");
+      res.json(runs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/payroll_runs", async (req, res) => {
+    try {
+      const run = req.body;
+      if (!run.id || !run.month || !run.year) {
+        res.status(400).json({ error: "Required fields missing (id, month, year)." });
+        return;
+      }
+      await setDoc(doc(db, "payroll_runs", run.id), run);
+      res.json({ success: true, run });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/payroll_runs/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ref = doc(db, "payroll_runs", id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        res.status(404).json({ error: "Payroll run not found." });
+        return;
+      }
+      const data = { ...req.body };
+      if (data.isDeleted) {
+        data.deletedAt = serverTimestamp();
+      }
+
+      // Auto-generate journal entry if paid or transferred
+      if ((data.status === "Transferred" || data.status === "Paid") && !data.isJournalGenerated) {
+        try {
+          const jvId = await createAutoJournalEntry("payroll_runs", { id, ...data });
+          if (jvId) {
+            data.journalEntryId = jvId;
+            data.journalEntryNo = jvId;
+            data.journalStatus = "معتمد";
+            data.isJournalGenerated = true;
+          }
+        } catch (jeErr) {
+          console.error("Error creating auto JV for payroll run:", jeErr);
+        }
+      }
+
+      await setDoc(ref, data, { merge: true });
+      res.json({ success: true, run: { ...snap.data(), ...data } });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/payroll_runs/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "payroll_runs", id));
+      res.json({ success: true, message: "Payroll run deleted successfully." });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // API 3: Employee management
@@ -965,30 +1115,451 @@ export async function startServer() {
   });
 
   // API: Payments / Collections
-  app.get("/api/payments", async (req, res) => {
-    res.json(await getCollectionDocs("payments"));
-  });
+  
 
-  app.post("/api/payments", async (req, res) => {
-    const body = req.body;
-    await setDoc(doc(db, "payments", body.id), body);
-    res.json({ success: true, payment: body });
-  });
+  
 
   // Audit log storage
-
-  // API: Journal Entries
-  app.get("/api/journal-entries", async (req, res) => {
-    res.json(await getCollectionDocs("journal_entries"));
+  app.post("/api/audit_logs", async (req, res) => {
+    try {
+      const log = req.body;
+      if (!log.action) {
+        res.status(400).json({ error: "Action is required." });
+        return;
+      }
+      const logId = log.id || `audit-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      await setDoc(doc(db, "payroll_audit_logs", logId), {
+        ...log,
+        id: logId,
+        createdAt: serverTimestamp(),
+      });
+      res.json({ success: true, log });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.post("/api/journal-entries", async (req, res) => {
-    const entry = req.body;
-    if (!entry.id) {
+  app.get("/api/audit_logs", async (req, res) => {
+    try {
+      const logs = await getCollectionDocs("payroll_audit_logs");
+      res.json(logs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // API: Journal Entries
+
+  // Helper to process journal entry balance updates for Cash boxes and Bank accounts
+  async function applyJournalToCashBank(entryId: string, passedEntry?: any, isReversal = false) {
+  try {
+    const entryRef = doc(db, "journal_entries", entryId);
+    const entrySnap = await getDoc(entryRef);
+    if (!entrySnap.exists()) return;
+    const entry = entrySnap.data();
+
+    // 3. تأكد أن القيد Approved
+    if (entry.status !== "معتمد" && entry.status !== "Approved") return;
+
+    // 5. تأكد أن cashBankApplied ليس true
+    if (!isReversal && entry.cashBankApplied) {
+      console.log(`Journal entry ${entryId} already applied to cash/bank.`);
+      return;
+    }
+
+    if (isReversal && !entry.cashBankApplied) {
+      console.log(`Journal entry ${entryId} is not applied, cannot reverse.`);
+      return;
+    }
+
+    // 2. تجيب سطور القيد من journal_entry_lines
+    let entryLines = entry.lines || [];
+    if (!entryLines || entryLines.length === 0) {
+      try {
+        const linesSnap = await getDocs(collection(db, "journal_entry_lines"));
+        entryLines = linesSnap.docs
+          .map(d => d.data())
+          .filter((l: any) => l.journalEntryId === entryId)
+          .sort((a: any, b: any) => (a.lineNo || 0) - (b.lineNo || 0));
+      } catch (err: any) {
+        console.warn("Failed to fetch journal_entry_lines fallback for", entryId, err.message);
+      }
+    }
+
+    // 4. تتأكد أن القيد متوازن
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const line of entryLines) {
+      totalDebit += Number(line.debit || 0);
+      totalCredit += Number(line.credit || 0);
+    }
+    
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      console.log(`Journal entry ${entryId} is not balanced, skipping.`);
+      return;
+    }
+
+    if (isReversal) {
+      const movementsSnap = await getDocs(collection(db, "cash_bank_movements"));
+      let foundActive = false;
+      for (const d of movementsSnap.docs) {
+        const mv = d.data();
+        if (mv.journalEntryId === entryId && !mv.isReversed) {
+          await updateDoc(doc(db, "cash_bank_movements", d.id), { isReversed: true });
+          foundActive = true;
+        }
+      }
+      if (!foundActive) {
+        console.log(`No active movements found to reverse for entry ${entryId}.`);
+        return;
+      }
+    }
+
+    let appliedAny = false;
+
+    const updateCashBox = async (boxId: string, diff: number, isDebit: boolean, lineAmount: number) => {
+      const boxRef = doc(db, "cash_boxes", boxId);
+      const boxSnap = await getDoc(boxRef);
+      if (boxSnap.exists()) {
+        const data = boxSnap.data();
+        const previousBalance = Number(data.current_balance || 0);
+        const newBalance = previousBalance + diff;
+        await updateDoc(boxRef, { current_balance: newBalance });
+
+        const mvId = `${entryId}_${isDebit ? "debit" : "credit"}_CB_${boxId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "cash_bank_movements", mvId), {
+          id: mvId,
+          journalEntryId: entryId,
+          accountType: "Cash",
+          cashBoxId: boxId,
+          debitAmount: isDebit ? lineAmount : 0,
+          creditAmount: !isDebit ? lineAmount : 0,
+          previousBalance,
+          newBalance,
+          isReversed: isReversal,
+          createdAt: new Date().toISOString(),
+          createdBy: entry.createdBy || "System"
+        });
+
+        const txId = `${entryId}_${isDebit ? "debit" : "credit"}_CB_TX_${boxId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "cash_bank_transactions", txId), {
+          id: txId,
+          transactionNumber: `TX-${Math.floor(100000 + Math.random() * 900000)}`,
+          date: entry.date,
+          source: "Journal Entry",
+          journalEntryId: entryId,
+          source_type: "Cash_Box",
+          source_id: boxId,
+          amount: lineAmount,
+          currency: entry.currency || "SAR",
+          type: diff > 0 ? "Deposit" : "Withdrawal",
+          transactionDirection: diff > 0 ? "In" : "Out",
+          balanceBefore: previousBalance,
+          balanceAfter: newBalance,
+          relatedModule: "Journal Entries",
+          relatedRecordId: entryId,
+          description: isReversal ? `[إلغاء وعكس] ${entry.description}` : entry.description,
+          status: isReversal ? "Cancelled" : "Approved",
+          createdBy: entry.createdBy || "System",
+          createdAt: new Date().toISOString()
+        });
+        
+        const auditId = `cb_audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "audit_logs", auditId), {
+          id: auditId,
+          action: isReversal ? "Reverse Balance From Journal" : "Update Balance From Journal",
+          module: "Cash & Bank",
+          record_id: boxId,
+          user_id: "System",
+          user_name: entry.createdBy || "System",
+          timestamp: new Date().toISOString(),
+          details: `Updated cash box ${data.code || boxId} balance from ${previousBalance} to ${newBalance} due to journal entry ${entryId}`
+        });
+
+        appliedAny = true;
+      }
+    };
+
+    const updateBankAccount = async (bankId: string, diff: number, isDebit: boolean, lineAmount: number) => {
+      const bankRef = doc(db, "bank_accounts", bankId);
+      const bankSnap = await getDoc(bankRef);
+      if (bankSnap.exists()) {
+        const data = bankSnap.data();
+        const previousBalance = Number(data.current_balance || 0);
+        const newBalance = previousBalance + diff;
+        await updateDoc(bankRef, { current_balance: newBalance });
+
+        const mvId = `${entryId}_${isDebit ? "debit" : "credit"}_BA_${bankId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "cash_bank_movements", mvId), {
+          id: mvId,
+          journalEntryId: entryId,
+          accountType: "Bank",
+          bankAccountId: bankId,
+          debitAmount: isDebit ? lineAmount : 0,
+          creditAmount: !isDebit ? lineAmount : 0,
+          previousBalance,
+          newBalance,
+          isReversed: isReversal,
+          createdAt: new Date().toISOString(),
+          createdBy: entry.createdBy || "System"
+        });
+
+        const txId = `${entryId}_${isDebit ? "debit" : "credit"}_BA_TX_${bankId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "cash_bank_transactions", txId), {
+          id: txId,
+          transactionNumber: `TX-${Math.floor(100000 + Math.random() * 900000)}`,
+          date: entry.date,
+          source: "Journal Entry",
+          journalEntryId: entryId,
+          source_type: "Bank_Account",
+          source_id: bankId,
+          amount: lineAmount,
+          currency: entry.currency || "SAR",
+          type: diff > 0 ? "Deposit" : "Withdrawal",
+          transactionDirection: diff > 0 ? "In" : "Out",
+          balanceBefore: previousBalance,
+          balanceAfter: newBalance,
+          relatedModule: "Journal Entries",
+          relatedRecordId: entryId,
+          description: isReversal ? `[إلغاء وعكس] ${entry.description}` : entry.description,
+          status: isReversal ? "Cancelled" : "Approved",
+          createdBy: entry.createdBy || "System",
+          createdAt: new Date().toISOString()
+        });
+
+        const auditId = `ba_audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "audit_logs", auditId), {
+          id: auditId,
+          action: isReversal ? "Reverse Balance From Journal" : "Update Balance From Journal",
+          module: "Cash & Bank",
+          record_id: bankId,
+          user_id: "System",
+          user_name: entry.createdBy || "System",
+          timestamp: new Date().toISOString(),
+          details: `Updated bank account ${data.account_number || bankId} balance from ${previousBalance} to ${newBalance} due to journal entry ${entryId}`
+        });
+
+        appliedAny = true;
+      }
+    };
+
+    // 6. تمر على كل سطر
+    for (const line of entryLines) {
+      const debitVal = Number(line.debit || 0);
+      const creditVal = Number(line.credit || 0);
+
+      // 7. إذا accountType = Bank
+      if (line.accountType === "Bank") {
+        const bankId = line.bankAccountId;
+        if (bankId) {
+          if (debitVal > 0) {
+            const diff = isReversal ? -debitVal : debitVal;
+            await updateBankAccount(bankId, diff, !isReversal, debitVal);
+          }
+          if (creditVal > 0) {
+            const diff = isReversal ? creditVal : -creditVal;
+            await updateBankAccount(bankId, diff, isReversal, creditVal);
+          }
+        }
+      } 
+      // 8. إذا accountType = Cash
+      else if (line.accountType === "Cash") {
+        const boxId = line.cashBoxId;
+        if (boxId) {
+          if (debitVal > 0) {
+            const diff = isReversal ? -debitVal : debitVal;
+            await updateCashBox(boxId, diff, !isReversal, debitVal);
+          }
+          if (creditVal > 0) {
+            const diff = isReversal ? creditVal : -creditVal;
+            await updateCashBox(boxId, diff, isReversal, creditVal);
+          }
+        }
+      }
+    }
+
+    // 11. حدث القيد
+    if (appliedAny) {
+      await updateDoc(entryRef, {
+        cashBankApplied: !isReversal,
+        cashBankAppliedAt: new Date().toISOString()
+      });
+    }
+
+  } catch (err: any) {
+    console.warn("Balances processing skipped due to error:", err.message);
+  }
+}
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  // API: Recalculate Cash & Bank Balances From Approved Journal Entries
+  
+
+  // Helper to get first active cash box
+  async function getDefaultCashBoxId() {
+    try {
+      const snap = await getDocs(collection(db, "cash_boxes"));
+      const active = snap.docs.map(d => ({ id: d.id, ...d.data() as any })).find(c => c.status === "Active");
+      return active ? active.id : (snap.docs[0]?.id || "CB_DEFAULT");
+    } catch (e) {
+      return "CB_DEFAULT";
+    }
+  }
+
+  // Helper to get first active bank account
+  async function getDefaultBankAccountId() {
+    try {
+      const snap = await getDocs(collection(db, "bank_accounts"));
+      const active = snap.docs.map(d => ({ id: d.id, ...d.data() as any })).find(b => b.status === "Active");
+      return active ? active.id : (snap.docs[0]?.id || "BA_DEFAULT");
+    } catch (e) {
+      return "BA_DEFAULT";
+    }
+  }
+
+  async function createCustomerInvoiceJournal(invoiceId: string) {
+    try {
+      console.log(`[Posting Engine] Processing Customer Invoice ${invoiceId}...`);
+      
+      const invoiceRef = doc(db, "customer_invoices", invoiceId);
+      const invoiceSnap = await getDoc(invoiceRef);
+      if (!invoiceSnap.exists()) {
+        throw new Error(`الفاتورة رقم ${invoiceId} غير موجودة في قاعدة البيانات.`);
+      }
+      const invoiceData = invoiceSnap.data();
+      invoiceData.id = invoiceId;
+
+      if (invoiceData.isJournalGenerated && invoiceData.journalEntryId) {
+        console.log(`[Posting Engine] Invoice ${invoiceId} already has journal entry: ${invoiceData.journalEntryId}`);
+        return {
+          journalEntryId: invoiceData.journalEntryId,
+          journalEntryNo: invoiceData.journalEntryNo,
+          revenueId: invoiceData.revenueId
+        };
+      }
+
+      const revenuesSnap = await getDocs(collection(db, "revenues"));
+      let existingRevenueDoc = revenuesSnap.docs.find(d => {
+        const data = d.data();
+        return data.sourceRecordId === invoiceId && data.sourceModule === "customer_invoice";
+      });
+
+      const totalAmount = Number(invoiceData.amount || invoiceData.totalAmount || 0);
+      const vatAmount = Number(invoiceData.taxAmount || invoiceData.vatAmount || 0);
+      const subtotal = totalAmount - vatAmount;
+
+      const revId = existingRevenueDoc ? existingRevenueDoc.id : `REV-${invoiceData.id}`;
+
+      const revenueData = {
+        id: revId,
+        invoiceId: invoiceData.id,
+        invoiceNo: invoiceData.invoiceNo || invoiceData.id,
+        customerId: invoiceData.customerId || invoiceData.partyId || "",
+        customerName: invoiceData.customerName || invoiceData.partyName || "",
+        invoiceDate: invoiceData.date || invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
+        date: invoiceData.date || invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
+        subtotal: subtotal,
+        vatAmount: vatAmount,
+        totalAmount: totalAmount,
+        amount: totalAmount,
+        paymentStatus: invoiceData.paymentStatus || invoiceData.status || "Unpaid",
+        paymentMethod: invoiceData.paymentMethod || "آجل",
+        bankAccountId: invoiceData.bankAccountId || "",
+        cashBoxId: invoiceData.cashBoxId || "",
+        projectId: invoiceData.projectId || "",
+        description: invoiceData.notes || invoiceData.description || `إيراد مبيعات تلقائي للفاتورة رقم ${invoiceData.invoiceNo || invoiceData.id}`,
+        notes: invoiceData.notes || invoiceData.description || `إيراد مبيعات تلقائي للفاتورة رقم ${invoiceData.invoiceNo || invoiceData.id}`,
+        sourceModule: "customer_invoice",
+        sourceRecordId: invoiceData.id,
+        sourceRecordNo: invoiceData.invoiceNo || invoiceData.id,
+        isAutoCreated: true,
+        isJournalGenerated: true,
+        status: "معتمد",
+        createdBy: invoiceData.createdBy || "System",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, "revenues", revId), revenueData);
+      console.log(`[Posting Engine] Created/Updated Revenue record: ${revId}`);
+
+      const pMethod = (invoiceData.paymentMethod || "").toLowerCase();
+      const isCash = pMethod === "نقدي" || pMethod === "cash" || pMethod === "نقداً" || pMethod === "كاش" || !!invoiceData.cashBoxId;
+      const isBank = pMethod === "البنك" || pMethod === "bank" || pMethod === "تحويل" || pMethod === "شبكة" || !!invoiceData.bankAccountId;
+
+      let debitAccount = "ذمم مدينة";
+      let debitType = "Customer";
+      let debitSubId = invoiceData.customerId || invoiceData.partyId || "";
+
+      let cashBoxId = invoiceData.cashBoxId || "";
+      let bankAccountId = invoiceData.bankAccountId || "";
+
+      if (isCash) {
+        debitAccount = "الصندوق";
+        debitType = "Cash";
+        if (!cashBoxId) {
+          cashBoxId = await getDefaultCashBoxId();
+        }
+        debitSubId = cashBoxId;
+      } else if (isBank) {
+        debitAccount = "البنك";
+        debitType = "Bank";
+        if (!bankAccountId) {
+          bankAccountId = await getDefaultBankAccountId();
+        }
+        debitSubId = bankAccountId;
+      }
+
+      const lines: any[] = [];
+      lines.push({
+        accountName: debitAccount,
+        accountType: debitType,
+        debit: totalAmount,
+        credit: 0,
+        cashBoxId: debitType === "Cash" ? debitSubId : "",
+        bankAccountId: debitType === "Bank" ? debitSubId : "",
+        customerId: debitType === "Customer" ? debitSubId : "",
+        description: invoiceData.notes || invoiceData.description || `قيد تلقائي لفاتورة عميل رقم ${invoiceData.invoiceNo || invoiceData.id}`
+      });
+
+      lines.push({
+        accountName: "إيرادات مبيعات",
+        accountType: "Revenue",
+        debit: 0,
+        credit: subtotal,
+        description: invoiceData.notes || invoiceData.description || `قيد تلقائي لفاتورة عميل رقم ${invoiceData.invoiceNo || invoiceData.id}`
+      });
+
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المستحقة",
+          accountType: "Tax",
+          debit: 0,
+          credit: vatAmount,
+          description: `ضريبة مبيعات فاتورة رقم ${invoiceData.invoiceNo || invoiceData.id}`
+        });
+      }
+
+      const totalDebit = lines.reduce((sum, l) => sum + (Number(l.debit) || 0), 0);
+      const totalCredit = lines.reduce((sum, l) => sum + (Number(l.credit) || 0), 0);
+      if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        throw new Error(`القيد غير متزن. إجمالي المدين (${totalDebit}) يجب أن يساوي إجمالي الدائن (${totalCredit}).`);
+      }
+
+      const date = invoiceData.date || invoiceData.invoiceDate || new Date().toISOString().split("T")[0];
       let yearStr = "26";
       let monthStr = "06";
-      if (entry.date && typeof entry.date === 'string' && entry.date.includes('-')) {
-        const parts = entry.date.split('-');
+      if (date && typeof date === 'string' && date.includes('-')) {
+        const parts = date.split('-');
         if (parts.length >= 2) {
           yearStr = parts[0].trim().slice(-2);
           monthStr = parts[1].trim().padStart(2, '0');
@@ -1000,6 +1571,608 @@ export async function startServer() {
       }
       const prefix = `JV${yearStr}${monthStr}`;
 
+      let jvId = "";
+      try {
+        const entries = await getCollectionDocs("journal_entries");
+        const matchedEntries = entries.filter((e: any) => e.id && e.id.startsWith(prefix));
+
+        let nextNum = 1;
+        if (matchedEntries.length > 0) {
+          const numbers = matchedEntries.map((e: any) => {
+            const suffix = e.id.slice(prefix.length);
+            const parsed = parseInt(suffix, 10);
+            return isNaN(parsed) ? 0 : parsed;
+          });
+          const maxNum = Math.max(...numbers, 0);
+          nextNum = maxNum + 1;
+        }
+        jvId = `${prefix}${String(nextNum).padStart(4, '0')}`;
+      } catch (e) {
+        jvId = `JV-${Date.now()}`;
+      }
+
+      const jvEntry = {
+        id: jvId,
+        journalEntryNo: jvId,
+        date,
+        type: "Customer Invoice Revenue",
+        sourceModule: "customer_invoices",
+        sourceRecordId: invoiceId,
+        sourceRecordNo: invoiceData.invoiceNo || invoiceData.id,
+        revenueId: revId,
+        description: invoiceData.notes || invoiceData.description || `قيد تلقائي لفاتورة عميل رقم ${invoiceData.invoiceNo || invoiceData.id}`,
+        status: "معتمد",
+        totalDebit,
+        totalCredit,
+        isBalanced: true,
+        createdBy: invoiceData.createdBy || "System",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+        isAutoGenerated: true,
+        debitAccount,
+        debitSubId,
+        creditAccount: "إيرادات مبيعات",
+        creditSubId: "",
+        amount: totalAmount,
+        lines: lines
+      };
+
+      for (let i = 0; i < lines.length; i++) {
+        const lineId = `${jvId}_line_${i + 1}`;
+        const lineData = {
+          id: lineId,
+          journalEntryId: jvId,
+          lineNo: i + 1,
+          accountName: lines[i].accountName,
+          accountType: lines[i].accountType,
+          debit: Number(lines[i].debit) || 0,
+          credit: Number(lines[i].credit) || 0,
+          cashBoxId: lines[i].cashBoxId || "",
+          bankAccountId: lines[i].bankAccountId || "",
+          customerId: lines[i].customerId || "",
+          supplierId: lines[i].supplierId || "",
+          projectId: invoiceData.projectId || "",
+          description: lines[i].description || jvEntry.description,
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, "journal_entry_lines", lineId), lineData);
+      }
+
+      await setDoc(doc(db, "journal_entries", jvId), jvEntry);
+      console.log(`[Posting Engine] Saved Journal Entry ${jvId}`);
+
+      await updateDoc(invoiceRef, {
+        journalEntryId: jvId,
+        journalEntryNo: jvId,
+        revenueId: revId,
+        isJournalGenerated: true,
+        isRevenueGenerated: true,
+        journalStatus: "معتمد",
+        journalError: ""
+      });
+
+      await updateDoc(doc(db, "revenues", revId), {
+        journalEntryId: jvId,
+        journalEntryNo: jvId,
+        isJournalGenerated: true,
+        journalStatus: "معتمد",
+        journalError: ""
+      });
+
+      await applyJournalToCashBank(jvId, jvEntry);
+
+      try {
+        const auditId = `civ_audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "audit_logs", auditId), {
+          id: auditId,
+          action: "ترحيل وتوليد قيد تلقائي",
+          module: "فواتير العملاء",
+          sourceModule: "customer_invoices",
+          sourceRecordId: invoiceId,
+          journalEntryId: jvId,
+          oldValue: "",
+          newValue: jvId,
+          user_id: "System",
+          user_name: invoiceData.createdBy || "System",
+          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          details: `تم ترحيل الفاتورة رقم ${invoiceData.invoiceNo || invoiceData.id} وتوليد القيد المحاسبي المعتمد رقم ${jvId} والإيراد المعتمد رقم ${revId}`
+        });
+      } catch (auditErr) {
+        console.error("Audit log failed inside Posting Engine:", auditErr);
+      }
+
+      return {
+        journalEntryId: jvId,
+        journalEntryNo: jvId,
+        revenueId: revId
+      };
+    } catch (err: any) {
+      console.error(`[Posting Engine Error] for invoice ${invoiceId}:`, err);
+      throw err;
+    }
+  }
+
+  // Helper to auto-generate a journal entry for approved/paid records
+  async function createAutoJournalEntry(payloadOrModule: any, possibleRecord?: any) {
+    let sourceModule = "";
+    let sourceRecordId = "";
+    let sourceType = "";
+    let amount = 0;
+    let vatAmount = 0;
+    let subtotal = 0;
+    let paymentMethod = "";
+    let bankAccountId = "";
+    let cashBoxId = "";
+    let customerId = "";
+    let supplierId = "";
+    let description = "";
+    let date = "";
+    let createdBy = "System";
+
+    if (typeof payloadOrModule === "string" && possibleRecord) {
+      // Old 2-parameter signature: createAutoJournalEntry(sourceModule, sourceRecord)
+      const sourceRecord = possibleRecord;
+      sourceModule = payloadOrModule;
+      sourceRecordId = sourceRecord.id;
+      amount = Number(sourceRecord.amount || sourceRecord.totalAmount || 0);
+      vatAmount = Number(sourceRecord.taxAmount || sourceRecord.vatAmount || 0);
+      subtotal = amount - vatAmount;
+      paymentMethod = sourceRecord.paymentMethod || "";
+      bankAccountId = sourceRecord.bankAccountId || "";
+      cashBoxId = sourceRecord.cashBoxId || "";
+      description = sourceRecord.notes || sourceRecord.description || "";
+      date = sourceRecord.date || new Date().toISOString().split("T")[0];
+      createdBy = sourceRecord.createdBy || "System";
+      
+      // Determine sourceType and customer/supplier IDs for compatibility
+      if (sourceModule === "revenues" || sourceModule === "revenue") {
+        sourceType = "revenue_received";
+      } else if (sourceModule === "expenses" || sourceModule === "expense") {
+        sourceType = "expense_paid";
+      } else if (sourceModule === "customer_invoices" || sourceModule === "customer_invoice") {
+        const isPaid = sourceRecord.paymentMethod && sourceRecord.paymentMethod !== "Unpaid" && sourceRecord.paymentMethod !== "آجل" && sourceRecord.paymentMethod !== "آجلة";
+        sourceType = isPaid ? "customer_invoice_paid" : "customer_invoice_unpaid";
+        customerId = sourceRecord.partyId || sourceRecord.customerId || "";
+      } else if (sourceModule === "supplier_invoices" || sourceModule === "supplier_invoice") {
+        const isPaid = sourceRecord.paymentMethod && sourceRecord.paymentMethod !== "Unpaid" && sourceRecord.paymentMethod !== "آجل" && sourceRecord.paymentMethod !== "آجلة";
+        sourceType = isPaid ? "supplier_invoice_paid" : "supplier_invoice_unpaid";
+        supplierId = sourceRecord.partyId || sourceRecord.supplierId || "";
+      } else if (sourceModule === "payroll_runs") {
+        sourceType = "payroll_run";
+      } else if (sourceModule === "cash_bank_transfers") {
+        sourceType = "cash_bank_transfer";
+      }
+    } else {
+      // New single-parameter payload signature: createAutoJournalEntry(payload)
+      const payload = payloadOrModule;
+      sourceModule = payload.sourceModule;
+      sourceRecordId = payload.sourceRecordId;
+      sourceType = payload.sourceType;
+      amount = Number(payload.amount || payload.totalAmount || 0);
+      vatAmount = Number(payload.vatAmount || 0);
+      subtotal = Number(payload.subtotal || (amount - vatAmount));
+      paymentMethod = payload.paymentMethod || "";
+      bankAccountId = payload.bankAccountId || "";
+      cashBoxId = payload.cashBoxId || "";
+      customerId = payload.customerId || "";
+      supplierId = payload.supplierId || "";
+      description = payload.description || "";
+      date = payload.date || new Date().toISOString().split("T")[0];
+      createdBy = payload.createdBy || "System";
+    }
+
+    if (!sourceModule) throw new Error("اسم النموذج المصدر مطلوب (sourceModule).");
+    if (!sourceRecordId) throw new Error("معرف السجل المصدر مطلوب (sourceRecordId).");
+    if (amount <= 0) throw new Error("القيمة المالية يجب أن تكون أكبر من الصفر.");
+
+    // Normalize source module to correct collection name
+    let collectionName = sourceModule;
+    if (sourceModule === "revenue") collectionName = "revenues";
+    else if (sourceModule === "expense") collectionName = "expenses";
+    else if (sourceModule === "customer_invoice") collectionName = "customer_invoices";
+    else if (sourceModule === "supplier_invoice") collectionName = "supplier_invoices";
+
+    // Double check if already generated in Firestore live
+    try {
+      const srcDocRef = doc(db, collectionName, sourceRecordId);
+      const srcSnap = await getDoc(srcDocRef);
+      if (srcSnap.exists()) {
+        const srcData = srcSnap.data();
+        if (srcData.isJournalGenerated || srcData.journalEntryId) {
+          console.log(`Journal entry already exists for ${collectionName}/${sourceRecordId}: ${srcData.journalEntryId}`);
+          return srcData.journalEntryId;
+        }
+      }
+    } catch (err) {
+      console.error("Error reading source record live state: ", err);
+    }
+
+    // Helper to get first active cash box
+    const getDefaultCashBoxId = async () => {
+      try {
+        const snap = await getDocs(collection(db, "cash_boxes"));
+        const active = snap.docs.map(d => ({ id: d.id, ...d.data() as any })).find(c => c.status === "Active");
+        return active ? active.id : (snap.docs[0]?.id || "");
+      } catch (e) {
+        return "";
+      }
+    };
+
+    // Helper to get first active bank account
+    const getDefaultBankAccountId = async () => {
+      try {
+        const snap = await getDocs(collection(db, "bank_accounts"));
+        const active = snap.docs.map(d => ({ id: d.id, ...d.data() as any })).find(b => b.status === "Active");
+        return active ? active.id : (snap.docs[0]?.id || "");
+      } catch (e) {
+        return "";
+      }
+    };
+
+    let debitAccount = "";
+    let debitSubId = "";
+    let creditAccount = "";
+    let creditSubId = "";
+    let lines: any[] = [];
+
+    // Normalize payment method to Cash/Bank
+    const paymentMethodLower = (paymentMethod || "").toLowerCase();
+    const isCash = paymentMethodLower === "نقدي" || paymentMethodLower === "cash" || paymentMethodLower === "نقداً" || paymentMethodLower === "كاش" || !!cashBoxId;
+    const isBank = paymentMethodLower === "البنك" || paymentMethodLower === "bank" || paymentMethodLower === "تحويل" || paymentMethodLower === "شبكة" || !!bankAccountId;
+
+    if (sourceType === "revenue_received" || sourceModule === "revenue" || sourceModule === "revenues") {
+      if (isCash && !cashBoxId) {
+        cashBoxId = await getDefaultCashBoxId();
+      }
+      if (!isCash && !bankAccountId) {
+        bankAccountId = await getDefaultBankAccountId();
+      }
+
+      // if (isCash && !cashBoxId) throw new Error("مطلب تحديد الصندوق لعملية الدفع النقدي.");
+      // if (!isCash && !bankAccountId) throw new Error("مطلب تحديد الحساب البنكي لعملية الدفع البنكي.");
+
+      const payloadRef = possibleRecord || payloadOrModule || {};
+      const actualCustomerName = payloadRef.clientName || payloadRef.customerName || payloadRef.partyName || "العميل";
+      
+      debitAccount = isCash ? "الصندوق" : "البنك";
+      debitSubId = isCash ? cashBoxId : bankAccountId;
+      creditAccount = "شركة فنون الوليد";
+
+      lines = [
+        {
+          accountName: actualCustomerName,
+          accountType: "Customer",
+          debit: amount,
+          credit: 0,
+          customerId: customerId || "CUST-DEFAULT",
+          description: `إثبات الإيراد للعميل - ${description}`
+        },
+        {
+          accountName: creditAccount,
+          accountType: "Revenue",
+          debit: 0,
+          credit: subtotal,
+          description: `إيراد لصالح شركة فنون الوليد - ${description}`
+        }
+      ];
+
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المستحقة",
+          accountType: "Tax",
+          debit: 0,
+          credit: vatAmount,
+          description: `ضريبة القيمة المضافة للإيراد ${sourceRecordId}`
+        });
+      }
+
+      lines.push(
+        {
+          accountName: debitAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: amount,
+          credit: 0,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description: `استلام المبلغ - ${description}`
+        },
+        {
+          accountName: actualCustomerName,
+          accountType: "Customer",
+          debit: 0,
+          credit: amount,
+          customerId: customerId || "CUST-DEFAULT",
+          description: `سداد العميل للمبلغ - ${description}`
+        }
+      );
+    } else if (sourceType === "expense_paid" || sourceModule === "expense" || sourceModule === "expenses") {
+      if (isCash && !cashBoxId) {
+        cashBoxId = await getDefaultCashBoxId();
+      }
+      if (!isCash && !bankAccountId) {
+        bankAccountId = await getDefaultBankAccountId();
+      }
+
+      // if (isCash && !cashBoxId) throw new Error("مطلب تحديد الصندوق لعملية الدفع النقدي.");
+      // if (!isCash && !bankAccountId) throw new Error("مطلب تحديد الحساب البنكي لعملية الدفع البنكي.");
+
+      creditAccount = isCash ? "الصندوق" : "البنك";
+      creditSubId = isCash ? cashBoxId : bankAccountId;
+      debitAccount = "مصروفات";
+
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: "Expense",
+          debit: subtotal,
+          credit: 0,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: 0,
+          credit: amount,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description
+        }
+      ];
+
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المدخلة",
+          accountType: "Tax",
+          debit: vatAmount,
+          credit: 0,
+          description: `ضريبة القيمة المضافة للمصروف ${sourceRecordId}`
+        });
+      }
+    } else if (sourceType === "customer_invoice_unpaid") {
+      debitAccount = "ذمم مدينة";
+      creditAccount = "إيرادات مبيعات";
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: "Customer",
+          debit: amount,
+          credit: 0,
+          customerId,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: "Revenue",
+          debit: 0,
+          credit: subtotal,
+          description
+        }
+      ];
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المستحقة",
+          accountType: "Tax",
+          debit: 0,
+          credit: vatAmount,
+          description: `ضريبة مبيعات فاتورة ${sourceRecordId}`
+        });
+      }
+    } else if (sourceType === "customer_invoice_paid") {
+      if (isCash && !cashBoxId) cashBoxId = await getDefaultCashBoxId();
+      if (!isCash && !bankAccountId) bankAccountId = await getDefaultBankAccountId();
+
+      debitAccount = isCash ? "الصندوق" : "البنك";
+      debitSubId = isCash ? cashBoxId : bankAccountId;
+      creditAccount = "إيرادات مبيعات";
+
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: amount,
+          credit: 0,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: "Revenue",
+          debit: 0,
+          credit: subtotal,
+          description
+        }
+      ];
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المستحقة",
+          accountType: "Tax",
+          debit: 0,
+          credit: vatAmount,
+          description: `ضريبة مبيعات فاتورة ${sourceRecordId}`
+        });
+      }
+    } else if (sourceType === "supplier_invoice_unpaid") {
+      debitAccount = "مصروفات";
+      creditAccount = "ذمم دائنة";
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: "Expense",
+          debit: subtotal,
+          credit: 0,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: "Supplier",
+          debit: 0,
+          credit: amount,
+          supplierId,
+          description
+        }
+      ];
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المدخلة",
+          accountType: "Tax",
+          debit: vatAmount,
+          credit: 0,
+          description: `ضريبة مشتريات فاتورة ${sourceRecordId}`
+        });
+      }
+    } else if (sourceType === "supplier_invoice_paid") {
+      if (isCash && !cashBoxId) cashBoxId = await getDefaultCashBoxId();
+      if (!isCash && !bankAccountId) bankAccountId = await getDefaultBankAccountId();
+
+      debitAccount = "مصروفات";
+      creditAccount = isCash ? "الصندوق" : "البنك";
+      creditSubId = isCash ? cashBoxId : bankAccountId;
+
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: "Expense",
+          debit: subtotal,
+          credit: 0,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: 0,
+          credit: amount,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description
+        }
+      ];
+      if (vatAmount > 0) {
+        lines.push({
+          accountName: "ضريبة القيمة المضافة المدخلة",
+          accountType: "Tax",
+          debit: vatAmount,
+          credit: 0,
+          description: `ضريبة مشتريات فاتورة ${sourceRecordId}`
+        });
+      }
+    } else if (sourceType === "customer_payment") {
+      if (isCash && !cashBoxId) cashBoxId = await getDefaultCashBoxId();
+      if (!isCash && !bankAccountId) bankAccountId = await getDefaultBankAccountId();
+
+      debitAccount = isCash ? "الصندوق" : "البنك";
+      debitSubId = isCash ? cashBoxId : bankAccountId;
+      creditAccount = "ذمم مدينة";
+
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: amount,
+          credit: 0,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: "Customer",
+          debit: 0,
+          credit: amount,
+          customerId,
+          description
+        }
+      ];
+    } else if (sourceType === "supplier_payment") {
+      if (isCash && !cashBoxId) cashBoxId = await getDefaultCashBoxId();
+      if (!isCash && !bankAccountId) bankAccountId = await getDefaultBankAccountId();
+
+      debitAccount = "ذمم دائنة";
+      creditAccount = isCash ? "الصندوق" : "البنك";
+      creditSubId = isCash ? cashBoxId : bankAccountId;
+
+      lines = [
+        {
+          accountName: debitAccount,
+          accountType: "Supplier",
+          debit: amount,
+          credit: 0,
+          supplierId,
+          description
+        },
+        {
+          accountName: creditAccount,
+          accountType: isCash ? "Cash" : "Bank",
+          debit: 0,
+          credit: amount,
+          cashBoxId: isCash ? cashBoxId : "",
+          bankAccountId: isCash ? "" : bankAccountId,
+          description
+        }
+      ];
+    } else if (sourceModule === "payroll_runs") {
+      // Compatibility with existing payroll runs
+      const isTransfer = possibleRecord?.status === "Transferred" || possibleRecord?.status === "Paid";
+      if (isTransfer) {
+        debitAccount = "رواتب مستحقة";
+        creditAccount = isCash ? "الصندوق" : "البنك";
+        creditSubId = isCash ? cashBoxId : bankAccountId;
+      } else {
+        debitAccount = "مصروف رواتب";
+        creditAccount = "رواتب مستحقة";
+      }
+
+      lines = [
+        { accountName: debitAccount, debit: amount, credit: 0, description },
+        { accountName: creditAccount, debit: 0, credit: amount, description }
+      ];
+    } else if (sourceModule === "cash_bank_transfers") {
+      // Compatibility with transfers
+      const fromType = possibleRecord?.from_type || "";
+      const toType = possibleRecord?.to_type || "";
+      const fromId = possibleRecord?.from_id || "";
+      const toId = possibleRecord?.to_id || "";
+
+      creditAccount = (fromType === "Cash_Box" || fromType === "الصندوق") ? "الصندوق" : "البنك";
+      creditSubId = fromId;
+      debitAccount = (toType === "Cash_Box" || toType === "الصندوق") ? "الصندوق" : "البنك";
+      debitSubId = toId;
+
+      lines = [
+        { accountName: debitAccount, debit: amount, credit: 0, description },
+        { accountName: creditAccount, debit: 0, credit: amount, description }
+      ];
+    } else {
+      // Fallback
+      throw new Error(`نوع المصدر غير معروف: ${sourceType || sourceModule}`);
+    }
+
+    // STRICT BALANCING CHECK (Total Debit MUST equal Total Credit)
+    const totalDebit = lines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+    const totalCredit = lines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      throw new Error(`القيد غير متزن. إجمالي المدين (${totalDebit}) يجب أن يساوي إجمالي الدائن (${totalCredit}).`);
+    }
+
+    let yearStr = "26";
+    let monthStr = "06";
+    if (date && typeof date === 'string' && date.includes('-')) {
+      const parts = date.split('-');
+      if (parts.length >= 2) {
+        yearStr = parts[0].trim().slice(-2);
+        monthStr = parts[1].trim().padStart(2, '0');
+      }
+    } else {
+      const now = new Date();
+      yearStr = String(now.getFullYear()).slice(-2);
+      monthStr = String(now.getMonth() + 1).padStart(2, '0');
+    }
+    const prefix = `JV${yearStr}${monthStr}`;
+
+    let jvId = "";
+    try {
       const entries = await getCollectionDocs("journal_entries");
       const matchedEntries = entries.filter((e: any) => e.id && e.id.startsWith(prefix));
 
@@ -1013,123 +2186,147 @@ export async function startServer() {
         const maxNum = Math.max(...numbers, 0);
         nextNum = maxNum + 1;
       }
-
-      entry.id = `${prefix}${String(nextNum).padStart(4, '0')}`;
+      jvId = `${prefix}${String(nextNum).padStart(4, '0')}`;
+    } catch (e) {
+      jvId = `JV-${Date.now()}`;
     }
-    await setDoc(doc(db, "journal_entries", entry.id), entry);
-    res.json({ success: true, entry });
-  });
 
-  app.put("/api/journal-entries/:id", async (req, res) => {
-    const entry = req.body;
-    await updateDoc(doc(db, "journal_entries", req.params.id), entry);
-    res.json({ success: true, entry });
-  });
+    const jvEntry = {
+      id: jvId,
+      journalEntryNo: jvId,
+      date,
+      type: sourceType || sourceModule,
+      sourceModule,
+      sourceRecordId,
+      description,
+      status: "معتمد",
+      totalDebit,
+      totalCredit,
+      isBalanced: true,
+      createdBy,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+      // Backward compatibility fields
+      debitAccount,
+      debitSubId,
+      creditAccount,
+      creditSubId,
+      amount,
+      lines
+    };
 
-  app.delete("/api/journal-entries/:id", async (req, res) => {
-    await deleteDoc(doc(db, "journal_entries", req.params.id));
-    res.json({ success: true });
-  });
+    try {
+      // 1. Save lines to `journal_entry_lines` collection
+      for (let i = 0; i < lines.length; i++) {
+        try {
+          const lineId = `${jvId}_line_${i + 1}`;
+          const lineData = {
+            id: lineId,
+            journalEntryId: jvId,
+            lineNo: i + 1,
+            accountName: lines[i].accountName,
+            accountType: lines[i].accountType || "",
+            debit: Number(lines[i].debit) || 0,
+            credit: Number(lines[i].credit) || 0,
+            cashBoxId: lines[i].cashBoxId || "",
+            bankAccountId: lines[i].bankAccountId || "",
+            customerId: lines[i].customerId || customerId || "",
+            supplierId: lines[i].supplierId || supplierId || "",
+            projectId: lines[i].projectId || "",
+            description: lines[i].description || description,
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(doc(db, "journal_entry_lines", lineId), lineData);
+        } catch (lineErr) {
+          console.warn("Could not save to journal_entry_lines, skipping:", lineErr.message);
+        }
+      }
+
+      // 2. Save header to `journal_entries` collection
+      await setDoc(doc(db, "journal_entries", jvId), jvEntry);
+
+      // 3. Update balances
+      await applyJournalToCashBank(jvId, jvEntry);
+
+      // 4. Update the source record
+      try {
+        await updateDoc(doc(db, collectionName, sourceRecordId), {
+          journalEntryId: jvId,
+          journalEntryNo: jvId,
+          isJournalGenerated: true,
+          journalStatus: "معتمد",
+          journalError: ""
+        });
+      } catch (updateErr) {
+        console.error("Failed to update source record with journal entry link:", updateErr);
+      }
+
+      // 5. Create audit log
+      try {
+        const auditId = `jv_audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "payroll_audit_logs", auditId), {
+          id: auditId,
+          action: "توليد قيد تلقائي",
+          module: "الحسابات العامة",
+          record_id: jvId,
+          user_id: "System",
+          user_name: createdBy,
+          timestamp: new Date().toISOString(),
+          details: `تم توليد القيد اليومي التلقائي ${jvId} للمصدر ${sourceModule} رقم ${sourceRecordId} بمبلغ ${amount} ر.س`
+        });
+      } catch (auditErr) {
+        console.error("Failed to save audit log for JV generation:", auditErr);
+      }
+
+      console.log(`Successfully generated and processed Auto Journal Entry ${jvId} for ${sourceModule} ID ${sourceRecordId}`);
+      return jvId;
+    } catch (err) {
+      console.error("Failed to save auto journal entry: ", err);
+      throw err;
+    }
+  }
 
   // API: Revenues
-  app.get("/api/revenues", async (req, res) => {
-    res.json(await getCollectionDocs("revenues"));
-  });
+  
 
-  app.post("/api/revenues", async (req, res) => {
-    const entry = req.body;
-    if (!entry.id) {
-      entry.id = `REV-2026-${Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0')}`;
-    }
-    await setDoc(doc(db, "revenues", entry.id), entry);
-    res.json({ success: true, entry });
-  });
+  
 
-  app.put("/api/revenues/:id", async (req, res) => {
-    const entry = req.body;
-    await updateDoc(doc(db, "revenues", req.params.id), entry);
-    res.json({ success: true, entry });
-  });
+  
 
-  app.delete("/api/revenues/:id", async (req, res) => {
-    await deleteDoc(doc(db, "revenues", req.params.id));
-    res.json({ success: true });
-  });
+  
 
   // API: Expenses
-  app.get("/api/expenses", async (req, res) => {
-    res.json(await getCollectionDocs("expenses"));
-  });
+  
 
-  app.post("/api/expenses", async (req, res) => {
-    const entry = req.body;
-    if (!entry.id) {
-      entry.id = `EXP-2026-${Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0')}`;
-    }
-    await setDoc(doc(db, "expenses", entry.id), entry);
-    res.json({ success: true, entry });
-  });
+  
 
-  app.put("/api/expenses/:id", async (req, res) => {
-    const entry = req.body;
-    await updateDoc(doc(db, "expenses", req.params.id), entry);
-    res.json({ success: true, entry });
-  });
+  
 
-  app.delete("/api/expenses/:id", async (req, res) => {
-    await deleteDoc(doc(db, "expenses", req.params.id));
-    res.json({ success: true });
-  });
+  
+
+  
+
+  // RETRY AUTO JOURNAL ENTRY ENDPOINTS
+  
 
   // API: Customer Invoices
-  app.get("/api/customer-invoices", async (req, res) => {
-    res.json(await getCollectionDocs("customer_invoices"));
-  });
+  
 
-  app.post("/api/customer-invoices", async (req, res) => {
-    const invoice = req.body;
-    if (!invoice.id) {
-      invoice.id = `CIV-${Math.floor(10000 + Math.random() * 90000)}`;
-    }
-    await setDoc(doc(db, "customer_invoices", invoice.id), invoice);
-    res.json({ success: true, invoice });
-  });
+  
 
-  app.put("/api/customer-invoices/:id", async (req, res) => {
-    const invoice = req.body;
-    await updateDoc(doc(db, "customer_invoices", req.params.id), invoice);
-    res.json({ success: true, invoice });
-  });
+  
 
-  app.delete("/api/customer-invoices/:id", async (req, res) => {
-    await deleteDoc(doc(db, "customer_invoices", req.params.id));
-    res.json({ success: true });
-  });
+  
 
   // API: Supplier Invoices
-  app.get("/api/supplier-invoices", async (req, res) => {
-    res.json(await getCollectionDocs("supplier_invoices"));
-  });
+  
 
-  app.post("/api/supplier-invoices", async (req, res) => {
-    const invoice = req.body;
-    if (!invoice.id) {
-      invoice.id = `SIV-${Math.floor(10000 + Math.random() * 90000)}`;
-    }
-    await setDoc(doc(db, "supplier_invoices", invoice.id), invoice);
-    res.json({ success: true, invoice });
-  });
+  
 
-  app.put("/api/supplier-invoices/:id", async (req, res) => {
-    const invoice = req.body;
-    await updateDoc(doc(db, "supplier_invoices", req.params.id), invoice);
-    res.json({ success: true, invoice });
-  });
+  
 
-  app.delete("/api/supplier-invoices/:id", async (req, res) => {
-    await deleteDoc(doc(db, "supplier_invoices", req.params.id));
-    res.json({ success: true });
-  });
+  
 
   // API v1: Employee Audit Trails
   app.get("/api/v1/hr/employee/audit-trails", async (req, res) => {
@@ -1232,8 +2429,8 @@ export async function startServer() {
     // Calculate dynamic values based on existing employee records
     const saudiCount = employeesList.filter(
       (e) =>
-        e.iqamaId.startsWith("1") ||
-        e.englishName.toLowerCase().includes("ahmed"),
+        (e.iqamaId && e.iqamaId.startsWith("1")) ||
+        (e.englishName && e.englishName.toLowerCase().includes("ahmed")),
     ).length;
     const expatCount = totalActive - saudiCount;
 

@@ -10,8 +10,8 @@ import { User } from "../../types";
 import { hasAdvancedPermission } from "../../lib/permissions";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../../utils/PrintShared";
 import QRCode from "qrcode";
-import { tafqeet } from "../../utils/tafqeet";
-import { generateZatcaQR } from "../../utils/zatca";
+import { tafqeet } from "../../utils/Tafqeet";
+import { generateZatcaQR, generateZatcaXML } from "../../utils/zatca";
 
 interface CustomerSupplierInvoicesProps {
   user: User;
@@ -48,6 +48,10 @@ interface Invoice {
   attachmentName?: string;
   attachmentData?: string;
   notes?: string;
+  isJournalGenerated?: boolean;
+  journalEntryId?: string;
+  journalStatus?: string;
+  journalError?: string;
   zatca?: {
     uuid?: string;
     hash?: string;
@@ -247,35 +251,38 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
   const [showZatcaSettingsModal, setShowZatcaSettingsModal] = useState(false);
 
   // Company and settings states
-  const [companyInfo, setCompanyInfo] = useState(() => {
-    const saved = localStorage.getItem("invoice_company_info");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.name && !parsed.name.includes("جودة الصفائح") && !parsed.email.includes("steelsheets")) {
-          return parsed;
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return {
-      name: "شركة فنون الوليد للصناعة",
-      country: "المملكة العربية السعودية",
-      city: "الدمام",
-      address: "صناعية دلة، شارع أبو بكر الرازي، 2882",
-      taxNumber: "311354897200003",
-      crNumber: "2050123456",
-      phone: "+966 13 833 4115",
-      email: "info@alwaleedneon.com"
-    };
+  const [companyInfo, setCompanyInfo] = useState({
+    name: "شركة فنون الوليد للصناعة",
+    country: "المملكة العربية السعودية",
+    city: "الدمام",
+    address: "صناعية دلة، شارع أبو بكر الرازي، 2882",
+    taxNumber: "311354897200003",
+    crNumber: "2050123456",
+    phone: "+966 13 833 4115",
+    email: "info@alwaleedneon.com"
   });
 
-  const [defaultTerms, setDefaultTerms] = useState(() => {
-    const saved = localStorage.getItem("invoice_default_terms");
-    if (!saved || saved.includes("تسري هذه الفاتورة وفقاً للقوانين") || saved.length < 150) {
-      return quotationContractText;
-    }
-    return saved;
-  });
+  const [defaultTerms, setDefaultTerms] = useState(quotationContractText);
+
+  // Fetch invoice settings from Cloud Firestore on mount to completely avoid Local Storage
+  useEffect(() => {
+    const fetchInvoiceSettings = async () => {
+      try {
+        const res = await fetch("/api/dynamic/invoice_settings");
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const docGlobal = data.find(d => d.id === "global");
+          if (docGlobal) {
+            if (docGlobal.companyInfo) setCompanyInfo(docGlobal.companyInfo);
+            if (docGlobal.defaultTerms) setDefaultTerms(docGlobal.defaultTerms);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading invoice settings from Firestore:", err);
+      }
+    };
+    fetchInvoiceSettings();
+  }, []);
 
   // Action confirmations
   const [confirmAction, setConfirmAction] = useState<{
@@ -411,6 +418,34 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
   const [payAccount, setPayAccount] = useState("الحساب الجاري الراجحي");
   const [payReceipt, setPayReceipt] = useState<{ name: string; data: string } | null>(null);
 
+  const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [selectedCashBoxId, setSelectedCashBoxId] = useState("");
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState("");
+
+  const fetchAccounts = async () => {
+    try {
+      const cbRes = await fetch("/api/dynamic/cash_boxes");
+      if (cbRes.ok) {
+        const cbData = await cbRes.json();
+        setCashBoxes(cbData);
+        const active = cbData.find((c: any) => c.status === "Active");
+        if (active) setSelectedCashBoxId(active.id);
+        else if (cbData.length > 0) setSelectedCashBoxId(cbData[0].id);
+      }
+      const baRes = await fetch("/api/dynamic/bank_accounts");
+      if (baRes.ok) {
+        const baData = await baRes.json();
+        setBankAccounts(baData);
+        const active = baData.find((b: any) => b.status === "Active");
+        if (active) setSelectedBankAccountId(active.id);
+        else if (baData.length > 0) setSelectedBankAccountId(baData[0].id);
+      }
+    } catch (e) {
+      console.error("Error fetching accounts in invoices page:", e);
+    }
+  };
+
   // Fetch all initial data
   const fetchData = async () => {
     setLoading(true);
@@ -455,6 +490,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
 
   useEffect(() => {
     fetchData();
+    fetchAccounts();
     // Reset filters and modals
     setSearchQuery("");
     setStatusFilter("all");
@@ -645,7 +681,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     const historyEntry = {
       action: editingInvoice ? "تعديل وحفظ" : "إنشاء فاتورة",
       user: user.username || "مستخدم",
-      date: new Date().toLocaleString("ar-SA"),
+      date: new Date().toLocaleString('en-US'),
       notes: `الحالة: ${status}. ملاحظات: ${invNotes || "لا يوجد"}`
     };
 
@@ -731,7 +767,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
         const historyEntry = {
           action: actionLabel,
           user: user.username || "مستخدم",
-          date: new Date().toLocaleString("ar-SA"),
+          date: new Date().toLocaleString('en-US'),
           notes: notes || "لا يوجد"
         };
 
@@ -768,12 +804,12 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     if (!inv) return;
     
     let updatedZatca = inv.zatca ? { ...inv.zatca, logs: [...(inv.zatca.logs || [])] } : { logs: [] };
-    const ts = new Date().toLocaleString("ar-SA");
+    const ts = new Date().toLocaleString('en-US');
 
     try {
       if (action === "generate_qr") {
         const zatcaStr = generateZatcaQR(
-          companyInfo.nameAr,
+          companyInfo.name,
           companyInfo.taxNumber,
           inv.date,
           inv.totalAmount.toString(),
@@ -867,7 +903,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     const historyEntry = {
       action: "تسجيل دفعة سداد",
       user: user.username || "مستخدم",
-      date: new Date().toLocaleString("ar-SA"),
+      date: new Date().toLocaleString('en-US'),
       notes: `تم سداد مبلغ: ${amount} ر.س بطريقة ${payMethod}. المتبقي: ${newRemaining} ر.س`
     };
 
@@ -881,6 +917,59 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     };
 
     try {
+      const isCash = (payMethod === "نقد / كاش" || payMethod === "Cash" || payMethod === "نقدي" || payMethod === "نقد");
+      const accountPayload = isCash 
+        ? { cashBoxId: selectedCashBoxId } 
+        : { bankAccountId: selectedBankAccountId };
+
+      // 1. Sync to revenues or expenses FIRST
+      if (activePortal === "customer") {
+        const syncRes = await fetch("/api/revenues", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: `REV-AUTO-${Date.now()}`,
+            date: payDate,
+            source: `فاتورة عميل ${invoice.id}`,
+            client: invoice.partyName,
+            quoteNumber: invoice.referenceId || "",
+            invoiceNumber: invoice.id,
+            amount: amount,
+            paymentMethod: payMethod,
+            status: "معتمد", // Approved to trigger auto-journal and affect balances
+            notes: `تحصيل تلقائي من فاتورة مبيعات ${invoice.id}`,
+            ...accountPayload
+          })
+        });
+        if (!syncRes.ok) {
+          const errData = await syncRes.json();
+          throw new Error(errData.error || "فشل توليد القيد التلقائي للتحصيل المالي.");
+        }
+      } else {
+        const syncRes = await fetch("/api/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: `EXP-AUTO-${Date.now()}`,
+            date: payDate,
+            category: "فواتير الموردين ومستلزمات الإنتاج",
+            subCategory: `فاتورة مورد ${invoice.id}`,
+            amount: amount,
+            paymentMethod: payMethod,
+            reference: invoice.id,
+            account: isCash ? "نقدي" : "تحويل بنكي",
+            status: "معتمد", // Approved to trigger auto-journal and affect balances
+            notes: `سداد تلقائي لفاتورة مورد ${invoice.id}`,
+            ...accountPayload
+          })
+        });
+        if (!syncRes.ok) {
+          const errData = await syncRes.json();
+          throw new Error(errData.error || "فشل توليد القيد التلقائي لسداد الفاتورة.");
+        }
+      }
+
+      // 2. Update the invoice status and paid amount
       const res = await fetch(`/api/${activePortal}-invoices/${invoice.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -888,54 +977,17 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
       });
 
       if (res.ok) {
-        // Automatically sync to system revenues / expenses for proper link logic!
-        if (activePortal === "customer") {
-          await fetch("/api/revenues", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: `REV-AUTO-${Date.now()}`,
-              date: payDate,
-              source: `فاتورة عميل ${invoice.id}`,
-              client: invoice.partyName,
-              quoteNumber: invoice.referenceId || "",
-              invoiceNumber: invoice.id,
-              amount: amount,
-              paymentMethod: payMethod,
-              status: "مسجل",
-              notes: `تحصيل تلقائي من فاتورة مبيعات ${invoice.id}`
-            })
-          });
-        } else {
-          await fetch("/api/expenses", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: `EXP-AUTO-${Date.now()}`,
-              date: payDate,
-              category: "فواتير الموردين ومستلزمات الإنتاج",
-              subCategory: `فاتورة مورد ${invoice.id}`,
-              amount: amount,
-              paymentMethod: payMethod,
-              reference: invoice.id,
-              account: payAccount,
-              status: "معتمد",
-              notes: `سداد تلقائي لفاتورة مورد ${invoice.id}`
-            })
-          });
-        }
-
         await logActivity("تسجيل دفعة سداد", `مبلغ: ${amount} ر.س للفاتورة: ${invoice.id}`);
         setPayAmount("");
         setPayReceipt(null);
         setShowPaymentModal(null);
         fetchData();
       } else {
-        alert("فشل تسجيل عملية الدفع.");
+        alert("فشل تسجيل عملية الدفع على الفاتورة.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error registering payment:", err);
-      alert("حدث خطأ غير متوقع.");
+      alert(`حدث خطأ أثناء معالجة العملية المالية:\n${err.message || err}`);
     } finally {
       setIsProcessing(false);
     }
@@ -1019,10 +1071,10 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
           </td>
           <td>${item.quantity}</td>
           <td>حبة</td>
-          <td style="white-space: nowrap;">${item.unitPrice.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+          <td style="white-space: nowrap;">${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
           <td>${(taxRate * 100).toFixed(0)}%</td>
-          <td style="white-space: nowrap;">${lineTax.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
-          <td style="font-weight: bold; white-space: nowrap;">${lineTotal.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+          <td style="white-space: nowrap;">${lineTax.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
+          <td style="font-weight: bold; white-space: nowrap;">${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
         </tr>
       `;
     }).join("");
@@ -1061,12 +1113,17 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
         <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
           <meta charset="UTF-8">
           <title>${inv.id}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
             body {
-              font-family: 'Cairo', 'Tajawal', sans-serif;
+              font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif;
               direction: rtl;
               text-align: right;
               padding: 20px;
@@ -1214,7 +1271,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               width: 100%;
               box-sizing: border-box;
               page-break-inside: avoid;
-              font-family: 'Cairo', sans-serif !important;
+              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-title {
               color: #0072BC;
@@ -1224,7 +1281,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               margin-bottom: 10px;
               border-bottom: 1.5px solid #000;
               padding-bottom: 5px;
-              font-family: 'Cairo', sans-serif !important;
+              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-content {
               text-align: right;
@@ -1235,7 +1292,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               white-space: pre-wrap;
               word-wrap: break-word;
               font-weight: bold;
-              font-family: 'Cairo', sans-serif !important;
+              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-content .red,
             .terms-content .important {
@@ -1258,7 +1315,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               font-weight: bold;
               cursor: pointer;
               box-shadow: 0 4px 12px rgba(0, 114, 188, 0.3);
-              font-family: 'Tajawal', sans-serif;
+              font-family: 'GE SS Two', 'Gotham Pro', sans-serif;
               display: inline-flex;
               align-items: center;
               gap: 8px;
@@ -1294,7 +1351,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 12px; margin-bottom: 20px; user-select: none; direction: ltr;">
               <!-- معلومات الشركة -->
               <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
-                <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'Tajawal', sans-serif;" dir="rtl">
+                <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
                   شركة فنون الوليد للصناعة
                 </h2>
                 <h3 style="font-size: 10px; font-weight: bold; color: #555; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
@@ -1304,7 +1361,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               
               <!-- الحالة في منتصف رأس الصفحة -->
               <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
-                <span style="font-size: 13px; font-weight: 800; padding: 4px 12px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'Cairo', 'Tajawal', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
+                <span style="font-size: 13px; font-weight: 800; padding: 4px 12px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
                   ${statusText}
                 </span>
               </div>
@@ -1318,10 +1375,10 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             <!-- Title and summary row -->
             <div style="justify-content: space-between; display: flex; align-items: flex-end; margin-bottom: 3mm; direction: rtl;">
               <div style="width: 45%; text-align: right;">
-                 <div style="font-size: 24px; font-weight: 700; color: #000; font-family: 'Cairo', sans-serif;">${invoiceTypeName}</div>
+                 <div style="font-size: 24px; font-weight: 700; color: #000; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">${invoiceTypeName}</div>
                  <div style="font-size: 14px; direction: rtl; font-weight: bold; color: #000; margin-top: 5px;">رقم الفاتورة: ${inv.id}</div>
               </div>
-              <div style="width: 45%; text-align: left; font-size: 13px; font-weight: bold; line-height: 1.5; color: #000; font-family: 'Cairo', sans-serif;">
+              <div style="width: 45%; text-align: left; font-size: 13px; font-weight: bold; line-height: 1.5; color: #000; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
                 <div>تاريخ الفاتورة: ${inv.date}</div>
                 <div>تاريخ الاستحقاق: ${inv.dueDate || "---"}</div>
                 <div>تاريخ التوريد: ${inv.date}</div>
@@ -1404,33 +1461,33 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   <table class="summary-table">
                     <tr class="summary-row">
                       <td style="color: #000; font-weight: bold;">المجموع الصافي قبل ضريبة VAT:</td>
-                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.subtotal.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                     </tr>
                     <tr class="summary-row">
                       <td style="color: #000; font-weight: bold;">مبلغ ضريبة القيمة المضافة (15%):</td>
-                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.taxAmount.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                     </tr>
                     ${inv.discount > 0 ? `
                       <tr class="summary-row" style="color: #c00000;">
                         <td style="font-weight: bold;">إجمالي الخصومات الممنوحة:</td>
-                        <td style="text-align: left; font-weight: bold; white-space: nowrap;">-${inv.discount.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                        <td style="text-align: left; font-weight: bold; white-space: nowrap;">-${inv.discount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                       </tr>
                     ` : ""}
                     <tr class="summary-row total">
                       <td style="color: #000; font-weight: bold; font-size: 13.5px;">المجموع الإجمالي النهائي:</td>
-                      <td style="text-align: left; font-weight: bold; color: #000; font-size: 13.5px; white-space: nowrap;">${inv.totalAmount.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; color: #000; font-size: 13.5px; white-space: nowrap;">${inv.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                     </tr>
                     <tr class="summary-row" style="color: #000; font-size: 11px;">
                       <td style="font-weight: bold;">المجموع الإجمالي المقرب:</td>
-                      <td style="text-align: left; font-weight: bold; white-space: nowrap;">${Math.round(inv.totalAmount).toLocaleString("ar-SA")} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; white-space: nowrap;">${Math.round(inv.totalAmount).toLocaleString('en-US')} ر.س</td>
                     </tr>
                     <tr class="summary-row" style="color: #000;">
                       <td style="font-weight: bold;">المبلغ المسدد مسبقاً:</td>
-                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.paidAmount.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; color: #000; white-space: nowrap;">${inv.paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                     </tr>
                     <tr class="summary-row" style="color: #c00000; border-bottom: 2px solid #000;">
                       <td style="font-weight: bold;">المتبقي المستحق:</td>
-                      <td style="text-align: left; font-weight: bold; color: #c00000; white-space: nowrap;">${inv.remainingAmount.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td>
+                      <td style="text-align: left; font-weight: bold; color: #c00000; white-space: nowrap;">${inv.remainingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</td>
                     </tr>
                   </table>
                 </td>
@@ -1459,7 +1516,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             </div>
 
             <!-- Footer identical to Quotations -->
-            <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'Cairo', sans-serif;">
+            <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
               <div style="text-align: left; line-height: 1.6;">
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
@@ -1618,7 +1675,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               {activePortal === "customer" ? "إجمالي الفواتير الصادرة" : "إجمالي الفواتير المسجلة"}
             </div>
             <div className="text-2xl font-black text-slate-800">
-              {totalAmountSum.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {totalAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-slate-400">العدد الإجمالي: {invoices.length} فواتير</div>
           </div>
@@ -1634,7 +1691,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               {activePortal === "customer" ? "إجمالي المبالغ المحصلة" : "إجمالي المبالغ المدفوعة"}
             </div>
             <div className="text-2xl font-black text-emerald-600">
-              {paidAmountSum.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {paidAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-emerald-500 font-semibold">
               نسبة التحصيل: {totalAmountSum > 0 ? ((paidAmountSum / totalAmountSum) * 100).toFixed(1) : "0"}%
@@ -1650,7 +1707,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
           <div className="space-y-1.5">
             <div className="text-xs font-bold text-slate-500">إجمالي المبالغ المتبقية</div>
             <div className="text-2xl font-black text-rose-600">
-              {remainingAmountSum.toLocaleString("ar-SA")} <span className="text-xs font-bold">ر.س</span>
+              {remainingAmountSum.toLocaleString('en-US')} <span className="text-xs font-bold">ر.س</span>
             </div>
             <div className="text-[11px] text-rose-500 font-semibold">
               المستحقات المعلقة: {totalAmountSum > 0 ? ((remainingAmountSum / totalAmountSum) * 100).toFixed(1) : "0"}%
@@ -1868,6 +1925,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   <th className="py-4 px-6">المدفوع</th>
                   <th className="py-4 px-6">المتبقي</th>
                   <th className="py-4 px-6 text-center">الحالة</th>
+                  <th className="py-4 px-6 text-center">القيد المحاسبي</th>
                   <th className="py-4 px-6 text-center">الإجراءات والعمليات</th>
                 </tr>
               </thead>
@@ -1892,11 +1950,11 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                           {isOverdue && <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-black">متأخرة ⚠️</span>}
                         </span>
                       </td>
-                      <td className="py-4 px-6 font-bold">{inv.totalAmount.toLocaleString("ar-SA")} ر.س</td>
-                      <td className="py-4 px-6 text-emerald-600 font-medium">{inv.paidAmount.toLocaleString("ar-SA")} ر.س</td>
+                      <td className="py-4 px-6 font-bold">{inv.totalAmount.toLocaleString('en-US')} ر.س</td>
+                      <td className="py-4 px-6 text-emerald-600 font-medium">{inv.paidAmount.toLocaleString('en-US')} ر.س</td>
                       <td className="py-4 px-6 font-bold text-slate-900">
                         <span className={inv.remainingAmount > 0 ? "text-amber-600" : "text-slate-400"}>
-                          {inv.remainingAmount.toLocaleString("ar-SA")} ر.س
+                          {inv.remainingAmount.toLocaleString('en-US')} ر.س
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center">
@@ -1909,6 +1967,47 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                         }`}>
                           {inv.status}
                         </span>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        {inv.journalStatus === 'failed' ? (
+                          <div className="flex flex-col gap-1 items-center bg-rose-50 text-rose-800 text-[10px] p-2 rounded-lg border border-rose-100 max-w-[150px] mx-auto">
+                            <span className="font-bold font-sans">فشل القيد المحاسبي ❌</span>
+                            <span className="break-words text-center line-clamp-1">{inv.journalError}</span>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("هل تريد إعادة محاولة إنشاء القيد المحاسبي لهذا السجل؟")) {
+                                  try {
+                                    const modPath = activePortal === "customer" ? "customer-invoices" : "supplier-invoices";
+                                    const res = await fetch(`/api/finance/retry/${modPath}/${inv.id}`, { method: "POST" });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      alert("تم إنشاء القيد المحاسبي بنجاح ورقم القيد: " + data.journalEntryId);
+                                      await fetchData();
+                                    } else {
+                                      alert("فشلت إعادة المحاولة: " + (data.error || "خطأ مجهول"));
+                                    }
+                                  } catch (err: any) {
+                                    alert("خطأ: " + err.message);
+                                  }
+                                }
+                              }}
+                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[9px] mt-1 cursor-pointer transition active:scale-95 whitespace-nowrap"
+                            >
+                              إعادة المحاولة 🔄
+                            </button>
+                          </div>
+                        ) : inv.isJournalGenerated ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[11px] font-bold">
+                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                              معتمد ومقيد
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-500 mt-1">{inv.journalEntryId || "قيد تلقائي"}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-semibold">---</span>
+                        )}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -2273,7 +2372,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                             </select>
                           </td>
                           <td className="p-2 text-left font-bold text-slate-800">
-                            {item.total.toLocaleString("ar-SA")} ر.س
+                            {item.total.toLocaleString('en-US')} ر.س
                           </td>
                           <td className="p-2 text-center">
                             <button
@@ -2343,12 +2442,12 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   
                   <div className="flex justify-between text-sm py-1 border-b border-dashed border-slate-200">
                     <span className="text-slate-500">المجموع قبل الضريبة:</span>
-                    <span className="font-bold text-slate-800">{getFormTotals().subtotal.toLocaleString("ar-SA")} ر.س</span>
+                    <span className="font-bold text-slate-800">{getFormTotals().subtotal.toLocaleString('en-US')} ر.س</span>
                   </div>
 
                   <div className="flex justify-between text-sm py-1 border-b border-dashed border-slate-200">
                     <span className="text-slate-500">ضريبة القيمة المضافة:</span>
-                    <span className="font-bold text-slate-800">{getFormTotals().taxAmount.toLocaleString("ar-SA")} ر.س</span>
+                    <span className="font-bold text-slate-800">{getFormTotals().taxAmount.toLocaleString('en-US')} ر.س</span>
                   </div>
 
                   {/* Discount input row */}
@@ -2366,7 +2465,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   <div className="flex justify-between text-base py-3 font-bold text-slate-900 bg-indigo-50/40 px-3 rounded-lg border border-indigo-100/50">
                     <span>المجموع الإجمالي النهائي:</span>
                     <span className={`${activePortal === "customer" ? "text-emerald-700" : "text-indigo-700"}`}>
-                      {getFormTotals().totalAmount.toLocaleString("ar-SA")} ر.س
+                      {getFormTotals().totalAmount.toLocaleString('en-US')} ر.س
                     </span>
                   </div>
                 </div>
@@ -2495,9 +2594,9 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                         <tr key={idx} className="hover:bg-slate-50/50">
                           <td className="p-3 font-semibold">{item.description}</td>
                           <td className="p-3 text-center font-bold">{item.quantity}</td>
-                          <td className="p-3 text-left font-medium">{item.unitPrice.toLocaleString("ar-SA")} ر.س</td>
+                          <td className="p-3 text-left font-medium">{item.unitPrice.toLocaleString('en-US')} ر.س</td>
                           <td className="p-3 text-center font-bold">{(item.taxRate * 100)}%</td>
-                          <td className="p-3 text-left font-black">{item.total.toLocaleString("ar-SA")} ر.س</td>
+                          <td className="p-3 text-left font-black">{item.total.toLocaleString('en-US')} ر.س</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2522,7 +2621,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                         {selectedInvoice.paymentHistory.map((pay, pIdx) => (
                           <div key={pIdx} className="p-3 flex justify-between items-center hover:bg-slate-50">
                             <div>
-                              <span className="font-bold text-slate-800">{pay.amount.toLocaleString("ar-SA")} ر.س</span>
+                              <span className="font-bold text-slate-800">{pay.amount.toLocaleString('en-US')} ر.س</span>
                               <span className="text-slate-400 mx-2">|</span>
                               <span className="text-slate-500">طريقة: {pay.method}</span>
                               {pay.account && <span className="text-slate-500"> ({pay.account})</span>}
@@ -2592,27 +2691,27 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   <div className="space-y-2.5 text-xs text-slate-600">
                     <div className="flex justify-between py-1 border-b border-slate-100">
                       <span>المجموع قبل الضريبة:</span>
-                      <strong className="text-slate-800">{selectedInvoice.subtotal.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong className="text-slate-800">{selectedInvoice.subtotal.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-100">
                       <span>ضريبة القيمة المضافة:</span>
-                      <strong className="text-slate-800">{selectedInvoice.taxAmount.toLocaleString("ar-SA")} ر.s</strong>
+                      <strong className="text-slate-800">{selectedInvoice.taxAmount.toLocaleString('en-US')} ر.s</strong>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-100">
                       <span>الخصم المباشر:</span>
-                      <strong className="text-rose-600">-{selectedInvoice.discount.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong className="text-rose-600">-{selectedInvoice.discount.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     <div className="flex justify-between py-2 text-sm border-b border-slate-100 font-bold text-slate-800">
                       <span>إجمالي الفاتورة النهائي:</span>
-                      <strong className="text-indigo-700">{selectedInvoice.totalAmount.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong className="text-indigo-700">{selectedInvoice.totalAmount.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-600 font-bold">
                       <span>المسدد والمستلم:</span>
-                      <strong>{selectedInvoice.paidAmount.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong>{selectedInvoice.paidAmount.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     <div className="flex justify-between py-2 text-sm font-extrabold text-rose-600">
                       <span>المبلغ المتبقي المعلق:</span>
-                      <strong>{selectedInvoice.remainingAmount.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong>{selectedInvoice.remainingAmount.toLocaleString('en-US')} ر.س</strong>
                     </div>
                   </div>
 
@@ -2765,11 +2864,11 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                 </div>
                 <div>
                   <span className="text-slate-400">إجمالي الفاتورة: </span>
-                  <strong className="text-slate-800">{showPaymentModal.totalAmount.toLocaleString("ar-SA")} ر.س</strong>
+                  <strong className="text-slate-800">{showPaymentModal.totalAmount.toLocaleString('en-US')} ر.س</strong>
                 </div>
                 <div>
                   <span className="text-slate-400">المتبقي المطلوب: </span>
-                  <strong className="text-rose-600 font-bold">{showPaymentModal.remainingAmount.toLocaleString("ar-SA")} ر.س</strong>
+                  <strong className="text-rose-600 font-bold">{showPaymentModal.remainingAmount.toLocaleString('en-US')} ر.س</strong>
                 </div>
               </div>
 
@@ -2816,18 +2915,35 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                   </select>
                 </div>
 
-                {/* Bank / account for supplier */}
-                {showPaymentModal.type === "supplier" && (
+                {/* Dynamic Bank / Cash Box selection based on method */}
+                {(payMethod === "نقد / كاش" || payMethod === "Cash" || payMethod === "نقدي" || payMethod === "نقد") ? (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-700">حساب الصرف والدفع *</label>
+                    <label className="text-xs font-bold text-slate-700">الصندوق النقدي *</label>
                     <select
-                      value={payAccount}
-                      onChange={(e) => setPayAccount(e.target.value)}
-                      className="w-full p-3 rounded-lg border border-slate-200 text-sm focus:outline-none bg-slate-50 text-slate-700"
+                      value={selectedCashBoxId}
+                      onChange={(e) => setSelectedCashBoxId(e.target.value)}
+                      className="w-full p-3 rounded-lg border border-slate-200 text-sm focus:outline-none bg-slate-50 text-slate-700 font-bold"
                     >
-                      <option value="الصندوق الرئيسي">الصندوق الرئيسي بالشركة</option>
-                      <option value="الحساب الجاري الراجحي">الحساب الجاري بنك الراجحي</option>
-                      <option value="الحساب الجاري الأهلي">الحساب الجاري البنك الأهلي</option>
+                      {cashBoxes.map((cb) => (
+                        <option key={cb.id} value={cb.id}>
+                          {cb.name || cb.code} ({parseFloat(cb.current_balance || 0).toLocaleString()} ر.س)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-700">الحساب البنكي *</label>
+                    <select
+                      value={selectedBankAccountId}
+                      onChange={(e) => setSelectedBankAccountId(e.target.value)}
+                      className="w-full p-3 rounded-lg border border-slate-200 text-sm focus:outline-none bg-slate-50 text-slate-700 font-bold"
+                    >
+                      {bankAccounts.map((ba) => (
+                        <option key={ba.id} value={ba.id}>
+                          {ba.bank_name || ba.account_name} - {ba.account_number} ({parseFloat(ba.current_balance || 0).toLocaleString()} ر.س)
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -3104,13 +3220,13 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                           </td>
                           <td className="p-2.5 text-center font-bold">{item.quantity}</td>
                           <td className="p-2.5 text-center">
-                            {item.unitPrice.toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س
+                            {item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
                           </td>
                           <td className="p-2.5 text-center text-slate-500">
                             {((item.taxRate || 0.15) * 100)}%
                           </td>
                           <td className="p-2.5 text-center font-black text-slate-900">
-                            {((item.quantity * item.unitPrice) * (1 + (item.taxRate || 0.15))).toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س
+                            {((item.quantity * item.unitPrice) * (1 + (item.taxRate || 0.15))).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
                           </td>
                         </tr>
                       ))}
@@ -3130,9 +3246,9 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                     </div>
 
                     <div className="space-y-2 border-r-2 border-indigo-500 pr-3 text-right">
-                      <span className="text-xs font-bold text-indigo-900 block font-['Cairo']">الشروط والأحكام ومعلومات أخرى (مطابقة لعروض الأسعار):</span>
+                      <span className="text-xs font-bold text-indigo-900 block font-['GE SS Two', 'Gotham Pro']">الشروط والأحكام ومعلومات أخرى (مطابقة لعروض الأسعار):</span>
                       <div 
-                        className="text-[11px] text-slate-800 leading-relaxed max-h-60 overflow-y-auto space-y-1 font-semibold font-['Cairo'] border border-slate-100 rounded-lg bg-slate-50 p-3"
+                        className="text-[11px] text-slate-800 leading-relaxed max-h-60 overflow-y-auto space-y-1 font-semibold font-['GE SS Two', 'Gotham Pro'] border border-slate-100 rounded-lg bg-slate-50 p-3"
                         style={{ fontFamily: 'Cairo, sans-serif' }}
                         dangerouslySetInnerHTML={{ __html: formatTermsHTML(previewInvoice.notes || defaultTerms) }}
                       />
@@ -3144,29 +3260,29 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                     <h4 className="text-xs font-extrabold text-slate-600 mb-2 border-b border-slate-100 pb-1">الحساب المالي التفصيلي</h4>
                     <div className="flex justify-between text-xs text-slate-600">
                       <span>المجموع الصافي (قبل الضريبة):</span>
-                      <strong className="text-slate-800">{previewInvoice.subtotal.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong className="text-slate-800">{previewInvoice.subtotal.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     <div className="flex justify-between text-xs text-slate-600">
                       <span>مبلغ ضريبة القيمة المضافة (15%):</span>
-                      <strong className="text-slate-800">{previewInvoice.taxAmount.toLocaleString("ar-SA")} ر.س</strong>
+                      <strong className="text-slate-800">{previewInvoice.taxAmount.toLocaleString('en-US')} ر.س</strong>
                     </div>
                     {previewInvoice.discount > 0 && (
                       <div className="flex justify-between text-xs text-rose-600 font-bold">
                         <span>إجمالي الخصم:</span>
-                        <span>-{previewInvoice.discount.toLocaleString("ar-SA")} ر.س</span>
+                        <span>-{previewInvoice.discount.toLocaleString('en-US')} ر.س</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm text-indigo-900 font-black pt-2 border-t border-slate-200">
                       <span>الإجمالي شامل الضريبة:</span>
-                      <span>{previewInvoice.totalAmount.toLocaleString("ar-SA")} ر.س</span>
+                      <span>{previewInvoice.totalAmount.toLocaleString('en-US')} ر.س</span>
                     </div>
                     <div className="flex justify-between text-xs text-emerald-600 font-bold pt-1">
                       <span>المسدد مسبقاً:</span>
-                      <span>{previewInvoice.paidAmount.toLocaleString("ar-SA")} ر.س</span>
+                      <span>{previewInvoice.paidAmount.toLocaleString('en-US')} ر.س</span>
                     </div>
                     <div className="flex justify-between text-xs text-rose-600 font-bold pt-1">
                       <span>المتبقي المستحق:</span>
-                      <span>{previewInvoice.remainingAmount.toLocaleString("ar-SA")} ر.س</span>
+                      <span>{previewInvoice.remainingAmount.toLocaleString('en-US')} ر.س</span>
                     </div>
                   </div>
                 </div>
@@ -3314,12 +3430,24 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                 إلغاء التعديل
               </button>
               <button
-                onClick={() => {
-                  localStorage.setItem("invoice_company_info", JSON.stringify(companyInfo));
-                  localStorage.setItem("invoice_default_terms", defaultTerms);
-                  logActivity("تعديل إعدادات قالب الفاتورة", "تم حفظ إعدادات الشركة والشروط والأحكام بالفواتير بنجاح");
-                  setShowSettingsModal(false);
-                  alert("تم حفظ وتحديث إعدادات قالب الفاتورة بنجاح في النظام 💾");
+                onClick={async () => {
+                  try {
+                    await fetch("/api/dynamic/invoice_settings/global", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        id: "global",
+                        companyInfo,
+                        defaultTerms
+                      })
+                    });
+                    logActivity("تعديل إعدادات قالب الفاتورة", "تم حفظ إعدادات الشركة والشروط والأحكام بالفواتير بنجاح");
+                    setShowSettingsModal(false);
+                    alert("تم حفظ وتحديث إعدادات قالب الفاتورة بنجاح في النظام 💾");
+                  } catch (err) {
+                    console.error("Error saving invoice settings to Firestore:", err);
+                    alert("حدث خطأ أثناء حفظ الإعدادات في قاعدة البيانات.");
+                  }
                 }}
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-1"
               >

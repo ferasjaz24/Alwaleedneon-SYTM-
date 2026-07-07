@@ -238,8 +238,17 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
   }
 
   if (module === 'finance') {
-    if (subId === 'journal') return hasAdvancedPermission(user, 'finance', 'journal', 'view_entries');
-    if (subId === 'invoices') return hasAdvancedPermission(user, 'finance', 'customer_invoices', 'view_portal') || hasAdvancedPermission(user, 'finance', 'supplier_invoices', 'view_portal');
+    if (subId === 'accounting_dashboard') return hasAdvancedPermission(user, 'finance', 'dashboard', 'view_dashboard');
+    if (subId === 'accounting_journal') return hasAdvancedPermission(user, 'finance', 'journal', 'view_entries');
+    if (subId === 'accounting_invoices') return hasAdvancedPermission(user, 'finance', 'customer_invoices', 'view_portal');
+    if (subId === 'accounting_revenues') return hasAdvancedPermission(user, 'finance', 'revenues', 'view_revenues');
+    if (subId === 'accounting_supplier_invoices') return hasAdvancedPermission(user, 'finance', 'supplier_invoices', 'view_portal');
+    if (subId === 'accounting_expenses') return hasAdvancedPermission(user, 'finance', 'expenses', 'view_expenses');
+    if (subId === 'accounting_payroll') return hasAdvancedPermission(user, 'finance', 'payroll', 'view_payroll');
+    if (subId === 'accounting_cash_bank') return hasAdvancedPermission(user, 'finance', 'cash_bank', 'view_portal');
+    if (subId === 'accounting_zakat_tax') return hasAdvancedPermission(user, 'finance', 'zakat_tax', 'view_zakat_tax');
+    if (subId === 'accounting_reports') return hasAdvancedPermission(user, 'finance', 'reports', 'view_reports');
+    if (subId === 'accounting_zatca') return hasAdvancedPermission(user, 'finance', 'zatca', 'view_zatca');
   }
 
   return true;
