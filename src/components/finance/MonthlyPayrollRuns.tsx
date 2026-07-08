@@ -818,7 +818,7 @@ export default function MonthlyPayrollRuns({
     try {
       // Check if the payroll number already exists (excluding deleted runs)
       const duplicateNumber = payrollRuns.find(
-        (r) => r.payrollNumber.trim() === newRunForm.payrollNumber.trim() && !r.isDeleted
+        (r) => r.payrollNumber?.trim() === newRunForm.payrollNumber?.trim() && !r.isDeleted
       );
       if (duplicateNumber) {
         showToast(
@@ -856,6 +856,7 @@ export default function MonthlyPayrollRuns({
         const transport = Number(emp.allowances?.transport || 0);
         const food = Number(emp.allowances?.food || 0);
         const muddah = Number(emp.allowances?.muddah || 0);
+        const otherAllowances = Number(emp.allowances?.otherAllowances || 0);
 
         // Fetch matching HR deductions for this employee for the chosen month and year
         const runMonthStr = newRunForm.month.toString().padStart(2, "0");
@@ -900,7 +901,7 @@ export default function MonthlyPayrollRuns({
         });
 
         // Calculate initial net
-        const entitlements = basic + housing + transport;
+        const entitlements = basic + housing + transport + food + otherAllowances;
         const totalDeductionsSum = absD + lateD + loanD + penD + otherD;
         const net = entitlements - totalDeductionsSum;
 
@@ -926,9 +927,9 @@ export default function MonthlyPayrollRuns({
           transportAllowance: transport,
           foodAllowance: food,
           muddahAmount: muddah,
+          otherAllowances: otherAllowances,
           overtimeHours: 0,
           overtimeAmount: 0,
-          otherAllowances: 0,
           absenceDeduction: absD,
           lateDeduction: lateD,
           loansDeduction: loanD,
@@ -1163,7 +1164,7 @@ export default function MonthlyPayrollRuns({
 
   const handleConfirmSoftDelete = async () => {
     if (!runToDeleteId) return;
-    if (!deleteReasonText.trim()) {
+    if (!deleteReasonText?.trim()) {
       showToast(
         "⚠️ سبب الحذف مطلوب لمتابعة العملية!",
         "⚠️ Deletion reason is required.",
@@ -1363,23 +1364,23 @@ export default function MonthlyPayrollRuns({
     const otherDeductReason = editEmployeeForm.deductionsReason ?? targetEmp.deductionsReason ?? "";
 
     // VALIDATE REASONS: If any is > 0 and reason is empty, block saving
-    if (loans > 0 && !loansReason.trim()) {
+    if (loans > 0 && !loansReason?.trim()) {
       showToast("⚠️ سبب الخصم مطلوب لكافة الاستقطاعات المفروضة! (السلفة)", "Deduction reason is required for loans.", "error");
       return;
     }
-    if (absence > 0 && !absenceReason.trim()) {
+    if (absence > 0 && !absenceReason?.trim()) {
       showToast("⚠️ سبب الخصم مطلوب لكافة الاستقطاعات المفروضة! (الغياب)", "Deduction reason is required for absence.", "error");
       return;
     }
-    if (late > 0 && !lateReason.trim()) {
+    if (late > 0 && !lateReason?.trim()) {
       showToast("⚠️ سبب الخصم مطلوب لكافة الاستقطاعات المفروضة! (التأخير)", "Deduction reason is required for late deduction.", "error");
       return;
     }
-    if (penalty > 0 && !penaltyReason.trim()) {
+    if (penalty > 0 && !penaltyReason?.trim()) {
       showToast("⚠️ سبب الخصم مطلوب لكافة الاستقطاعات المفروضة! (الجزاءات)", "Deduction reason is required for penalties.", "error");
       return;
     }
-    if (otherDeduct > 0 && !otherDeductReason.trim()) {
+    if (otherDeduct > 0 && !otherDeductReason?.trim()) {
       showToast("⚠️ سبب الخصم مطلوب لكافة الاستقطاعات المفروضة! (أخرى)", "Deduction reason is required for other deductions.", "error");
       return;
     }
@@ -1687,6 +1688,7 @@ export default function MonthlyPayrollRuns({
            transport = (freshEmp.allowances && freshEmp.allowances.transport !== undefined) ? Number(freshEmp.allowances.transport) : transport;
            food = (freshEmp.allowances && freshEmp.allowances.food !== undefined) ? Number(freshEmp.allowances.food) : food;
            muddah = (freshEmp.allowances && freshEmp.allowances.muddah !== undefined) ? Number(freshEmp.allowances.muddah) : muddah;
+
            
            bankName = freshEmp.bankName || bankName;
            iban = freshEmp.iban || iban;
@@ -1696,11 +1698,13 @@ export default function MonthlyPayrollRuns({
            accountHolderName = freshEmp.accountHolderName || accountHolderName;
         }
 
+                const otherAllowances = (freshEmp && freshEmp.allowances && freshEmp.allowances.otherAllowances !== undefined) ? Number(freshEmp.allowances.otherAllowances) : (emp.otherAllowances || 0);
         const entitlements = Number(basicSalary || 0) +
           Number(housing || 0) +
           Number(transport || 0) +
           Number(emp.overtimeAmount || 0) +
-          Number(emp.otherAllowances || 0);
+          Number(food || 0) +
+          Number(otherAllowances || 0);
 
         const totalDeductionsSum = absD + lateD + loanD + penD + otherD;
         const net = entitlements - totalDeductionsSum;
@@ -1874,7 +1878,7 @@ export default function MonthlyPayrollRuns({
 
   // Submit Modification Requests (Reviewer)
   const handleRequestModificationsSubmit = () => {
-    if (!modRequestNotes.trim()) return;
+    if (!modRequestNotes?.trim()) return;
 
     const newRequest: PayrollModificationRequest = {
       id: `REQ-${Date.now()}`,
@@ -1903,7 +1907,7 @@ export default function MonthlyPayrollRuns({
 
   // Close or Respond to Modification Requests
   const handleRespondToModRequestSubmit = () => {
-    if (!selectedRequestForResponse || !modResponseNotes.trim()) return;
+    if (!selectedRequestForResponse || !modResponseNotes?.trim()) return;
 
     const updatedRequests = runModificationRequests.map((req) => {
       if (req.id === selectedRequestForResponse.id) {
@@ -1974,7 +1978,7 @@ export default function MonthlyPayrollRuns({
   // Register Transfer Details
   const handleRegisterTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transferForm.referenceNumber.trim()) {
+    if (!transferForm.referenceNumber?.trim()) {
       showToast("⚠️ يرجى إدخال رقم المرجع المصرفي لتوثيق الحوالة!", "⚠️ Bank reference number is required!", "error");
       return;
     }
@@ -4037,7 +4041,7 @@ export default function MonthlyPayrollRuns({
                 </button>
                 <button
                   onClick={handleRequestModificationsSubmit}
-                  disabled={!modRequestNotes.trim()}
+                  disabled={!modRequestNotes?.trim()}
                   className="px-6 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-xs font-bold shadow-md"
                 >
                   تقديم طلب التعديل ⚠️
@@ -4108,7 +4112,7 @@ export default function MonthlyPayrollRuns({
                 </button>
                 <button
                   onClick={handleRespondToModRequestSubmit}
-                  disabled={!modResponseNotes.trim()}
+                  disabled={!modResponseNotes?.trim()}
                   className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-xs font-bold shadow-md"
                 >
                   حفظ وتسجيل الرد 💬

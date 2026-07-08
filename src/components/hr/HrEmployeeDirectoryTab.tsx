@@ -476,7 +476,10 @@ export default function HrEmployeeDirectoryTab({
     jobTitle: "",
     classification: "موظف",
     grade: "Grade 1",
-    allowances: { housing: 0, transport: 0,   },
+    allowances: { housing: 0, transport: 0,
+    food: 0,
+    otherAllowances: 0,
+    muddah: 0,   },
     basicSalary: 6000,
     homeAddress: "الرياض، المملكة العربية السعودية",
     department: "Neon Fabrication",
@@ -498,6 +501,9 @@ export default function HrEmployeeDirectoryTab({
     basicSalary: 0,
     housing: 0,
     transport: 0,
+    food: 0,
+    otherAllowances: 0,
+    muddah: 0,
     loans: 0,
     deductions: 0,
     status: "Active",
@@ -647,16 +653,19 @@ export default function HrEmployeeDirectoryTab({
     setIsEditingBankInfo(false);
     setIsContractEditingUrl(!emp.contractUrl);
     setSalaryContractForm({
-                                      basicSalary: selectedEmp.basicSalary || 0,
-                                      housing: selectedEmp.allowances?.housing || 0,
-                                      transport: selectedEmp.allowances?.transport || 0,
-                                      loans: selectedEmp.allowances?.loans || 0,
-                                      deductions: selectedEmp.allowances?.deductions || 0,
-                                      status: selectedEmp.allowances?.status || "Active",
-                                      contractQiwaNumber: selectedEmp.contractQiwaNumber || "",
-                                      contractUrl: selectedEmp.contractUrl || "",
-                                      contractExpiry: selectedEmp.contractExpiry || "",
-                                    });
+      basicSalary: emp.basicSalary || 0,
+      housing: emp.allowances?.housing || 0,
+      transport: emp.allowances?.transport || 0,
+      food: emp.allowances?.food || 0,
+      otherAllowances: emp.allowances?.otherAllowances || 0,
+      muddah: emp.allowances?.muddah || 0,
+      loans: emp.allowances?.loans || 0,
+      deductions: emp.allowances?.deductions || 0,
+      status: emp.allowances?.status || "Active",
+      contractQiwaNumber: emp.contractQiwaNumber || "",
+      contractUrl: emp.contractUrl || "",
+      contractExpiry: emp.contractExpiry || "",
+    });
     setBankInfoForm({
       bankName: emp.bankName || "",
       iban: emp.iban || "",
@@ -865,6 +874,11 @@ export default function HrEmployeeDirectoryTab({
             allowances: {
               housing: Number(empData.housing) || 0,
               transport: Number(empData.transport) || 0,
+              food: Number(empData.food) || 0,
+              otherAllowances: Number(empData.otherAllowances) || 0,
+              muddah: Number(empData.muddah) || 0,
+              loans: Number(empData.loans) || 0,
+              deductions: Number(empData.deductions) || 0,
               status: "Active",
             },
             birthDate: empData.birthDate || "",
@@ -958,7 +972,10 @@ export default function HrEmployeeDirectoryTab({
         jobTitle: "",
         classification: "موظف",
         grade: "Grade 1",
-        allowances: { housing: 0, transport: 0,   },
+        allowances: { housing: 0, transport: 0,
+    food: 0,
+    otherAllowances: 0,
+    muddah: 0,   },
         basicSalary: 6000,
         homeAddress: "الرياض، المملكة العربية السعودية",
         department: "Neon Fabrication",
@@ -999,7 +1016,8 @@ export default function HrEmployeeDirectoryTab({
       const totalAllowances = selectedEmp.allowances
         ? (Number(selectedEmp.allowances.housing || 0) +
            Number(selectedEmp.allowances.transport || 0) +
-           Number((selectedEmp.allowances as any).food || 0))
+           Number(selectedEmp.allowances.food || 0) +
+           Number(selectedEmp.allowances.otherAllowances || 0))
         : 0;
       const printHTML = `
         <div style="font-family: 'GE SS Two', 'Gotham Pro', Arial, sans-serif; max-width: 800px; margin: 0 auto; direction: rtl;">
@@ -1884,6 +1902,9 @@ export default function HrEmployeeDirectoryTab({
                                   ...(editForm.allowances || {
                                     housing: 0,
                                     transport: 0,
+    food: 0,
+    otherAllowances: 0,
+    muddah: 0,
                                   }),
                                   status: e.target.value,
                                 },
@@ -2398,16 +2419,19 @@ export default function HrEmployeeDirectoryTab({
                         onClick={() => {
                           setIsEditingSalaryContract(true);
                           setSalaryContractForm({
-                                      basicSalary: selectedEmp.basicSalary || 0,
-                                      housing: selectedEmp.allowances?.housing || 0,
-                                      transport: selectedEmp.allowances?.transport || 0,
-                                      loans: selectedEmp.allowances?.loans || 0,
-                                      deductions: selectedEmp.allowances?.deductions || 0,
-                                      status: selectedEmp.allowances?.status || "Active",
-                                      contractQiwaNumber: selectedEmp.contractQiwaNumber || "",
-                                      contractUrl: selectedEmp.contractUrl || "",
-                                      contractExpiry: selectedEmp.contractExpiry || "",
-                                    });
+      basicSalary: selectedEmp.basicSalary || 0,
+      housing: selectedEmp.allowances?.housing || 0,
+      transport: selectedEmp.allowances?.transport || 0,
+      food: selectedEmp.allowances?.food || 0,
+      otherAllowances: selectedEmp.allowances?.otherAllowances || 0,
+      muddah: selectedEmp.allowances?.muddah || 0,
+      loans: selectedEmp.allowances?.loans || 0,
+      deductions: selectedEmp.allowances?.deductions || 0,
+      status: selectedEmp.allowances?.status || "Active",
+      contractQiwaNumber: selectedEmp.contractQiwaNumber || "",
+      contractUrl: selectedEmp.contractUrl || "",
+      contractExpiry: selectedEmp.contractExpiry || "",
+    });
                           setIsContractEditingUrl(!selectedEmp.contractUrl);
                         }}
                         className="px-3 py-1 bg-[#0072BC]/10 hover:bg-[#0072BC]/20 text-[#0072BC] font-extrabold text-[11px] rounded-lg transition-all cursor-pointer"
@@ -2427,6 +2451,9 @@ export default function HrEmployeeDirectoryTab({
         allowances: {
           housing: Number(salaryContractForm.housing) || 0,
           transport: Number(salaryContractForm.transport) || 0,
+          food: Number(salaryContractForm.food) || 0,
+          otherAllowances: Number(salaryContractForm.otherAllowances) || 0,
+          muddah: Number(salaryContractForm.muddah) || 0,
           loans: Number(salaryContractForm.loans) || 0,
           deductions: Number(salaryContractForm.deductions) || 0,
           status: salaryContractForm.status || "Active",
@@ -2465,8 +2492,8 @@ export default function HrEmployeeDirectoryTab({
           </label>
           <input
             type="number"
-            value={salaryContractForm.basicSalary || ""}
-            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, basicSalary: Number(e.target.value) || 0 })}
+            value={salaryContractForm.basicSalary === 0 ? 0 : (salaryContractForm.basicSalary || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, basicSalary: e.target.value === '' ? 0 : Number(e.target.value) })}
             className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 transition-all text-right font-extrabold"
           />
         </div>
@@ -2476,8 +2503,8 @@ export default function HrEmployeeDirectoryTab({
           </label>
           <input
             type="number"
-            value={salaryContractForm.housing || ""}
-            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, housing: Number(e.target.value) || 0 })}
+            value={salaryContractForm.housing === 0 ? 0 : (salaryContractForm.housing || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, housing: e.target.value === '' ? 0 : Number(e.target.value) })}
             className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 transition-all text-right font-bold"
           />
         </div>
@@ -2487,19 +2514,54 @@ export default function HrEmployeeDirectoryTab({
           </label>
           <input
             type="number"
-            value={salaryContractForm.transport || ""}
-            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, transport: Number(e.target.value) || 0 })}
+            value={salaryContractForm.transport === 0 ? 0 : (salaryContractForm.transport || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, transport: e.target.value === '' ? 0 : Number(e.target.value) })}
             className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 transition-all text-right font-bold"
+          />
+        </div>
+
+        <div>
+          <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+            {lang === "ar" ? "بدل طعام" : "Food Allowance"}
+          </label>
+          <input
+            type="number"
+            value={salaryContractForm.food === 0 ? 0 : (salaryContractForm.food || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, food: e.target.value === '' ? 0 : Number(e.target.value) })}
+            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 transition-all text-right font-bold"
+          />
+        </div>
+        <div>
+          <label className="block text-slate-400 font-bold mb-1 text-[10px]">
+            {lang === "ar" ? "بدلات أخرى" : "Other Allowances"}
+          </label>
+          <input
+            type="number"
+            value={salaryContractForm.otherAllowances === 0 ? 0 : (salaryContractForm.otherAllowances || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, otherAllowances: e.target.value === '' ? 0 : Number(e.target.value) })}
+            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 transition-all text-right font-bold"
+          />
+        </div>
+        <div>
+          <label className="block text-purple-400 font-bold mb-1 text-[10px]" title="مبلغ مدد لا يضاف لإجمالي الراتب، بل هو جزء من الأساسي">
+            {lang === "ar" ? "مبلغ مدد (من الأساسي)" : "Muddah Amount"}
+          </label>
+          <input
+            type="number"
+            value={salaryContractForm.muddah === 0 ? 0 : (salaryContractForm.muddah || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, muddah: e.target.value === '' ? 0 : Number(e.target.value) })}
+            className="w-full bg-purple-50/50 border border-purple-200 rounded-lg px-3 py-1.5 text-xs text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all text-right font-bold"
           />
         </div>
         <div>
           <label className="block text-rose-400 font-bold mb-1 text-[10px]">
             {lang === "ar" ? "السلف والقروض" : "Loans"}
           </label>
+
           <input
             type="number"
-            value={salaryContractForm.loans || ""}
-            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, loans: Number(e.target.value) || 0 })}
+            value={salaryContractForm.loans === 0 ? 0 : (salaryContractForm.loans || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, loans: e.target.value === '' ? 0 : Number(e.target.value) })}
             className="w-full bg-rose-50/50 border border-rose-200 rounded-lg px-3 py-1.5 text-xs text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-right font-bold"
           />
         </div>
@@ -2509,8 +2571,8 @@ export default function HrEmployeeDirectoryTab({
           </label>
           <input
             type="number"
-            value={salaryContractForm.deductions || ""}
-            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, deductions: Number(e.target.value) || 0 })}
+            value={salaryContractForm.deductions === 0 ? 0 : (salaryContractForm.deductions || "")}
+            onChange={(e) => setSalaryContractForm({ ...salaryContractForm, deductions: e.target.value === '' ? 0 : Number(e.target.value) })}
             className="w-full bg-rose-50/50 border border-rose-200 rounded-lg px-3 py-1.5 text-xs text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-right font-bold"
           />
         </div>
@@ -2597,7 +2659,32 @@ export default function HrEmployeeDirectoryTab({
             {selectedEmp.allowances?.transport || 0} {lang === "ar" ? "ر.س" : "SAR"}
           </span>
         </div>
+        <div>
+          <span className="block text-slate-400 font-bold mb-1 text-[10px]">
+            {lang === "ar" ? "بدل طعام" : "Food Allowance"}
+          </span>
+          <span className="font-bold text-xs text-slate-600">
+            {selectedEmp.allowances?.food || 0} {lang === "ar" ? "ر.س" : "SAR"}
+          </span>
+        </div>
+        <div>
+          <span className="block text-slate-400 font-bold mb-1 text-[10px]">
+            {lang === "ar" ? "بدلات أخرى" : "Other Allowances"}
+          </span>
+          <span className="font-bold text-xs text-slate-600">
+            {selectedEmp.allowances?.otherAllowances || 0} {lang === "ar" ? "ر.س" : "SAR"}
+          </span>
+        </div>
+        <div>
+          <span className="block text-purple-400 font-bold mb-1 text-[10px]" title="مبلغ مدد لا يضاف لإجمالي الراتب، بل هو جزء من الأساسي">
+            {lang === "ar" ? "مبلغ مدد (من الأساسي)" : "Muddah Amount"}
+          </span>
+          <span className="font-bold text-xs text-purple-600">
+            {selectedEmp.allowances?.muddah || 0} {lang === "ar" ? "ر.س" : "SAR"}
+          </span>
+        </div>
       </div>
+
     </div>
     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-150 space-y-3">
       <h5 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
@@ -3638,7 +3725,7 @@ export default function HrEmployeeDirectoryTab({
                       required
                       value={newEmpForm.basicSalary}
                       onChange={(e) =>
-                        setNewEmpForm({ ...newEmpForm, basicSalary: Number(e.target.value) || 0 })
+                        setNewEmpForm({ ...newEmpForm, basicSalary: e.target.value === '' ? 0 : Number(e.target.value) })
                       }
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
                     />
@@ -3653,7 +3740,7 @@ export default function HrEmployeeDirectoryTab({
                       onChange={(e) =>
                         setNewEmpForm({
                           ...newEmpForm,
-                          allowances: { ...newEmpForm.allowances, housing: Number(e.target.value) || 0 },
+                          allowances: { ...newEmpForm.allowances, housing: e.target.value === '' ? 0 : Number(e.target.value) },
                         })
                       }
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"
@@ -3671,7 +3758,7 @@ export default function HrEmployeeDirectoryTab({
                       onChange={(e) =>
                         setNewEmpForm({
                           ...newEmpForm,
-                          allowances: { ...newEmpForm.allowances, transport: Number(e.target.value) || 0 },
+                          allowances: { ...newEmpForm.allowances, transport: e.target.value === '' ? 0 : Number(e.target.value) },
                         })
                       }
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center"

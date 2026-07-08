@@ -59,6 +59,7 @@ export interface Allowance {
   transport: number;
   food?: number;
   muddah?: number;
+  otherAllowances?: number;
   loans?: number;       // سلفة مالية
   deductions?: number;  // خصومات
   overtime?: number;    // إضافي
