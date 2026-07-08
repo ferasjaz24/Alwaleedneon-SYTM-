@@ -1019,10 +1019,10 @@ export default function MonthlyPayrollRuns({
         setIsCreateModalOpen(false);
         await loadPayrollRuns();
       } else {
-        throw new Error("API rejection");
+        const errBody = await res.text(); throw new Error("API rejection: " + (errBody.length > 100 ? errBody.substring(0, 100) + "..." : errBody));
       }
     } catch (err) {
-      showToast("❌ حدث خطأ أثناء الاتصال بالخادم وحفظ البيانات.", "❌ Connection error saving data to server.", "error");
+      showToast("❌ حدث خطأ أثناء الاتصال بالخادم وحفظ البيانات: " + err.message, "❌ Connection error saving data to server.", "error");
     }
   };
 
