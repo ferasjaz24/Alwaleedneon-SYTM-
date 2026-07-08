@@ -213,6 +213,7 @@ export default function MonthlyPayrollRuns({
   // Register Transfer Modal
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [bankFilter, setBankFilter] = useState("All");
+  const [sortFilter, setSortFilter] = useState("role");
   const [transferForm, setTransferForm] = useState({
     bankName: "البنك الأهلي السعودي (SNB)",
     referenceNumber: "",
@@ -2848,18 +2849,32 @@ export default function MonthlyPayrollRuns({
                     <span>جدول بيانات وعقود الموظفين المستحقين الرواتب هذا الشهر</span>
                     <span className="bg-slate-800 px-3 py-1 rounded-full text-[#00AEEF] font-mono font-bold">{runEmployees.length} موظف</span>
                     
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-bold text-slate-700">تصفية البنك:</label>
-                      <select
-                        value={bankFilter}
-                        onChange={(e) => setBankFilter(e.target.value)}
-                        className="p-2 border border-slate-200 rounded-lg text-xs"
-                      >
-                        <option value="All">الجميع</option>
-                        {Array.from(new Set(runEmployees.map(e => e.bankName || "Cash"))).map(b => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-700">ترتيب:</label>
+                        <select
+                          value={sortFilter}
+                          onChange={(e) => setSortFilter(e.target.value)}
+                          className="p-2 border border-slate-200 rounded-lg text-xs text-black"
+                        >
+                          
+                          <option value="highestSalary">أعلى راتب</option>
+                          <option value="role">حسب الدور</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-700">تصفية البنك:</label>
+                        <select
+                          value={bankFilter}
+                          onChange={(e) => setBankFilter(e.target.value)}
+                          className="p-2 border border-slate-200 rounded-lg text-xs text-black"
+                        >
+                          <option value="All">الجميع</option>
+                          {Array.from(new Set(runEmployees.map(e => e.bankName || "Cash"))).map(b => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
@@ -2891,7 +2906,31 @@ export default function MonthlyPayrollRuns({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
-                        {runEmployees.filter(e => bankFilter === "All" || (e.bankName || "Cash") === bankFilter).map((emp) => {
+                        {(() => {
+                          let filtered = runEmployees.filter(e => bankFilter === "All" || (e.bankName || "Cash") === bankFilter);
+                          
+                          if (sortFilter === "highestSalary") {
+                            filtered = filtered.sort((a, b) => (b.totalEntitlements || 0) - (a.totalEntitlements || 0));
+                          } else if (sortFilter === "role") {
+                            const roleOrder = {
+                              "الإدارة العليا": 1,
+                              "فراس": 2,
+                              "إداري": 3,
+                              "موظف": 4,
+                              "عامل تصنيع": 5
+                            };
+                            filtered = filtered.sort((a, b) => {
+                              const empA = employees.find(e => e.id === a.employeeId);
+                              const empB = employees.find(e => e.id === b.employeeId);
+                              const roleA = empA?.classification || "موظف";
+                              const roleB = empB?.classification || "موظف";
+                              const orderA = roleOrder[roleA as keyof typeof roleOrder] || 99;
+                              const orderB = roleOrder[roleB as keyof typeof roleOrder] || 99;
+                              return orderA - orderB;
+                            });
+                          }
+                          
+                          return filtered.map((emp) => {
                           const isEditing = editingEmployeeId === emp.id;
                           const canModifyRow =
                             selectedRun.status === "Draft" ||
@@ -3489,7 +3528,7 @@ export default function MonthlyPayrollRuns({
                               </td>
                             </tr>
                           );
-                        })}
+                        }); })()}
                       </tbody>
                     </table>
                   </div>
