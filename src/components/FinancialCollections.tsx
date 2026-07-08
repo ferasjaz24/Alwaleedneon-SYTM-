@@ -524,7 +524,7 @@ export default function FinancialCollections({ lang, user }: FCProps) {
           </style>
         </head>
         <body>
-          <div style="text-align: center;"><img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;" /></div>
+          <div style="text-align: center;"><img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 10px;" /></div>
           <div class="header-sec">
             <h1>تقرير التحصيل الشهري</h1>
             <p><strong>الموظف/المندوب:</strong> ${selectedReportEmployee} &nbsp;|&nbsp; <strong>الشهر:</strong> ${reportMonth}</p>

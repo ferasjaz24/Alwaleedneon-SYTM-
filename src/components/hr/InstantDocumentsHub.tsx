@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Printer, Save, Eye, CheckCircle2, Shield, X } from 'lucide-react';
+import { FileText, Printer, Save, Eye, CheckCircle2, Shield, X, Languages, Loader2 } from 'lucide-react';
 import { Employee, User } from '../../types';
 import { DocumentHeader, DocumentFooter } from '../../utils/PrintSharedComponents';
 import RichTextToolbar from '../RichTextToolbar';
+import { fetchTranslation } from '../../utils/translator';
 
 interface InstantDocumentsHubProps {
   lang: 'ar' | 'en';
@@ -18,6 +19,7 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
   const [docTemplate, setDocTemplate] = useState<string>('salary_cert');
   const [docContent, setDocContent] = useState<string>('');
   
+  const [docLanguage, setDocLanguage] = useState<'ar' | 'en'>('ar');
   const [exportLogs, setExportLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   
@@ -91,11 +93,36 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
     ]
   };
 
-  const getTemplateText = () => {
+const getTemplateText = () => {
     if (!selectedDocEmp) return '';
     const d = new Date().toISOString().slice(0, 10);
     const totalSalary = (selectedDocEmp.basicSalary || 0) + (selectedDocEmp.allowances?.housing || 0) + (selectedDocEmp.allowances?.transport || 0);
 
+    if (docLanguage === 'en') {
+      switch(docTemplate) {
+        case 'salary_cert': return `Ref: HR-SAL-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Salary Certificate & Employment Proof\n\nTo Whom It May Concern,\n\nThis is to certify that ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.iqamaId}) is an employee of our company, working as ${selectedDocEmp.jobTitle} in the ${selectedDocEmp.department || 'Operations'} department since ${selectedDocEmp.dateOfJoining}.\n\nFinancial Details:\n- Basic Salary: SAR ${selectedDocEmp.basicSalary || 0}\n- Allowances: SAR ${(selectedDocEmp.allowances?.housing || 0) + (selectedDocEmp.allowances?.transport || 0)}\n- Total Monthly Salary: SAR ${totalSalary}\n\nThis certificate is issued upon the employee's request without any liability to the company.\n\nHR Department\nCompany Administration`;
+        case 'warning': return `Ref: HR-WRN-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Official Warning Letter\n\nDear ${selectedDocEmp['arabicName']}, working as ${selectedDocEmp.jobTitle},\n\nThis letter serves as an official warning regarding your recent conduct/performance. You are expected to adhere strictly to the company's policies and procedures.\n\nFurther violations may result in disciplinary actions up to termination.\n\nHR Department`;
+        case 'termination': return `Ref: HR-TERM-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Notice of Contract Termination\n\nDear ${selectedDocEmp['arabicName']}, working as ${selectedDocEmp.jobTitle},\n\nWe regret to inform you that your employment with the company is terminated effectively. Please coordinate with HR and Finance for your final settlement.\n\nHR Department`;
+        case 'employee_intro': return `Ref: INTRO-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Employee Introduction Letter\n\nTo Whom It May Concern,\n\nWe certify that ${selectedDocEmp['arabicName']} (ID/Iqama: ${selectedDocEmp.iqamaId}) is a confirmed employee in our company under the title ${selectedDocEmp.jobTitle}.\n\nHR Department`;
+        case 'work_start': return `Ref: START-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Commencement of Duty\n\nThis is to confirm that ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.iqamaId}), appointed as ${selectedDocEmp.jobTitle}, has officially started/resumed duty on ${d}.\n\nHR Department`;
+        case 'probation_fix': return `Ref: CONFIRM-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Employment Confirmation\n\nDear ${selectedDocEmp['arabicName']}, ${selectedDocEmp.jobTitle},\n\nWe are pleased to inform you that you have successfully completed your probation period. You are now a confirmed employee.\n\nHR Department`;
+        case 'transfer': return `Ref: TRANS-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Employee Transfer Notice\n\nDear ${selectedDocEmp['arabicName']}, ${selectedDocEmp.jobTitle},\n\nBe informed that management has decided to transfer you to a new department/location effective immediately.\n\nHR Department`;
+        case 'promotion': return `Ref: PROM-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Official Promotion Notice\n\nDear ${selectedDocEmp['arabicName']}, \n\nCongratulations! Based on your performance, you have been promoted. Your new role is [.....................] in the ${selectedDocEmp.department || 'Operations'} department.\n\nHR Department`;
+        case 'leave_request':
+        case 'sick_leave':
+        case 'annual_leave':
+        case 'emergency_leave': return `Ref: LEAVE-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Leave Application\n\nEmployee Name: ${selectedDocEmp['arabicName']}\nJob Title: ${selectedDocEmp.jobTitle}\n\nI am applying for a leave starting from [......] to [......] for the following reason:\n[.........................]\n\nEmployee Signature: ......................\n\nManager Approval: ......................\nHR Approval: ......................`;
+        case 'contract': return `Ref: CONT-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Employment Contract Draft\n\nFirst Party: Company Administration\nSecond Party: ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.iqamaId}), Title: ${selectedDocEmp.jobTitle}\n\nTotal Monthly Salary: SAR ${totalSalary}\n\nFirst Party Signature: ......................\nSecond Party Signature: ......................`;
+        case 'custody_receipt': return `Ref: CUST-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Custody / Asset Handover Receipt\n\nI, ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.id}), ${selectedDocEmp.jobTitle}, acknowledge the receipt of the following company assets:\n1. ..............................................................\n2. ..............................................................\n\nEmployee Signature: ......................\nStorekeeper Signature: ......................`;
+        case 'clearance': return `Ref: CLR-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Clearance Certificate\n\nTo Whom It May Concern,\n\nThis is to certify that ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.id}) has cleared all dues and company properties.\n\nManager: .....................\nStorekeeper: .....................\nIT Dept: .....................\nFinance: .....................\n\nHR Dept:`;
+        case 'resignation_acc': return `Ref: RESC-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Acceptance of Resignation\n\nDear ${selectedDocEmp['arabicName']}, \n\nWe formally accept your resignation. Your notice period ends on (  /  /  ).\n\nHR Department`;
+        case 'experience': return `Ref: EXP-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Experience Certificate\n\nTo Whom It May Concern,\n\nThis is to certify that ${selectedDocEmp['arabicName']} (ID: ${selectedDocEmp.iqamaId}) worked with us as ${selectedDocEmp.jobTitle} from ${selectedDocEmp.dateOfJoining} to present.\n\nHR Department`;
+        case 'written_warning_1':
+        case 'written_warning_2':
+        case 'notice': return `Ref: PNLTY-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nSubject: Written Warning\n\nDear ${selectedDocEmp['arabicName']}, ${selectedDocEmp.jobTitle},\n\nThis is an official warning regarding the following violation:\n1. ........................................................\n\nPlease adhere to company policies to avoid further actions.\n\nHR Department`;
+        default: return `Subject: ${templatesList[docCategory]?.find((t) => t.id === docTemplate)?.name || 'Custom Document'}\nRef: DOC-FAW-${selectedDocEmp.id}-26\nDate: ${d}\n\nEmployee Details:\n- Name: ${selectedDocEmp['arabicName']}\n- ID: ${selectedDocEmp.id} / ${selectedDocEmp.iqamaId}\n- Title: ${selectedDocEmp.jobTitle}\n- Department: ${selectedDocEmp.department || 'Operations'}\n\n------------------------------------------------\n[Enter Document Details Here]\n\n\n\n\n------------------------------------------------\n\nEmployee Signature: ......................................\nManager Signature: ......................................\nHR Signature: ......................................`;
+      }
+    } else {
     switch(docTemplate) {
       
       case 'employee_intro': return `الرقم المرجعي: INTRO-FAW-${selectedDocEmp.id}-26\nالتاريخ: ${d}\n\nالموضوع: إفادة رسمية على رأس العمل للجهات المعنية\n\nإلى الجهة التي يهمها الأمر المحترمين،\nتحية طيبة وبعد،\n\nانطلاقاً من مبدأ التعاون وسعياً لتسهيل المعاملات الإجرائية لمنسوبيها، يسرنا في "شركة فنون الوليد للصناعة"، بصفتنا إحدى الشركات الرائدة بمجال صناعة اللوحات الإعلانية ومجسمات النيون في المملكة العربية السعودية، أن نفيدكم بصفة رسمية وموثقة بأن الموظف الموضحة بياناته أدناه، هو أحد الكوادر الأساسية المسجلة والمعتمدة لدينا في قواعد بيانات الشركة، ولا يزال على رأس العمل يباشر مهامه بشكل يومي ومنتظم.\n\nالبيانات التعريفية للموظف:\n-------------------------\n• الاسم الرباعي الموثق: ${selectedDocEmp['arabicName']}\n• رقم الإثبات (هوية وطنية / إقامة): ${selectedDocEmp.iqamaId}\n• الرقم الوظيفي لدى الشركة: ${selectedDocEmp.id}\n• المسمى الوظيفي المعتمد: ${selectedDocEmp.jobTitle}\n• مكان العمل والإدارة: ${selectedDocEmp.department || 'إدارة المشاريع الميدانية والعمليات'}\n• تاريخ بداية الخدمة والانضمام: ${selectedDocEmp.dateOfJoining}\n\nونحيطكم علماً بأن الغرض من إصدار هذه الإفادة هو إثبات تبعية المذكور المهنية لشركتنا للاستخدام الإجرائي الروتيني الذي يتطلب إثبات الحالة الوظيفية، ولا يُشكل هذا المستند أو ينطوي على أي تثبيت لحقوق طرف ثالث، أو التزام مالي مترتب علينا، ولا يعد كفالة بنكية أو شخصية أو تضمن من قبل الشركة تجاه أي التزامات قد يبرمها المذكور.\n\nشاكرين ومقدرين حسن تعاونكم الدائم ولكم جزيل الشكر،،،\n\nلجنة شؤون الموظفين والامتثال الإداري\nشركة فنون الوليد للصناعة`;
@@ -135,12 +162,14 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
         return `موضوع الإشعار أو المستند الإداري: ${templatesList[docCategory]?.find((t: any) => t.id === docTemplate)?.name || 'إجراء ونموذج مخصص وغير اعتيادي'}\nالرقم الأرشيفي المرجعي للتخزين: DOC-FAW-${selectedDocEmp.id}-26\nتاريخ الانعقاد والإصدار: ${d}\n\nالبيانات التعريفية للموظف المعتمد عليه بالخطاب الموحد الدقيق والإلزامي:\n• الاسم الرباعي الكامل للموظف المقر: ${selectedDocEmp['arabicName']}\n• الإثبات الوظيفي الداخلي: ${selectedDocEmp.id} | هوية وأوراق الإقامة المنظمة: ${selectedDocEmp.iqamaId}\n• المسمى الرتبوي والوظيفي الحالي: ${selectedDocEmp.jobTitle}\n• إدارة التشغيل والمهام والإسناد المباشرة: ${selectedDocEmp.department || 'العمليات والمشاريع المركزية والصيانة'}\n\n------------------------------------------------\nالمحتوى التفصيلي للإجراء والقرار المُنبثق عن الإدارة (متاح للتعديل والمطابقة الحرة والتوثيق المكتبي):\n\n(يُرجى محو هذا النّص الإرشادي واستبداله بصياغة وكتابة التفاصيل الدقيقة وحيثيات الإجراء الإداري أو المشكلة أو الموضوع الخاص بهذا المستند بشكل مباشر في هذا النطاق، حيث تم تصميم المساحة الورقية لتراعي تنسيق الورق الرسمي الخاص بالشركة وتتيح كتابة كل الإفادات والتنويهات بحرية ومرونة عالية تتناسب من الإطالة والاختصار...)\n\n\n\n\n\n\n\n\n------------------------------------------------\n\nالاعتمادات الإدارية والمصادقات وتواقيع المسؤولين الختامية لتنفيذ الوثيقة واستدامتها:\n• الموظف المستفيد/المقر للاستلام والإقرار بحذافير الوثيقة (توقيع وتسليم): ......................................\n• الإدارة المباشرة / رئيس قسم التشغيل أو التوجيه (توقيع): ......................................\n• قسم التوثيق في شؤون الموظفين العليا (مصدق نهائي): ......................................\n\n[الختم الرسمي لشركة فنون الوليد للصناعة - الدمام]`;
     }
 
+
+    }
   };
 
   // Re-fill local state if template or employee changes
   useEffect(() => {
     setDocContent(getTemplateText());
-  }, [selectedDocEmp, docTemplate, docCategory]);
+  }, [selectedDocEmp, docTemplate, docCategory, docLanguage]);
 
   const loadLogs = async () => {
     setLoadingLogs(true);
@@ -354,7 +383,23 @@ export default function InstantDocumentsHub({ lang, user, employees }: InstantDo
             </select>
           </div>
           
-          <div className="md:col-span-3 flex justify-end gap-3 mt-2">
+          <div className="md:col-span-3 flex justify-end gap-3 mt-2 flex-wrap">
+            
+            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+              <button 
+                onClick={() => setDocLanguage('ar')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition ${docLanguage === 'ar' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:bg-slate-200'}`}
+              >
+                العربية
+              </button>
+              <button 
+                onClick={() => setDocLanguage('en')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition ${docLanguage === 'en' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:bg-slate-200'}`}
+              >
+                English
+              </button>
+            </div>
+    
             <button onClick={handlePrint} className="bg-[#00AEEF] hover:bg-[#0072BC] text-white px-6 py-3 rounded-xl transition flex items-center gap-2">
               <Printer className="w-4 h-4" /> طباعة المستند
             </button>

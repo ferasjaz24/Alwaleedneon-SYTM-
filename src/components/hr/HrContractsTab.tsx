@@ -10,7 +10,7 @@ const DocumentHeader = () => (
       </h3>
     </div>
     <div style={{ textAlign: 'right' }}>
-      <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerPolicy="no-referrer" alt="Fonoun Alwaleed Logo" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+      <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerPolicy="no-referrer" alt="Fonoun Alwaleed Logo" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
     </div>
   </div>
 );

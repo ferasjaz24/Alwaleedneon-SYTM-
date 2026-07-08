@@ -560,7 +560,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">التاريخ <span className="text-rose-500">*</span></label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none" />
+                  <input type="date" lang="en" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">مصدر الإيراد <span className="text-rose-500">*</span></label>
@@ -611,7 +611,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">المبلغ <span className="text-rose-500">*</span></label>
-                  <input type="number" placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none font-bold text-emerald-600 text-lg" />
+                  <input type="number" lang="en" placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none font-bold text-emerald-600 text-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">طريقة الدفع <span className="text-rose-500">*</span></label>
@@ -1655,7 +1655,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">التاريخ <span className="text-rose-500">*</span></label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none" />
+                  <input type="date" lang="en" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">نوع المصروف <span className="text-rose-500">*</span></label>
@@ -1697,7 +1697,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">المبلغ <span className="text-rose-500">*</span></label>
-                  <input type="number" placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none font-bold text-rose-600 text-lg" />
+                  <input type="number" lang="en" placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0072BC] focus:outline-none font-bold text-rose-600 text-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">طريقة الدفع <span className="text-rose-500">*</span></label>

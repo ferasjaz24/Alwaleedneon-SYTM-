@@ -698,7 +698,7 @@ export default function HrLeavesTab({
     else if (req.type_en === "Death") setLeaveType("Death");
     else setLeaveType("Annual");
 
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDeleteLeave = async (id: string) => {

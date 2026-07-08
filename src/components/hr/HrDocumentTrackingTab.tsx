@@ -1449,12 +1449,21 @@ export default function HrDocumentTrackingTab({
                   className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-right"
                 >
                   <option value="">{isAr ? 'كل الكيانات والجهات' : 'All Entities'}</option>
-                  {Array.from(new Set(employeeDocs.map(d => JSON.stringify({id: d.employeeId, name: d.employeeName})))).map(str => {
-                    const parsed = JSON.parse(str);
-                    return (
+                  {Array.from(new Set(employeeDocs.map(d => JSON.stringify({id: d.employeeId, name: d.employeeName}))))
+                    .map(str => JSON.parse(str))
+                    .map((parsed, i, arr) => {
+                      if (parsed.name && parsed.name.includes('الوليد')) {
+                        const firstWaleed = arr.findIndex(item => item.name && item.name.includes('الوليد'));
+                        if (firstWaleed !== i) {
+                          parsed.name = 'SignX / ساين إكس';
+                        }
+                      }
+                      return parsed;
+                    })
+                    .filter((v, i, a) => a.findIndex(t => t.name === v.name) === i)
+                    .map(parsed => (
                       <option key={parsed.id} value={parsed.id}>{parsed.name}</option>
-                    );
-                  })}
+                    ))}
                 </select>
               </div>
 

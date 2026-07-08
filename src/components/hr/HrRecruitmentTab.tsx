@@ -388,7 +388,7 @@ export default function HrRecruitmentTab({ lang, onAddEmployeeLocally }: HrRecru
 
               <div>
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الراتب المخصص كحد أقصى' : 'Salary Maximum threshold (SAR)'}</label>
-                <input type="number" value={reqBudget} onChange={e => setReqBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={reqBudget} onChange={e => setReqBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
 
               <div>

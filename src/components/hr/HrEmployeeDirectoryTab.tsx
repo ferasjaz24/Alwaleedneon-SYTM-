@@ -967,7 +967,7 @@ export default function HrEmployeeDirectoryTab({
               <h3 style="font-size: 11px; font-weight: bold; color: #6b7280; margin: 4px 0 0 0; letter-spacing: 0.1em; direction: ltr; text-align: right;">FONOUN ALWALEED INDUSTRIAL CO.</h3>
             </div>
             <div>
-              <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" alt="Logo" style="height: 60px; object-fit: contain;" />
+              <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" alt="Logo" style="height: 100px; object-fit: contain;" />
             </div>
           </div>
           <h1 style="text-align: center; color: #0072BC; margin-bottom: 20px; font-size: 20px;">سجل الموظف الشامل | Employee Profile Record</h1>

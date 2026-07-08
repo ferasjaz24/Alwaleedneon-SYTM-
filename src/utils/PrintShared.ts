@@ -9,7 +9,7 @@ export const sharedPrintHeader = `
       </h3>
     </div>
     <div style="text-align: right;">
-      <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 80px; height: 80px; object-fit: contain;" />
+      <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
     </div>
   </div>
 `;
@@ -34,8 +34,8 @@ export const sharedPrintStyles = `
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { margin: 20mm; size: A4; }
   }
-  body { font-family: 'Gotham Pro', 'GE SS', 'GE SS Two', sans-serif, system-ui !important; direction: rtl; }
-  * { font-family: 'Gotham Pro', 'GE SS', 'GE SS Two', sans-serif !important; }
+  body { font-family: 'EnglishNumbersOnly', 'Gotham Pro', 'GE SS', 'GE SS Two', sans-serif, system-ui !important; direction: rtl; }
+  * { font-family: 'EnglishNumbersOnly', 'Gotham Pro', 'GE SS', 'GE SS Two', sans-serif !important; }
   .ql-align-center { text-align: center; }
   .ql-align-right { text-align: right; }
   .ql-align-left { text-align: left; }

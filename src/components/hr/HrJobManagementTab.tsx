@@ -254,15 +254,15 @@ export default function HrJobManagementTab({ lang }: HrJobManagementTabProps) {
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الحد الأدنى للراتب' : 'Salary min range (SAR)'}</label>
-                <input type="number" value={newMinPay} onChange={e => setNewMinPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={newMinPay} onChange={e => setNewMinPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الحد الأقصى للراتب' : 'Salary max range (SAR)'}</label>
-                <input type="number" value={newMaxPay} onChange={e => setNewMaxPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={newMaxPay} onChange={e => setNewMaxPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div className="col-span-2">
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'البدلات الميدانية والحياكة المضافة' : 'Field/Risk Allowance (SAR)'}</label>
-                <input type="number" value={newFieldAllow} onChange={e => setNewFieldAllow(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={newFieldAllow} onChange={e => setNewFieldAllow(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div className="col-span-2">
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'رخصة السلامة الحاكمة المعتمدة' : 'Emergency Safety Certificate Requirement'}</label>

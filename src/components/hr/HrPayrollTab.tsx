@@ -687,7 +687,7 @@ export default function HrPayrollTab({
           <div style="flex-grow: 1;">
             <div style="text-align:center; margin-bottom:20px;">
               <h2 style="margin: 0; font-size: 18px;">كشف مسير الرواتب والأجور الشهري الرسمي المعتمد</h2>
-              <p style="margin: 5px 0;">تاريخ الصدور: ${new Date().toLocaleDateString('ar-EG')}</p>
+              <p style="margin: 5px 0;">تاريخ الصدور: ${new Date().toLocaleDateString('en-US')}</p>
             </div>
 
             <table class="info-table">

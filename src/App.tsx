@@ -298,6 +298,7 @@ export default function App() {
   };
 
   // Active module tab
+  const [systemRefreshKey, setSystemRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
     | "hr"
@@ -1564,7 +1565,7 @@ export default function App() {
         {/* Brand Logo Group */}
         <div id="brand-identity-group" className="flex items-center gap-4">
           <img
-            src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small"
+            src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png"
             referrerPolicy="no-referrer"
             alt="Fonoun Alwaleed Logo"
             className="w-12 h-12 object-contain"
@@ -1592,6 +1593,13 @@ export default function App() {
         >
           {/* Notifications & Bilingual Language Switcher & Accessibility */}
           <div className="flex items-center gap-2 relative">
+            <button
+              onClick={() => setSystemRefreshKey(prev => prev + 1)}
+              className="p-2.5 rounded-xl bg-slate-200/60 text-slate-600 hover:bg-[#0072BC] hover:text-white transition-colors"
+              title={lang === 'ar' ? 'تحديث البيانات' : 'Refresh Data'}
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
             <NotificationsBell user={user} lang={lang} />
             <div
               id="lang-switch-container"
@@ -1718,7 +1726,7 @@ export default function App() {
             {/* Logo details inside card */}
             <div className="flex flex-col items-center text-center mb-8">
               <img
-                src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small"
+                src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png"
                 referrerPolicy="no-referrer"
                 alt="Fonoun Alwaleed Logo"
                 className="w-28 h-28 mx-auto mb-4 object-contain animate-pulse"
@@ -2513,6 +2521,7 @@ export default function App() {
           )}
           {/* MAIN MODULE CONTENT GATEWAY */}
           <main
+            key={systemRefreshKey}
             id="main-tabs-content-gate"
             className={`col-span-12 ${isSidebarCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'} flex flex-col gap-6 print:block transition-all duration-300`}
           >

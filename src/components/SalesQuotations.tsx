@@ -249,7 +249,7 @@ body {
   margin: 0;
   padding: 0;
   background: #ffffff;
-  font-family: 'GE SS Two', 'Gotham Pro', Arial, Tahoma, sans-serif;
+  font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', Arial, Tahoma, sans-serif;
   color: #111;
   direction: rtl;
 }
@@ -332,8 +332,8 @@ body {
   text-align: right;
 }
 .company-logo {
-  max-width: 34mm;
-  max-height: 29mm;
+  max-width: 50mm;
+  max-height: 45mm;
   object-fit: contain;
 }
 /* بيانات الشركة في المنتصف */
@@ -560,10 +560,10 @@ body {
 .ql-align-right { text-align: right; }
 .ql-align-left { text-align: left; }
 .ql-align-justify { text-align: justify; }
-.ql-font-tajawal { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; }
+.ql-font-tajawal { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif; }
 .ql-font-arial { font-family: 'Arial', sans-serif; }
 .ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
-.ql-font-cairo { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; }
+.ql-font-cairo { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif; }
 .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
 .terms-content ul { padding-right: 20px; list-style-type: disc; }
 .terms-content ol { padding-right: 20px; list-style-type: decimal; }
@@ -608,7 +608,7 @@ body {
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 8px; margin-bottom: 20px; user-select: none; direction: ltr;">
                 <!-- معلومات الشركة -->
                 <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
-                  <h2 style="font-size: 20px; font-weight: 900; color: #374151; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
+                  <h2 style="font-size: 20px; font-weight: 900; color: #374151; margin: 0; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
                     شركة فنون الوليد للصناعة
                   </h2>
                   <h3 style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
@@ -625,7 +625,7 @@ body {
 
                 <!-- الشعار -->
                 <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
-                  <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 70px; height: 70px; object-fit: contain;" />
+                  <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
                 </div>
               </div>
               
@@ -774,7 +774,7 @@ body {
           <style>
             @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
             @import url('https://fonts.cdnfonts.com/css/gotham-pro');
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
           <title>${title}</title>
@@ -1450,7 +1450,7 @@ function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy,
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">تاريخ التسعيرة</label>
-                  <input type="date" value={quote.quoteDate} onChange={e=>onChange({...quote, quoteDate:e.target.value})} disabled={isReadOnly} className="w-full p-2.5 border rounded-xl text-sm font-bold bg-slate-50 focus:bg-white transition" />
+                  <input type="date" lang="en" value={quote.quoteDate} onChange={e=>onChange({...quote, quoteDate:e.target.value})} disabled={isReadOnly} className="w-full p-2.5 border rounded-xl text-sm font-bold bg-slate-50 focus:bg-white transition" />
                 </div>
                 <div>
                    <label className="block text-xs font-bold text-slate-600 mb-1">اسم المشروع (اختياري)</label>
@@ -1536,10 +1536,10 @@ function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy,
                            {it.description && <div className="text-[10px] mt-1 text-slate-500 truncate max-w-[200px]">{it.description}</div>}
                         </td>
                         <td className="p-3">
-                           <input type="number" disabled={isReadOnly} value={it.quantity||0} onChange={e=>updateRow(it.id, {quantity: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg text-center font-bold" min="1"/>
+                           <input type="number" lang="en" disabled={isReadOnly} value={it.quantity||0} onChange={e=>updateRow(it.id, {quantity: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg text-center font-bold" min="1"/>
                         </td>
                         <td className="p-3">
-                           <input type="number" disabled={isReadOnly} value={it.unitPrice||0} onChange={e=>updateRow(it.id, {unitPrice: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg text-center font-bold" />
+                           <input type="number" lang="en" disabled={isReadOnly} value={it.unitPrice||0} onChange={e=>updateRow(it.id, {unitPrice: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg text-center font-bold" />
                         </td>
                         <td className="p-3 text-center font-black text-slate-700 bg-slate-50">
                            {((it.quantity*it.unitPrice)*(1 - (it.discountPct||0)/100)).toFixed(2)}
@@ -1696,7 +1696,7 @@ function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy,
                 <div className="flex gap-4">
                    <div className="w-1/2">
                       <label className="block text-xs font-bold text-slate-600 mb-1">خصم خاص بالصنف (%)</label>
-                      <input type="number" min="0" max="100" value={itemInEdit.discountPct||0} onChange={e=>updateRow(editingItemId, {discountPct: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg font-bold" />
+                      <input type="number" lang="en" min="0" max="100" value={itemInEdit.discountPct||0} onChange={e=>updateRow(editingItemId, {discountPct: parseFloat(e.target.value)||0})} className="w-full p-2 border rounded-lg font-bold" />
                    </div>
                    <div className="w-1/2 bg-slate-50 p-2 rounded-lg border flex flex-col justify-center items-center">
                      <span className="text-[10px] font-bold text-slate-400">السعر بعد الخصم</span>

@@ -347,7 +347,7 @@ export default function HrOrgStructureTab({ lang, employees }: HrOrgStructureTab
               </div>
               <div className="col-span-2">
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الميزانية السنوية SAR' : 'Annual Budget'}</label>
-                <input type="number" value={newBudget} onChange={e => setNewBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={newBudget} onChange={e => setNewBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
             </div>
 
@@ -390,7 +390,7 @@ export default function HrOrgStructureTab({ lang, employees }: HrOrgStructureTab
               </div>
               <div className="col-span-2">
                 <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الميزانية السنوية' : 'Annual Budget'}</label>
-                <input type="number" value={newBudget} onChange={e => setNewBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                <input type="number" lang="en" value={newBudget} onChange={e => setNewBudget(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
             </div>
 

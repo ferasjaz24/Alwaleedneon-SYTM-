@@ -692,7 +692,7 @@ export default function MonthlyPayrollRuns({
   <div style="font-family: 'GE SS', 'GE SS Two', 'GE SS Two', 'Gotham Pro', sans-serif; direction: rtl; padding: 20px; color: #0f172a; width: 100%; background: white;">
         <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #0072BC; padding-bottom: 20px; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 15px;">
-    <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 80px; height: 80px; object-fit: contain;" />
+    <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
     <div>
       <h1 style="color: #0072BC; margin: 0; font-size: 24px; font-weight: 900;">شركة فنون الوليد للصناعة</h1>
             <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">مسير رواتب موظفي وعمال المصنع المعتمد</p>
@@ -2099,7 +2099,7 @@ export default function MonthlyPayrollRuns({
   <div style="font-family: 'GE SS', 'GE SS Two', 'GE SS Two', 'Gotham Pro', sans-serif; direction: rtl; padding: 20px; color: #0f172a; max-width: 800px; margin: 0 auto; background: white;">
         <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #0072BC; padding-bottom: 20px; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 15px;">
-    <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 80px; height: 80px; object-fit: contain;" />
+    <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
     <div>
       <h1 style="color: #0072BC; margin: 0; font-size: 24px; font-weight: 900;">شركة فنون الوليد للصناعة</h1>
             <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">مسير رواتب موظفي وعمال المصنع</p>

@@ -655,11 +655,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "تاريخ البداية" : "Start Date"}</label>
-                <input type="date" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
+                <input type="date" lang="en" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "تاريخ النهاية" : "End Date"}</label>
-                <input type="date" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
+                <input type="date" lang="en" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "مدة التنفيذ (أيام)" : "Total Days"}</label>
@@ -669,11 +669,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "أيام العمل الفعلية" : "Actual Working Days"}</label>
-                <input type="number" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.actualWorkingDays} onChange={e => setFormData({...formData, actualWorkingDays: Number(e.target.value)})} />
+                <input type="number" lang="en" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.actualWorkingDays} onChange={e => setFormData({...formData, actualWorkingDays: Number(e.target.value)})} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "ساعات العمل اليومية" : "Daily Hours"}</label>
-                <input type="number" min="1" max="24" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.dailyHours} onChange={e => setFormData({...formData, dailyHours: Number(e.target.value)})} />
+                <input type="number" lang="en" min="1" max="24" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.dailyHours} onChange={e => setFormData({...formData, dailyHours: Number(e.target.value)})} />
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
@@ -684,7 +684,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
               {formData.needsOvertime && (
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "الساعات الإضافية" : "Overtime Hours"}</label>
-                  <input type="number" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.expectedOvertimeHours} onChange={e => setFormData({...formData, expectedOvertimeHours: Number(e.target.value)})} />
+                  <input type="number" lang="en" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.expectedOvertimeHours} onChange={e => setFormData({...formData, expectedOvertimeHours: Number(e.target.value)})} />
                 </div>
               )}
             </div>
@@ -700,14 +700,14 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "إجمالي تكلفة المواد" : "Total Material Cost"}</label>
                 <div className="relative">
-                  <input type="number" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.materialCost} onChange={e => setFormData({...formData, materialCost: e.target.value})} placeholder="15000" />
+                  <input type="number" lang="en" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.materialCost} onChange={e => setFormData({...formData, materialCost: e.target.value})} placeholder="15000" />
                   <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 ${isAr ? 'left-3' : 'right-3'}`}>SAR</span>
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "التكلفة التشغيلية (للشهر الواحد)" : "Monthly Operational Cost"}</label>
                 <div className="relative">
-                  <input type="number" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.monthlyOperationalCost} onChange={e => setFormData({...formData, monthlyOperationalCost: e.target.value})} placeholder="5000" />
+                  <input type="number" lang="en" min="0" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.monthlyOperationalCost} onChange={e => setFormData({...formData, monthlyOperationalCost: e.target.value})} placeholder="5000" />
                   <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 ${isAr ? 'left-3' : 'right-3'}`}>SAR</span>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">{isAr ? "يتم حساب التكلفة الإجمالية تلقائياً بناءً على مدة المشروع." : "Total calculated automatically based on duration."}</p>
@@ -719,7 +719,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
                     <option value="fixed">{isAr ? "مبلغ ثابت" : "Fixed"}</option>
                     <option value="percentage">{isAr ? "نسبة %" : "Percentage"}</option>
                   </select>
-                  <input type="number" min="0" className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.riskValue} onChange={e => setFormData({...formData, riskValue: e.target.value})} placeholder={formData.riskType === 'fixed' ? "2000" : "10"} />
+                  <input type="number" lang="en" min="0" className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" value={formData.riskValue} onChange={e => setFormData({...formData, riskValue: e.target.value})} placeholder={formData.riskType === 'fixed' ? "2000" : "10"} />
                 </div>
               </div>
             </div>
@@ -783,10 +783,10 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
                             <div className="text-[10px] text-slate-400">{emp.jobTitle}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <input type="number" min="0" className="w-16 p-1.5 rounded-lg border border-slate-200 text-center text-xs" value={emp.days} onChange={e => updateSelectedEmployee(emp.id, 'days', Number(e.target.value))} />
+                            <input type="number" lang="en" min="0" className="w-16 p-1.5 rounded-lg border border-slate-200 text-center text-xs" value={emp.days} onChange={e => updateSelectedEmployee(emp.id, 'days', Number(e.target.value))} />
                           </td>
                           <td className="px-4 py-3">
-                            <input type="number" min="1" max="24" className="w-16 p-1.5 rounded-lg border border-slate-200 text-center text-xs" value={emp.hoursPerDay} onChange={e => updateSelectedEmployee(emp.id, 'hoursPerDay', Number(e.target.value))} />
+                            <input type="number" lang="en" min="1" max="24" className="w-16 p-1.5 rounded-lg border border-slate-200 text-center text-xs" value={emp.hoursPerDay} onChange={e => updateSelectedEmployee(emp.id, 'hoursPerDay', Number(e.target.value))} />
                           </td>
                           <td className="px-4 py-3">
                             <input type="text" className="w-32 p-1.5 rounded-lg border border-slate-200 text-xs" value={emp.roleType} onChange={e => updateSelectedEmployee(emp.id, 'roleType', e.target.value)} list="role-types" />
@@ -849,11 +849,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "هامش الربح المطلوب %" : "Target Margin %"}</label>
-                    <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-emerald-600" value={formData.targetMargin} onChange={e => setFormData({...formData, targetMargin: Number(e.target.value)})} />
+                    <input type="number" lang="en" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-emerald-600" value={formData.targetMargin} onChange={e => setFormData({...formData, targetMargin: Number(e.target.value)})} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "الحد الأدنى المقبول %" : "Min Margin %"}</label>
-                    <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-amber-600" value={formData.minMargin} onChange={e => setFormData({...formData, minMargin: Number(e.target.value)})} />
+                    <input type="number" lang="en" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-amber-600" value={formData.minMargin} onChange={e => setFormData({...formData, minMargin: Number(e.target.value)})} />
                   </div>
                 </div>
                 <div>
@@ -887,7 +887,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
                     </div>
                     <div className="w-24">
                       <label className="block text-[10px] font-bold text-slate-500 mb-1">{isAr ? "النسبة %" : "Percentage"}</label>
-                      <input type="number" min="0" max="100" className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none" value={p.percentage} onChange={e => setPayments(prev => prev.map(x => x.id === p.id ? {...x, percentage: Number(e.target.value)} : x))} />
+                      <input type="number" lang="en" min="0" max="100" className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none" value={p.percentage} onChange={e => setPayments(prev => prev.map(x => x.id === p.id ? {...x, percentage: Number(e.target.value)} : x))} />
                     </div>
                     <div className="flex-1">
                       <label className="block text-[10px] font-bold text-slate-500 mb-1">{isAr ? "متى تندفع؟ (الشرط)" : "Condition/Milestone"}</label>
@@ -921,7 +921,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "السعر (بدون ضريبة)" : "Price (No VAT)"}</label>
-                  <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-black text-slate-800" value={formData.userPrice} onChange={e => setFormData({...formData, userPrice: e.target.value})} />
+                  <input type="number" lang="en" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-black text-slate-800" value={formData.userPrice} onChange={e => setFormData({...formData, userPrice: e.target.value})} />
                 </div>
                 <div className="opacity-60 pointer-events-none">
                   <label className="block text-xs font-bold text-slate-500 mb-1">{isAr ? "السعر شامل الضريبة" : "Total w/ VAT"}</label>

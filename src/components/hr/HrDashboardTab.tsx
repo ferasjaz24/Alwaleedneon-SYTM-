@@ -108,13 +108,18 @@ export default function HrDashboardTab({
     return days >= 0 && days <= 90;
   }).length;
 
-  // 8. الإقامات القريبة من الانتهاء (أقل من 90 يوماً متبقية)
-  const iqamasNearingExpiryCount = employees.filter(e => {
-    if (!e.iqamaExpiryDate) return false;
-    const expiry = new Date(e.iqamaExpiryDate);
-    const diff = expiry.getTime() - new Date().getTime();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days >= 0 && days <= 90;
+  // 8. العقود والإقامات المنتهية
+  const expiredIqamasCount = employees.filter(e => {
+    let expired = false;
+    if (e.iqamaExpiryDate) {
+      const diff = new Date(e.iqamaExpiryDate).getTime() - new Date().getTime();
+      if (diff < 0) expired = true;
+    }
+    if (e.contractExpiry) {
+      const diff = new Date(e.contractExpiry).getTime() - new Date().getTime();
+      if (diff < 0) expired = true;
+    }
+    return expired;
   }).length;
 
   // 9. الموظفين تحت التجربة (grade يحتوي على كلمة probation أو تجربة، أو تاريخ التعيين خلال آخر 90 يوم)
@@ -386,7 +391,7 @@ export default function HrDashboardTab({
             <div className="space-y-1 text-right">
               <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'العقود القريبة من الانتهاء' : 'Contracts Nearing Expiry'}</span>
               <p className="text-2xl font-mono font-black text-orange-900 leading-none">{contractsNearingExpiryCount}</p>
-              <span className="text-[9px] text-orange-600 font-semibold block">⚠️ {lang === 'ar' ? 'خلال أقل من 90 يوم' : 'expires in 90 days'}</span>
+              <span className="text-[9px] text-orange-600 font-semibold block">⚠️ {lang === 'ar' ? 'خلال أقل من 90 يوم' : 'already expired'}</span>
             </div>
             <div className="p-2.5 bg-orange-100/50 rounded-xl group-hover:scale-110 transition-transform">
               <FileText className="w-5 h-5 text-orange-600" />
@@ -394,14 +399,14 @@ export default function HrDashboardTab({
           </div>
 
           {/* Card 8: الإقامات القريبة من الانتهاء */}
-          <div className="bg-gradient-to-br from-teal-50/90 to-white p-4 rounded-2xl border border-teal-100 flex items-center justify-between shadow-sm hover:shadow transition-all group">
+          <div className="bg-gradient-to-br from-red-50/90 to-white p-4 rounded-2xl border border-red-100 flex items-center justify-between shadow-sm hover:shadow transition-all group">
             <div className="space-y-1 text-right">
-              <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'العقود/الإقامات المنتهية' : 'Iqamas Nearing Expiry'}</span>
-              <p className="text-2xl font-mono font-black text-teal-900 leading-none">{iqamasNearingExpiryCount}</p>
-              <span className="text-[9px] text-teal-600 font-semibold block">⚠️ {lang === 'ar' ? 'تاريخ انتهاء الإقامة < 90 يوم' : 'expires in 90 days'}</span>
+              <span className="text-[11px] text-slate-500 font-bold block">{lang === 'ar' ? 'العقود/الإقامات المنتهية' : 'Expired Contracts & Iqamas'}</span>
+              <p className="text-2xl font-mono font-black text-red-900 leading-none">{expiredIqamasCount}</p>
+              <span className="text-[9px] text-red-600 font-semibold block">⚠️ {lang === 'ar' ? 'منتهية الصلاحية تماماً' : 'already expired'}</span>
             </div>
-            <div className="p-2.5 bg-teal-100/50 rounded-xl group-hover:scale-110 transition-transform">
-              <CreditCard className="w-5 h-5 text-teal-600" />
+            <div className="p-2.5 bg-red-100/50 rounded-xl group-hover:scale-110 transition-transform">
+              <CreditCard className="w-5 h-5 text-red-600" />
             </div>
           </div>
 
@@ -462,7 +467,7 @@ export default function HrDashboardTab({
           {operationsLogs.slice(0, 4).map((log) => (
             <div key={log.id} className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-2xl text-[11px] hover:bg-slate-100/40 transition flex flex-col justify-between gap-2 text-right">
               <div className="flex justify-between items-center bg-white/60 p-1 px-2 rounded-lg font-mono text-[9px]">
-                <span className="text-slate-400">{new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                <span className="text-slate-400">{new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'en-US' : 'en-US')}</span>
                 <span className="font-extrabold text-[#0072BC]">👤 BY: {log.user}</span>
               </div>
               <p className="font-bold text-slate-700 leading-relaxed">
@@ -785,7 +790,7 @@ export default function HrDashboardTab({
                   <div className="space-y-1 flex-1">
                     <p className="font-bold text-slate-800">{lang === 'ar' ? log.actionAr : log.actionEn}</p>
                     <div className="flex gap-4 text-[9px] text-slate-400 font-mono">
-                      <span>🕒 {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                      <span>🕒 {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'en-US' : 'en-US')}</span>
                       <span className="font-bold text-sky-800">👤 OPERATOR: {log.user}</span>
                     </div>
                   </div>

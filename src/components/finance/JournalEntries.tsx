@@ -498,7 +498,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm">
+          <table className="w-full min-w-max text-right text-sm whitespace-nowrap">
             <thead className="bg-slate-50 border-b text-slate-600 font-bold">
               <tr>
                 <th className="p-4">رقم القيد</th>
@@ -626,7 +626,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">تاريخ القيد <span className="text-rose-500">*</span></label>
-                  <input type="date" value={entryForm.date} onChange={(e) => setEntryForm({...entryForm, date: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input type="date" lang="en" value={entryForm.date} onChange={(e) => setEntryForm({...entryForm, date: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">نوع القيد <span className="text-rose-500">*</span></label>
@@ -697,7 +697,7 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
                   <label className="block text-sm font-bold text-slate-700 mb-2">المبلغ <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-slate-400 font-bold">SAR</span>
-                    <input type="number" min="0.01" step="0.01" placeholder="0.00" value={entryForm.amount} onChange={(e) => setEntryForm({...entryForm, amount: e.target.value})} className="w-full p-2.5 pl-12 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-left font-mono font-bold" dir="ltr" />
+                    <input type="number" lang="en" min="0.01" step="0.01" placeholder="0.00" value={entryForm.amount} onChange={(e) => setEntryForm({...entryForm, amount: e.target.value})} className="w-full p-2.5 pl-12 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-left font-mono font-bold" dir="ltr" />
                   </div>
                 </div>
               </div>

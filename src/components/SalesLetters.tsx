@@ -4,6 +4,7 @@ import { User } from '../types';
 import { DocumentHeader, DocumentFooter } from '../utils/PrintSharedComponents';
 import { sharedPrintHeader, sharedPrintFooter } from '../utils/PrintShared';
 import RichTextToolbar from './RichTextToolbar';
+import DeliveryNoteBuilder from './sales/DeliveryNoteBuilder';
 import { getAdvancedPermissionScope } from '../lib/permissions';
 
 interface SalesLettersProps {
@@ -111,7 +112,8 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
       { id: 'site_prep', name: 'طلب تجهيز الموقع' },
       { id: 'design_approval', name: 'اعتماد التصميم النهائي' },
       { id: 'installation_ready', name: 'جاهزية الأعمال للتركيب' },
-      { id: 'handover', name: 'خطاب تسليم الأعمال' }
+      { id: 'handover', name: 'خطاب تسليم الأعمال' },
+      { id: 'delivery_note', name: 'سند تسليم مهني (Delivery Note)' }
     ],
     'warnings': [
       { id: 'warning', name: 'إنذار نهائي قبل التصعيد' },
@@ -187,7 +189,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
     const quote = quotes.find(q => q.id === selectedQuoteId);
     if (!quote) return '';
 
-    const d = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+    const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const client = clients.find(c => c.id === quote.clientId);
     const fullClientName = client ? (client.companyName || client.name) : 'العميل الكريم';
     const repName = docLanguage === 'ar'
@@ -279,7 +281,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           <style>
             @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
             @import url('https://fonts.cdnfonts.com/css/gotham-pro');
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة خطاب المبيعات</title>
             <script src="https://cdn.tailwindcss.com"></script>
@@ -289,11 +291,11 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0; 
                 padding: 0; 
                 background: white; 
-                font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
+                font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
-              @page { size: A4; margin: 20mm; }
+              @page { size: A4; margin: 10mm; }
               .print\\:hidden { display: none !important; }
               .page-break { page-break-before: always; border-top: none; }
               .doc-container {
@@ -366,6 +368,12 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
   const handleExport = async () => {
     if (!selectedQuoteId) { alert("يرجى اختيار عرض السعر المعتمد أولاً."); return; }
     
+    let contentToSave = docContent;
+    if (docTemplate === 'delivery_note') {
+      const container = document.getElementById('printable-sales-letter-container');
+      if (container) contentToSave = container.innerHTML;
+    }
+
     const docName = templatesList[docCategory]?.find((t: any) => t.id === docTemplate)?.name || docTemplate;
     const quote = quotes.find(q => q.id === selectedQuoteId);
     const isRep = user?.role === 'Sales Rep';
@@ -377,7 +385,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
       quotationNumber: quote?.quotationNumber || quote?.id || '',
       exportedBy: user.username,
       exportedAt: new Date().toISOString(),
-      content: docContent,
+      content: contentToSave,
       status: isRep ? 'without_stamp' : 'approved'
     };
 
@@ -405,6 +413,12 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
   const handleRequestApproval = async () => {
     if (!selectedQuoteId) { alert("يرجى اختيار عرض السعر المعتمد أولاً."); return; }
     
+    let contentToSave = docContent;
+    if (docTemplate === 'delivery_note') {
+      const container = document.getElementById('printable-sales-letter-container');
+      if (container) contentToSave = container.innerHTML;
+    }
+
     const docName = templatesList[docCategory]?.find((t: any) => t.id === docTemplate)?.name || docTemplate;
     const quote = quotes.find(q => q.id === selectedQuoteId);
     
@@ -415,7 +429,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
       quotationNumber: quote?.quotationNumber || quote?.id || '',
       exportedBy: user.username,
       exportedAt: new Date().toISOString(),
-      content: docContent,
+      content: contentToSave,
       status: 'pending' // pending administrative approval
     };
 
@@ -515,7 +529,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           <style>
             @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
             @import url('https://fonts.cdnfonts.com/css/gotham-pro');
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة خطاب المبيعات - أرشيف</title>
             <script src="https://cdn.tailwindcss.com"></script>
@@ -525,11 +539,11 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                 margin: 0; 
                 padding: 0; 
                 background: white; 
-                font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
+                font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
               }
-              @page { size: A4; margin: 20mm; }
+              @page { size: A4; margin: 10mm; }
               .doc-container {
                 width: 100%;
                 margin: 0 auto;
@@ -679,7 +693,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
           #printable-sales-letter-page2 {
             page-break-before: always;
           }
-          @page { margin: 20mm; size: A4; }
+          @page { margin: 10mm; size: A4; }
         }
       `}</style>
       
@@ -855,72 +869,79 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
 
         {/* Editable Preview Frame */}
         <div className="bg-slate-200 p-2 md:p-8 rounded-3xl -mx-4 md:mx-0 shadow-inner overflow-hidden print:bg-transparent print:shadow-none print:p-0 print:m-0 print:overflow-visible">
-          <p className="text-center text-[10px] text-slate-400 mb-2 print:hidden font-bold">معاينة قابلة للتعديل - انقر على النص للتعديل وإضافة بنودك مباشرة قبل الطباعة</p>
-          <div className="max-w-[210mm] mx-auto print:hidden">
-            <RichTextToolbar />
-            
-            {/* AI Professional Translation Bar */}
-            <div className="bg-white border-t border-slate-100 p-3 flex flex-wrap items-center justify-between gap-2 rounded-b-xl mb-4 shadow-sm text-right" dir="rtl">
-              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                ✨ {lang === 'ar' ? 'ترجمة الخطاب الفورية (Gemini AI):' : 'Instant AI Translation (Gemini):'}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleTranslateLetter("ar")}
-                  disabled={isTranslating}
-                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                >
-                  {isTranslating ? 'جاري الترجمة...' : 'ترجمة إلى العربية 🇸🇦'}
-                </button>
-                <button
-                  onClick={() => handleTranslateLetter("en")}
-                  disabled={isTranslating}
-                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                >
-                  {isTranslating ? 'Translating...' : 'Translate to English 🇬🇧'}
-                </button>
+          {docTemplate === 'delivery_note' ? (
+            <DeliveryNoteBuilder quoteId={selectedQuoteId} quotes={quotes} clients={clients} user={user} onSaveDraft={(c) => { setDocContent(c); handleExport(); }} />
+          ) : (
+            <>
+              <p className="text-center text-[10px] text-slate-400 mb-2 print:hidden font-bold">معاينة قابلة للتعديل - انقر على النص للتعديل وإضافة بنودك مباشرة قبل الطباعة</p>
+              <div className="max-w-[210mm] mx-auto print:hidden">
+                <RichTextToolbar />
+                
+                {/* AI Professional Translation Bar */}
+                <div className="bg-white border-t border-slate-100 p-3 flex flex-wrap items-center justify-between gap-2 rounded-b-xl mb-4 shadow-sm text-right" dir="rtl">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    ✨ {lang === 'ar' ? 'ترجمة الخطاب الفورية (Gemini AI):' : 'Instant AI Translation (Gemini):'}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleTranslateLetter("ar")}
+                      disabled={isTranslating}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isTranslating ? 'جاري الترجمة...' : 'ترجمة إلى العربية 🇸🇦'}
+                    </button>
+                    <button
+                      onClick={() => handleTranslateLetter("en")}
+                      disabled={isTranslating}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isTranslating ? 'Translating...' : 'Translate to English 🇬🇧'}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div id="printable-sales-letter-container">
-            <div id="printable-sales-letter" className="relative mx-auto bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-               
-               {/* Formal Header */}
-              <DocumentHeader />
 
-            {/* Editable Content */}
-            <div 
-              contentEditable 
-              suppressContentEditableWarning
-              className="outline-none whitespace-pre-wrap font-sans text-sm leading-7 text-stone-800" style={{ flexGrow: 1 }}
-              onBlur={(e) => setDocContent(e.currentTarget.innerHTML)}
-              dangerouslySetInnerHTML={{ __html: docContent }}
-            />
+              <div id="printable-sales-letter-container">
+                <div id="printable-sales-letter" className="relative mx-auto bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+                  
+                  {/* Formal Header */}
+                  <DocumentHeader />
 
-            {/* Footer Signatures - hidden for Sales Rep on active design unless approved */}
-            {user?.role !== 'Sales Rep' && (
-              <div className="flex flex-col items-center justify-center relative z-10 pointer-events-none" style={{ marginTop: '-4rem', marginBottom: '-2rem' }} contentEditable={false}>
-                <p className="text-slate-500 font-bold mb-1 text-sm bg-white/70 px-2 rounded">ختم شركة الوليد</p>
-                <img src="https://i.postimg.cc/kXNd2vcT/Whats-App-Image-2026-02-26-at-3-36-23-PM.png" alt="ختم الشركة" className="w-28 h-auto object-contain opacity-90 mix-blend-multiply" />
+                  {/* Editable Content */}
+                  <div 
+                    contentEditable 
+                    suppressContentEditableWarning
+                    className="outline-none whitespace-pre-wrap font-sans text-sm leading-7 text-stone-800" style={{ flexGrow: 1 }}
+                    onBlur={(e) => setDocContent(e.currentTarget.innerHTML)}
+                    dangerouslySetInnerHTML={{ __html: docContent }}
+                  />
+
+                  {/* Footer Signatures - hidden for Sales Rep on active design unless approved */}
+                  {user?.role !== 'Sales Rep' && (
+                    <div className="flex flex-col items-center justify-center relative z-10 pointer-events-none" style={{ marginTop: '-4rem', marginBottom: '-2rem' }} contentEditable={false}>
+                      <p className="text-slate-500 font-bold mb-1 text-sm bg-white/70 px-2 rounded">ختم شركة الوليد</p>
+                      <img src="https://i.postimg.cc/kXNd2vcT/Whats-App-Image-2026-02-26-at-3-36-23-PM.png" alt="ختم الشركة" className="w-28 h-auto object-contain opacity-90 mix-blend-multiply" />
+                    </div>
+                  )}
+                  
+                  <div className="mt-auto relative z-0">
+                    <DocumentFooter />
+                  </div>
+                </div>
+
+                {docCategory === 'financial' && (
+                  <div id="printable-sales-letter-page2" className="page-break relative mx-auto mt-8 bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pageBreakBefore: 'always' }}>
+                    <DocumentHeader />
+                    <div className="flex-grow flex flex-col items-center justify-center pt-10">
+                      <h2 className="text-xl font-bold text-slate-800 mb-8 border-b-2 border-indigo-500 pb-2">البيانات البنكية لشركة فنون الوليد للصناعة</h2>
+                      <img src="https://i.postimg.cc/yNbMMQ1V/Whats-App-Image-2026-06-17-at-11-47-06-AM.jpg" alt="البيانات البنكية" className="w-full max-w-lg h-auto shadow-sm rounded-xl border border-slate-200" />
+                    </div>
+                    <DocumentFooter />
+                  </div>
+                )}
               </div>
-            )}
-            
-            <div className="mt-auto relative z-0">
-              <DocumentFooter />
-            </div>
-          </div>
-
-          {docCategory === 'financial' && (
-            <div id="printable-sales-letter-page2" className="page-break relative mx-auto mt-8 bg-white shadow print:shadow-none print:m-0 overflow-hidden" style={{ width: '210mm', height: '297mm', padding: '3cm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pageBreakBefore: 'always' }}>
-               <DocumentHeader />
-               <div className="flex-grow flex flex-col items-center justify-center pt-10">
-                 <h2 className="text-xl font-bold text-slate-800 mb-8 border-b-2 border-indigo-500 pb-2">البيانات البنكية لشركة فنون الوليد للصناعة</h2>
-                 <img src="https://i.postimg.cc/yNbMMQ1V/Whats-App-Image-2026-06-17-at-11-47-06-AM.jpg" alt="البيانات البنكية" className="w-full max-w-lg h-auto shadow-sm rounded-xl border border-slate-200" />
-               </div>
-               <DocumentFooter />
-            </div>
+            </>
           )}
-          </div>
         </div>
       </div>
 
@@ -1079,7 +1100,7 @@ export default function SalesLetters({ lang, user }: SalesLettersProps) {
                       {lang === 'ar' ? 'مملوكة لمؤسسة الوليد التجارية | ترخيص صناعي رقم 44110511855' : 'Owned by Al Waleed Trading Est. | Industrial License No. 44110511855'}
                     </p>
                   </div>
-                  <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerPolicy="no-referrer" className="h-12 object-contain" alt="Logo" />
+                  <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerPolicy="no-referrer" className="h-20 object-contain" alt="Logo" />
                 </div>
 
                 {/* Letter Content body */}

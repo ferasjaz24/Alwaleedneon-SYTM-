@@ -1368,7 +1368,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
 
               <!-- الشعار -->
               <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
-                <img src="https://pbs.twimg.com/media/HE46IrybcAAMq7L?format=png&name=small" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 70px; height: 70px; object-fit: contain;" />
+                <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
               </div>
             </div>
 

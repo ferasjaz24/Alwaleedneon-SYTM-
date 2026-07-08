@@ -1067,7 +1067,7 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+            <table className="w-full min-w-max text-right text-xs whitespace-nowrap">
               <thead className="bg-slate-50 text-slate-700 font-extrabold uppercase border-b">
                 <tr>
                   <th className="px-6 py-4">رقم القيد</th>
@@ -1260,7 +1260,7 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
                 </div>
 
                 <div className="overflow-x-auto rounded-xl border">
-                  <table className="w-full text-right text-[11px]">
+                  <table className="w-full min-w-max text-right text-[11px] whitespace-nowrap">
                     <thead className="bg-slate-100 text-slate-700 font-bold border-b">
                       <tr>
                         <th className="px-3 py-2.5 w-44">نوع الحساب / Account Type</th>

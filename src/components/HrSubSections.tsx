@@ -1327,11 +1327,11 @@ export default function HrSubSections({
                 <p className="font-extrabold text-slate-700">{lang === 'ar' ? 'محاكي السلفة والأقساط' : 'Loan Amortization Tool'}</p>
                 <div>
                   <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'قيمة السلفة المطلوب سحبها' : 'Loan Capital Requested (SAR)'}</label>
-                  <input type="number" value={loanAmount} onChange={(e) => setLoanAmount(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                  <input type="number" lang="en" value={loanAmount} onChange={(e) => setLoanAmount(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'فترة السداد بالأشهر' : 'Tenure (Months)'}</label>
-                  <input type="number" value={loanMonths} onChange={(e) => setLoanMonths(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                  <input type="number" lang="en" value={loanMonths} onChange={(e) => setLoanMonths(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
               </div>
 
@@ -1600,11 +1600,11 @@ export default function HrSubSections({
                 <p className="font-extrabold text-slate-705">{lang === 'ar' ? 'مدخلات احتساب السفر المستحق' : 'Saudi Labor Code EOS Inputs'}</p>
                 <div>
                   <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الراتب الفعلي المسجل (أساسي + سكن)' : 'Actual Salary Base (SAR)'}</label>
-                  <input type="number" value={eosSalary} onChange={(e) => setEosSalary(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                  <input type="number" lang="en" value={eosSalary} onChange={(e) => setEosSalary(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'إجمالي سنوات الخدمة' : 'Service Tenure in Years'}</label>
-                  <input type="number" value={eosYears} onChange={(e) => setEosYears(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
+                  <input type="number" lang="en" value={eosYears} onChange={(e) => setEosYears(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'طريقة إنهاء العلاقة التعاقدية' : 'Termination Type'}</label>
