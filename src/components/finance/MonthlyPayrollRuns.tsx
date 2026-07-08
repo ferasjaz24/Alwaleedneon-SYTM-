@@ -141,6 +141,68 @@ interface MonthlyPayrollRunsProps {
   employees: Employee[];
 }
 
+
+const InlineEditable = ({ 
+  value, 
+  onSave, 
+  type = "number", 
+  className = "", 
+  disabled = false 
+}: { 
+  value: any, 
+  onSave: (val: any) => void, 
+  type?: string, 
+  className?: string, 
+  disabled?: boolean 
+}) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [localValue, setLocalValue] = React.useState(value);
+
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  if (disabled) {
+    return <span className={className}>{type === "number" ? (Number(value) || 0).toLocaleString('en-US') : value}</span>;
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        autoFocus
+        type={type}
+        value={localValue}
+        onChange={(e) => setLocalValue(type === "number" ? Number(e.target.value) : e.target.value)}
+        onBlur={() => {
+          setIsEditing(false);
+          if (localValue !== value) {
+            onSave(localValue);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            setIsEditing(false);
+            if (localValue !== value) {
+              onSave(localValue);
+            }
+          }
+        }}
+        className="w-full px-1 py-1 border border-indigo-500 rounded text-[11px] font-mono font-bold text-slate-900 text-center shadow-sm focus:outline-none min-w-[60px]"
+      />
+    );
+  }
+
+  return (
+    <div
+      onClick={() => setIsEditing(true)}
+      className={`cursor-pointer hover:bg-slate-100 hover:ring-1 hover:ring-slate-300 rounded px-1 py-0.5 min-w-[2rem] text-center transition-all ${className}`}
+      title="انقر للتعديل"
+    >
+      {type === "number" ? (Number(value) || 0).toLocaleString('en-US') : (value || "—")}
+    </div>
+  );
+};
+
 export default function MonthlyPayrollRuns({
   lang,
   user,
@@ -187,8 +249,8 @@ export default function MonthlyPayrollRuns({
   // Large Modal for Editing Employee Payroll
   const [isEditEmployeeModalOpen, setIsEditEmployeeModalOpen] = useState(false);
   const [selectedEditEmployee, setSelectedEditEmployee] = useState<PayrollRunEmployee | null>(null);
-  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
-  const [editEmployeeForm, setEditEmployeeForm] = useState<Partial<PayrollRunEmployee>>({});
+  
+  
 
   // Single Payslip Modal
   const [selectedPayslipEmployee, setSelectedPayslipEmployee] = useState<PayrollRunEmployee | null>(null);
@@ -1324,6 +1386,60 @@ export default function MonthlyPayrollRuns({
   };
 
   // Save changes to employee values
+  
+  const handleInlineSave = async (empId: string, field: string, value: any) => {
+    if (!selectedRun) return;
+    const targetEmp = runEmployees.find((e) => e.id === empId);
+    if (!targetEmp) return;
+
+    const merged = { ...targetEmp, [field]: value };
+
+    // Auto-fill reasons for deductions if not present
+    if (merged.loansDeduction > 0 && !merged.loanDeductionReason?.trim()) merged.loanDeductionReason = "تعديل مباشر";
+    if (merged.absenceDeduction > 0 && !merged.absenceDeductionReason?.trim()) merged.absenceDeductionReason = "تعديل مباشر";
+    if (merged.lateDeduction > 0 && !merged.lateDeductionReason?.trim()) merged.lateDeductionReason = "تعديل مباشر";
+    if (merged.penaltyDeduction > 0 && !merged.penaltyDeductionReason?.trim()) merged.penaltyDeductionReason = "تعديل مباشر";
+    if (merged.otherDeductions > 0 && !merged.deductionsReason?.trim()) merged.deductionsReason = "تعديل مباشر";
+    if (merged.otherAllowances > 0 && !merged.otherAllowancesReason?.trim()) merged.otherAllowancesReason = "تعديل مباشر";
+
+    const calculated = calculateEmployeeNet({
+      basicSalary: merged.basicSalary || 0,
+      housingAllowance: merged.housingAllowance || 0,
+      transportAllowance: merged.transportAllowance || 0,
+      foodAllowance: merged.foodAllowance || 0,
+      muddahAmount: merged.muddahAmount || 0,
+      overtimeAmount: merged.overtimeAmount || 0,
+      otherAllowances: merged.otherAllowances || 0,
+      loansDeduction: merged.loansDeduction || 0,
+      gosiDeduction: merged.gosiDeduction || 0,
+      absenceDeduction: merged.absenceDeduction || 0,
+      lateDeduction: merged.lateDeduction || 0,
+      penaltyDeduction: merged.penaltyDeduction || 0,
+      otherDeductions: merged.otherDeductions || 0,
+    });
+
+    const updatedEmployee = {
+      ...merged,
+      totalEntitlements: calculated.totalEntitlements,
+      totalDeductions: calculated.totalDeductions,
+      netSalary: calculated.netSalary,
+    };
+
+    setRunEmployees(prev => prev.map(e => e.id === empId ? updatedEmployee : e));
+
+    try {
+      await fetch(`/api/payroll_runs/${selectedRun.id}/employees/${empId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEmployee),
+      });
+      // Background load to sync aggregates
+      loadPayrollRuns();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSaveEmployeeRow = async (empId: string) => {
     if (!selectedRun) return;
 
@@ -2943,606 +3059,118 @@ export default function MonthlyPayrollRuns({
                           }
                           
                           return filtered.map((emp) => {
-                          const isEditing = editingEmployeeId === emp.id;
-                          const canModifyRow =
-                            selectedRun.status === "Draft" ||
-                            selectedRun.status === "Needs Modification" ||
-                            selectedRun.status === "Under Modification";
-
-                          // Live values in edit mode
-                          const liveBasic = Number(editEmployeeForm.basicSalary !== undefined ? editEmployeeForm.basicSalary : (emp.basicSalary || 0));
-                          const liveHousing = Number(editEmployeeForm.housingAllowance !== undefined ? editEmployeeForm.housingAllowance : (emp.housingAllowance || 0));
-                          const liveTransport = Number(editEmployeeForm.transportAllowance !== undefined ? editEmployeeForm.transportAllowance : (emp.transportAllowance || 0));
-                          const liveFood = Number(editEmployeeForm.foodAllowance !== undefined ? editEmployeeForm.foodAllowance : (emp.foodAllowance || 0));
-                          const liveMuddah = Number(editEmployeeForm.muddahAmount !== undefined ? editEmployeeForm.muddahAmount : (emp.muddahAmount || 0));
-                          const liveOtAmount = Number(editEmployeeForm.overtimeAmount !== undefined ? editEmployeeForm.overtimeAmount : (emp.overtimeAmount || 0));
-                          const liveOtherAllow = Number(editEmployeeForm.otherAllowances !== undefined ? editEmployeeForm.otherAllowances : (emp.otherAllowances || 0));
-
-                          const liveEntitlements = liveBasic + liveHousing + liveTransport + liveOtAmount;
-
-                          const liveLoans = Number(editEmployeeForm.loansDeduction !== undefined ? editEmployeeForm.loansDeduction : (emp.loansDeduction || 0));
-                          const liveAbsence = Number(editEmployeeForm.absenceDeduction !== undefined ? editEmployeeForm.absenceDeduction : (emp.absenceDeduction || 0));
-                          const liveLate = Number(editEmployeeForm.lateDeduction !== undefined ? editEmployeeForm.lateDeduction : (emp.lateDeduction || 0));
-                          const livePenalty = Number(editEmployeeForm.penaltyDeduction !== undefined ? editEmployeeForm.penaltyDeduction : (emp.penaltyDeduction || 0));
-                          const liveGosi = Number(editEmployeeForm.gosiDeduction !== undefined ? editEmployeeForm.gosiDeduction : (emp.gosiDeduction || 0));
-                          const liveOtherDeduct = Number(editEmployeeForm.otherDeductions !== undefined ? editEmployeeForm.otherDeductions : (emp.otherDeductions || 0));
-
-                          const liveDeductions = liveLoans + liveAbsence + liveLate + livePenalty + liveGosi + liveOtherDeduct;
-                          const liveNet = Math.max(0, liveEntitlements - liveDeductions);
-
-                          const displayTotalSalary = isEditing ? liveNet : emp.netSalary;
-                          const displayMuddah = isEditing ? liveMuddah : (emp.muddahAmount || 0);
-                          const displayRemaining = Math.max(0, displayTotalSalary - displayMuddah);
-
-                          return (
-                            <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-4 px-4 sticky right-0 bg-white z-5 border-l border-slate-200 shadow-xs">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-extrabold text-slate-900 text-xs sm:text-[13.5px]">{emp.arabicName}</span>
-                                  {emp.company && (
-                                    <span className={`px-1.5 py-0.5 text-[9px] font-black rounded-md border whitespace-nowrap ${
-                                      emp.company.includes("ساين")
-                                        ? "bg-purple-50 text-purple-700 border-purple-100"
-                                        : "bg-blue-50 text-blue-700 border-blue-100"
-                                    }`}>
-                                      {emp.company}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[10.5px] text-slate-500 font-mono font-bold mt-0.5">
-                                  ID: {emp.employeeId} | {emp.jobTitle}
-                                </div>
-                              </td>
-
-                              {/* BANK INFO */}
-                              <td className="py-4 px-4 bg-sky-50/20">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.bankName ?? emp.bankName ?? ""}
-                                      placeholder="اسم البنك"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          bankName: e.target.value,
-                                        })
-                                      }
-                                      className="w-28 px-2 py-1.5 border-2 border-sky-200 focus:border-sky-500 rounded-lg text-[10.5px] font-bold shadow-sm"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.iban ?? emp.iban ?? ""}
-                                      placeholder="IBAN"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          iban: e.target.value,
-                                        })
-                                      }
-                                      className="w-44 px-2 py-1.5 border-2 border-sky-200 focus:border-sky-500 rounded-lg text-[10.5px] font-mono shadow-sm"
-                                    />
+                            const canModifyRow = selectedRun.status === "Draft" || selectedRun.status === "Needs Modification" || selectedRun.status === "Under Modification";
+                            const netRemaining = Math.max(0, emp.netSalary - (emp.muddahAmount || 0));
+                            return (
+                              <tr key={emp.id} className="border-b border-slate-100/50 hover:bg-slate-50/50 transition-colors">
+                                {/* EMPLOYEE INFO */}
+                                <td className="py-4 px-4 sticky right-0 bg-white z-10 border-l border-slate-200">
+                                  <div className="font-bold text-slate-800 text-[13.5px] font-arabic flex items-center gap-2">
+                                    {emp.arabicName}
+                                    {emp.company && (
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                                        emp.company.includes("ساين")
+                                          ? "bg-purple-50 text-purple-700 border-purple-100"
+                                          : "bg-blue-50 text-blue-700 border-blue-100"
+                                      }`}>
+                                        {emp.company}
+                                      </span>
+                                    )}
                                   </div>
-                                ) : (
-                                  <div
-                                    onClick={() => {
-                                      setSelectedBankEmployee(emp);
-                                      setIsBankModalOpen(true);
-                                      logActionToAudit({
-                                        action: "عرض تفاصيل البنك",
-                                        payrollRunId: selectedRun.id,
-                                        employeeId: emp.id,
-                                        notes: `عرض بيانات الحساب البنكي للموظف ${emp.arabicName}`
-                                      });
-                                    }}
-                                    className="cursor-pointer group flex flex-col items-start hover:bg-sky-50 p-1.5 rounded-lg transition-all"
-                                  >
-                                    {(() => {
-                                      const style = getBankStyle(emp.bankName || "");
-                                      return (
-                                        <span className={`${style.bg} text-[10px] font-extrabold px-2 py-0.5 rounded-full mb-1 border transition-all font-arabic flex items-center gap-1 shadow-xs`}>
-                                          <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                                          {emp.bankName || "—"}
-                                        </span>
-                                      );
-                                    })()}
-                                    <span className="text-[10px] font-mono text-slate-500 tracking-wider font-semibold select-all">
-                                      {emp.iban || "—"}
-                                    </span>
+                                  <div className="text-[10.5px] text-slate-500 font-mono font-bold mt-0.5">
+                                    ID: {emp.employeeId} | {emp.jobTitle}
                                   </div>
-                                )}
-                              </td>
+                                </td>
 
-                              {/* BASIC */}
-                              <td className="py-4 px-3 font-mono font-bold text-slate-700">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.basicSalary ?? emp.basicSalary}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        basicSalary: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.basicSalary.toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* HOUSING */}
-                              <td className="py-4 px-3 font-mono font-bold text-slate-700">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.housingAllowance ?? emp.housingAllowance}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        housingAllowance: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.housingAllowance.toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* TRANSPORT */}
-                              <td className="py-4 px-3 font-mono font-bold text-slate-700">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.transportAllowance ?? emp.transportAllowance}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        transportAllowance: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.transportAllowance.toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* LIVING ALLOWANCE */}
-                              <td className="py-4 px-3 font-mono font-bold text-slate-700">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.foodAllowance ?? emp.foodAllowance ?? 0}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        foodAllowance: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  (emp.foodAllowance ?? 0).toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* MUDDAH AMOUNT */}
-                              <td className="py-4 px-3 font-mono text-indigo-600 font-bold" style={{ display: 'none' }}>
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.muddahAmount ?? emp.muddahAmount}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        muddahAmount: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-indigo-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-indigo-900 text-center bg-indigo-50 shadow-sm"
-                                  />
-                                ) : (
-                                  (emp.muddahAmount || 0).toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* OVERTIME HOURS */}
-                              <td className="py-4 px-3 font-mono font-bold text-indigo-600">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.overtimeHours ?? emp.overtimeHours}
-                                    onChange={(e) => {
-                                      const hrs = Number(e.target.value);
-                                      const base = editEmployeeForm.basicSalary ?? emp.basicSalary;
-                                      const pay = updateHourlyOtAmount(hrs, base);
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        overtimeHours: hrs,
-                                        overtimeAmount: pay,
-                                      });
-                                    }}
-                                    className="w-20 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.overtimeHours
-                                )}
-                              </td>
-
-                              {/* OVERTIME AMOUNT */}
-                              <td className="py-4 px-3 font-mono text-indigo-600 font-bold">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.overtimeAmount ?? emp.overtimeAmount}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        overtimeAmount: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.overtimeAmount.toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {/* OTHER ALLOWANCES */}
-                              <td className="py-4 px-3 font-mono font-bold text-[#0072BC]">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.otherAllowances ?? emp.otherAllowances ?? 0}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        otherAllowances: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  (emp.otherAllowances || 0).toLocaleString('en-US')
-                                )}
-                              </td>
-
-                              {showDetailedDeductions && (<>
-                              {/* LOANS DEDUCTION */}
-                              <td className="py-4 px-3 font-mono font-bold text-rose-600">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="number"
-                                      value={editEmployeeForm.loansDeduction ?? emp.loansDeduction}
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          loansDeduction: Number(e.target.value),
-                                        })
-                                      }
-                                      className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.loanDeductionReason ?? emp.loanDeductionReason ?? ""}
-                                      placeholder="السبب *"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          loanDeductionReason: e.target.value,
-                                        })
-                                      }
-                                      className="w-24 px-1.5 py-1 border border-slate-300 rounded text-[10px]"
-                                    />
+                                {/* BANK INFO */}
+                                <td className="py-4 px-4 bg-sky-50/20">
+                                  <div className="space-y-1 text-right max-w-[140px]">
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-slate-400">البنك:</span>
+                                      <InlineEditable type="text" value={emp.bankName || ""} onSave={(val) => handleInlineSave(emp.id, "bankName", val)} disabled={!canModifyRow || !isAccountant} className="font-arabic font-bold text-[10px] w-[80px] text-right" />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-slate-400">IBAN:</span>
+                                      <InlineEditable type="text" value={emp.iban || ""} onSave={(val) => handleInlineSave(emp.id, "iban", val)} disabled={!canModifyRow || !isAccountant} className="font-mono font-bold text-[10px] tracking-tight text-right w-[110px]" />
+                                    </div>
                                   </div>
-                                ) : (
-                                  <div
-                                    onClick={() => {
-                                      if (emp.loansDeduction > 0) {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Loan");
-                                        setIsDeductionModalOpen(true);
-                                      }
-                                    }}
-                                    className={`${emp.loansDeduction > 0 ? "cursor-pointer hover:underline font-bold" : "text-slate-300"}`}
-                                  >
-                                    {emp.loansDeduction.toLocaleString('en-US')}
-                                  </div>
-                                )}
-                              </td>
+                                </td>
 
-                              {/* ABSENCE DEDUCTION */}
-                              <td className="py-4 px-3 font-mono font-bold text-rose-600">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="number"
-                                      value={editEmployeeForm.absenceDeduction ?? emp.absenceDeduction ?? 0}
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          absenceDeduction: Number(e.target.value),
-                                        })
-                                      }
-                                      className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.absenceDeductionReason ?? emp.absenceDeductionReason ?? ""}
-                                      placeholder="السبب *"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          absenceDeductionReason: e.target.value,
-                                        })
-                                      }
-                                      className="w-24 px-1.5 py-1 border border-slate-300 rounded text-[10px]"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    onClick={() => {
-                                      if ((emp.absenceDeduction || 0) > 0) {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Absence");
-                                        setIsDeductionModalOpen(true);
-                                      }
-                                    }}
-                                    className={`${(emp.absenceDeduction || 0) > 0 ? "cursor-pointer hover:underline font-bold" : "text-slate-300"}`}
-                                  >
-                                    {(emp.absenceDeduction || 0).toLocaleString('en-US')}
-                                  </div>
-                                )}
-                              </td>
+                                {/* EARNINGS */}
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.basicSalary} onSave={(val) => handleInlineSave(emp.id, "basicSalary", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.housingAllowance} onSave={(val) => handleInlineSave(emp.id, "housingAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.transportAllowance} onSave={(val) => handleInlineSave(emp.id, "transportAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.foodAllowance} onSave={(val) => handleInlineSave(emp.id, "foodAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center" style={{ display: "none" }}><InlineEditable value={emp.muddahAmount} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center"><InlineEditable value={emp.overtimeHours} onSave={(val) => handleInlineSave(emp.id, "overtimeHours", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center"><InlineEditable value={emp.overtimeAmount} onSave={(val) => handleInlineSave(emp.id, "overtimeAmount", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-[#0072BC] text-center"><InlineEditable value={emp.otherAllowances} onSave={(val) => handleInlineSave(emp.id, "otherAllowances", val)} disabled={!canModifyRow || !isAccountant} /></td>
 
-                              {/* LATE DEDUCTION */}
-                              <td className="py-4 px-3 font-mono font-bold text-rose-600">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="number"
-                                      value={editEmployeeForm.lateDeduction ?? emp.lateDeduction ?? 0}
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          lateDeduction: Number(e.target.value),
-                                        })
-                                      }
-                                      className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.lateDeductionReason ?? emp.lateDeductionReason ?? ""}
-                                      placeholder="السبب *"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          lateDeductionReason: e.target.value,
-                                        })
-                                      }
-                                      className="w-24 px-1.5 py-1 border border-slate-300 rounded text-[10px]"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    onClick={() => {
-                                      if ((emp.lateDeduction || 0) > 0) {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Late");
-                                        setIsDeductionModalOpen(true);
-                                      }
-                                    }}
-                                    className={`${(emp.lateDeduction || 0) > 0 ? "cursor-pointer hover:underline font-bold" : "text-slate-300"}`}
-                                  >
-                                    {(emp.lateDeduction || 0).toLocaleString('en-US')}
-                                  </div>
+                                {/* DEDUCTIONS */}
+                                {showDetailedDeductions && (
+                                  <>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.loansDeduction} onSave={(val) => handleInlineSave(emp.id, "loansDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.absenceDeduction} onSave={(val) => handleInlineSave(emp.id, "absenceDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.lateDeduction} onSave={(val) => handleInlineSave(emp.id, "lateDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.penaltyDeduction} onSave={(val) => handleInlineSave(emp.id, "penaltyDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.gosiDeduction} onSave={(val) => handleInlineSave(emp.id, "gosiDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                  </>
                                 )}
-                              </td>
+                                
+                                {/* OTHER DEDUCTIONS */}
+                                <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center">
+                                  <InlineEditable value={emp.otherDeductions} onSave={(val) => handleInlineSave(emp.id, "otherDeductions", val)} disabled={!canModifyRow || !isAccountant} />
+                                </td>
 
-                              {/* PENALTY DEDUCTION */}
-                              <td className="py-4 px-3 font-mono font-bold text-rose-600">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="number"
-                                      value={editEmployeeForm.penaltyDeduction ?? emp.penaltyDeduction ?? 0}
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          penaltyDeduction: Number(e.target.value),
-                                        })
-                                      }
-                                      className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={editEmployeeForm.penaltyDeductionReason ?? emp.penaltyDeductionReason ?? ""}
-                                      placeholder="السبب *"
-                                      onChange={(e) =>
-                                        setEditEmployeeForm({
-                                          ...editEmployeeForm,
-                                          penaltyDeductionReason: e.target.value,
-                                        })
-                                      }
-                                      className="w-24 px-1.5 py-1 border border-slate-300 rounded text-[10px]"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    onClick={() => {
-                                      if ((emp.penaltyDeduction || 0) > 0) {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Penalty");
-                                        setIsDeductionModalOpen(true);
-                                      }
-                                    }}
-                                    className={`${(emp.penaltyDeduction || 0) > 0 ? "cursor-pointer hover:underline font-bold" : "text-slate-300"}`}
-                                  >
-                                    {(emp.penaltyDeduction || 0).toLocaleString('en-US')}
-                                  </div>
-                                )}
-                              </td>
+                                {/* SUMMARY */}
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center">
+                                  {emp.netSalary.toLocaleString("en-US")}
+                                </td>
+                                <td className="py-4 px-3 font-mono font-bold text-amber-600 text-center bg-amber-50/30">
+                                  <InlineEditable value={emp.muddahAmount || 0} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} />
+                                </td>
+                                <td className="py-4 px-3 font-mono font-bold text-emerald-600 text-center bg-emerald-50/20">
+                                  {netRemaining.toLocaleString("en-US")}
+                                </td>
 
-                              {/* GOSI */}
-                              <td className="py-4 px-3 font-mono font-bold text-rose-600">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={editEmployeeForm.gosiDeduction ?? emp.gosiDeduction}
-                                    onChange={(e) =>
-                                      setEditEmployeeForm({
-                                        ...editEmployeeForm,
-                                        gosiDeduction: Number(e.target.value),
-                                      })
-                                    }
-                                    className="w-24 px-2 py-1.5 border-2 border-slate-300 focus:border-indigo-500 rounded-lg text-xs font-mono font-bold text-slate-900 text-center shadow-sm"
-                                  />
-                                ) : (
-                                  emp.gosiDeduction.toLocaleString('en-US')
-                                )}
-                              </td>
+                                {/* TRANSFER STATUS */}
+                                <td className="py-4 px-3 text-center">
+                                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${emp.transferStatus === "Transferred" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                                    {emp.transferStatus === "Transferred" ? "تم التحويل" : "بانتظار التحويل"}
+                                  </span>
+                                </td>
 
-                              </>)}
-                              {/* OTHER DEDUCTIONS */}
-                              <td className="py-4 px-3 font-mono text-rose-600 font-bold text-center">
-                                {isEditing ? (
-                                  emp.otherDeductions > 0 ? (
+                                {/* ACTIONS */}
+                                <td className="py-4 px-4 text-left">
+                                  <div className="flex items-center justify-end gap-1">
                                     <button
                                       onClick={() => {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Other");
-                                        setIsDeductionModalOpen(true);
+                                        setSelectedPayslipEmployee(emp);
+                                        setIsPayslipModalOpen(true);
                                       }}
-                                      className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded border border-rose-200 text-sm font-bold transition-colors"
-                                      title="إدارة الاستقطاعات التفصيلية"
+                                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold flex items-center gap-0.5"
+                                      title="عرض كشف الراتب الفردي"
                                     >
-                                      {emp.otherDeductions.toLocaleString('en-US')}
+                                      <FileText className="w-3 h-3" />
+                                      كشف راتب
                                     </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedDeductionEmployee(emp);
-                                        setClickedDeductionType("Other");
-                                        setIsDeductionModalOpen(true);
-                                      }}
-                                      className="px-2 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded text-[11px] font-bold whitespace-nowrap transition-colors"
-                                    >
-                                      إضافة خصم
-                                    </button>
-                                  )
-                                ) : (
-                                  <button
-                                    className="px-2 py-1 bg-transparent hover:bg-rose-50 text-rose-600 rounded text-sm font-bold transition-colors"
-                                    onClick={() => {
-                                      setSelectedDeductionEmployee(emp);
-                                      setClickedDeductionType("Other");
-                                      setIsDeductionModalOpen(true);
-                                    }}
-                                    title="إدارة الاستقطاعات التفصيلية"
-                                  >
-                                    {emp.otherDeductions > 0 ? emp.otherDeductions.toLocaleString('en-US') : "0"}
-                                  </button>
-                                )}
-                              </td>
-
-                              {/* TOTAL SALARY */}
-                              <td className="py-4 px-3 font-mono text-indigo-600 font-extrabold text-[13.5px] text-center">
-                                {displayTotalSalary.toLocaleString('en-US')} ر.س
-                              </td>
-
-                              {/* MUDDAH */}
-                              <td className="py-4 px-3 font-mono text-amber-600 font-bold text-center">
-                                {displayMuddah.toLocaleString('en-US')} ر.س
-                              </td>
-
-                              {/* REMAINING SALARY */}
-                              <td className="py-4 px-3 font-mono text-emerald-600 font-extrabold text-[13.5px]">
-                                {displayRemaining.toLocaleString('en-US')} ر.س
-                              </td>
-
-                              {/* TRANSFERRED CHECKBOX */}
-                              <td className="py-4 px-3 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={!!emp.isTransferred}
-                                  onChange={() => toggleEmployeeTransferred(emp.id)}
-                                  className="w-5 h-5 text-emerald-600 border-2 border-slate-300 rounded-md focus:ring-emerald-500 cursor-pointer"
-                                />
-                              </td>
-
-                              {/* ACTIONS */}
-                              <td className="py-3 px-4 text-left">
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  {isEditing ? (
-                                    <>
-                                      <button
-                                        onClick={() => handleSaveEmployeeRow(emp.id)}
-                                        className="p-1 bg-emerald-500 text-white rounded hover:bg-emerald-600 font-bold text-xs"
-                                        title="حفظ التعديلات"
-                                      >
-                                        ✓
-                                      </button>
+                                    {canModifyRow && (
                                       <button
                                         onClick={() => {
-                                          setEditingEmployeeId(null);
-                                          setEditEmployeeForm({});
+                                          handleRemoveEmployeeRow(emp.id);
                                         }}
-                                        className="p-1 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 font-bold text-xs"
-                                        title="إلغاء التعديل"
+                                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold flex items-center gap-0.5"
+                                        title="حذف الموظف من المسير"
                                       >
-                                        ✕
+                                        <Trash2 className="w-3 h-3" />
+                                        حذف
                                       </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {canModifyRow && isAccountant && (
-                                        <button
-                                          onClick={() => {
-                                            setEditingEmployeeId(emp.id);
-                                            setEditEmployeeForm(emp);
-                                          }}
-                                          className="p-1 text-[#0072BC] hover:bg-blue-50 rounded"
-                                          title="تعديل يدوياً"
-                                        >
-                                          <Edit3 className="w-3.5 h-3.5" />
-                                        </button>
-                                      )}
-
-                                      <button
-                                        onClick={() => {
-                                          setSelectedPayslipEmployee(emp);
-                                          setIsPayslipModalOpen(true);
-                                        }}
-                                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold flex items-center gap-0.5"
-                                        title="عرض كشف الراتب الفردي"
-                                      >
-                                        <FileText className="w-3 h-3" />
-                                        كشف راتب
-                                      </button>
-                                      {canModifyRow && (
-                                        <button
-                                          onClick={() => {
-                                            if (true) { // Bypass confirm in iframe
-                                              handleRemoveEmployeeRow(emp.id);
-                                            }
-                                          }}
-                                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold flex items-center gap-0.5"
-                                          title="حذف الموظف من المسير"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                          حذف
-                                        </button>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        }); })()}
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          }); })()}
                       </tbody>
                     </table>
                   </div>
