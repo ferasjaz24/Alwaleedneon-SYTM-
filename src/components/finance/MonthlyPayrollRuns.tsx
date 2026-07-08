@@ -213,6 +213,7 @@ export default function MonthlyPayrollRuns({
   // Register Transfer Modal
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [bankFilter, setBankFilter] = useState("All");
+  const [showDetailedDeductions, setShowDetailedDeductions] = useState(false);
   const [sortFilter, setSortFilter] = useState("role");
   const [transferForm, setTransferForm] = useState({
     bankName: "البنك الأهلي السعودي (SNB)",
@@ -2892,12 +2893,23 @@ export default function MonthlyPayrollRuns({
                           <th className="py-4 px-3 text-right text-indigo-600">أوفرتايم (س)</th>
                           <th className="py-4 px-3 text-right text-indigo-600">أوفرتايم (مبلغ)</th>
                           <th className="py-4 px-3 text-right text-[#0072BC]">بدلات أخرى</th>
-                          <th className="py-4 px-3 text-right text-rose-600">خصم السلف</th>
-                          <th className="py-4 px-3 text-right text-rose-600">خصم الغياب</th>
-                          <th className="py-4 px-3 text-right text-rose-600">خصم التأخير</th>
-                          <th className="py-4 px-3 text-right text-rose-600">خصم الجزاءات</th>
-                          <th className="py-4 px-3 text-right text-rose-600">تأمينات GOSI</th>
-                          <th className="py-4 px-3 text-right text-rose-600">خصومات أخرى</th>
+                          {showDetailedDeductions && (
+                            <>
+                              <th className="py-4 px-3 text-right text-rose-600">خصم السلف</th>
+                              <th className="py-4 px-3 text-right text-rose-600">خصم الغياب</th>
+                              <th className="py-4 px-3 text-right text-rose-600">خصم التأخير</th>
+                              <th className="py-4 px-3 text-right text-rose-600">خصم الجزاءات</th>
+                              <th className="py-4 px-3 text-right text-rose-600">تأمينات GOSI</th>
+                            </>
+                          )}
+                          <th className="py-4 px-3 text-right text-rose-600">
+                            <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => setShowDetailedDeductions(!showDetailedDeductions)}>
+                              خصومات أخرى
+                              <span className="text-[10px] bg-rose-100 text-rose-700 rounded-full w-4 h-4 flex items-center justify-center">
+                                {showDetailedDeductions ? '◀' : '▶'}
+                              </span>
+                            </div>
+                          </th>
                           <th className="py-4 px-3 text-right text-indigo-600 font-black">إجمالي الراتب</th>
                           <th className="py-4 px-3 text-right text-amber-600 font-black">مُدد</th>
                           <th className="py-4 px-3 text-right text-emerald-600 font-black">باقي الراتب</th>
@@ -3197,6 +3209,7 @@ export default function MonthlyPayrollRuns({
                                 )}
                               </td>
 
+                              {showDetailedDeductions && (<>
                               {/* LOANS DEDUCTION */}
                               <td className="py-4 px-3 font-mono font-bold text-rose-600">
                                 {isEditing ? (
@@ -3392,6 +3405,7 @@ export default function MonthlyPayrollRuns({
                                 )}
                               </td>
 
+                              </>)}
                               {/* OTHER DEDUCTIONS */}
                               <td className="py-4 px-3 font-mono text-rose-600 font-bold text-center">
                                 {isEditing ? (
