@@ -80,27 +80,50 @@ export async function logSystemAudit(params: {
 
 // Auto-register unhandled runtime errors (Sentry behavior)
 if (typeof window !== "undefined") {
+  const isViteOrWsError = (message: string, stack: string) => {
+    const lowerMsg = (message || "").toLowerCase();
+    const lowerStack = (stack || "").toLowerCase();
+    return (
+      lowerMsg.includes("websocket") ||
+      lowerMsg.includes("socket") ||
+      lowerMsg.includes("vite") ||
+      lowerMsg.includes("hmr") ||
+      lowerMsg.includes("closed without opened") ||
+      lowerStack.includes("websocket") ||
+      lowerStack.includes("vite") ||
+      lowerStack.includes("hmr")
+    );
+  };
+
   window.addEventListener("error", (event) => {
     // Only capture real errors
     if (!event.error && !event.message) return;
     
+    const message = event.message || "Unhandled runtime script error";
+    const stack = event.error ? event.error.stack || "" : "";
+    if (isViteOrWsError(message, stack)) return;
+
     logSystemError({
       code: "ERR-500-RUNTIME",
-      message: event.message || "Unhandled runtime script error",
+      message,
       page: window.location.pathname || "Root",
       action: "System Runtime Intercept",
-      stack: event.error ? event.error.stack : ""
+      stack
     });
   });
 
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
+    const message = reason?.message || (typeof reason === "string" ? reason : "Unhandled Promise Rejection");
+    const stack = reason?.stack || "";
+    if (isViteOrWsError(message, stack)) return;
+
     logSystemError({
       code: "ERR-500-PROMISE",
-      message: reason?.message || (typeof reason === "string" ? reason : "Unhandled Promise Rejection"),
+      message,
       page: window.location.pathname || "Root",
       action: "Async Promise Intercept",
-      stack: reason?.stack || ""
+      stack
     });
   });
 }

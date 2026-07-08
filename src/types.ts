@@ -238,6 +238,7 @@ export interface PayrollRunEmployee {
   totalDeductions: number;
   netSalary: number;
   deductionsList?: DeductionItem[];
+  transferStatus?: string;
   isTransferred?: boolean;
 }
 

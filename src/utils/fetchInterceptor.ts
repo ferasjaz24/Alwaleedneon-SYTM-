@@ -883,7 +883,10 @@ const customFetch = async function (
         try {
           const snapDoc = await getDoc(doc(db, collectionName, docId));
           if (snapDoc.exists()) {
-            const data = { id: snapDoc.id, ...snapDoc.data() };
+            let data = { id: snapDoc.id, ...snapDoc.data() };
+            if (collectionName === "users") {
+              data = { username: snapDoc.id, id: snapDoc.id, ...snapDoc.data() } as any;
+            }
             const mapped =
               collectionName === "employees"
                 ? mapEmployeeFromDB(data)
@@ -935,8 +938,11 @@ const customFetch = async function (
       } else {
         try {
           const snapDocs = await getDocs(refCol);
-          const list = snapDocs.docs.map((d) => {
-            const data = { id: d.id, ...d.data() };
+          let list = snapDocs.docs.map((d) => {
+            let data = { id: d.id, ...d.data() };
+            if (collectionName === "users") {
+              data = { username: d.id, id: d.id, ...d.data() } as any;
+            }
             return collectionName === "employees"
               ? mapEmployeeFromDB(data)
               : collectionName === "clients"
@@ -946,12 +952,26 @@ const customFetch = async function (
 
           // Merge with fallback to ensure large items or offline items appear
           const fallbackList = getLocalCollection(collectionName).filter(Boolean);
-          const filteredList = list.filter(Boolean);
+          let filteredList = list.filter(Boolean);
           fallbackList.forEach((fbItem) => {
             if (fbItem && fbItem.id && !filteredList.find((d) => d && d.id === fbItem.id)) {
               filteredList.push(fbItem);
             }
           });
+
+          if (collectionName === "users") {
+            const seen = new Set();
+            filteredList = filteredList.filter((u: any) => {
+              if (!u) return false;
+              const uname = u.username || u.id;
+              if (!uname || seen.has(uname)) {
+                return false;
+              }
+              seen.add(uname);
+              return true;
+            });
+          }
+
           // Update the fallback with the merged list
           saveLocalCollection(collectionName, filteredList);
 
@@ -976,7 +996,10 @@ const customFetch = async function (
     // POST (Add or update if id is provided)
     if (method === "POST") {
       const body = JSON.parse((init?.body as string) || "{}");
-      const id = docId || body.id || `doc_${Date.now()}`;
+      let id = docId || body.id || `doc_${Date.now()}`;
+      if (collectionName === "users") {
+        id = docId || body.username || body.id || `doc_${Date.now()}`;
+      }
 
       const clean = { ...body };
       delete clean.id;
@@ -1133,11 +1156,36 @@ const customFetch = async function (
       }
 
       try {
-        await deleteDoc(doc(db, collectionName, targetId));
+        if (collectionName === "users") {
+          const snap = await getDocs(collection(db, "users"));
+          for (const d of snap.docs) {
+            const uData = d.data();
+            const docId = d.id;
+            const uName = uData?.username || docId;
+            if (
+              docId.toUpperCase() === targetId.toUpperCase() ||
+              uName.toUpperCase() === targetId.toUpperCase()
+            ) {
+              await deleteDoc(doc(db, "users", docId));
+            }
+          }
+        } else {
+          await deleteDoc(doc(db, collectionName, targetId));
+        }
 
         // Update local fallback too
         const list = getLocalCollection(collectionName);
-        const filtered = list.filter((d) => d.id !== targetId);
+        const filtered = list.filter((d) => {
+          if (!d) return false;
+          if (collectionName === "users") {
+            const uName = d.username || d.id;
+            return (
+              d.id?.toUpperCase() !== targetId.toUpperCase() &&
+              uName?.toUpperCase() !== targetId.toUpperCase()
+            );
+          }
+          return d.id !== targetId;
+        });
         saveLocalCollection(collectionName, filtered);
 
         return new Response(JSON.stringify({ success: true, id: targetId }), {
@@ -1150,7 +1198,17 @@ const customFetch = async function (
           error,
         );
         const list = getLocalCollection(collectionName);
-        const filtered = list.filter((d) => d.id !== targetId);
+        const filtered = list.filter((d) => {
+          if (!d) return false;
+          if (collectionName === "users") {
+            const uName = d.username || d.id;
+            return (
+              d.id?.toUpperCase() !== targetId.toUpperCase() &&
+              uName?.toUpperCase() !== targetId.toUpperCase()
+            );
+          }
+          return d.id !== targetId;
+        });
         saveLocalCollection(collectionName, filtered);
 
         return new Response(JSON.stringify({ success: true, id: targetId }), {

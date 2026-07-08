@@ -510,7 +510,28 @@ export default function AdvancedPermissionsPortal({
 }: any) {
   // We store advanced permissions inside `user.permissions.advanced`
   // mapping structure: { [mainKey]: { [subKey]: { [permId]: boolean } } }
-  const [advPerms, setAdvPerms] = useState<any>(user.permissions?.advanced || {});
+  const isTargetFeras = user.username?.toUpperCase() === 'FERAS';
+
+  const getCompletePermissions = () => {
+    const complete: any = {};
+    Object.entries(PERMISSIONS_SCHEMA).forEach(([mainKey, mainVal]) => {
+      complete[mainKey] = {};
+      Object.entries(mainVal.sub).forEach(([subKey, subVal]) => {
+        complete[mainKey][subKey] = {};
+        subVal.perms.forEach((p: any) => {
+          complete[mainKey][subKey][p.id] = 'all';
+        });
+      });
+    });
+    return complete;
+  };
+
+  const [advPerms, setAdvPerms] = useState<any>(() => {
+    if (isTargetFeras) {
+      return getCompletePermissions();
+    }
+    return user.permissions?.advanced || {};
+  });
   
   const [scopes, setScopes] = useState<any>(user.permissions?.scopes || { global: 'all' });
   const [isSaving, setIsSaving] = useState(false);
@@ -642,6 +663,17 @@ export default function AdvancedPermissionsPortal({
             </div>
             
             <div className="flex items-center gap-4">
+               <button 
+                   type="button"
+                   onClick={() => {
+                     setAdvPerms(getCompletePermissions());
+                   }}
+                   disabled={isSaving}
+                   className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-lg hover:shadow-emerald-500/30"
+               >
+                   <CheckCircle className="w-4 h-4" />
+                   منح صلاحيات كاملة
+               </button>
                <button 
                    onClick={handleSaveData} 
                    disabled={isSaving}

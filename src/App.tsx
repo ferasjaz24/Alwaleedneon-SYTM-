@@ -963,6 +963,59 @@ export default function App() {
     e.preventDefault();
     setUserCreationError("");
     setUserCreationSuccess("");
+
+    // 1. Check if currentUser exists (Requirement 2)
+    const currentUser = user;
+    if (!currentUser) {
+      setUserCreationError(
+        lang === "ar"
+          ? "المستخدم الحالي غير مسجل الدخول"
+          : "Current user is not logged in."
+      );
+      return;
+    }
+
+    // 2. Check if currentUserProfile exists (Requirement 3 & 4)
+    const currentUserProfile = user;
+    if (!currentUserProfile) {
+      setUserCreationError(
+        lang === "ar"
+          ? "تعذر التحقق من صلاحيات المستخدم الحالي"
+          : "Unable to verify current user permissions."
+      );
+      return;
+    }
+
+    // 3. Guard against undefined role on currentUserProfile (Requirement 1 & 5)
+    if (!currentUserProfile.role) {
+      setUserCreationError(
+        lang === "ar"
+          ? "صلاحية المستخدم الحالي غير موجودة"
+          : "The role of the current user does not exist."
+      );
+      return;
+    }
+
+    // 4. Authorize if current user is super_admin or admin (Requirement 6)
+    const currentRole = currentUserProfile.role ? currentUserProfile.role.toLowerCase().replace(/_/g, " ").trim() : "";
+    const isSuperAdminOrAdmin = 
+      currentRole === "super_admin" || 
+      currentRole === "admin" ||
+      currentRole === "super admin" ||
+      currentRole === "الادارة العليا" ||
+      currentRole === "الإدارة العليا" ||
+      currentUser?.username?.toUpperCase() === "FERAS";
+
+    if (!isSuperAdminOrAdmin) {
+      setUserCreationError(
+        lang === "ar"
+          ? "ليس لديك صلاحية لإضافة مستخدم"
+          : "You do not have permission to add a user."
+      );
+      return;
+    }
+
+    // 5. Basic credentials check
     if (!newAdminUser.username || !newAdminUser.password) {
       setUserCreationError(
         lang === "ar"
@@ -971,12 +1024,57 @@ export default function App() {
       );
       return;
     }
+
+    // 6. Map role automatically if not set (Requirement 9)
+    let finalRole = newAdminUser.role || "";
+    if (!finalRole && newAdminUser.jobTitle) {
+      if (newAdminUser.jobTitle === "General Admin Director") {
+        finalRole = "Super Admin";
+      } else if (newAdminUser.jobTitle === "HR Manager") {
+        finalRole = "HR Manager";
+      } else if (newAdminUser.jobTitle === "Sales Coordinator") {
+        finalRole = "Sales Rep";
+      }
+    }
+
+    // 7. Require role (Requirement 7 & 8)
+    if (!finalRole) {
+      setUserCreationError(
+        lang === "ar"
+          ? "يرجى اختيار صلاحية المستخدم"
+          : "Please select a user role"
+      );
+      return;
+    }
+
     setButtonLoading("addUser", true);
     try {
+      // 8. Sanitize payload against undefined to protect Firebase
+      const payload: any = {
+        username: newAdminUser.username || "",
+        password: newAdminUser.password || "",
+        jobTitle: newAdminUser.jobTitle || "",
+        role: finalRole,
+        empId: newAdminUser.empId || "",
+        name: (newAdminUser as any).name || "",
+        email: (newAdminUser as any).email || "",
+        department: (newAdminUser as any).department || "",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser?.uid || "FERAS"
+      };
+
+      // Safe replace of undefined fields
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === undefined) {
+          payload[key] = "";
+        }
+      });
+
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAdminUser),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -991,25 +1089,28 @@ export default function App() {
       } else {
         setUserCreationSuccess(
           lang === "ar"
-            ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user.role}`
-            : `Success. Assigned role level: ${data.user.role}`,
+            ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user?.role || finalRole}`
+            : `Success. Assigned role level: ${data.user?.role || finalRole}`,
         );
         logSystemAudit({
           user: user?.username || "FERAS",
           action: "أضاف",
           department: "HR",
-          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${newAdminUser.username} ودور: ${newAdminUser.role}`
+          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role}`
         });
         showToast(lang === "ar" ? "تم إنشاء الحساب بنجاح وتأكيده على السيرفر" : "Account registered successfully!");
         setNewAdminUser({
           username: "",
           password: "",
           jobTitle: "HR Assistant",
+          role: "",
+          empId: ""
         });
         handleReloadUsers();
         handleReloadAuditLogs();
       }
     } catch (err: any) {
+      console.error("handleAddUser error:", err); // Requirement 10
       setUserCreationError(err.message || "Error occurred");
       logSystemError({
         code: "ERR-500-SYS",
@@ -1025,7 +1126,17 @@ export default function App() {
 
   // Super Admin deletes user
   const handleDeleteUser = async (uName: string) => {
-    if (uName.toUpperCase() === "FERAS") return;
+    // Prevent deleting the currently logged-in account to avoid self-lockout
+    if (uName.toUpperCase() === user?.username?.toUpperCase()) {
+      showToast(
+        lang === "ar"
+          ? "لا يمكنك حذف حسابك النشط الذي تستخدمه حالياً!"
+          : "You cannot delete your own active session account!",
+        "error"
+      );
+      return;
+    }
+
     setButtonLoading(`deleteUser-${uName}`, true);
     try {
       const res = await fetch(`/api/users/${uName}`, { method: "DELETE" });
@@ -2381,13 +2492,18 @@ export default function App() {
                           <span className="px-1.5 py-0.5 bg-cyan-100 text-cyan-800 text-[9px] rounded font-bold">
                             {item.role}
                           </span>
-                          {item.username !== "FERAS" && (
+                          {item.username.toUpperCase() !== user?.username?.toUpperCase() && (
                             <button
+                              disabled={isActionLoading[`deleteUser-${item.username}`]}
                               onClick={() => handleDeleteUser(item.username)}
-                              className="text-stone-400 hover:text-rose-500 p-1"
+                              className="text-stone-400 hover:text-rose-500 disabled:opacity-50 p-1 transition flex items-center justify-center"
                               title="Delete System Access"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              {isActionLoading[`deleteUser-${item.username}`] ? (
+                                <div className="w-3.5 h-3.5 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -2915,7 +3031,7 @@ export default function App() {
                                 </td>
                                 <td className="py-3 px-2 text-center">
                                   <div className="flex items-center justify-center gap-2">
-                                    {!isFeras && (
+                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS") && (
                                       <button
                                         onClick={() =>
                                           setSelectedUserForPermissions(item)
@@ -2930,8 +3046,9 @@ export default function App() {
                                         <ShieldCheck className="w-3.5 h-3.5" />
                                       </button>
                                     )}
-                                    {!isFeras && (
+                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS") && (
                                       <button
+                                        disabled={isActionLoading[`updateUser-${item.username}`]}
                                         onClick={() =>
                                           handleUpdateUser(item.username, {
                                             role: item.role,
@@ -2939,20 +3056,28 @@ export default function App() {
                                             password: item.password,
                                           })
                                         }
-                                        className="px-2.5 py-1.5 bg-[#0072BC] hover:bg-sky-700 text-white rounded text-[10px] font-black transition"
+                                        className="px-2.5 py-1.5 bg-[#0072BC] hover:bg-sky-700 text-white rounded text-[10px] font-black transition disabled:opacity-50 flex items-center gap-1"
                                       >
+                                        {isActionLoading[`updateUser-${item.username}`] && (
+                                          <div className="w-2.5 h-2.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        )}
                                         {lang === "ar" ? "حفظ" : "Save"}
                                       </button>
                                     )}
-                                    {!isFeras && (
+                                    {item.username.toUpperCase() !== user?.username?.toUpperCase() && (
                                       <button
+                                        disabled={isActionLoading[`deleteUser-${item.username}`]}
                                         onClick={() =>
                                           handleDeleteUser(item.username)
                                         }
-                                        className="p-1 text-slate-400 hover:text-red-600 rounded transition"
+                                        className="p-1 text-slate-400 hover:text-red-600 disabled:opacity-50 rounded transition flex items-center justify-center"
                                         title="Revoke Credentials"
                                       >
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                        {isActionLoading[`deleteUser-${item.username}`] ? (
+                                          <div className="w-3.5 h-3.5 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin" />
+                                        ) : (
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        )}
                                       </button>
                                     )}
                                   </div>

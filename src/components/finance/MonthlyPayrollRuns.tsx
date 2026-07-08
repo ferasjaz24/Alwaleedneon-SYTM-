@@ -304,6 +304,9 @@ export default function MonthlyPayrollRuns({
   const [modResponseNotes, setModResponseNotes] = useState("");
   const [modResponseStatus, setModResponseStatus] = useState<"Closed" | "Open">("Closed");
 
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
+  const [editEmployeeForm, setEditEmployeeForm] = useState<any>({});
+
   // Helper to convert any Arabic digits to English digits globally
   const toEnglishDigits = (str: string | number | null | undefined): string => {
     if (str === null || str === undefined) return "";
@@ -1401,6 +1404,13 @@ export default function MonthlyPayrollRuns({
     if (merged.penaltyDeduction > 0 && !merged.penaltyDeductionReason?.trim()) merged.penaltyDeductionReason = "تعديل مباشر";
     if (merged.otherDeductions > 0 && !merged.deductionsReason?.trim()) merged.deductionsReason = "تعديل مباشر";
     if (merged.otherAllowances > 0 && !merged.otherAllowancesReason?.trim()) merged.otherAllowancesReason = "تعديل مباشر";
+
+    // Auto-calculate overtime amount when overtime hours change
+    if (field === 'overtimeHours' || field === 'basicSalary') {
+      const baseSalaryForOvertime = Number(merged.basicSalary || 0);
+      const hourlyRate = baseSalaryForOvertime / 240;
+      merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+    }
 
     const calculated = calculateEmployeeNet({
       basicSalary: merged.basicSalary || 0,

@@ -25,7 +25,28 @@ import {
 const getCollectionDocs = async (colName) => {
   try {
     const snap = await getDocs(collection(db, colName));
-    return snap.docs.map((d) => d.data());
+    const results = snap.docs.map((d) => {
+      const data = d.data();
+      if (colName === "users") {
+        return { username: d.id, id: d.id, ...data } as any;
+      }
+      return { id: d.id, ...data } as any;
+    });
+
+    if (colName === "users") {
+      const seen = new Set();
+      return results.filter((u: any) => {
+        if (!u) return false;
+        const uname = u.username || u.id;
+        if (!uname || seen.has(uname)) {
+          return false;
+        }
+        seen.add(uname);
+        return true;
+      });
+    }
+
+    return results;
   } catch (err: any) {
     console.error(`Firebase error reading colName ${colName}:`, err);
     fs.appendFileSync('server-errors.txt', `Firebase error reading colName ${colName}: ${err.message}\n`);
@@ -756,8 +777,24 @@ Text to translate: ${text}`;
 
   app.delete("/api/users/:username", async (req, res) => {
     const { username } = req.params;
-    await deleteDoc(doc(db, "users", username));
-    res.json({ success: true });
+    try {
+      const snap = await getDocs(collection(db, "users"));
+      for (const d of snap.docs) {
+        const uData = d.data();
+        const docId = d.id;
+        const uName = uData?.username || docId;
+        if (
+          docId.toUpperCase() === username.toUpperCase() ||
+          uName.toUpperCase() === username.toUpperCase()
+        ) {
+          await deleteDoc(doc(db, "users", docId));
+        }
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error("Failed to delete user:", e);
+      res.status(500).json({ error: e.message || "Failed to delete user" });
+    }
   });
 
   app.delete("/api/deductions", async (req, res) => {

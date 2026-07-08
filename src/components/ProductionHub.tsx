@@ -5485,8 +5485,8 @@ export default function ProductionHub({
                   </button>
                   {assignedCrew.length > 0 && (
                     <div className="p-2 bg-slate-50 rounded-xl text-[9px] text-slate-600 font-bold max-h-24 overflow-y-auto space-y-1">
-                      {assignedCrew.map((c) => (
-                        <p key={c}>✔️ {c}</p>
+                      {assignedCrew.map((c, i) => (
+                        <p key={`${c}-${i}`}>✔️ {c}</p>
                       ))}
                     </div>
                   )}
@@ -5732,7 +5732,7 @@ export default function ProductionHub({
 
                                   return (
                                     <button
-                                      key={empName}
+                                      key={`${emp.id || ''}-${empName}-${idx}`}
                                       type="button"
                                       onMouseDown={() => {
                                         const copy = [...tempCrewRows];
@@ -6319,7 +6319,7 @@ export default function ProductionHub({
                   const isChecked = assignedCrew.includes(empName);
                   return (
                     <label
-                      key={empName}
+                      key={`${emp.id || ''}-${empName}`}
                       className="flex items-center gap-3 p-2.5 hover:bg-slate-50 border rounded-xl cursor-pointer"
                     >
                       <input

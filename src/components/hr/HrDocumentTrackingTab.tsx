@@ -1462,7 +1462,7 @@ export default function HrDocumentTrackingTab({
                     })
                     .filter((v, i, a) => a.findIndex(t => t.name === v.name) === i)
                     .map(parsed => (
-                      <option key={parsed.id} value={parsed.id}>{parsed.name}</option>
+                      <option key={`${parsed.id || ''}-${parsed.name}`} value={parsed.id || ''}>{parsed.name}</option>
                     ))}
                 </select>
               </div>

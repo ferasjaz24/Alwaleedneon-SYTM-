@@ -514,8 +514,8 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                className="w-full pl-10 pr-3 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-100 bg-slate-50"
              >
                <option value="">-- اختر المندوب من القائمة --</option>
-               {filteredReps.map(rep => (
-                 <option key={rep.username} value={rep.username}>{getRepDisplayName(rep.username)}</option>
+               {filteredReps.map((rep, idx) => (
+                 <option key={`${rep.username}-${idx}`} value={rep.username}>{getRepDisplayName(rep.username)}</option>
                ))}
              </select>
              <Search className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
@@ -879,8 +879,8 @@ export default function SalesRepsTargets({ lang, user }: Props) {
                {otherUsers.length === 0 ? (
                  <div className="p-8 text-center text-slate-400">لا يوجد مستخدمين متطابقين للبحث.</div>
                ) : (
-                 otherUsers.map(sysUser => (
-                   <div key={sysUser.username} className="flex justify-between items-center p-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 rounded-xl transition">
+                 otherUsers.map((sysUser, idx) => (
+                   <div key={`${sysUser.username}-${idx}`} className="flex justify-between items-center p-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 rounded-xl transition">
                      <div>
                        <p className="font-bold text-slate-800 text-sm">{getRepDisplayName(sysUser.username)}</p>
                        <p className="text-[10px] text-slate-500">{sysUser.role || 'مستخدم نظام'}</p>
