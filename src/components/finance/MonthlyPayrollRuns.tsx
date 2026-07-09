@@ -238,7 +238,6 @@ export default function MonthlyPayrollRuns({
   // Detailed Payroll Run View Modal
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
   const [runEmployees, setRunEmployees] = useState<PayrollRunEmployee[]>([]);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const toggleEmployeeTransferred = (empId: string) => {
     setRunEmployees(prev => prev.map(e => e.id === empId ? { ...e, isTransferred: !e.isTransferred } : e));
@@ -1134,57 +1133,6 @@ export default function MonthlyPayrollRuns({
     setIsViewModalOpen(true);
   };
 
-  const handleSaveDraft = async () => {
-    if (!selectedRun) return;
-    setIsSavingDraft(true);
-
-    const totalBasicSalary = runEmployees.reduce((sum, item) => sum + (item.basicSalary || 0), 0);
-    const totalAllowances = runEmployees.reduce(
-      (sum, item) => sum + (item.housingAllowance || 0) + (item.transportAllowance || 0) + (item.foodAllowance || 0) + (item.overtimeAmount || 0) + (item.otherAllowances || 0),
-      0
-    );
-    const totalDeductions = runEmployees.reduce((sum, item) => sum + (item.totalDeductions || 0), 0);
-    const totalNetSalary = runEmployees.reduce((sum, item) => sum + (item.netSalary || 0), 0);
-    const totalOvertimeHours = runEmployees.reduce((sum, item) => sum + (item.overtimeHours || 0), 0);
-    const totalOvertimeAmount = runEmployees.reduce((sum, item) => sum + (item.overtimeAmount || 0), 0);
-
-    const updatedRun = {
-      ...selectedRun,
-      employees: runEmployees,
-      totalBasicSalary,
-      totalAllowances,
-      totalDeductions,
-      totalNetSalary,
-      totalOvertimeHours,
-      totalOvertimeAmount,
-      updatedAt: new Date().toISOString(),
-    };
-
-    try {
-      const res = await fetch(`/api/payroll_runs/${selectedRun.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedRun),
-      });
-      if (res.ok) {
-        setSelectedRun(updatedRun);
-        setPayrollRuns(payrollRuns.map(r => r.id === selectedRun.id ? updatedRun : r));
-        showToast("تم حفظ مسير الرواتب كمسودة مؤقتة بنجاح! 💾", "Payroll draft saved successfully!", "success");
-        logActionToAudit({
-          action: "حفظ مسودة مؤقتة",
-          payrollRunId: selectedRun.id,
-          notes: "قام المستخدم بحفظ مسير الرواتب كمسودة مؤقتة لمتابعة العمل لاحقاً"
-        });
-      } else {
-        showToast("❌ فشل حفظ المسودة في السيرفر", "Failed to save draft to server", "error");
-      }
-    } catch (err) {
-      showToast("❌ حدث خطأ أثناء الحفظ", "Error occurred while saving draft", "error");
-    } finally {
-      setIsSavingDraft(false);
-    }
-  };
-
   // Delete Run (Soft Delete with status rules and reason)
   const handleDeleteRun = async (run: PayrollRun) => {
     // Approved, Transferred, Paid or Partially Paid payroll cannot be deleted unless the user is Super Admin / Top Management
@@ -1457,20 +1405,11 @@ export default function MonthlyPayrollRuns({
     if (merged.otherDeductions > 0 && !merged.deductionsReason?.trim()) merged.deductionsReason = "تعديل مباشر";
     if (merged.otherAllowances > 0 && !merged.otherAllowancesReason?.trim()) merged.otherAllowancesReason = "تعديل مباشر";
 
-    // Auto-calculate overtime amount when overtime hours change (if calculation mode is basic or muddah)
-    const otMode = selectedRun.overtimeCalcMode || "basic";
-    if (otMode === "basic") {
-      if (field === 'overtimeHours' || field === 'basicSalary') {
-        const baseSalaryForOvertime = Number(merged.basicSalary || 0);
-        const hourlyRate = baseSalaryForOvertime / 240;
-        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
-      }
-    } else if (otMode === "muddah") {
-      if (field === 'overtimeHours' || field === 'muddahAmount') {
-        const baseSalaryForOvertime = Number(merged.muddahAmount || 0);
-        const hourlyRate = baseSalaryForOvertime / 240;
-        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
-      }
+    // Auto-calculate overtime amount when overtime hours change
+    if (field === 'overtimeHours' || field === 'basicSalary') {
+      const baseSalaryForOvertime = Number(merged.basicSalary || 0);
+      const hourlyRate = baseSalaryForOvertime / 240;
+      merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
     }
 
     const calculated = calculateEmployeeNet({
@@ -3038,93 +2977,6 @@ export default function MonthlyPayrollRuns({
                     <span className="bg-slate-800 px-3 py-1 rounded-full text-[#00AEEF] font-mono font-bold">{runEmployees.length} موظف</span>
                     
                     <div className="flex items-center gap-4">
-                      {/* Overtime Calculation Selector */}
-                      <div className="flex items-center gap-1.5 bg-slate-800 p-1.5 rounded-xl border border-slate-700 font-arabic">
-                        <span className="text-[10px] text-slate-300 font-bold px-1.5">طريقة حساب العمل الإضافي:</span>
-                        <button
-                          onClick={() => {
-                            if (!selectedRun) return;
-                            const updatedRun = { ...selectedRun, overtimeCalcMode: "basic" as const };
-                            const updatedEmployees = runEmployees.map(emp => {
-                              const baseSalaryForOvertime = Number(emp.basicSalary || 0);
-                              const hourlyRate = baseSalaryForOvertime / 240;
-                              const calculatedOt = Math.round((Number(emp.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
-                              const calculated = calculateEmployeeNet({
-                                ...emp,
-                                overtimeAmount: calculatedOt
-                              });
-                              return {
-                                ...emp,
-                                overtimeAmount: calculatedOt,
-                                totalEntitlements: calculated.totalEntitlements,
-                                totalDeductions: calculated.totalDeductions,
-                                netSalary: calculated.netSalary,
-                              };
-                            });
-                            setRunEmployees(updatedEmployees);
-                            setSelectedRun(updatedRun);
-                            setPayrollRuns(payrollRuns.map(r => r.id === selectedRun.id ? updatedRun : r));
-                            showToast("تم تحويل حساب الإضافي بناءً على الراتب الأساسي (1.5) 🔄", "Overtime calculation switched to Basic Salary!", "success");
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                            (selectedRun?.overtimeCalcMode || "basic") === "basic"
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          على الأساسي (1.5)
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!selectedRun) return;
-                            const updatedRun = { ...selectedRun, overtimeCalcMode: "muddah" as const };
-                            const updatedEmployees = runEmployees.map(emp => {
-                              const baseSalaryForOvertime = Number(emp.muddahAmount || 0);
-                              const hourlyRate = baseSalaryForOvertime / 240;
-                              const calculatedOt = Math.round((Number(emp.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
-                              const calculated = calculateEmployeeNet({
-                                ...emp,
-                                overtimeAmount: calculatedOt
-                              });
-                              return {
-                                ...emp,
-                                overtimeAmount: calculatedOt,
-                                totalEntitlements: calculated.totalEntitlements,
-                                totalDeductions: calculated.totalDeductions,
-                                netSalary: calculated.netSalary,
-                              };
-                            });
-                            setRunEmployees(updatedEmployees);
-                            setSelectedRun(updatedRun);
-                            setPayrollRuns(payrollRuns.map(r => r.id === selectedRun.id ? updatedRun : r));
-                            showToast("تم تحويل حساب الإضافي بناءً على مبلغ مدد (1.5) 🔄", "Overtime calculation switched to Muddah Amount!", "success");
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                            (selectedRun?.overtimeCalcMode || "basic") === "muddah"
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          على مبلغ مدد (1.5)
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!selectedRun) return;
-                            const updatedRun = { ...selectedRun, overtimeCalcMode: "fixed" as const };
-                            setSelectedRun(updatedRun);
-                            setPayrollRuns(payrollRuns.map(r => r.id === selectedRun.id ? updatedRun : r));
-                            showToast("تم تحويل الإضافي إلى مبلغ محدد / يدوي ⚙️", "Overtime switched to Fixed / Manual amount!", "success");
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                            (selectedRun?.overtimeCalcMode || "basic") === "fixed"
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          مبلغ محدد / يدوي
-                        </button>
-                      </div>
-
                       <div className="flex items-center gap-2">
                         <label className="text-xs font-bold text-slate-700">ترتيب:</label>
                         <select
@@ -3241,24 +3093,15 @@ export default function MonthlyPayrollRuns({
                                 </td>
 
                                 {/* BANK INFO */}
-                                <td className="py-4 px-4 bg-slate-50/50">
-                                  <div className="space-y-1 text-right max-w-[160px]">
-                                    {emp.bankName ? (
-                                      (() => {
-                                        const bankStyle = getBankStyle(emp.bankName);
-                                        return (
-                                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black ${bankStyle.bg}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${bankStyle.dot}`} />
-                                            <span>{emp.bankName}</span>
-                                          </div>
-                                        );
-                                      })()
-                                    ) : (
-                                      <span className="text-[10px] text-slate-400 font-bold">—</span>
-                                    )}
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <span className="text-[9px] text-slate-400 font-bold">IBAN:</span>
-                                      <span className="font-mono font-bold text-[10px] text-slate-600 tracking-tight">{emp.iban || "—"}</span>
+                                <td className="py-4 px-4 bg-sky-50/20">
+                                  <div className="space-y-1 text-right max-w-[140px]">
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-slate-400">البنك:</span>
+                                      <InlineEditable type="text" value={emp.bankName || ""} onSave={(val) => handleInlineSave(emp.id, "bankName", val)} disabled={!canModifyRow || !isAccountant} className="font-arabic font-bold text-[10px] w-[80px] text-right" />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-slate-400">IBAN:</span>
+                                      <InlineEditable type="text" value={emp.iban || ""} onSave={(val) => handleInlineSave(emp.id, "iban", val)} disabled={!canModifyRow || !isAccountant} className="font-mono font-bold text-[10px] tracking-tight text-right w-[110px]" />
                                     </div>
                                   </div>
                                 </td>
@@ -3548,20 +3391,7 @@ export default function MonthlyPayrollRuns({
               <div className="text-xs text-slate-500 font-arabic">
                 بيئة عمل مسير الرواتب الإلكتروني الموحد لشركة فنون الوليد للصناعة
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  disabled={isSavingDraft}
-                  onClick={handleSaveDraft}
-                  className={`px-6 py-2.5 font-extrabold rounded-xl text-xs transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 font-arabic ${
-                    isSavingDraft 
-                      ? "bg-emerald-400 text-white cursor-not-allowed" 
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95"
-                  }`}
-                >
-                  <Save className={`w-4 h-4 ${isSavingDraft ? "animate-pulse" : ""}`} />
-                  <span>{isSavingDraft ? "جاري الحفظ..." : "حفظ المسير مؤقتاً / Save Draft 💾"}</span>
-                </button>
-
+              <div>
                 <button
                   onClick={() => {
                     setIsViewModalOpen(false);
