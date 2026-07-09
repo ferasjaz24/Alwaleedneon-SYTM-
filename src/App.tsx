@@ -65,6 +65,7 @@ import FinanceApprovals from "./components/FinanceApprovals";
 import AdvancedPermissionsPortal from "./components/AdvancedPermissionsPortal";
 import AISettingsModal from "./components/AISettingsModal";
 import MainDashboard from "./components/MainDashboard";
+import SmartAssistantCommands from "./components/SmartAssistantCommands";
 
 // System Error Logging & Performance Indexing Optimization
 import { logSystemError, logSystemAudit, setActiveLoggerUser } from "./lib/logger";
@@ -408,7 +409,7 @@ export default function App() {
     const roleName = user.role?.toLowerCase() || '';
     const isSuperAdmin = username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management';
 
-    if (activeTab === "super_admin" as any) {
+    if (activeTab === "super_admin" as any || activeTab === "ai_commands" as any) {
       return isSuperAdmin;
     }
 
@@ -778,6 +779,16 @@ export default function App() {
       setQuotations(await res.json());
     }
   };
+
+  // Listen to AI data mutations and reload in real-time
+  useEffect(() => {
+    const handleReloadAll = async () => {
+      await handleReloadEmployees();
+      await handleReloadQuotations();
+    };
+    window.addEventListener("F24DataReload", handleReloadAll);
+    return () => window.removeEventListener("F24DataReload", handleReloadAll);
+  }, []);
 
   // Log login event to database
   const logLoginEvent = async (username: string) => {
@@ -2418,20 +2429,37 @@ export default function App() {
 
               {/* Super Admin Console */}
               {(user.role === "Super Admin" || user.username === "FERAS") && (
-                <button
-                  id="tab-btn-superadmin"
-                  onClick={() => {
-                    setActiveTab("super_admin" as any);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${activeTab === ("super_admin" as any) ? "bg-[#0072BC] text-white shadow-lg shadow-[#0072BC]/15 neon-glow-blue" : "text-slate-600 hover:bg-white/90 hover:text-[#0072BC]"}`}
-                >
-                  <Shield className="w-5 h-5 text-rose-500 animate-pulse" />
-                  <span>
-                    {lang === "ar"
-                      ? "👮 التحكم الإداري الفائق"
-                      : "👮 Super Admin Console"}
-                  </span>
-                </button>
+                <>
+                  <button
+                    id="tab-btn-superadmin"
+                    onClick={() => {
+                      setActiveTab("super_admin" as any);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${activeTab === ("super_admin" as any) ? "bg-[#0072BC] text-white shadow-lg shadow-[#0072BC]/15 neon-glow-blue" : "text-slate-600 hover:bg-white/90 hover:text-[#0072BC]"}`}
+                  >
+                    <Shield className="w-5 h-5 text-rose-500 animate-pulse" />
+                    <span>
+                      {lang === "ar"
+                        ? "👮 التحكم الإداري الفائق"
+                        : "👮 Super Admin Console"}
+                    </span>
+                  </button>
+
+                  <button
+                    id="tab-btn-ai-commands"
+                    onClick={() => {
+                      setActiveTab("ai_commands" as any);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${activeTab === ("ai_commands" as any) ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15" : "text-slate-600 hover:bg-white/90 hover:text-indigo-600"}`}
+                  >
+                    <Cpu className="w-5 h-5 text-indigo-500 animate-pulse" />
+                    <span>
+                      {lang === "ar"
+                        ? "🤖 أوامر المساعد الذكي"
+                        : "🤖 Smart Assistant Commands"}
+                    </span>
+                  </button>
+                </>
               )}
 
               {/* Secure F24 Indicator Badge */}
@@ -3466,6 +3494,19 @@ export default function App() {
                   </div>
 
                 </div>
+              </div>
+            )}
+
+            {activeTab === ("ai_commands" as any) && (
+              <div id="content-tab-ai-commands" className="space-y-6">
+                <SmartAssistantCommands
+                  lang={lang}
+                  user={user}
+                  onRefreshData={async () => {
+                    await handleReloadEmployees();
+                    await handleReloadQuotations();
+                  }}
+                />
               </div>
             )}
 

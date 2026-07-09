@@ -172,6 +172,7 @@ export interface PayrollRun {
   modificationRequests?: PayrollModificationRequest[];
   totalOvertimeHours?: number;
   totalOvertimeAmount?: number;
+  overtimeCalcMode?: "basic" | "muddah" | "fixed";
   employees?: PayrollRunEmployee[];
 }
 
