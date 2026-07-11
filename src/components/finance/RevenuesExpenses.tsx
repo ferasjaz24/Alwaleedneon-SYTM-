@@ -1349,6 +1349,208 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
     }
   };
 
+  const handlePrintSummary = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const monthFiltered = expenses.filter(r => {
+      const matchesSearch = 
+        r.id?.toLowerCase().includes(search.toLowerCase()) ||
+        r.description?.toLowerCase().includes(search.toLowerCase()) ||
+        r.supplier?.toLowerCase().includes(search.toLowerCase()) ||
+        r.projectName?.toLowerCase().includes(search.toLowerCase()) ||
+        r.reference?.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = filterStatus === "all" || r.status === filterStatus;
+      const matchesMonth = filterMonth ? r.date?.startsWith(filterMonth) : true;
+      return matchesSearch && matchesStatus && matchesMonth;
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const totalFilteredAmount = monthFiltered.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const totalFilteredPaid = monthFiltered.filter(r => r.status === 'مدفوع').reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const totalFilteredApproved = monthFiltered.filter(r => r.status === 'معتمد').reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const totalFilteredPending = monthFiltered.filter(r => r.status === 'بانتظار اعتماد').reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+
+    const monthLabel = filterMonth ? filterMonth : "جميع الأشهر";
+
+    const rowsHtml = monthFiltered.map(r => {
+      let statusClass = "status-draft";
+      if (r.status === "مدفوع") statusClass = "status-paid";
+      else if (r.status === "معتمد") statusClass = "status-approved";
+      else if (r.status === "بانتظار اعتماد") statusClass = "status-pending";
+
+      const partyDetails = [r.supplier, r.projectName].filter(Boolean).join(" - ");
+      const amtStr = parseFloat(r.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      return `
+        <tr>
+          <td style="font-family: monospace; font-weight: bold;">${r.id || ''}</td>
+          <td>${r.date || ''}</td>
+          <td>${r.expenseType || ''}</td>
+          <td>${r.description || ''}</td>
+          <td>${partyDetails || '-'}</td>
+          <td>${r.paymentMethod || ''}</td>
+          <td style="text-align: left; font-weight: bold;">${amtStr}</td>
+          <td style="text-align: center;"><span class="status-badge ${statusClass}">${r.status || ''}</span></td>
+        </tr>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <html dir="rtl" lang="ar">
+        <head>
+          <style>
+            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
+            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+          </style>
+          <title>ملخص المصروفات - ${monthLabel}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+          <style>
+            ${sharedPrintStyles}
+            body {
+              padding: 20px;
+              box-sizing: border-box;
+            }
+            .print-container {
+              max-width: 900px;
+              margin: 0 auto;
+              display: flex;
+              flex-direction: column;
+              min-height: 95vh;
+            }
+            .content-wrapper {
+              flex-grow: 1;
+              margin-bottom: 40px;
+            }
+            .doc-title {
+              text-align: center;
+              color: #0072BC;
+              font-size: 22px;
+              font-weight: 800;
+              margin-top: 10px;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #0072BC;
+              padding-bottom: 12px;
+            }
+            .summary-cards-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15px;
+              margin-bottom: 25px;
+            }
+            .summary-card {
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 12px;
+              text-align: center;
+              background-color: #f8fafc;
+            }
+            .summary-card-title {
+              font-size: 11px;
+              font-weight: bold;
+              color: #64748b;
+              margin-bottom: 5px;
+            }
+            .summary-card-value {
+              font-size: 16px;
+              font-weight: 900;
+              color: #0072BC;
+            }
+            .expenses-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 25px;
+            }
+            .expenses-table th, .expenses-table td {
+              border: 1px solid #e2e8f0;
+              padding: 8px 10px;
+              text-align: right;
+              font-size: 12px;
+            }
+            .expenses-table th {
+              background-color: #f1f5f9;
+              color: #334155;
+              font-weight: bold;
+            }
+            .expenses-table tr:nth-child(even) {
+              background-color: #f8fafc;
+            }
+            .status-badge {
+              display: inline-block;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 10px;
+              font-weight: bold;
+            }
+            .status-paid { background-color: #dcfce7; color: #166534; }
+            .status-approved { background-color: #e0f2fe; color: #0369a1; }
+            .status-pending { background-color: #fef3c7; color: #92400e; }
+            .status-draft { background-color: #f1f5f9; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            <div class="content-wrapper">
+              ${sharedPrintHeader}
+              
+              <div class="doc-title">ملخص المصروفات الشهرية - ${monthLabel}</div>
+              
+              <div style="font-size: 12px; margin-bottom: 15px; color: #475569;">
+                <strong>تاريخ الطباعة:</strong> ${new Date().toLocaleDateString('ar-SA')} | 
+                <strong>عدد العمليات:</strong> ${monthFiltered.length} حركة
+              </div>
+
+              <div class="summary-cards-grid">
+                <div class="summary-card">
+                  <div class="summary-card-title">إجمالي المدفوع</div>
+                  <div class="summary-card-value" style="color: #166534;">${totalFilteredPaid.toLocaleString('en-US')} ر.س</div>
+                </div>
+                <div class="summary-card">
+                  <div class="summary-card-title">معتمد (بانتظار الصرف)</div>
+                  <div class="summary-card-value" style="color: #0369a1;">${totalFilteredApproved.toLocaleString('en-US')} ر.س</div>
+                </div>
+                <div class="summary-card">
+                  <div class="summary-card-title">بانتظار الاعتماد</div>
+                  <div class="summary-card-value" style="color: #b45309;">${totalFilteredPending.toLocaleString('en-US')} ر.س</div>
+                </div>
+                <div class="summary-card" style="border: 2px solid #0072BC; background-color: #f0f9ff;">
+                  <div class="summary-card-title" style="color: #0072BC;">إجمالي المصروفات للمدة</div>
+                  <div class="summary-card-value" style="color: #0072BC;">${totalFilteredAmount.toLocaleString('en-US')} ر.س</div>
+                </div>
+              </div>
+
+              <table class="expenses-table">
+                <thead>
+                  <tr>
+                    <th>رقم السند</th>
+                    <th>التاريخ</th>
+                    <th>نوع المصروف</th>
+                    <th>البيان / الوصف</th>
+                    <th>المورد / المشروع</th>
+                    <th>طريقة الدفع</th>
+                    <th style="text-align: left;">المبلغ (ر.س)</th>
+                    <th>الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+
+            ${sharedPrintFooter}
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const filtered = expenses.filter(r => {
     const matchesSearch = 
       r.id?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1458,6 +1660,26 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
             onChange={(e) => setFilterMonth(e.target.value)}
             className="w-full md:w-48 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]"
           />
+          {(filterMonth || filterStatus !== "all" || search) && (
+            <button
+              onClick={() => {
+                setFilterMonth("");
+                setFilterStatus("all");
+                setSearch("");
+              }}
+              className="px-3 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold transition-all text-xs flex items-center justify-center border border-rose-100 whitespace-nowrap self-stretch md:self-center"
+            >
+              مسح التصفية
+            </button>
+          )}
+          <button
+            onClick={handlePrintSummary}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all duration-150 shadow-sm border border-slate-200"
+            title="طباعة ملخص مصروفات للشهر"
+          >
+            <Printer className="w-5 h-5 text-slate-500" />
+            <span>طباعة ملخص المصروفات</span>
+          </button>
         </div>
         
         <button

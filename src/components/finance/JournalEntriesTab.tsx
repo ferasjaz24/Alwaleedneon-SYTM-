@@ -223,6 +223,78 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
     });
   };
 
+  // Synchronize approved journal entry lines that represent expenses to the expenses collection
+  const syncJournalEntryToExpenses = async (jvId: string) => {
+    try {
+      const jvRef = doc(db, "journal_entries", jvId);
+      const jvSnap = await getDoc(jvRef);
+      if (!jvSnap.exists()) return;
+      const jv = jvSnap.data() as JournalEntry;
+
+      if (jv.status !== "Approved") return;
+
+      // Identify expense lines
+      for (const line of jv.lines) {
+        const isExpenseLine = line.debit > 0 && (
+          line.accountType === "Expense" ||
+          line.accountName?.includes("مصروف") ||
+          line.accountName?.includes("رواتب") ||
+          line.accountName?.includes("إيجار") ||
+          line.accountName?.includes("تشغيل")
+        );
+
+        if (!isExpenseLine) continue;
+
+        // Try to find the counterpart credit line (Bank or Cash)
+        const creditLine = jv.lines.find(l => l.credit > 0 && (l.accountType === "Bank" || l.accountType === "Cash"));
+        const paymentMethod = creditLine ? (creditLine.accountType === "Cash" ? "نقدي" : "تحويل بنكي") : "تحويل بنكي";
+        const bankAccountId = (creditLine?.accountType === "Bank") ? (creditLine.bankAccountId || "") : "";
+        const cashBoxId = (creditLine?.accountType === "Cash") ? (creditLine.cashBoxId || "") : "";
+
+        let expenseType = "أخرى";
+        if (line.accountName?.includes("رواتب")) expenseType = "رواتب";
+        else if (line.accountName?.includes("إيجار")) expenseType = "إيجار";
+        else if (line.accountName?.includes("مشتريات") || line.accountName?.includes("مواد")) expenseType = "مشتريات مواد";
+        else if (line.accountName?.includes("تشغيل")) expenseType = "مصاريف تشغيل";
+
+        const expensePayload = {
+          id: `EX-JV-${jv.id}-${line.lineNo || line.id || Date.now()}`,
+          date: jv.date || new Date().toISOString().split("T")[0],
+          expenseType: expenseType,
+          description: line.description || jv.description || `صرف تلقائي عبر قيد اليومية رقم ${jv.journalEntryNo}`,
+          supplier: line.accountType === "Supplier" ? (line.accountName || "") : "",
+          projectName: "",
+          amount: String(line.debit || ""),
+          paymentMethod: paymentMethod,
+          cashBoxId: cashBoxId,
+          bankAccountId: bankAccountId,
+          reference: jv.journalEntryNo,
+          attachmentData: "",
+          status: "مدفوع",
+          notes: `مزامنة تلقائية من قيد اليومية رقم ${jv.journalEntryNo} - حساب: ${line.accountName}`,
+          createdBy: jv.createdBy || user?.username || "system",
+          createdAt: new Date().toISOString(),
+          updatedBy: user?.username || "system",
+          updatedAt: new Date().toISOString(),
+          approvedBy: user?.username || "system",
+          approvedAt: new Date().toISOString(),
+          paidBy: user?.username || "system",
+          paidAt: new Date().toISOString()
+        };
+
+        // Post to /api/expenses
+        await fetch(`/api/expenses`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expensePayload)
+        });
+      }
+      console.log("Successfully auto-synced journal entry lines to expenses collection.");
+    } catch (err) {
+      console.error("Error in syncJournalEntryToExpenses:", err);
+    }
+  };
+
   // Reverse financial impact
   const reverseJournalImpactFromCashBank = async (jvId: string) => {
     const jvRef = doc(db, "journal_entries", jvId);
@@ -332,6 +404,9 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
 
         // Apply the financial balances
         await applyJournalImpactToCashBank(jv.id);
+
+        // Sync expense lines of the approved journal entry to the expenses module
+        await syncJournalEntryToExpenses(jv.id);
 
         // Save Audit Log
         const logId = `LOG_JV_APP_${Date.now()}`;
@@ -598,6 +673,7 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
       // If approved directly, apply impact
       if (journalForm.status === "Approved") {
         await applyJournalImpactToCashBank(jvId);
+        await syncJournalEntryToExpenses(jvId);
       }
 
       alert(lang === "ar" ? "تم حفظ وتسجيل قيد اليومية بنجاح" : "Journal entry saved successfully");
@@ -1020,12 +1096,7 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
           >
             <span>➕</span> إضافة قيد يومي مانيوال
           </button>
-          <button
-            onClick={() => setShowTestModal(true)}
-            className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 px-5 rounded-xl font-extrabold text-sm shadow-md transition-all flex items-center gap-2"
-          >
-            <span>⚡</span> اختبار التدفق المالي التلقائي (Test Flow)
-          </button>
+
         </div>
       </div>
 

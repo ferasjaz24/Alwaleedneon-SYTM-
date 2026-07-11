@@ -664,14 +664,30 @@ export default function ProcurementRequests({
                       {req.quotationNumber}
                     </td>
                     <td className="p-3.5 font-medium text-slate-400 font-mono">
-                      {new Date(req.requestedAt).toLocaleString('en-US', {
-                        hour12: true,
-                      })}
+                      <div>
+                        {new Date(req.requestedAt).toLocaleString('en-US', {
+                          hour12: true,
+                        })}
+                      </div>
+                      {req.isOrder && req.orderCreatedAt && (
+                        <div className="text-[10px] text-indigo-600 mt-1 font-bold flex items-center gap-1">
+                          <span>🎯</span>
+                          <span>{lang === "ar" ? "تعميد: " : "PO: "}</span>
+                          <span>{new Date(req.orderCreatedAt).toLocaleString('en-US', { hour12: true })}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="p-3.5 font-medium">
                       <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600 font-bold text-[10px]">
                         👤 {req.requestedBy}
                       </span>
+                      {req.isOrder && req.orderCreatedBy && (
+                        <div className="mt-1">
+                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-black inline-block">
+                            ✍️ {lang === "ar" ? "بواسطة: " : "By: "} {req.orderCreatedBy}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="p-3.5">
                       <span

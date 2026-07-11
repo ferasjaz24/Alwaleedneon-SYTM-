@@ -172,6 +172,56 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
     });
   };
 
+  const syncJournalEntryToExpenses = async (entry: any) => {
+    if (entry.status !== "معتمد") return;
+
+    const isExpense = (entry.debitAccount && entry.debitAccount.startsWith("مصروف")) || entry.type === "قيد مصروف";
+    if (!isExpense) return;
+
+    let expenseType = "أخرى";
+    if (entry.debitAccount === "مصروف رواتب") expenseType = "رواتب";
+    else if (entry.debitAccount === "مصروف إيجار") expenseType = "إيجار";
+    else if (entry.debitAccount === "مصروف مشتريات مواد") expenseType = "مشتريات مواد";
+    else if (entry.debitAccount === "مصروف تشغيل") expenseType = "مصاريف تشغيل";
+
+    const expensePayload = {
+      id: `EX-JE-${entry.id || Date.now()}`,
+      date: entry.date || new Date().toISOString().split("T")[0],
+      expenseType: expenseType,
+      description: entry.description || `مزامنة تلقائية من قيد اليومية رقم ${entry.id}`,
+      supplier: entry.creditAccount === "الموردون" ? (entry.creditSubId || "") : "",
+      projectName: entry.project || "",
+      amount: String(entry.amount || ""),
+      paymentMethod: entry.creditAccount === "البنك" ? "تحويل بنكي" : (entry.creditAccount === "الصندوق" ? "نقدي" : "تحويل بنكي"),
+      cashBoxId: entry.creditAccount === "الصندوق" ? (entry.creditSubId || "") : "",
+      bankAccountId: entry.creditAccount === "البنك" ? (entry.creditSubId || "") : "",
+      reference: entry.reference || "",
+      attachmentData: entry.attachmentData || "",
+      status: "مدفوع",
+      notes: entry.notes || `مزامنة من قيد اليومية المعمد رقم ${entry.id}`,
+      createdBy: entry.createdBy || user.username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      approvedBy: user.username,
+      approvedAt: new Date().toISOString(),
+      paidBy: user.username,
+      paidAt: new Date().toISOString()
+    };
+
+    try {
+      const res = await fetch(`/api/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expensePayload)
+      });
+      if (res.ok) {
+        console.log("Successfully auto-synced journal entry to expenses list.");
+      }
+    } catch (e) {
+      console.error("Error auto-syncing journal entry to expenses:", e);
+    }
+  };
+
   const handleSave = async (status: string) => {
     const error = validateForm();
     if (error) {
@@ -205,6 +255,14 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
+        const responseData = await res.json();
+        const savedId = responseData.id || editingEntryId;
+        const savedEntry = { ...payload, id: savedId };
+
+        if (status === "معتمد") {
+          await syncJournalEntryToExpenses(savedEntry);
+        }
+
         fetchEntries();
         setShowAddModal(false);
         if (status === "مسودة") alert("تم حفظ القيد كمسودة بنجاح.");
@@ -420,11 +478,15 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
   const handleConfirmApprove = async () => {
     if (!approveConfirmItem) return;
     try {
+      const approvedItem = { ...approveConfirmItem, status: "معتمد" };
       await fetch(`/api/journal-entries/${approveConfirmItem.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...approveConfirmItem, status: "معتمد" })
+        body: JSON.stringify(approvedItem)
       });
+      
+      await syncJournalEntryToExpenses(approvedItem);
+
       setApproveConfirmItem(null);
       fetchEntries();
     } catch (err) {

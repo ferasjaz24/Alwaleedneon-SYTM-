@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import "express-async-errors";
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -2419,6 +2420,104 @@ Text to translate: ${text}`;
   
 
   
+
+  // API: Customer Invoices
+  app.get("/api/customer-invoices", async (req, res) => {
+    try {
+      const data = await getCollectionDocs("customer_invoices");
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/customer-invoices", async (req, res) => {
+    try {
+      const inv = req.body;
+      if (!inv.id) inv.id = `INV-${Date.now()}`;
+      await setDoc(doc(db, "customer_invoices", inv.id), inv);
+      if (inv.status === "معتمدة وصادرة" || inv.status === "معتمد") {
+        try {
+          await createCustomerInvoiceJournal(inv.id);
+        } catch (e) {
+          console.error("Auto journal trigger error:", e);
+        }
+      }
+      res.json({ success: true, invoice: inv });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/customer-invoices/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const inv = req.body;
+      await setDoc(doc(db, "customer_invoices", id), inv, { merge: true });
+      if (inv.status === "معتمدة وصادرة" || inv.status === "معتمد") {
+        try {
+          await createCustomerInvoiceJournal(id);
+        } catch (e) {
+          console.error("Auto journal trigger error:", e);
+        }
+      }
+      res.json({ success: true, invoice: inv });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/customer-invoices/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "customer_invoices", id));
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // API: Supplier Invoices
+  app.get("/api/supplier-invoices", async (req, res) => {
+    try {
+      const data = await getCollectionDocs("supplier_invoices");
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/supplier-invoices", async (req, res) => {
+    try {
+      const inv = req.body;
+      if (!inv.id) inv.id = `SUP-INV-${Date.now()}`;
+      await setDoc(doc(db, "supplier_invoices", inv.id), inv);
+      res.json({ success: true, invoice: inv });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/supplier-invoices/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const inv = req.body;
+      await setDoc(doc(db, "supplier_invoices", id), inv, { merge: true });
+      res.json({ success: true, invoice: inv });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/supplier-invoices/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "supplier_invoices", id));
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // API v1: Employee Audit Trails
   app.get("/api/v1/hr/employee/audit-trails", async (req, res) => {
