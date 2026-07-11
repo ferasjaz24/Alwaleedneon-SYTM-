@@ -39,6 +39,7 @@ import {
   Terminal,
   Activity,
   Cpu,
+  UserCheck,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import NotificationsBell from "./components/NotificationsBell";
@@ -414,6 +415,7 @@ export default function App() {
 
     // 1. HR module
     if (activeTab === "hr") {
+      if (activeHrSubTab === "ess_dashboard") return true;
       if (!canAccessModule(user, "hr")) return false;
       if (activeHrSubTab) {
         return canShowSubmenu(user, "hr", activeHrSubTab);
@@ -1025,30 +1027,37 @@ export default function App() {
       return;
     }
 
-    // 6. Map role automatically if not set (Requirement 9)
-    let finalRole = newAdminUser.role || "";
-    if (!finalRole && newAdminUser.jobTitle) {
-      if (newAdminUser.jobTitle === "General Admin Director") {
-        finalRole = "Super Admin";
-      } else if (newAdminUser.jobTitle === "HR Manager") {
-        finalRole = "HR Manager";
-      } else if (newAdminUser.jobTitle === "Sales Coordinator") {
-        finalRole = "Sales Rep";
-      }
-    }
-
-    // 7. Require role (Requirement 7 & 8)
-    if (!finalRole) {
-      setUserCreationError(
-        lang === "ar"
-          ? "يرجى اختيار صلاحية المستخدم"
-          : "Please select a user role"
-      );
-      return;
-    }
+    // 6. All newly created users default to the "Employee" role with no auto-permissions
+    const finalRole = "Employee";
 
     setButtonLoading("addUser", true);
     try {
+      // Build default permissions based on the chosen role (all disabled by default, only manageable via Advanced Access Control Portal)
+      const defaultModulePerms = {
+        enabled: false,
+        viewAccess: "none" as "none" | "own" | "all",
+        editAccess: "none" as "none" | "own" | "all",
+        deleteAccess: "none" as "none" | "own" | "all",
+        add: false,
+        approve: false,
+        exportPdf: false,
+        exportExcel: false,
+        print: false,
+        deleteSensitive: false,
+        viewCosts: false,
+      };
+
+      const defaultModuleAccess = {
+        hr: { ...defaultModulePerms },
+        sales: { ...defaultModulePerms },
+        finance: { ...defaultModulePerms },
+        production: { ...defaultModulePerms },
+        procurement: { ...defaultModulePerms },
+        reports: { ...defaultModulePerms },
+        settings: { ...defaultModulePerms },
+        notifications: { ...defaultModulePerms },
+      };
+
       // 8. Sanitize payload against undefined to protect Firebase
       const payload: any = {
         username: newAdminUser.username || "",
@@ -1061,7 +1070,11 @@ export default function App() {
         department: (newAdminUser as any).department || "",
         status: "active",
         createdAt: new Date().toISOString(),
-        createdBy: currentUser?.uid || "FERAS"
+        createdBy: currentUser?.uid || "FERAS",
+        permissions: {
+          moduleAccess: defaultModuleAccess,
+          advanced: {},
+        }
       };
 
       // Safe replace of undefined fields
@@ -2289,62 +2302,64 @@ export default function App() {
               )}
 
               {/* Financial Accounting */}
-              <div
-                id="tab-btn-finance-group"
-                className="w-full flex flex-col gap-2"
-              >
-                <button
-                  id="tab-btn-finance"
-                  onClick={() => {
-                    setActiveTab("finance");
-                    setIsFinanceDropdownOpen(!isFinanceDropdownOpen);
-                  }}
-                  className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-[14px] font-extrabold transition-all duration-300 ${activeTab === "finance" ? "bg-[#0072BC] text-white shadow-xl shadow-[#0072BC]/20" : "text-slate-600 hover:bg-slate-50 hover:text-[#0072BC]"}`}
+              {canAccessModule(user, 'finance') && (
+                <div
+                  id="tab-btn-finance-group"
+                  className="w-full flex flex-col gap-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
-                    <span>
-                      {lang === "ar"
-                        ? "المحاسبة المالية 💰"
-                        : "Financial Accounting 💰"}
+                  <button
+                    id="tab-btn-finance"
+                    onClick={() => {
+                      setActiveTab("finance");
+                      setIsFinanceDropdownOpen(!isFinanceDropdownOpen);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-[14px] font-extrabold transition-all duration-300 ${activeTab === "finance" ? "bg-[#0072BC] text-white shadow-xl shadow-[#0072BC]/20" : "text-slate-600 hover:bg-slate-50 hover:text-[#0072BC]"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
+                      <span>
+                        {lang === "ar"
+                          ? "المحاسبة المالية 💰"
+                          : "Financial Accounting 💰"}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-black opacity-90 select-none transition-transform duration-300">
+                      {isFinanceDropdownOpen ? "▼" : "▲"}
                     </span>
-                  </div>
-                  <span className="text-[11px] font-black opacity-90 select-none transition-transform duration-300">
-                    {isFinanceDropdownOpen ? "▼" : "▲"}
-                  </span>
-                </button>
+                  </button>
 
-                {/* Nested Accordion Submenus */}
-                {isFinanceDropdownOpen && (
-                  <div className="mt-1 mr-2 ml-2 pr-4 text-[13px] flex flex-col gap-2 border-r-2 border-[#0072BC]/30 py-2">
-                    {financeSubmenus
-                      .filter((sub) => canShowSubmenu(user, "finance", sub.id))
-                      .map((sub) => {
-                      const isSubActive =
-                        activeTab === "finance" &&
-                        activeFinanceSubTab === sub.id;
-                      return (
-                        <button
-                          key={sub.id}
-                          onClick={() => {
-                            setActiveTab("finance");
-                            setActiveFinanceSubTab(sub.id);
-                          }}
-                          className={`w-full flex items-center gap-3 py-2.5 px-3.5 rounded-xl text-right font-semibold transition-all duration-200 ${
-                            isSubActive
-                              ? "bg-[#0072BC] text-white font-extrabold shadow-md shadow-[#0072BC]/15 scale-[1.02]"
-                              : "text-slate-600 hover:bg-slate-100 hover:text-[#0072BC]"
-                          }`}
-                        >
-                          <span className="truncate leading-loose">
-                            {lang === "ar" ? sub.ar : sub.en}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                  {/* Nested Accordion Submenus */}
+                  {isFinanceDropdownOpen && (
+                    <div className="mt-1 mr-2 ml-2 pr-4 text-[13px] flex flex-col gap-2 border-r-2 border-[#0072BC]/30 py-2">
+                      {financeSubmenus
+                        .filter((sub) => canShowSubmenu(user, "finance", sub.id))
+                        .map((sub) => {
+                        const isSubActive =
+                          activeTab === "finance" &&
+                          activeFinanceSubTab === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={() => {
+                              setActiveTab("finance");
+                              setActiveFinanceSubTab(sub.id);
+                            }}
+                            className={`w-full flex items-center gap-3 py-2.5 px-3.5 rounded-xl text-right font-semibold transition-all duration-200 ${
+                              isSubActive
+                                ? "bg-[#0072BC] text-white font-extrabold shadow-md shadow-[#0072BC]/15 scale-[1.02]"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-[#0072BC]"
+                            }`}
+                          >
+                            <span className="truncate leading-loose">
+                              {lang === "ar" ? sub.ar : sub.en}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Manufacturing Production Control Hub */}
               {canAccessModule(user, 'production') && (
@@ -2433,6 +2448,27 @@ export default function App() {
                   </span>
                 </button>
               )}
+
+              {/* Employee Inquiries (Visible to everyone without exception) */}
+              <button
+                id="tab-btn-employee-inquiries"
+                onClick={() => {
+                  setActiveTab("hr");
+                  setActiveHrSubTab("ess_dashboard");
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${
+                  activeTab === "hr" && activeHrSubTab === "ess_dashboard"
+                    ? "bg-[#0072BC] text-white shadow-lg shadow-[#0072BC]/15 neon-glow-blue"
+                    : "text-slate-600 hover:bg-white/90 hover:text-[#0072BC]"
+                }`}
+              >
+                <UserCheck className="w-5 h-5 text-indigo-500 fill-indigo-500/20" />
+                <span>
+                  {lang === "ar"
+                    ? "استعلامات الموظف"
+                    : "Employee Inquiries"}
+                </span>
+              </button>
 
               {/* Secure F24 Indicator Badge */}
               <div className="mt-4 p-4 rounded-2xl bg-slate-100/80 border border-slate-200/50 flex flex-col gap-2">
@@ -2687,7 +2723,7 @@ export default function App() {
                       </h2>
                       <p className="text-xs text-slate-500 leading-relaxed mt-2 max-w-xl">
                         {lang === "ar"
-                          ? "إدارة الحسابات الأمنية، كلمات السر، مستويات الوصولوصلاحيات الأقسام لجميع الموظفين."
+                          ? "إدارة الحسابات الأمنية، كلمات السر، مستويات الوصول وصلاحيات الأقسام لجميع الموظفين."
                           : "Override master roles, manage user passwords, and configure access profiles directly."}
                       </p>
                     </div>
@@ -2781,68 +2817,6 @@ export default function App() {
                           }
                           className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl"
                         />
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 block mb-1">
-                          {lang === "ar"
-                            ? "صلاحية الوصول ومستوى القسم"
-                            : "System Authorization Role"}
-                        </label>
-                        <select
-                          value={newAdminUser.role || ""}
-                          onChange={(e) =>
-                            setNewAdminUser({
-                              ...newAdminUser,
-                              role: e.target.value,
-                            })
-                          }
-                          className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl"
-                        >
-                          <option value="">
-                            --{" "}
-                            {lang === "ar"
-                              ? "اختر الصلاحية المناسبة"
-                              : "Select access role"}{" "}
-                            --
-                          </option>
-                          <option value="Employee (Inquiries)">
-                            {lang === "ar"
-                              ? "موظف - استعلامات (الخدمة الذاتية)"
-                              : "Employee (Inquiries) - Self Service Portal"}
-                          </option>
-                          <option value="HR Manager">
-                            {lang === "ar"
-                              ? "مدير الموارد البشرية"
-                              : "HR Manager"}
-                          </option>
-                          <option value="Sales Rep">
-                            {lang === "ar"
-                              ? "مندوب مبيعات - إدخال تسعير وتعديل"
-                              : "Sales Rep & Costing"}
-                          </option>
-                          <option value="Purchasing">
-                            {lang === "ar" ? "مندوب مشتريات" : "Purchasing"}
-                          </option>
-                          <option value="Production">
-                            {lang === "ar"
-                              ? "فني إنتاج وإحصائيات"
-                              : "Production Hub Viewer"}
-                          </option>
-                          <option value="Admin">
-                            {lang === "ar"
-                              ? "إداري - وصول كامل"
-                              : "General Admin (Full Edit)"}
-                          </option>
-                          <option value="Senior Management">
-                            {lang === "ar"
-                              ? "إدارة عليا - وصول كامل"
-                              : "Senior Management (Full)"}
-                          </option>
-                          <option value="Super Admin">
-                            {lang === "ar" ? "مشرف فائق النظام" : "Super Admin"}
-                          </option>
-                        </select>
                       </div>
 
                       {/* Map to Real Employee list */}

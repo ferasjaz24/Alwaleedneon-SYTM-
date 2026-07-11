@@ -81,6 +81,15 @@ const legacyRoleMappings: Record<string, Partial<UserPermissions['moduleAccess']
     reports: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
     settings: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
     notifications: { ...defaultModulePermissions, enabled: true, viewAccess: 'all', editAccess: 'all', deleteAccess: 'all', add: true, approve: true, exportPdf: true, exportExcel: true, print: true, viewCosts: true },
+  },
+  'Employee': {
+    hr: { ...defaultModulePermissions, enabled: true, viewAccess: 'own', editAccess: 'own', add: true },
+  },
+  'Employee (Inquiries)': {
+    hr: { ...defaultModulePermissions, enabled: true, viewAccess: 'own', editAccess: 'own', add: true },
+  },
+  'موظف': {
+    hr: { ...defaultModulePermissions, enabled: true, viewAccess: 'own', editAccess: 'own', add: true },
   }
 };
 
@@ -213,6 +222,7 @@ export default function UserPermissionsModal({ user, onClose, onSave, lang }: Pr
                 onChange={(e) => setEditRole(e.target.value)}
                 className="w-full px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:border-blue-500 text-sm"
               >
+                 <option value="Employee">{lang === 'ar' ? 'موظف' : 'Employee'}</option>
                  <option value="Employee (Inquiries)">{lang === "ar" ? "موظف (استعلام فقط)" : "Employee (Inquiries)"}</option>
                  <option value="Sales Rep">{lang === "ar" ? "مندوب مبيعات" : "Sales Rep"}</option>
                  <option value="HR Manager">{lang === "ar" ? "مدير موارد بشرية" : "HR Manager"}</option>

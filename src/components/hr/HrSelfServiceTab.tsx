@@ -58,7 +58,7 @@ export default function HrSelfServiceTab({ lang, user, employees }: HrSelfServic
   const [inquiryNameFilter, setInquiryNameFilter] = useState('');
 
   // Locate the employee bound context
-  const isEmployeeRole = user?.role === 'Employee (Inquiries)' || user?.role === 'موظف - استعلامات' || user?.username === 'KAMEL' || forceViewAsEmployee;
+  const isEmployeeRole = user?.role === 'Employee (Inquiries)' || user?.role === 'Employee' || user?.role === 'موظف' || user?.role === 'موظف - استعلامات' || user?.username === 'KAMEL' || forceViewAsEmployee;
   
   // High-intelligence matching mapping to link a logged-in user account dynamically to their HR Employee ID
   const matchedEmployee = React.useMemo(() => {
@@ -343,7 +343,7 @@ export default function HrSelfServiceTab({ lang, user, employees }: HrSelfServic
     <div id="hr-selfservice-management" className="space-y-6">
       
       {/* Dual Mode View Toggle for Admin / HR Managers / Super Admin */}
-      {!(user?.role === 'Employee (Inquiries)' || user?.role === 'موظف - استعلامات') && (
+      {!(user?.role === 'Employee (Inquiries)' || user?.role === 'Employee' || user?.role === 'موظف' || user?.role === 'موظف - استعلامات') && (
         <div id="self-service-view-toggle" className="flex bg-slate-100/90 p-1 rounded-2xl w-max gap-1 border border-slate-200/50">
           <button
             onClick={() => setForceViewAsEmployee(false)}

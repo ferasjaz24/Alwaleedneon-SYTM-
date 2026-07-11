@@ -188,7 +188,7 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
   // Map subId to schema
   if (module === 'hr') {
     if (subId === 'dashboard') return hasAdvancedPermission(user, 'hr', 'dashboard', 'view_dashboard');
-    if (subId === 'ess_dashboard') return hasAdvancedPermission(user, 'hr', 'self_service', 'view_inquiries');
+    if (subId === 'ess_dashboard') return true;
     if (subId === 'employees_all') return hasAdvancedPermission(user, 'hr', 'employees', 'view_emp');
     if (subId === 'leaves_tracker') return hasAdvancedPermission(user, 'hr', 'leaves', 'view_balances');
     if (subId === 'payroll_main') return hasAdvancedPermission(user, 'hr', 'payroll', 'view_payroll');
