@@ -334,24 +334,6 @@ export default function App() {
   const [activeFinanceSubTab, setActiveFinanceSubTab] = useState("accounting_dashboard");
   const [isFinanceDropdownOpen, setIsFinanceDropdownOpen] = useState(false);
 
-  // Automated transition loading state
-  const [isTabChanging, setIsTabChanging] = useState(false);
-
-  useEffect(() => {
-    setIsTabChanging(true);
-    const timer = setTimeout(() => {
-      setIsTabChanging(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [
-    activeTab,
-    activeHrSubTab,
-    activeSalesSubTab,
-    activeProductionSubTab,
-    activeWarehouseSubTab,
-    activeFinanceSubTab
-  ]);
-
   // Directory Filters
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -2716,21 +2698,6 @@ export default function App() {
                 >
                   <span>{lang === 'ar' ? 'الرجوع إلى لوحة المؤشرات' : 'Back to Dashboard'}</span>
                 </button>
-              </div>
-            ) : isTabChanging ? (
-              <div className="flex flex-col items-center justify-center min-h-[500px] p-8 bg-white border border-slate-100 rounded-3xl shadow-sm text-center animate-in fade-in duration-300">
-                <div className="relative flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-[#0072BC]"></div>
-                  <div className="absolute h-7 w-7 rounded-full bg-blue-50 flex items-center justify-center animate-pulse">
-                    <Cpu className="w-3.5 h-3.5 text-[#0072BC]" />
-                  </div>
-                </div>
-                <h3 className="text-xs font-black text-slate-700 mt-5 tracking-wide animate-pulse">
-                  {lang === 'ar' ? 'جاري تحميل واسترجاع البيانات الفورية...' : 'Retrieving real-time data integrations...'}
-                </h3>
-                <p className="text-[10px] text-slate-400 mt-1.5 font-medium">
-                  {lang === 'ar' ? 'يرجى الانتظار، يتم تحديث المؤشرات ومزامنة العمليات الحية' : 'Please wait, caching active database telemetry...'}
-                </p>
               </div>
             ) : (
               <>

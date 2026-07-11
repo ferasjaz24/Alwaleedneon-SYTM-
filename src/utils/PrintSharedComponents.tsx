@@ -19,12 +19,12 @@ export const DocumentHeader = () => (
 export const DocumentFooter = () => (
   <div style={{ marginTop: 'auto', borderTop: '2px solid #0072BC', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '10px', color: '#4b5563', userSelect: 'none', direction: 'ltr', minHeight: '60px' }}>
     <div style={{ textAlign: 'left', lineHeight: '1.6' }}>
-      <p style={{margin:0}}><span style={{ fontWeight: 'bold', color: '#0072BC' }}>T:</span> +966 13 833 4115 | <span style={{ fontWeight: 'bold', color: '#0072BC' }}>E:</span> info@alwaleedneon.com</p>
+      <p style={{margin:0}}><span style={{ fontWeight: 'bold', color: '#0072BC' }}>T:</span> +966 13 833 4115</p>
       <p style={{margin:0}}><span style={{ fontWeight: 'bold', color: '#0072BC' }}>Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
     </div>
     <div style={{ textAlign: 'right', lineHeight: '1.6' }}>
-      <p style={{margin:0}}>www.alwaleedneon.com</p>
-      <p style={{margin:0, fontWeight: 'bold', color: '#0072BC'}}>شركة فنون الوليد للصناعة</p>
+      <p style={{margin:0}}>info@alwaleedneon.com | www.alwaleedneon.com</p>
+      <p style={{margin:0}}><span style={{ fontWeight: 'bold', color: '#0072BC' }}>Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
     </div>
   </div>
 );

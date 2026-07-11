@@ -202,30 +202,7 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
     loadData();
   }, []);
 
-  const handleOpenPrintTab = async (inv: CustomerInvoice) => {
-    let activeBankAccounts = [];
-    try {
-      const baRes = await fetch("/api/dynamic/bank_accounts");
-      if (baRes.ok) {
-        const baData = await baRes.json();
-        if (Array.isArray(baData)) {
-          activeBankAccounts = baData.filter((ba: any) => ba && ba.isDeleted !== true && ba.status !== "Inactive");
-        }
-      }
-    } catch (e) {
-      console.error("Error fetching live bank accounts for print:", e);
-    }
-
-    const bankIbanHTML = activeBankAccounts && activeBankAccounts.length > 0 
-      ? activeBankAccounts.map(ba => {
-          const bankName = ba.bank_name_ar || ba.bankName || ba.bank_name || ba.bank_name_en || "البنك المعتمد";
-          const iban = ba.iban || "---";
-          const accNum = ba.account_number || ba.accountNumber || "---";
-          return `• <strong>${bankName}:</strong> <span style="font-family: monospace;">${iban}</span> | ح/أ: <span style="font-family: monospace;">${accNum}</span><br />`;
-        }).join("")
-      : `• <strong>مصرف الراجحي:</strong> <span style="font-family: monospace;">SA48800000045612347890</span><br />
-         • <strong>بنك الرياض:</strong> <span style="font-family: monospace;">SA22200000001234567891</span>`;
-
+  const handleOpenPrintTab = (inv: CustomerInvoice) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       alert("الرجاء السماح بفتح النوافذ المنبثقة لطباعة الفاتورة");
@@ -590,7 +567,8 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
               <h4 style="margin-top: 0; margin-bottom: 6px; font-size: 10px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">الحسابات البنكية المعتمدة للتحويل / Wire Details:</h4>
               <p style="margin: 0; font-size: 9px; color: #475569; line-height: 1.6;">
                 يمكنكم سداد قيمة هذه الفاتورة بالتحويل البنكي المباشر لأحد الحسابات التالية:<br />
-                ${bankIbanHTML}
+                • <strong>مصرف الراجحي:</strong> <span style="font-family: monospace;">SA48800000045612347890</span><br />
+                • <strong>بنك الرياض:</strong> <span style="font-family: monospace;">SA22200000001234567891</span>
               </p>
             </div>
 
@@ -618,42 +596,14 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
             </div>
           </div>
 
-          <!-- Signatures, ZATCA Barcode & Corporate Info (Symmetric next to each other) -->
-          <div style="margin-top: 30px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: stretch; gap: 20px; direction: rtl; text-align: right;">
-            <!-- Right Side: Corporate Details (Balanced & aligned with barcode on the left) -->
-            <div style="width: 50%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; box-sizing: border-box;">
-              <div>
-                <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 10px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                  بيانات الجهة المصدرة (شركة فنون الوليد)
-                </div>
-                <div style="font-size: 11px; line-height: 1.6; color: #000; font-weight: bold;">
-                  <div><strong>الاسم القانوني:</strong> شركة فنون الوليد للصناعة (فنون الوليد للديكور والمقاولات)</div>
-                  <div><strong>الرقم الضريبي الموحد (VAT):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">311354897200003</span></div>
-                  <div><strong>رقم السجل التجاري (CR):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">2050123456</span></div>
-                  <div><strong>العنوان الوطني:</strong> المنطقة الصناعية بـ دلة، شارع أبو بكر الرازي، الدمام 32445، المملكة العربية السعودية</div>
-                </div>
-              </div>
-              
-              <div style="margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                <div style="font-size: 10.5px; font-weight: bold; color: #000; margin-bottom: 15px;">توقيع واعتماد الحسابات والختم الرسمي:</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; direction: rtl;">
-                  <div style="width: 150px; border-bottom: 1.5px dashed #000;"></div>
-                  <div style="font-size: 10.5px; border: 2px solid #0072BC; color: #0072BC; border-radius: 50%; padding: 4px 10px; transform: rotate(-5deg); font-weight: bold; margin-left: 10px;">مـعـتـمـد</div>
-                </div>
-              </div>
+          <div class="signatures">
+            <div>
+              <div class="sig-line">توقيع المستلم / Receiver Signature</div>
+              <p style="margin: 4px 0 0 0; font-size: 9px; color: #64748b;">اسم وتوقيع وختم العميل المستلم</p>
             </div>
-            
-            <!-- Left Side: ZATCA Barcode (Parallel and symmetric to the right side) -->
-            <div style="width: 45%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; box-sizing: border-box; text-align: center;">
-              <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 15px; width: 100%; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                الربط الإلكتروني والتحقق (ZATCA QR)
-              </div>
-              <div style="display: center; justify-content: center; align-items: center; flex-grow: 1; min-height: 110px;">
-                ${qrCodeHtml}
-              </div>
-              <div style="font-size: 10px; color: #000; margin-top: 12px; font-weight: bold; font-family: 'GE SS Two', 'Gotham Pro', sans-serif; line-height: 1.5;">
-                فاتورة ضريبية إلكترونية معتمدة وتبادلية<br/>من هيئة الزكاة والضريبة والجمارك (ZATCA)
-              </div>
+            <div>
+              <div class="sig-line" style="color: #0072BC; border-top-color: #0072BC;">توقيع المنشأة المعتمد / Authorized Signature</div>
+              <p style="margin: 4px 0 0 0; font-size: 9px; color: #64748b;">قسم الإدارة المالية والمحاسبية</p>
             </div>
           </div>
 

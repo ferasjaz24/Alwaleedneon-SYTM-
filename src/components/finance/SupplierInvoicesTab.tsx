@@ -486,37 +486,14 @@ export default function SupplierInvoicesTab({ lang, user }: { lang: "ar" | "en";
             </div>
           </div>
 
-          <!-- Symmetrical approvals and corporate details -->
-          <div style="margin-top: 30px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: stretch; gap: 20px; direction: rtl; text-align: right;">
-            <!-- Right Side: Corporate Details as the Receiver -->
-            <div style="width: 50%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; box-sizing: border-box;">
-              <div>
-                <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 10px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                  الجهة المستلمة والمستفيدة (شركة فنون الوليد)
-                </div>
-                <div style="font-size: 11px; line-height: 1.6; color: #000; font-weight: bold;">
-                  <div><strong>الاسم القانوني:</strong> شركة فنون الوليد للصناعة (فنون الوليد للديكور والمقاولات)</div>
-                  <div><strong>الرقم الضريبي الموحد (VAT):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">311354897200003</span></div>
-                  <div><strong>رقم السجل التجاري (CR):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">2050123456</span></div>
-                  <div><strong>العنوان الوطني:</strong> المنطقة الصناعية بـ دلة، شارع أبو بكر الرازي، الدمام 32445، المملكة العربية السعودية</div>
-                </div>
-              </div>
+          <div class="signatures">
+            <div>
+              <div class="sig-line">توقيع الموظف المستلم / Employee Signature</div>
+              <p style="margin: 4px 0 0 0; font-size: 9px; color: #64748b;">قسم إدارة المشتريات / المستودع</p>
             </div>
-            
-            <!-- Left Side: Received and Approved Stamp/Signatures -->
-            <div style="width: 45%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; box-sizing: border-box;">
-              <div>
-                <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 15px; width: 100%; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                  الاعتماد والتدقيق المالي
-                </div>
-                <div style="font-size: 10.5px; font-weight: bold; color: #000; margin-bottom: 5px;">توقيع الموظف المستلم (قسم المستودعات):</div>
-                <div style="border-bottom: 1px dashed #ccc; height: 35px; margin-bottom: 15px;"></div>
-                <div style="font-size: 10.5px; font-weight: bold; color: #000; margin-bottom: 5px;">توقيع واعتماد قسم المحاسبة والتدقيق:</div>
-                <div style="border-bottom: 1px dashed #ccc; height: 35px; margin-bottom: 10px;"></div>
-              </div>
-              <div style="display: flex; justify-content: flex-end;">
-                <div style="font-size: 10.5px; border: 2px solid #0072BC; color: #0072BC; border-radius: 50%; padding: 4px 10px; transform: rotate(-5deg); font-weight: bold; display: inline-block;">مُدَقّق ومُعْتَمَد</div>
-              </div>
+            <div>
+              <div class="sig-line" style="color: #0072BC; border-top-color: #0072BC;">الاعتماد المالي المعتمد / Financial Approval</div>
+              <p style="margin: 4px 0 0 0; font-size: 9px; color: #64748b;">قسم المحاسبة والمراجعة المالية</p>
             </div>
           </div>
 

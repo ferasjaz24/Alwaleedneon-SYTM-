@@ -17,12 +17,12 @@ export const sharedPrintHeader = `
 export const sharedPrintFooter = `
   <div style="margin-top: auto; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #4b5563; user-select: none; direction: ltr; min-height: 80px;">
     <div style="text-align: left; line-height: 1.6;">
-      <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115 | <span style="font-weight: bold; color: #0072BC;">E:</span> info@alwaleedneon.com</p>
+      <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
       <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
     </div>
     <div style="text-align: right; line-height: 1.6;">
-      <p style="margin:0;">www.alwaleedneon.com</p>
-      <p style="margin:0; font-weight: bold; color: #0072BC;">شركة فنون الوليد للصناعة</p>
+      <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
+      <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
     </div>
   </div>
 `;

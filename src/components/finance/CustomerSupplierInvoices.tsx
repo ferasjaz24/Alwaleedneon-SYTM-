@@ -1082,8 +1082,8 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     let qrImgHTML = "";
     if (inv.status !== "بانتظار الاعتماد" && inv.status !== "مسودة") {
       const zatcaBase64 = generateZatcaQR(
-        companyInfo.name,
-        companyInfo.taxNumber,
+        "شركة فنون الوليد للصناعة",
+        "310123456700003", // Example VAT for the company
         new Date().toISOString(),
         inv.totalAmount.toString(),
         inv.taxAmount.toString()
@@ -1108,28 +1108,6 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
     const statusColor = inv.status === 'paid' ? '#10b981' : (inv.status === 'partial' ? '#f59e0b' : '#ef4444');
     const statusBg = inv.status === 'paid' ? '#ecfdf5' : (inv.status === 'partial' ? '#fffbeb' : '#fef2f2');
     const statusText = inv.status === 'paid' ? "مدفوعة" : (inv.status === 'partial' ? "مدفوعة جزئياً" : (inv.status === 'unpaid' ? "غير مدفوعة" : inv.status));
-
-    let activeBankAccounts = bankAccounts || [];
-    try {
-      const baRes = await fetch("/api/dynamic/bank_accounts");
-      if (baRes.ok) {
-        const baData = await baRes.json();
-        if (Array.isArray(baData)) {
-          activeBankAccounts = baData.filter((ba: any) => ba && ba.isDeleted !== true && ba.status !== "Inactive");
-        }
-      }
-    } catch (e) {
-      console.error("Error fetching live bank accounts for print:", e);
-    }
-
-    const bankIbanHTML = activeBankAccounts && activeBankAccounts.length > 0 
-      ? activeBankAccounts.map(ba => {
-          const bankName = ba.bank_name_ar || ba.bankName || ba.bank_name || ba.bank_name_en || "البنك المعتمد";
-          const iban = ba.iban || "---";
-          const accNum = ba.account_number || ba.accountNumber || "---";
-          return `<div style="margin: 2px 0;"><span style="font-weight: bold; color: #0072BC;">${bankName}:</span> <span style="font-family: monospace; font-size: 11px; font-weight: bold;">${iban}</span> | ح/أ: <span style="font-family: monospace; font-size: 11px;">${accNum}</span></div>`;
-        }).join("")
-      : `<div style="margin: 2px 0;"><span style="font-weight: bold; color: #0072BC;">مصرف الراجحي (Al Rajhi Bank):</span> <span style="font-family: monospace; font-size: 11px; font-weight: bold;">SA80 8000 0012 3456 7890 12</span> | ح/أ: <span style="font-family: monospace; font-size: 11px;">23456786543</span></div>`;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -1524,55 +1502,28 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               </div>
             </div>
 
-            <!-- Signatures, ZATCA Barcode & Corporate Info -->
-            <div style="margin-top: 30px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: stretch; gap: 20px;">
-              <!-- Right Side: Corporate Details (Balanced & aligned with barcode on the left) -->
-              <div style="width: 50%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; box-sizing: border-box; text-align: right;">
-                <div>
-                  <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 10px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                    بيانات الجهة المصدرة (شركة فنون الوليد)
-                  </div>
-                  <div style="font-size: 11px; line-height: 1.6; color: #000; font-weight: bold;">
-                    <div><strong>الاسم القانوني:</strong> شركة فنون الوليد للصناعة (فنون الوليد للديكور والمقاولات)</div>
-                    <div><strong>الرقم الضريبي الموحد (VAT):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">311354897200003</span></div>
-                    <div><strong>رقم السجل التجاري (CR):</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: 900;">2050123456</span></div>
-                    <div><strong>العنوان الوطني (National Address):</strong> المنطقة الصناعية بـ دلة، شارع أبو بكر الرازي، ص.ب 2882، الدمام 32445، المملكة العربية السعودية</div>
-                  </div>
-                </div>
-                
-                <div style="margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                  <div style="font-size: 10.5px; font-weight: bold; color: #000; margin-bottom: 15px;">توقيع واعتماد الحسابات والختم الرسمي:</div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; direction: rtl;">
-                    <div style="width: 150px; border-bottom: 1.5px dashed #000;"></div>
-                    <div class="stamp" style="font-size: 10.5px; padding: 4px 10px; transform: rotate(-2deg); margin: 0;">مـعـتـمـد</div>
-                  </div>
-                </div>
+            <!-- Signatures and stamp -->
+            <div class="stamp-box">
+              <div style="text-align: right;">
+                <div style="font-size: 12px; font-weight: bold; color: #000;">توقيع واعتماد قسم الحسابات والتدقيق المالي</div>
+                <div style="font-size: 11px; color: #000; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للصناعة</div>
+                <div style="width: 180px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
               </div>
-              
-              <!-- Left Side: ZATCA Barcode (Parallel and symmetric to the right side) -->
-              <div style="width: 45%; border: 1.5px solid #000; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; box-sizing: border-box; text-align: center;">
-                <div style="font-size: 13px; font-weight: 800; color: #0072BC; border-bottom: 1.5px solid #000; padding-bottom: 6px; margin-bottom: 15px; width: 100%; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-                  الربط الإلكتروني والتحقق (ZATCA QR)
-                </div>
-                <div style="display: flex; justify-content: center; align-items: center; flex-grow: 1; min-height: 110px;">
-                  ${qrImgHTML ? qrImgHTML : `<div style="width: 100px; height: 100px; border: 1.5px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">التحقق والترميز الضريبي</div>`}
-                </div>
-                <div style="font-size: 10px; color: #000; margin-top: 12px; font-weight: bold; font-family: 'GE SS Two', 'Gotham Pro', sans-serif; line-height: 1.5;">
-                  فاتورة ضريبية إلكترونية معتمدة وتبادلية<br/>من هيئة الزكاة والضريبة والجمارك (ZATCA)
-                </div>
+              <div style="text-align: left; width: 150px;">
+                ${qrImgHTML}
+                <div style="font-size: 10px; color: #000; margin-top: 5px; text-align: center; font-weight: bold;">هيئة الزكاة والضريبة والجمارك</div>
               </div>
             </div>
 
-            <!-- Footer identical to Quotations but with dynamic IBAN list -->
+            <!-- Footer identical to Quotations -->
             <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-              <div style="text-align: left; line-height: 1.6; width: 50%;">
-                <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115 | <span style="font-weight: bold; color: #0072BC;">E:</span> info@alwaleedneon.com</p>
+              <div style="text-align: left; line-height: 1.6;">
+                <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
-                <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Web:</span> www.alwaleedneon.com</p>
               </div>
-              <div style="text-align: right; line-height: 1.6; width: 50%; direction: ltr;">
-                <p style="margin:0; font-weight: bold; color: #0072BC; text-transform: uppercase; margin-bottom: 4px;">Bank Accounts & IBAN Details:</p>
-                ${bankIbanHTML}
+              <div style="text-align: right; line-height: 1.6;">
+                <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
+                <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
               </div>
             </div>
           </div>

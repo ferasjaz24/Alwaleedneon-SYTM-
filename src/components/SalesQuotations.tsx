@@ -49,12 +49,6 @@ export interface SalesQuotation {
   items: SalesQuoteItem[];
   status: 'مسودة' | 'نشط' | 'معتمد';
   approvedBy?: string;
-  approvedAt?: string;
-  updatesLog?: Array<{
-    user: string;
-    action: string;
-    timestamp: string;
-  }>;
   createdBy?: string;
   salesRepName?: string;
   termsText: string;
@@ -903,15 +897,6 @@ body {
             lastUpdated: new Date().toISOString()
           };
           payload.approvedBy = user?.name || user?.username || 'المستخدم الحالي';
-          payload.approvedAt = new Date().toISOString();
-          payload.updatesLog = [
-            ...(editorQtn.updatesLog || []),
-            {
-              user: user?.name || user?.username || 'المستخدم الحالي',
-              action: "تم تعميد واعتماد عرض السعر وتحويله للمرحلة التالية",
-              timestamp: new Date().toISOString()
-            }
-          ];
           if (!payload.id) {
              payload.id = `SQ-${Date.now()}`;
              payload.dateCreated = new Date().toISOString();
@@ -922,7 +907,6 @@ body {
       return;
     }
 
-    const isNew = !editorQtn.id;
     const payload = {
       ...editorQtn,
       status: forceStatus || editorQtn.status || 'مسودة',
@@ -930,42 +914,13 @@ body {
     };
     if (forceStatus === 'معتمد') {
       payload.approvedBy = user?.name || user?.username || 'المستخدم الحالي';
-      payload.approvedAt = new Date().toISOString();
-      payload.updatesLog = [
-        ...(editorQtn.updatesLog || []),
-        {
-          user: user?.name || user?.username || 'المستخدم الحالي',
-          action: "تم تعميد واعتماد عرض السعر وتحويله للمرحلة التالية",
-          timestamp: new Date().toISOString()
-        }
-      ];
     } else if (skipConfirm && forceStatus === 'مسودة') {
       // Unapproving
       payload.approvedBy = '';
-      payload.approvedAt = '';
-      payload.updatesLog = [
-        ...(editorQtn.updatesLog || []),
-        {
-          user: user?.name || user?.username || 'المستخدم الحالي',
-          action: "تم إلغاء اعتماد وتعميد عرض السعر وإعادته لمسودة",
-          timestamp: new Date().toISOString()
-        }
-      ];
-    } else {
-      // Saving normally as draft
-      payload.updatesLog = [
-        ...(editorQtn.updatesLog || []),
-        {
-          user: user?.name || user?.username || 'المستخدم الحالي',
-          action: isNew ? "إنشاء عرض السعر وحفظه كمسودة" : "تعديل وحفظ عرض السعر كمسودة",
-          timestamp: new Date().toISOString()
-        }
-      ];
     }
     if (!payload.id) {
        payload.id = `SQ-${Date.now()}`;
        payload.dateCreated = new Date().toISOString();
-       payload.createdBy = user?.name || user?.username || 'المستخدم الحالي';
     }
 
     executeSave(payload, forceStatus, skipConfirm, showAlerts);
@@ -1174,18 +1129,7 @@ body {
                         <td className="p-4 text-center text-slate-600 text-xs">{q.orderType}</td>
                         <td className="p-4 text-center font-bold text-emerald-600" dir="ltr">{total.toFixed(2)} {q.currency}</td>
                         <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`px-3 py-1 rounded-full text-xs font-black ${getStatusColors(q.status)}`}>{q.status}</span>
-                            <div className="text-[10px] text-slate-400 font-medium">
-                              {lang === 'ar' ? 'بواسطة:' : 'By:'} <span className="text-slate-600 font-bold">{q.createdBy || 'النظام'}</span>
-                            </div>
-                            {q.status === 'معتمد' && (
-                              <div className="text-[9px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                {lang === 'ar' ? 'اعتمد بواسطة:' : 'Approved by:'} <span className="font-extrabold">{q.approvedBy || 'النظام'}</span>
-                                {q.approvedAt && <div className="text-[8px] font-mono mt-0.5">{new Date(q.approvedAt).toLocaleDateString()}</div>}
-                              </div>
-                            )}
-                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-black ${getStatusColors(q.status)}`}>{q.status}</span>
                         </td>
                         <td className="p-4">
                            <div className="flex items-center gap-2">
@@ -1635,68 +1579,6 @@ function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy,
                     <span>الإجمالي مع الضريبة:</span>
                     <span>{total.toFixed(2)} {quote.currency}</span>
                  </div>
-            {/* سجل العمليات والمتابعة (Workflow Log) */}
-            <div className="border-t border-slate-200 pt-6 mt-6">
-              <h3 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0072BC] animate-pulse"></span>
-                {lang === 'ar' ? 'سجل تتبع العمليات والاعتمادات (Workflow Audit Log):' : 'Workflow Audit Log:'}
-              </h3>
-              
-              <div className="space-y-3 mb-6">
-                {(!quote.updatesLog || quote.updatesLog.length === 0) ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col justify-between">
-                      <div>
-                        <span className="text-xs font-bold text-slate-400 block mb-1">
-                          {lang === 'ar' ? 'مُنشئ ومُرسل الطلب' : 'Created & Sent By'}
-                        </span>
-                        <span className="font-extrabold text-sm text-slate-700">
-                          {quote.createdBy || 'النظام'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-2 font-mono" dir="ltr">
-                        {quote.dateCreated ? new Date(quote.dateCreated).toLocaleString('en-US') : '---'}
-                      </span>
-                    </div>
-                    {quote.status === 'معتمد' && (
-                      <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl flex flex-col justify-between">
-                        <div>
-                          <span className="text-xs font-bold text-emerald-600/80 block mb-1">
-                            {lang === 'ar' ? 'مسؤول التعميد والاعتماد' : 'Approved & Signed By'}
-                          </span>
-                          <span className="font-extrabold text-sm text-emerald-800">
-                            {quote.approvedBy || 'النظام'}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-emerald-600/70 mt-2 font-mono" dir="ltr">
-                          {quote.approvedAt ? new Date(quote.approvedAt).toLocaleString('en-US') : quote.lastUpdated ? new Date(quote.lastUpdated).toLocaleString('en-US') : '---'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {quote.updatesLog.map((log: any, idx: number) => (
-                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 bg-slate-50 border border-slate-150 rounded-2xl hover:bg-slate-100 transition">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0072BC]"></span>
-                          <span className="font-bold text-xs text-slate-700">
-                            {log.action}
-                          </span>
-                          <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-black">
-                            {lang === 'ar' ? 'بواسطة:' : 'By:'} {log.user}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-mono" dir="ltr">
-                          {new Date(log.timestamp).toLocaleString('en-US')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
                  <div className="text-xs text-center text-emerald-600 font-bold bg-emerald-50 py-2 rounded-lg break-words">
                     {tafqeet(total, quote.currency)}
                  </div>
