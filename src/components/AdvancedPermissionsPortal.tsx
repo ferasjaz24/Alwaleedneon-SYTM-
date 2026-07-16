@@ -567,6 +567,9 @@ export default function AdvancedPermissionsPortal({
   const [boundDeviceId, setBoundDeviceId] = useState<string>(
      user.boundDeviceId || ""
   );
+  const [boundDeviceName, setBoundDeviceName] = useState<string>(
+     user.boundDeviceName || ""
+  );
   const [pendingDeviceApprovalId, setPendingDeviceApprovalId] = useState<string>(
      user.pendingDeviceApprovalId || ""
   );
@@ -652,6 +655,7 @@ export default function AdvancedPermissionsPortal({
        deviceLockEnabled,
        allowDeviceMigration,
        boundDeviceId,
+       boundDeviceName,
        pendingDeviceApprovalId,
        pendingDeviceApprovalName
     };
@@ -891,9 +895,17 @@ export default function AdvancedPermissionsPortal({
                                         <div className="p-3 bg-slate-100 rounded-lg text-slate-700 font-mono text-xs select-all text-center break-all border border-slate-200">
                                            {boundDeviceId}
                                         </div>
+                                        {boundDeviceName && (
+                                           <div className="text-[11px] text-[#0072BC] font-black text-center bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100">
+                                              اسم الجهاز: {boundDeviceName}
+                                           </div>
+                                        )}
                                         <button
                                            type="button"
-                                           onClick={() => setBoundDeviceId("")}
+                                           onClick={() => {
+                                              setBoundDeviceId("");
+                                              setBoundDeviceName("");
+                                           }}
                                            className="w-full py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-lg transition"
                                         >
                                            إلغاء ربط ومسح هذا الجهاز فوراً
@@ -927,6 +939,7 @@ export default function AdvancedPermissionsPortal({
                                               type="button"
                                               onClick={() => {
                                                  setBoundDeviceId(pendingDeviceApprovalId);
+                                                 setBoundDeviceName(pendingDeviceApprovalName);
                                                  setPendingDeviceApprovalId("");
                                                  setPendingDeviceApprovalName("");
                                               }}

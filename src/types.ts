@@ -46,6 +46,7 @@ export interface User {
   empId?: string;
   permissions?: UserPermissions;
   boundDeviceId?: string;
+  boundDeviceName?: string;
   deviceLockEnabled?: boolean;
   allowDeviceMigration?: boolean;
   pendingDeviceApprovalId?: string;

@@ -40,6 +40,8 @@ import {
   Activity,
   Cpu,
   UserCheck,
+  Smartphone,
+  AlertTriangle,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import NotificationsBell from "./components/NotificationsBell";
@@ -240,6 +242,30 @@ export const financeSubmenus = [
   }
 ];
 
+function getDeviceFriendlyName(): string {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return "Unknown Device";
+  }
+  const ua = navigator.userAgent;
+  let os = "جهاز غير معروف / Unknown OS";
+  let browser = "متصفح غير معروف / Unknown Browser";
+
+  if (ua.includes("Windows")) os = "جهاز كمبيوتر ويندوز / Windows PC";
+  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "جهاز ماك / Mac Device";
+  else if (ua.includes("iPhone")) os = "هاتف آيفون / iPhone";
+  else if (ua.includes("iPad")) os = "جهاز آيباد / iPad";
+  else if (ua.includes("Android")) os = "جهاز أندرويد / Android Device";
+  else if (ua.includes("Linux")) os = "جهاز لينكس / Linux Device";
+
+  if (ua.includes("Chrome") && !ua.includes("Edg") && !ua.includes("OPR")) browser = "جوجل كروم / Google Chrome";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "متصفح سفاري / Safari";
+  else if (ua.includes("Firefox")) browser = "متصفح فايرفوكس / Firefox";
+  else if (ua.includes("Edg")) browser = "متصفح إيدج / Microsoft Edge";
+  else if (ua.includes("OPR") || ua.includes("Opera")) browser = "متصفح أوبرا / Opera";
+
+  return `${os} (${browser})`;
+}
+
 export default function App() {
   // Locale state
   const [lang, setLang] = useState<"ar" | "en">("ar");
@@ -257,6 +283,12 @@ export default function App() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [deviceBlockDetails, setDeviceBlockDetails] = useState<{
+    username: string;
+    devId: string;
+    devName: string;
+    boundDeviceName?: string;
+  } | null>(null);
 
   // Captcha bot check states
   const [loginCaptchaChallenge, setLoginCaptchaChallenge] = useState(() => ({
@@ -925,8 +957,23 @@ export default function App() {
     const uName = loginUsername.toUpperCase().trim();
     
     try {
+      // PROACTIVE FIX: Fetch fresh users list from backend to prevent stale local React state on logout
+      let currentUsers = users;
+      try {
+        const freshUsersRes = await fetch("/api/users");
+        if (freshUsersRes.ok) {
+          const freshData = await freshUsersRes.json();
+          if (Array.isArray(freshData) && freshData.length > 0) {
+            currentUsers = freshData;
+            setUsers(freshData);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load fresh users on login:", err);
+      }
+
       // Validate from loaded system users
-      const matched = users.find((u) => u.username.toUpperCase() === uName);
+      const matched = currentUsers.find((u) => u.username.toUpperCase() === uName);
       if (matched) {
         if (
           loginPassword &&
@@ -956,16 +1003,18 @@ export default function App() {
         }
 
         const isLockEnabled = matched.deviceLockEnabled !== false; // Active by default for optimal security
+        const currentDeviceName = getDeviceFriendlyName();
         
         if (isLockEnabled) {
           if (!matched.boundDeviceId) {
             // First login from any device binds this device automatically
             matched.boundDeviceId = devId;
+            matched.boundDeviceName = currentDeviceName;
             try {
               await fetch(`/api/users/${matched.username}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ boundDeviceId: devId }),
+                body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName }),
               });
               console.log("Device auto-bound for user on first login:", matched.username, devId);
             } catch (err) {
@@ -975,12 +1024,13 @@ export default function App() {
             // Check if user is in device self-migration/setup mode
             if (matched.allowDeviceMigration) {
               matched.boundDeviceId = devId;
+              matched.boundDeviceName = currentDeviceName;
               matched.allowDeviceMigration = false;
               try {
                 await fetch(`/api/users/${matched.username}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ boundDeviceId: devId, allowDeviceMigration: false }),
+                  body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName, allowDeviceMigration: false }),
                 });
                 console.log("Device self-migration completed for user:", matched.username, devId);
               } catch (err) {
@@ -989,13 +1039,12 @@ export default function App() {
             } else {
               // Block login, register pending authorization request
               try {
-                const userAgentName = navigator.userAgent ? navigator.userAgent.substring(0, 100) : "Browser";
                 await fetch(`/api/users/${matched.username}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ 
                     pendingDeviceApprovalId: devId,
-                    pendingDeviceApprovalName: userAgentName
+                    pendingDeviceApprovalName: currentDeviceName
                   }),
                 });
                 console.log("Logged pending device authorization request for user:", matched.username, devId);
@@ -1003,14 +1052,22 @@ export default function App() {
                 console.error("Failed to post pending device request:", err);
               }
 
+              // Open custom Device Mismatch block modal
+              setDeviceBlockDetails({
+                username: matched.username,
+                devId: devId,
+                devName: currentDeviceName,
+                boundDeviceName: matched.boundDeviceName || (lang === "ar" ? "جهاز آخر مرتبط سابقاً" : "Another previously linked device")
+              });
+
               setLoginError(
                 lang === "ar"
-                  ? "عذراً، هذا الجهاز غير موثق للدخول. تم إرسال طلب توثيق إلى مدير النظام. يرجى التواصل مع الإدارة المباشرة لترخيص الجهاز."
-                  : "Sorry, this device is not authorized for access. A pending approval request has been sent to the system administrator. Please contact your supervisor."
+                  ? "عذراً، هذا الجهاز غير موثق للدخول لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى التواصل مع الإدارة أو الدعم الفني لطلب الإذن."
+                  : "Error: This device is not authorized. This account is already linked to another device. Please contact support."
               );
               logSystemError({
                 code: "ERR-403-DEVICE",
-                message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${uName} (معرّف الجهاز: ${devId})`,
+                message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${uName} (معرّف الجهاز: ${devId} | الاسم: ${currentDeviceName})`,
                 page: "Login Gateway",
                 action: "handleRegularLogin"
               });
@@ -1046,6 +1103,7 @@ export default function App() {
         }
 
         setUser(matched);
+        setSystemRefreshKey((prev) => prev + 1);
         logLoginEvent(matched.username);
         logSystemAudit({
           user: matched.username,
@@ -1128,8 +1186,23 @@ export default function App() {
     }
 
     if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
-      // Find FERAS user details to check device binding
-      const matched = users.find((u) => u.username.toUpperCase() === "FERAS");
+      // PROACTIVE FIX: Fetch fresh users list from backend to prevent stale local React state on logout
+      let currentUsers = users;
+      try {
+        const freshUsersRes = await fetch("/api/users");
+        if (freshUsersRes.ok) {
+          const freshData = await freshUsersRes.json();
+          if (Array.isArray(freshData) && freshData.length > 0) {
+            currentUsers = freshData;
+            setUsers(freshData);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load fresh users for F24 check:", err);
+      }
+
+      // Find FERAS user details to check device binding (checking both "FERAS" and "FERAS24" for safety)
+      const matched = currentUsers.find((u) => u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "FERAS24");
       
       let devId = localStorage.getItem("alwaleed_device_id");
       if (!devId) {
@@ -1139,14 +1212,16 @@ export default function App() {
 
       if (matched) {
         const isLockEnabled = matched.deviceLockEnabled !== false;
+        const currentDeviceName = getDeviceFriendlyName();
         if (isLockEnabled) {
           if (!matched.boundDeviceId) {
             matched.boundDeviceId = devId;
+            matched.boundDeviceName = currentDeviceName;
             try {
               await fetch(`/api/users/${matched.username}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ boundDeviceId: devId }),
+                body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName }),
               });
               console.log("F24 master device auto-bound on first login:", devId);
             } catch (err) {
@@ -1155,12 +1230,13 @@ export default function App() {
           } else if (matched.boundDeviceId !== devId) {
             if (matched.allowDeviceMigration) {
               matched.boundDeviceId = devId;
+              matched.boundDeviceName = currentDeviceName;
               matched.allowDeviceMigration = false;
               try {
                 await fetch(`/api/users/${matched.username}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ boundDeviceId: devId, allowDeviceMigration: false }),
+                  body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName, allowDeviceMigration: false }),
                 });
                 console.log("F24 master device self-migrated:", devId);
               } catch (err) {
@@ -1169,23 +1245,30 @@ export default function App() {
             } else {
               // Block F24 login!
               try {
-                const userAgentName = navigator.userAgent ? navigator.userAgent.substring(0, 100) : "Browser";
                 await fetch(`/api/users/${matched.username}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ 
                     pendingDeviceApprovalId: devId,
-                    pendingDeviceApprovalName: userAgentName
+                    pendingDeviceApprovalName: currentDeviceName
                   }),
                 });
               } catch (err) {
                 console.error("Failed to post pending F24 request:", err);
               }
 
+              // Open custom Device Mismatch block modal
+              setDeviceBlockDetails({
+                username: matched.username,
+                devId: devId,
+                devName: currentDeviceName,
+                boundDeviceName: matched.boundDeviceName || (lang === "ar" ? "جهاز الإدارة المقيد" : "Admin-restricted bound device")
+              });
+
               setF24Error(
                 lang === "ar"
-                  ? "عذراً، هذا الجهاز غير موثق للدخول للمدير الفائق. تم تقديم طلب ترخيص أمان معلق."
-                  : "Sorry, this device is not authorized for Super Admin access. A pending security request has been filed."
+                  ? "عذراً، هذا الجهاز غير موثق للدخول للمدير الفائق لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى التواصل مع الدعم الفني لتوثيق هذا الجهاز."
+                  : "Error: This device is not authorized for Super Admin access. This account is already linked to another device."
               );
               setButtonLoading("f24Login", false);
               return;
@@ -1217,6 +1300,7 @@ export default function App() {
       }
 
       setUser(superAdmin);
+      setSystemRefreshKey((prev) => prev + 1);
       logLoginEvent("FERAS");
       logSystemAudit({
         user: "FERAS",
@@ -5761,6 +5845,101 @@ export default function App() {
       </footer>
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: sharedPrintFooter }} />
       {user && <AIAssistant lang={lang} />}
+
+      {/* DEVICE BLOCKED SECURITY ALERT MODAL */}
+      {deviceBlockDetails && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-slate-900 border-2 border-rose-500/50 rounded-3xl p-6 md:p-8 text-white relative shadow-2xl overflow-hidden text-right">
+            
+            {/* Glowing warning element */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-red-600 to-rose-500"></div>
+            
+            {/* Header section with AlertTriangle & Shield */}
+            <div className="flex items-center justify-center gap-3 mb-6 flex-row-reverse">
+              <div className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl">
+                <AlertTriangle className="w-8 h-8 animate-bounce" />
+              </div>
+              <div className="text-right">
+                <h3 className="text-xl font-black text-white tracking-wide">
+                  {lang === "ar" ? "تنبيه أمني: حظر وصول جهاز" : "Security Alert: Device Access Blocked"}
+                </h3>
+                <p className="text-xs text-rose-400 font-bold tracking-widest uppercase mt-0.5">
+                  {lang === "ar" ? "قفل الجهاز الثنائي مفعل نشط" : "Active Two-Factor Device Binding lock"}
+                </p>
+              </div>
+            </div>
+
+            {/* Main Explanatory Statement requested by the user */}
+            <div className="space-y-4">
+              <p className="text-sm font-bold text-slate-200 leading-relaxed bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                {lang === "ar" ? (
+                  <>
+                    <span className="text-rose-400 text-lg block mb-2 font-black">عذراً، لا يمكنك تسجيل الدخول من هذا الجهاز!</span>
+                    هذا الحساب مرتبط بجهاز آخر معتمد مسبقاً لدى النظام. لأسباب أمنية مشددة تمنع سياسة الشركة الدخول المتعدد أو تغيير الأجهزة دون إذن كتابي مسبق من الإدارة الفنية.
+                  </>
+                ) : (
+                  <>
+                    <span className="text-rose-400 text-lg block mb-2 font-black">No, you cannot log in from this device!</span>
+                    This account is bound to another authorized device in the system. For security reasons, multi-device logins and unauthorized device migrations are strictly prohibited without manual administrator clearance.
+                  </>
+                )}
+              </p>
+
+              {/* Technical Details Grid */}
+              <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 font-mono text-xs">
+                <div className="flex justify-between border-b border-slate-800/80 pb-2 flex-row-reverse">
+                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "المستخدم المستهدف:" : "Target User:"}</span>
+                  <span className="text-cyan-400 font-bold text-left">{deviceBlockDetails.username}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "جهازك الحالي:" : "Your Current Device:"}</span>
+                  <span className="text-white bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[11px] font-sans">
+                    {deviceBlockDetails.devName}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "المعرّف الرقمي لجهازك:" : "Your Device Identifier:"}</span>
+                  <span className="text-slate-300 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[10px] select-all">
+                    {deviceBlockDetails.devId}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "الجهاز المسجل حالياً:" : "Currently Registered Device:"}</span>
+                  <span className="text-amber-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[11px] font-sans">
+                    {deviceBlockDetails.boundDeviceName}
+                  </span>
+                </div>
+              </div>
+
+              {/* Support & Action steps */}
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-slate-300 space-y-2">
+                <h4 className="text-xs font-black text-amber-400 flex items-center justify-center gap-1.5 flex-row-reverse">
+                  <Shield className="w-4 h-4" />
+                  <span>{lang === "ar" ? "طلب تفعيل الجهاز وتصريح الدخول" : "Device Activation Request"}</span>
+                </h4>
+                <p className="text-[11px] leading-relaxed text-slate-300 font-semibold text-center">
+                  {lang === "ar" ? (
+                    "عذراً، لا يمكنك تغيير جهازك دون إذن مسبق. يرجى تزويد قسم الإدارة أو الدعم الفني بالمعرّف الرقمي الظاهر أعلاه ليقوم المسؤول بتحديث الجهاز المسموح به من لوحة إدارة النظام."
+                  ) : (
+                    "No, you cannot change your login device without permission. Please provide your administration or support with the device identifier displayed above to permit this new device."
+                  )}
+                </p>
+                <div className="pt-2 flex flex-wrap justify-center gap-4 text-[11px] text-amber-300 font-mono">
+                  <span>✉️ ferasbusiness24@gmail.com</span>
+                </div>
+              </div>
+
+              {/* Close Button to return to login form */}
+              <button
+                onClick={() => setDeviceBlockDetails(null)}
+                className="w-full mt-4 py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700/50"
+              >
+                ✕ {lang === "ar" ? "العودة لصفحة تسجيل الدخول" : "Return to Login Screen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Toast notification stack */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none select-none">

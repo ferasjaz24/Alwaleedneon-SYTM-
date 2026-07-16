@@ -301,6 +301,15 @@ const customFetch = async function (
     return originalFetch.apply(this, [input, init]);
   }
 
+  // If the browser user is not authenticated yet, bypass the interceptor and let the Express server handle it.
+  // The Express server is authenticated as a system-server on the backend, so it can securely access the DB.
+  const isSettingsOrStatus = pathname.includes("/api/settings/gemini") || pathname.includes("/api/db-status");
+  const isGeminiRoute = pathname.includes("/api/gemini/");
+  if (!isSettingsOrStatus && !isGeminiRoute && auth && !auth.currentUser) {
+    console.log("[CLIENT-FIREBASE-INTERCEPT] User not authenticated on client-side. Routing request to Express server:", pathname);
+    return originalFetch.apply(this, [input, init]);
+  }
+
   const method = init?.method?.toUpperCase() || "GET";
   console.log(`[CLIENT-FIREBASE-INTERCEPT] ${method} ${pathname}`);
 
