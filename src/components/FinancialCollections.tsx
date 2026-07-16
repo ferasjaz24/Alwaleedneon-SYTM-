@@ -84,6 +84,28 @@ export default function FinancialCollections({ lang, user }: FCProps) {
   // To re-render lists easily
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Custom delete confirmation state with countdown
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    plan: CollectionPlan;
+    countdown: number;
+    isOpen: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (deleteConfirmState && deleteConfirmState.countdown > 0) {
+      const timer = setTimeout(() => {
+        setDeleteConfirmState(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            countdown: prev.countdown - 1
+          };
+        });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteConfirmState]);
+
   useEffect(() => {
     fetchData();
   }, [refreshKey]);
@@ -335,28 +357,47 @@ export default function FinancialCollections({ lang, user }: FCProps) {
     }
   };
 
+  const executeDeletePlan = async (plan: CollectionPlan) => {
+    try {
+      const res = await fetch(`/api/dynamic/financial_collections/${plan.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setRefreshKey(k => k + 1);
+        setDeleteConfirmState(null);
+      } else {
+        showAlert('حدث خطأ أثناء محاولة حذف الخطة.');
+      }
+    } catch (e) {
+      console.error(e);
+      showAlert('حدث خطأ أثناء محاولة حذف الخطة.');
+    }
+  };
+
   const handleDeletePlan = async (plan: CollectionPlan) => {
+    const username = user?.username?.toLowerCase() || '';
+    const roleName = user?.role?.toLowerCase() || '';
+    
+    // Check the new advanced permission from the portal
+    const hasAdminDeletePermission = hasAdvancedPermission(user, 'sales', 'collection', 'delete_confirmed_collection');
+
+    const isHighLevelAdmin = username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner') || hasAdminDeletePermission;
+
     const deleteScope = getAccessLevel(user, 'sales', 'deleteAccess');
-    const canDelete = isOwnerOrAdmin || deleteScope === 'all' || (deleteScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase());
+    const canDelete = isOwnerOrAdmin || deleteScope === 'all' || (deleteScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase()) || isHighLevelAdmin;
     if (!canDelete) {
       showAlert('لا تملك صلاحية الحذف على هذه الخطة.');
       return;
     }
 
-    if (plan.receiptConfirmedBy) {
+    if (plan.receiptConfirmedBy && !isHighLevelAdmin) {
       showAlert('لا يمكن حذف خطة تحصيل معتمدة ومؤكدة استلامها.');
       return;
     }
     
-    showConfirm('هل أنت متأكد من حذف خطة التحصيل نهائياً؟', async () => {
-      try {
-        const res = await fetch(`/api/dynamic/financial_collections/${plan.id}`, { method: 'DELETE' });
-        if (res.ok) {
-          setRefreshKey(k => k + 1);
-        }
-      } catch (e) {
-        console.error(e);
-      }
+    // Open the premium countdown confirmation modal
+    setDeleteConfirmState({
+      plan,
+      countdown: 2,
+      isOpen: true
     });
   };
 
@@ -1249,6 +1290,67 @@ export default function FinancialCollections({ lang, user }: FCProps) {
                   حسناً
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Countdown Delete Confirmation Modal */}
+      {deleteConfirmState?.isOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 text-rose-600 justify-center flex-col text-center">
+                <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mb-2">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-800">تأكيد الحذف النهائي للتحصيل</h3>
+              </div>
+              
+              <p className="text-sm text-slate-600 leading-relaxed text-center">
+                هل أنت متأكد من حذف خطة التحصيل هذه نهائياً من السجلات؟
+                {deleteConfirmState.plan.receiptConfirmedBy && (
+                  <span className="block mt-2 text-rose-600 font-extrabold text-xs bg-rose-50 p-2.5 rounded-lg border border-rose-100">
+                    ⚠️ تنبيه: هذه الخطة معتمدة ومؤكدة بواسطة ({deleteConfirmState.plan.receiptConfirmedBy})، ولديك الصلاحية القصوى كمسؤول لإجراء الحذف!
+                  </span>
+                )}
+              </p>
+
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs text-slate-700 space-y-1 text-right" dir="rtl">
+                <div><strong>رقم المستند/العرض:</strong> {deleteConfirmState.plan.quotationNumber}</div>
+                <div><strong>المشروع:</strong> {deleteConfirmState.plan.projectName}</div>
+                <div><strong>العميل:</strong> {deleteConfirmState.plan.clientName}</div>
+                <div><strong>المبلغ الإجمالي:</strong> {deleteConfirmState.plan.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</div>
+              </div>
+
+              {deleteConfirmState.countdown > 0 ? (
+                <div className="text-center text-xs font-bold text-amber-600 flex items-center justify-center gap-1.5 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                  <Clock className="w-4 h-4 animate-spin" />
+                  <span>الرجاء الانتظار {deleteConfirmState.countdown} ثانية لتأكيد الحذف وتفادي الأخطاء...</span>
+                </div>
+              ) : (
+                <div className="text-center text-xs font-bold text-emerald-600 flex items-center justify-center gap-1.5 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>تم التحقق! يمكنك الآن الضغط على زر الحذف بأمان.</span>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmState(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition text-sm"
+              >
+                إلغاء والتراجع
+              </button>
+              <button
+                onClick={() => executeDeletePlan(deleteConfirmState.plan)}
+                disabled={deleteConfirmState.countdown > 0}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed transition shadow-lg shadow-rose-200 flex items-center justify-center gap-2 text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleteConfirmState.countdown > 0 ? `تأكيد الحذف (${deleteConfirmState.countdown})` : 'تأكيد الحذف النهائي'}
+              </button>
             </div>
           </div>
         </div>

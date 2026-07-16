@@ -175,7 +175,8 @@ const PERMISSIONS_SCHEMA = {
           { id: 'add_payment', labelAr: 'تسجيل دفعة', labelEn: 'تسجيل دفعة', type: 'add' },
           { id: 'approve_payment', labelAr: 'اعتماد دفعة مالية', labelEn: 'اعتماد دفعة مالية', type: 'approve' },
           { id: 'unapprove_payment', labelAr: 'إلغاء اعتماد دفعة مالية*', labelEn: 'إلغاء اعتماد دفعة مالية*', type: 'sensitive' },
-          { id: 'delete_payment', labelAr: 'حذف دفعة*', labelEn: 'حذف دفعة*', type: 'sensitive' }
+          { id: 'delete_payment', labelAr: 'حذف دفعة*', labelEn: 'حذف دفعة*', type: 'sensitive' },
+          { id: 'delete_confirmed_collection', labelAr: 'حذف تحصيل معتمد/مكتمل الدفعات*', labelEn: 'حذف تحصيل معتمد/مكتمل الدفعات*', type: 'sensitive' }
         ]
       },
       prod_orders: {
