@@ -1,0 +1,1 @@
+sed -i 's|placeholder="مثال: غياب يوم 15 أكتوبر دون عذر"|placeholder={item.type === "Loan Deduction" ? "تاريخ الانتهاء/رقم الدفعة..." : item.type === "Absence Deduction" ? "كم يوم غياب؟" : item.type === "Late Deduction" ? "كم دقيقة تأخير؟" : item.type === "Penalty Deduction" ? "اكتب المخالفة..." : "السبب"}|g' src/components/finance/MonthlyPayrollRuns.tsx

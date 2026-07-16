@@ -13,6 +13,7 @@ import {
   Loader2,
   CheckCircle,
   Wand2,
+  History,
 } from "lucide-react";
 import {
   sharedPrintHeader,
@@ -104,6 +105,11 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
   const [smartImportFile, setSmartImportFile] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
 
+  const [isLogOpen, setIsLogOpen] = useState(false);
+  const [materialsLog, setMaterialsLog] = useState<any[]>([]);
+  const [isLogLoading, setIsLogLoading] = useState(false);
+  const [logSearch, setLogSearch] = useState("");
+
   const [editingItem, setEditingItem] = useState<Partial<MaterialItem>>({});
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -123,6 +129,32 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
   useEffect(() => {
     fetchItems();
   }, []);
+
+  const fetchMaterialsLog = async () => {
+    setIsLogLoading(true);
+    try {
+      const ts = Date.now();
+      const res = await fetch(`/api/dynamic/materials_log?t=${ts}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMaterialsLog(
+          (Array.isArray(data) ? data : []).sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )
+        );
+      }
+    } catch (e) {
+      console.error("Failed to fetch materials log", e);
+    } finally {
+      setIsLogLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLogOpen) {
+      fetchMaterialsLog();
+    }
+  }, [isLogOpen]);
 
   const fetchItems = async () => {
     try {
@@ -663,6 +695,13 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
           >
             <Wand2 className="w-5 h-5" />
             {lang === "ar" ? "استيراد ذكي" : "Smart Import"}
+          </button>
+          <button
+            onClick={() => setIsLogOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold shadow-lg transition"
+          >
+            <History className="w-5 h-5" />
+            {lang === "ar" ? "سجل حركة المواد" : "Materials Log"}
           </button>
           <button
             onClick={handleExportSelected}
@@ -1542,6 +1581,146 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
                   : lang === "ar"
                     ? "حفظ بيانات المادة"
                     : "Save Material"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLogOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+          dir="rtl"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col h-[85vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                <History className="w-5 h-5 text-indigo-600" />
+                {lang === "ar" ? "سجل حركة وسحب المواد" : "Materials Movement Log"}
+              </h3>
+              <button
+                onClick={() => setIsLogOpen(false)}
+                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Search and Filter bar */}
+            <div className="px-6 py-3 border-b border-slate-100 flex flex-col sm:flex-row gap-3 bg-white">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={
+                    lang === "ar"
+                      ? "ابحث باسم المادة أو المشروع..."
+                      : "Search by material or project..."
+                  }
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  className="w-full pr-9 pl-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                />
+              </div>
+              <button
+                onClick={fetchMaterialsLog}
+                className="px-4 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-extrabold transition cursor-pointer"
+              >
+                {lang === "ar" ? "تحديث" : "Refresh"}
+              </button>
+            </div>
+
+            {/* Modal Scrollable Table Body */}
+            <div className="flex-1 overflow-auto p-6">
+              {isLogLoading ? (
+                <div className="flex flex-col items-center justify-center h-full gap-2">
+                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                  <span className="text-xs text-slate-400 font-bold">
+                    {lang === "ar" ? "جاري تحميل سجل الحركات..." : "Loading transaction logs..."}
+                  </span>
+                </div>
+              ) : materialsLog.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
+                  <History className="w-12 h-12 text-slate-300" />
+                  <span className="text-sm font-bold">
+                    {lang === "ar" ? "لا توجد حركات مسجلة حالياً" : "No recorded movements found"}
+                  </span>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                  <table className="w-full text-right border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-black">
+                        <th className="px-4 py-3">{lang === "ar" ? "المادة" : "Material"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "رمز الصنف" : "Item Code"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "نوع الحركة" : "Type"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "الكمية" : "Quantity"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "المشروع المرجعي" : "Linked Project"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "بواسطة" : "By User"}</th>
+                        <th className="px-4 py-3">{lang === "ar" ? "التاريخ والوقت" : "Date & Time"}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {materialsLog
+                        .filter((log) => {
+                          const term = logSearch.toLowerCase();
+                          return (
+                            (log.itemName || "").toLowerCase().includes(term) ||
+                            (log.project || "").toLowerCase().includes(term) ||
+                            (log.itemCode || "").toLowerCase().includes(term) ||
+                            (log.user || "").toLowerCase().includes(term)
+                          );
+                        })
+                        .map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-50/80 transition">
+                            <td className="px-4 py-3 font-black text-slate-800">{log.itemName}</td>
+                            <td className="px-4 py-3 font-mono text-slate-500">{log.itemCode || "---"}</td>
+                            <td className="px-4 py-3">
+                              {log.type === "addition" ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-black text-[10px] border border-emerald-100">
+                                  ➕ {lang === "ar" ? "إضافة (توريد)" : "Addition (PO)"}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-black text-[10px] border border-rose-100">
+                                  ➖ {lang === "ar" ? "سحب (إنتاج)" : "Deduction (Prod)"}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-black text-slate-800 text-sm">
+                              {log.qty}
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-slate-600">
+                              {log.project || "---"}
+                            </td>
+                            <td className="px-4 py-3 font-bold text-slate-500">
+                              {log.user || "---"}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-slate-400 text-[10px]">
+                              {new Date(log.timestamp).toLocaleString("ar-SA", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end bg-slate-50">
+              <button
+                onClick={() => setIsLogOpen(false)}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
+              >
+                {lang === "ar" ? "إغلاق" : "Close"}
               </button>
             </div>
           </div>

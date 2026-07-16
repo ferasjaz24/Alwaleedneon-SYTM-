@@ -22,7 +22,7 @@ interface JournalEntry {
   id: string;
   journalEntryNo: string;
   date: string;
-  sourceModule: "Manual" | "Customer Invoice" | "Revenue Receipt" | "Bank Transfer" | "Adjustment";
+  sourceModule: "Manual" | "Customer Invoice" | "Revenue Receipt" | "Bank Transfer" | "Adjustment" | "مشتريات يومية" | "Reversal Log" | string;
   sourceId?: string;
   description: string;
   status: "Draft" | "Approved" | "Reversed" | "Cancelled";
@@ -48,6 +48,14 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
   // Search & Filters
   const [searchNo, setSearchNo] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    return `${yyyy}-${mm}`;
+  });
+  const [showJournalPrintMenu, setShowJournalPrintMenu] = useState(false);
+  const [showJournalReportModal, setShowJournalReportModal] = useState(false);
 
   // Modals
   const [showJournalModal, setShowJournalModal] = useState(false);
@@ -101,6 +109,286 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
   const [testing, setTesting] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
 
+  // Custom states for Daily Purchase approval
+  const [showApprovalAccountModal, setShowApprovalAccountModal] = useState(false);
+  const [approvalEntry, setApprovalEntry] = useState<JournalEntry | null>(null);
+  const [selectedPaymentSource, setSelectedPaymentSource] = useState<{ type: "Bank" | "Cash"; id: string }>({ type: "Bank", id: "" });
+
+  const handlePrintJournal = (autoPrint: boolean) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert(lang === "ar" ? "يرجى السماح بالنوافذ المنبثقة لطباعة التقرير." : "Please allow popups to print the report.");
+      return;
+    }
+
+    const totalDebits = filteredEntries.reduce((sum, e) => sum + (Number(e.totalDebit) || 0), 0);
+    const totalCredits = filteredEntries.reduce((sum, e) => sum + (Number(e.totalCredit) || 0), 0);
+    const approvedCount = filteredEntries.filter(e => e.status === "Approved").length;
+
+    const filterValueText = lang === "ar" 
+      ? `الحالة: ${filterStatus === "all" ? "الكل" : filterStatus === "Approved" ? "معتمد" : filterStatus === "Draft" ? "مسودة" : "ملغى"}` 
+      : `Status: ${filterStatus}`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="${lang === "ar" ? "ar" : "en"}" dir="${lang === "ar" ? "rtl" : "ltr"}">
+      <head>
+        <meta charset="utf-8">
+        <title>${lang === "ar" ? "تقرير القيود اليومية" : "Journal Entries Report"}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
+          
+          body {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+            direction: rtl;
+            text-align: right;
+            padding: 20px;
+            color: #000 !important;
+            font-size: 13px;
+            background-color: #f1f5f9;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .invoice-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1.5px solid #000;
+            padding: 30px;
+            border-radius: 8px;
+            position: relative;
+            box-sizing: border-box;
+            background-color: white;
+          }
+
+          .header-line {
+            border-top: 2px solid #0072BC;
+            border-bottom: 1px solid #000;
+            height: 1px;
+            margin: 15px 0;
+          }
+
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 25px;
+          }
+
+          .items-table th {
+            background-color: #0072BC !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            padding: 8px;
+            font-size: 11px;
+            border: 1.5px solid #000 !important;
+            text-align: center;
+          }
+
+          .items-table td {
+            padding: 6px 8px;
+            border: 1.5px solid #000 !important;
+            font-size: 11px;
+            color: #000 !important;
+            font-weight: 600;
+            text-align: center;
+            vertical-align: middle;
+          }
+
+          .items-table tr:nth-child(even) {
+            background-color: #fcfcfc !important;
+          }
+
+          /* Floating action print button */
+          .print-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 99999;
+            background-color: #0072BC;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 114, 188, 0.3);
+            font-family: 'Tajawal', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+          }
+
+          .print-button:hover {
+            background-color: #005185;
+            transform: translateY(-1px);
+          }
+
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            body {
+              padding: 0;
+              background-color: white !important;
+            }
+            .invoice-container {
+              border: none;
+              padding: 0;
+              width: 100%;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 12mm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <button class="print-button no-print" onclick="window.print()">🖨️ ${lang === "ar" ? "طباعة التقرير" : "Print Report"}</button>
+        
+        <div class="invoice-container">
+          <!-- Standard Header layout -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 12px; margin-bottom: 20px; user-select: none; direction: ltr;">
+            <!-- معلومات الشركة -->
+            <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
+              <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'Tajawal', sans-serif;" dir="rtl">
+                شركة فنون الوليد للصناعة
+              </h2>
+              <h3 style="font-size: 10px; font-weight: bold; color: #555; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
+                FONOUN ALWALEED INDUSTRIAL CO.
+              </h3>
+            </div>
+            
+            <!-- الحالة في منتصف رأس الصفحة -->
+            <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
+              <span style="font-size: 12px; font-weight: 800; padding: 4px 12px; border: 2px solid #0072BC; color: #0072BC; border-radius: 6px; font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; white-space: nowrap;">
+                ${lang === "ar" ? "تقرير القيود اليومية" : "Journal Entries Report"}
+              </span>
+            </div>
+
+            <!-- الشعار -->
+            <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
+              <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
+            </div>
+          </div>
+
+          <!-- Report Filter Criteria -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1.5px solid #000; text-align: center; font-size: 11px; direction: rtl;">
+            <tr style="background: #f1f5f9; font-weight: bold; color: #000;">
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "تاريخ الاستخراج" : "Date Generated"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "الفترة المحددة" : "Selected Period"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "معايير التصفية والفلترة" : "Filter Criteria"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "المستخرج بواسطة" : "Generated By"}</td>
+            </tr>
+            <tr style="color: #000; font-weight: bold;">
+              <td style="padding: 8px; border: 1.5px solid #000;">${new Date().toLocaleDateString("en-US")}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${selectedMonth === "all" ? (lang === "ar" ? "جميع الفترات" : "All Periods") : selectedMonth}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${filterValueText}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${user?.username || "Financial Accountant"}</td>
+            </tr>
+          </table>
+
+          <!-- Total Summary Box -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; border: 1.5px solid #000; text-align: center; font-size: 11px; direction: rtl;">
+            <tr style="background: #f1f5f9; font-weight: bold; color: #000;">
+              <td style="padding: 8px; border: 1.5px solid #000; width: 33.3%;">${lang === "ar" ? "إجمالي المدين (Debits)" : "Total Debits"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 33.3%;">${lang === "ar" ? "إجمالي الدائن (Credits)" : "Total Credits"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 33.3%;">${lang === "ar" ? "القيود المعتمدة والمرحلة" : "Approved Entries"}</td>
+            </tr>
+            <tr style="color: #000; font-weight: bold; font-size: 13px;">
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800;">${totalDebits.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800;">${totalCredits.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800; color: #059669;">${approvedCount}</td>
+            </tr>
+          </table>
+
+          <!-- Detail Table -->
+          <table class="items-table" style="direction: rtl;">
+            <thead>
+              <tr>
+                <th style="width: 100px;">${lang === "ar" ? "رقم القيد" : "Entry No"}</th>
+                <th style="width: 90px;">${lang === "ar" ? "التاريخ" : "Date"}</th>
+                <th>${lang === "ar" ? "بيان القيد العام" : "General Description"}</th>
+                <th style="width: 110px;">${lang === "ar" ? "إجمالي المدين" : "Total Debit"}</th>
+                <th style="width: 110px;">${lang === "ar" ? "إجمالي الدائن" : "Total Credit"}</th>
+                <th style="width: 80px;">${lang === "ar" ? "الحالة" : "Status"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredEntries.map((jv) => `
+                <tr>
+                  <td style="font-weight: bold; font-family: monospace;">${jv.journalEntryNo}</td>
+                  <td style="font-family: monospace;">${jv.date}</td>
+                  <td style="text-align: right; padding-right: 12px; font-weight: bold;">${jv.description}</td>
+                  <td style="font-family: monospace; text-align: left; padding-left: 10px;">${(Number(jv.totalDebit) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td style="font-family: monospace; text-align: left; padding-left: 10px;">${(Number(jv.totalCredit) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td>
+                    <span style="font-weight: bold; color: ${
+                      jv.status === 'Approved' ? '#059669' : jv.status === 'Draft' ? '#4b5563' : '#dc2626'
+                    };">
+                      ${jv.status === 'Approved' ? (lang === 'ar' ? 'معتمد' : 'Approved') : jv.status === 'Draft' ? (lang === 'ar' ? 'مسودة' : 'Draft') : (lang === 'ar' ? 'ملغى' : 'Cancelled')}
+                    </span>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+          <!-- Signatures Section -->
+          <div style="margin-top: 35px; display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #000; padding-top: 15px; direction: rtl;">
+            <div style="text-align: right; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">توقيع واعتماد قسم الحسابات والتدقيق المالي</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للصناعة</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+            <div style="text-align: center; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">اعتماد المدير المالي والتدقيق</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">مراجعة الصلاحيات الحسابية</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+            <div style="text-align: left; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">المجلس التنفيذي والختم الرسمي</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للخدمات الصناعية</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+          </div>
+
+          <!-- Standard Corporate Footer -->
+          <div style="margin-top: 45px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'Tajawal', sans-serif;">
+            <div style="text-align: left; line-height: 1.6;">
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
+            </div>
+            <div style="text-align: right; line-height: 1.6;">
+              <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
+            </div>
+          </div>
+
+        </div>
+
+        ${autoPrint ? `
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            }
+          </script>
+        ` : ""}
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -108,7 +396,11 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
       const entList = entSnap.docs
         .map(d => ({ id: d.id, ...d.data() } as JournalEntry))
         .filter(x => !x.isDeleted)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        .sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.date || 0).getTime();
+          const timeB = new Date(b.createdAt || b.date || 0).getTime();
+          return timeB - timeA;
+        });
       setEntries(entList);
 
       const bankSnap = await getDocs(collection(db, "bank_accounts"));
@@ -223,6 +515,129 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
     });
   };
 
+  // Synchronize Approved Journal Entry to Expenses & Revenues automatic section (Smart Accountant Logic)
+  const syncJournalEntryToExpensesAndRevenues = async (jvId: string, lang: "ar" | "en") => {
+    try {
+      const jvRef = doc(db, "journal_entries", jvId);
+      const jvSnap = await getDoc(jvRef);
+      if (!jvSnap.exists()) return;
+      const jv = jvSnap.data() as JournalEntry;
+
+      // Only sync if Approved
+      if (jv.status !== "Approved") return;
+
+      // 1. Analyze for Expense Lines
+      // Check if there is a line with accountType === "Expense" or accountCode starts with "3" or "5", or accountName contains common Arabic/English expense terms, with debit > 0
+      const expenseLines = jv.lines.filter(l => 
+        l.debit > 0 && 
+        (l.accountType === "Expense" || 
+         String(l.accountCode).startsWith("5") || 
+         String(l.accountCode).startsWith("3") ||
+         /مصروف|مصاريف|مشتريات|رواتب|أجور|رواتب|إيجار|كهرباء|ماء|هاتف|صيانة|دعاية|إعلان|رسوم|شراء|إيجارات|سفر|عمولة|تأمين/i.test(l.accountName || "") ||
+         /expense|purchase|salary|wage|rent|electricity|water|phone|maintenance|advertising|marketing|fees|commission|travel|insurance/i.test(l.accountName || ""))
+      );
+
+      // 2. Analyze for Revenue Lines
+      // Check if there is a line with accountType === "Revenue" or accountCode starts with "4", or accountName contains Arabic/English revenue terms, with credit > 0
+      const revenueLines = jv.lines.filter(l => 
+        l.credit > 0 && 
+        (l.accountType === "Revenue" || 
+         String(l.accountCode).startsWith("4") ||
+         /إيراد|إيرادات|مبيعات|أرباح|عمولة_مكتسبة/i.test(l.accountName || "") ||
+         /revenue|sales|profit|commission_earned/i.test(l.accountName || ""))
+      );
+
+      if (expenseLines.length > 0) {
+        // Find if there is a credit line on Bank or Cash to determine payment details
+        const creditPaymentLine = jv.lines.find(l => l.credit > 0 && (l.accountType === "Bank" || l.accountType === "Cash"));
+        const isPaid = !!creditPaymentLine;
+
+        const totalAmount = expenseLines.reduce((sum, l) => sum + Number(l.debit), 0);
+        // Look for any VAT Input line to break down subtotal and VAT
+        const vatLine = jv.lines.find(l => l.debit > 0 && (l.accountType === "VAT Output" || l.accountCode === "2204" || /ضريبة|قيمة_مضافة|vat/i.test(l.accountName || "")));
+        const vatAmount = vatLine ? Number(vatLine.debit) : 0;
+        const subtotal = Math.max(0, totalAmount - vatAmount);
+
+        const expenseId = `EXP_JV_${jv.id}`;
+        const expenseNo = `EXP-JV-${jv.journalEntryNo.replace("JV-", "")}`;
+
+        // Prepare transaction nature description
+        const transactionNature = expenseLines.map(l => l.accountName).join(" + ") || (lang === "ar" ? "قيد مصروفات مانيوال" : "Manual Expenses JV");
+
+        const expensePayload: any = {
+          id: expenseId,
+          expenseNo,
+          supplierInvoiceId: "",
+          invoiceNo: jv.journalEntryNo,
+          supplierId: "JV_AUTO_EXP",
+          supplierName: transactionNature, // State the nature of transaction / account instead of raw supplier!
+          poId: "",
+          projectName: "",
+          expenseDate: jv.date,
+          subtotal,
+          vatAmount,
+          totalAmount,
+          paymentStatus: isPaid ? "Paid" : "Pending Payment",
+          notes: jv.description || (lang === "ar" ? `قيد مصروفات معتمد تلقائي برقم القيد ${jv.journalEntryNo}` : `Approved expense auto-logged from JV ${jv.journalEntryNo}`),
+          createdAt: new Date().toISOString(), // Sort at absolute top
+          createdBy: jv.createdBy || "system",
+          sourceJVId: jv.id,
+        };
+
+        if (isPaid && creditPaymentLine) {
+          expensePayload.paidFromType = creditPaymentLine.accountType === "Bank" ? "Bank" : "Cash";
+          expensePayload.paidFromId = creditPaymentLine.bankAccountId || creditPaymentLine.cashBoxId || "";
+          expensePayload.paidFromName = creditPaymentLine.accountName;
+          expensePayload.paidAt = jv.date;
+        }
+
+        await setDoc(doc(db, "expenses", expenseId), expensePayload, { merge: true });
+        console.log(`Successfully synced Journal Entry ${jv.journalEntryNo} to Expenses: ${expenseNo}`);
+      }
+
+      if (revenueLines.length > 0) {
+        // Find if there is a debit line on Bank or Cash
+        const debitPaymentLine = jv.lines.find(l => l.debit > 0 && (l.accountType === "Bank" || l.accountType === "Cash"));
+        const isPaid = !!debitPaymentLine;
+
+        const totalAmount = revenueLines.reduce((sum, l) => sum + Number(l.credit), 0);
+        const vatLine = jv.lines.find(l => l.credit > 0 && (l.accountType === "VAT Output" || l.accountCode === "2204" || /ضريبة|قيمة_مضافة|vat/i.test(l.accountName || "")));
+        const vatAmount = vatLine ? Number(vatLine.credit) : 0;
+        const taxableAmount = Math.max(0, totalAmount - vatAmount);
+
+        const revenueId = `REV_JV_${jv.id}`;
+        const revenueNo = `REV-JV-${jv.journalEntryNo.replace("JV-", "")}`;
+
+        const transactionNature = revenueLines.map(l => l.accountName).join(" + ") || (lang === "ar" ? "قيد إيراد مبيعات مانيوال" : "Manual Revenues JV");
+
+        const revenuePayload: any = {
+          id: revenueId,
+          revenueId: revenueNo,
+          invoiceId: "",
+          invoiceNo: jv.journalEntryNo,
+          customerId: "JV_AUTO_REV",
+          customerName: transactionNature, // State the nature of transaction
+          revenueDate: jv.date,
+          taxableAmount,
+          vatAmount,
+          totalAmount,
+          paidAmount: isPaid ? totalAmount : 0,
+          remainingAmount: isPaid ? 0 : totalAmount,
+          revenueStatus: isPaid ? "Paid" : "Unpaid",
+          notes: jv.description || (lang === "ar" ? `قيد إيراد معتمد تلقائي برقم القيد ${jv.journalEntryNo}` : `Approved revenue auto-logged from JV ${jv.journalEntryNo}`),
+          createdAt: new Date().toISOString(), // Sort at absolute top
+          createdBy: jv.createdBy || "system",
+          sourceJVId: jv.id
+        };
+
+        await setDoc(doc(db, "revenues", revenueId), revenuePayload, { merge: true });
+        console.log(`Successfully synced Journal Entry ${jv.journalEntryNo} to Revenues: ${revenueNo}`);
+      }
+    } catch (e) {
+      console.error("Error syncing JV to expenses/revenues:", e);
+    }
+  };
+
   // Reverse financial impact
   const reverseJournalImpactFromCashBank = async (jvId: string) => {
     const jvRef = doc(db, "journal_entries", jvId);
@@ -312,6 +727,18 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
 
   // Approval handler
   const handleApproveEntry = (jv: JournalEntry) => {
+    // Check if it is from Daily Purchase Requests
+    const isDailyPurchase = jv.sourceModule === "مشتريات يومية" || (jv.journalEntryNo && jv.journalEntryNo.startsWith("JV-BRQ"));
+
+    if (isDailyPurchase) {
+      setApprovalEntry(jv);
+      const defaultType = banks.length > 0 ? "Bank" : "Cash";
+      const defaultId = defaultType === "Bank" ? (banks[0]?.id || "") : (boxes[0]?.id || "");
+      setSelectedPaymentSource({ type: defaultType, id: defaultId });
+      setShowApprovalAccountModal(true);
+      return;
+    }
+
     setConfirmDialog({
       isOpen: true,
       title: lang === "ar" ? "اعتماد قيد محاسبي" : "Approve Journal Entry",
@@ -332,6 +759,9 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
 
         // Apply the financial balances
         await applyJournalImpactToCashBank(jv.id);
+
+        // Sync with expenses/revenues automatically
+        await syncJournalEntryToExpensesAndRevenues(jv.id, lang);
 
         // Save Audit Log
         const logId = `LOG_JV_APP_${Date.now()}`;
@@ -595,9 +1025,10 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
         createdAt: nowStr
       });
 
-      // If approved directly, apply impact
+      // If approved directly, apply impact and sync with expenses/revenues
       if (journalForm.status === "Approved") {
         await applyJournalImpactToCashBank(jvId);
+        await syncJournalEntryToExpensesAndRevenues(jvId, lang);
       }
 
       alert(lang === "ar" ? "تم حفظ وتسجيل قيد اليومية بنجاح" : "Journal entry saved successfully");
@@ -998,7 +1429,8 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
   const filteredEntries = entries.filter(e => {
     const matchNo = (e.journalEntryNo || "").toLowerCase().includes((searchNo || "").toLowerCase());
     const matchStat = filterStatus === "all" || e.status === filterStatus;
-    return matchNo && matchStat;
+    const matchMonth = selectedMonth === "all" || !selectedMonth || (e.date && e.date.startsWith(selectedMonth));
+    return matchNo && matchStat && matchMonth;
   });
 
   return (
@@ -1020,42 +1452,82 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
           >
             <span>➕</span> إضافة قيد يومي مانيوال
           </button>
-          <button
-            onClick={() => setShowTestModal(true)}
-            className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 px-5 rounded-xl font-extrabold text-sm shadow-md transition-all flex items-center gap-2"
-          >
-            <span>⚡</span> اختبار التدفق المالي التلقائي (Test Flow)
-          </button>
         </div>
       </div>
 
       {/* Filters Panel */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xl grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xl grid grid-cols-1 md:grid-cols-4 gap-4 items-end no-print">
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">بحث برقم القيد</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">🔍 بحث برقم القيد</label>
           <input
             type="text"
             value={searchNo}
             onChange={(e) => setSearchNo(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs"
+            className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#0072BC]"
             placeholder="JV-XXXX"
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-1">فلتر حالة القيد</label>
+          <label className="block text-xs font-bold text-slate-500 mb-1">🚦 فلتر حالة القيد</label>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs bg-white font-semibold text-slate-700"
+            className="w-full border border-slate-200 rounded-xl px-4 py-2 text-xs bg-white font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#0072BC]"
           >
-            <option value="all">كل القيود (النشطة)</option>
+            <option value="all">كل الحالات (all)</option>
             <option value="Draft">مسودة (Draft)</option>
             <option value="Approved">معتمد ومرحل (Approved)</option>
             <option value="Cancelled">ملغى ومجمد</option>
           </select>
         </div>
-        <div className="flex items-end pb-1 text-slate-400 font-bold text-xs">
-          • جميع القيود المعتمدة (Approved) يرحل أثرها للبنك والصندوق فوراً.
+        <div>
+          <label className="block text-xs font-bold text-slate-500 mb-1">📅 تاريخ الشهر المالي</label>
+          <div className="flex gap-2">
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#0072BC] bg-white"
+            />
+            {selectedMonth !== "all" && (
+              <button
+                onClick={() => setSelectedMonth("all")}
+                className="px-2.5 py-1 text-[10px] font-black text-slate-500 hover:text-white bg-slate-100 hover:bg-[#0072BC] rounded-lg transition-all"
+              >
+                الكل
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowJournalPrintMenu(!showJournalPrintMenu)}
+            className="w-full bg-[#005185] hover:bg-[#0072BC] text-white py-2 px-4 rounded-xl font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 h-[36px]"
+          >
+            🖨️ {lang === "ar" ? "خيارات تقرير الشهر" : "Monthly Report Options"}
+          </button>
+          {showJournalPrintMenu && (
+            <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-1.5 z-30 font-bold text-slate-700 text-xs text-right animate-fade-in no-print">
+              <button
+                onClick={() => {
+                  setShowJournalPrintMenu(false);
+                  handlePrintJournal(false);
+                }}
+                className="w-full text-right px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-slate-800 transition"
+              >
+                👁️ {lang === "ar" ? "معاينة ملخص القيود" : "Preview Journal Summary"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowJournalPrintMenu(false);
+                  handlePrintJournal(true);
+                }}
+                className="w-full text-right px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-[#0072BC] border-t border-slate-100 transition"
+              >
+                🖨️ {lang === "ar" ? "طباعة الملخص المالي" : "Print Journal Summary"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1143,12 +1615,6 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
                               className="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-2 rounded-lg text-[10px] font-bold"
                             >
                               🚀 اعتماد
-                            </button>
-                            <button
-                              onClick={() => openJournalForm(jv)}
-                              className="text-[#0072BC] hover:bg-sky-50 py-1 px-1.5 rounded"
-                            >
-                              📝
                             </button>
                             <button
                               onClick={() => handleDeleteDraft(jv)}
@@ -1484,6 +1950,247 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
         </div>
       )}
 
+      {showApprovalAccountModal && approvalEntry && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center animate-fade-in backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border overflow-hidden">
+            <div className="bg-[#0072BC] p-5 text-white flex justify-between items-center">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <span>🏦</span>
+                {lang === "ar" ? "اعتماد وصرف قيد مشتريات يومية" : "Approve & Disburse Daily Purchases JV"}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowApprovalAccountModal(false);
+                  setApprovalEntry(null);
+                }}
+                className="text-white hover:text-red-200 text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border space-y-2 text-xs font-semibold text-slate-700 text-right" dir="rtl">
+                <p className="flex justify-between">
+                  <span>{lang === "ar" ? "رقم القيد:" : "JV Number:"}</span>
+                  <span className="font-bold text-slate-900">{approvalEntry.journalEntryNo}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>{lang === "ar" ? "تاريخ القيد:" : "JV Date:"}</span>
+                  <span className="font-bold text-slate-900">{approvalEntry.date}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>{lang === "ar" ? "البيان العام:" : "Description:"}</span>
+                  <span className="font-bold text-slate-900">{approvalEntry.description}</span>
+                </p>
+                <div className="border-t pt-2 mt-2 flex justify-between items-center">
+                  <span className="font-bold text-[#0072BC]">{lang === "ar" ? "المبلغ الإجمالي:" : "Total Amount:"}</span>
+                  <span className="font-black text-lg text-[#0072BC]">
+                    {Number(approvalEntry.totalDebit).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-right" dir="rtl">
+                <label className="block text-xs font-bold text-slate-500">
+                  {lang === "ar" ? "طريقة الصرف وتحديد الحساب المالي:" : "Payment Method & Financial Account:"}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaymentSource({
+                        type: "Bank",
+                        id: banks[0]?.id || ""
+                      });
+                    }}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      selectedPaymentSource.type === "Bank"
+                        ? "border-[#0072BC] bg-[#0072BC]/5 text-[#0072BC]"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-lg">💳</span>
+                    <span>{lang === "ar" ? "حساب بنكي / تحويل" : "Bank Account"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaymentSource({
+                        type: "Cash",
+                        id: boxes[0]?.id || ""
+                      });
+                    }}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      selectedPaymentSource.type === "Cash"
+                        ? "border-[#0072BC] bg-[#0072BC]/5 text-[#0072BC]"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-lg">💵</span>
+                    <span>{lang === "ar" ? "نقدي / الصندوق" : "Cash / Safe Box"}</span>
+                  </button>
+                </div>
+
+                {selectedPaymentSource.type === "Bank" ? (
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-bold text-slate-400">
+                      {lang === "ar" ? "اختر الحساب البنكي:" : "Select Bank Account:"}
+                    </label>
+                    <select
+                      value={selectedPaymentSource.id}
+                      onChange={(e) => setSelectedPaymentSource({ ...selectedPaymentSource, id: e.target.value })}
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 focus:border-[#0072BC] bg-white"
+                      required
+                    >
+                      <option value="">{lang === "ar" ? "-- اختر البنك لتأكيد الصرف منه --" : "-- Select Bank --"}</option>
+                      {banks.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.bankName} ({lang === "ar" ? "الرصيد" : "Bal"}: {Number(b.currentBalance || b.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-bold text-slate-400">
+                      {lang === "ar" ? "اختر الصندوق النقدي:" : "Select Cash Box:"}
+                    </label>
+                    <select
+                      value={selectedPaymentSource.id}
+                      onChange={(e) => setSelectedPaymentSource({ ...selectedPaymentSource, id: e.target.value })}
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0072BC]/20 focus:border-[#0072BC] bg-white"
+                      required
+                    >
+                      <option value="">{lang === "ar" ? "-- اختر الصندوق لتأكيد الصرف منه --" : "-- Select Cash Box --"}</option>
+                      {boxes.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.cashBoxName} ({lang === "ar" ? "الرصيد" : "Bal"}: {Number(b.currentBalance || b.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 border-t flex justify-between gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowApprovalAccountModal(false);
+                  setApprovalEntry(null);
+                }}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-6 rounded-xl text-xs transition"
+              >
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!selectedPaymentSource.id) {
+                    alert(lang === "ar" ? "يرجى تحديد الحساب المالي أولاً" : "Please select a financial account first");
+                    return;
+                  }
+
+                  const nowStr = new Date().toISOString();
+                  const userStr = user?.username || "System";
+
+                  // Replace temporary credit line with real cash/bank line
+                  const updatedLines = approvalEntry.lines.map(line => {
+                    const isCreditLiability = line.credit > 0 && (
+                      line.accountType === "Accounts Payable" || 
+                      line.accountCode === "2205" || 
+                      line.accountName === "مستحقات مشتريات يومية" ||
+                      line.accountName === "Accrued Daily Purchases"
+                    );
+                    
+                    if (isCreditLiability) {
+                      if (selectedPaymentSource.type === "Bank") {
+                        const selectedBank = banks.find(b => b.id === selectedPaymentSource.id);
+                        return {
+                          ...line,
+                          accountType: "Bank" as const,
+                          accountCode: selectedBank?.accountCode || "1101",
+                          accountName: selectedBank?.bankName || "البنك",
+                          bankAccountId: selectedPaymentSource.id,
+                          cashBoxId: "",
+                          description: lang === "ar" 
+                            ? `صرف من حساب البنك: ${selectedBank?.bankName}`
+                            : `Disbursed from bank account: ${selectedBank?.bankName}`
+                        };
+                      } else {
+                        const selectedBox = boxes.find(b => b.id === selectedPaymentSource.id);
+                        return {
+                          ...line,
+                          accountType: "Cash" as const,
+                          accountCode: selectedBox?.accountCode || "1102",
+                          accountName: selectedBox?.cashBoxName || "الصندوق",
+                          cashBoxId: selectedPaymentSource.id,
+                          bankAccountId: "",
+                          description: lang === "ar"
+                            ? `صرف نقدي من الصندوق: ${selectedBox?.cashBoxName}`
+                            : `Disbursed in cash from box: ${selectedBox?.cashBoxName}`
+                        };
+                      }
+                    }
+                    return line;
+                  });
+
+                  try {
+                    // Update the entry in Firestore with approved status and updated lines
+                    await updateDoc(doc(db, "journal_entries", approvalEntry.id), {
+                      lines: updatedLines,
+                      status: "Approved",
+                      approvedAt: nowStr,
+                      approvedBy: user?.id || "system",
+                      approvedByName: userStr
+                    });
+
+                    // Apply impact to Bank/Cash Box balances
+                    await applyJournalImpactToCashBank(approvalEntry.id);
+
+                    // Sync the entry to the Expenses collection as Approved and Paid
+                    await syncJournalEntryToExpensesAndRevenues(approvalEntry.id, lang);
+
+                    // Save Audit Log
+                    const logId = `LOG_JV_APP_${Date.now()}`;
+                    await setDoc(doc(db, "audit_logs", logId), {
+                      userId: user?.id || "unknown",
+                      userName: user?.username || "System",
+                      userRole: user?.role || "Admin",
+                      action: "اعتماد قيد مشتريات يومية وتحديث رصيد الصرف",
+                      module: "Journal Entries",
+                      recordId: approvalEntry.id,
+                      createdAt: nowStr
+                    });
+
+                    showToast(
+                      lang === "ar" 
+                        ? "تم اعتماد وصرف قيد المشتريات وتحديث الحسابات والمصروفات بنجاح!" 
+                        : "Daily Purchases JV approved, disbursed, and synced to expenses successfully!",
+                      "success"
+                    );
+
+                    setShowApprovalAccountModal(false);
+                    setApprovalEntry(null);
+                    loadData();
+                  } catch (err: any) {
+                    console.error("Failed to approve daily purchases entry:", err);
+                    alert(lang === "ar" ? "فشل اعتماد القيد" : "Failed to approve journal entry");
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl text-xs transition"
+              >
+                {lang === "ar" ? "نعم، اعتمد واخصم الصرف" : "Yes, Approve & Disburse"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AUTOMATED TEST FLOW LOG MODAL */}
       {showTestModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
@@ -1606,6 +2313,182 @@ export default function JournalEntriesTab({ lang, user }: { lang: "ar" | "en"; u
             {toast.type === "success" ? "✓" : "!"}
           </span>
           <p className="text-xs font-bold text-slate-100 leading-snug">{toast.message}</p>
+        </div>
+      )}
+
+      {/* JOURNAL ENTRIES MONTHLY REPORT PRINT MODAL */}
+      {showJournalReportModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #journal-report-print-area, #journal-report-print-area * {
+                visibility: visible !important;
+              }
+              #journal-report-print-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                background: white !important;
+                color: black !important;
+                direction: rtl !important;
+                font-family: sans-serif !important;
+              }
+              .no-print-modal {
+                display: none !important;
+              }
+            }
+          `}} />
+          
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl border overflow-hidden flex flex-col my-8 max-h-[90vh] no-print-modal">
+            <div className="bg-[#005185] p-5 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📄</span>
+                <h2 className="text-sm font-black">
+                  {lang === "ar" ? "ملخص تقرير القيود اليومية وعمليات الأستاذ" : "Journal Entries Summary Report"}
+                </h2>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-white hover:bg-slate-100 text-[#005185] py-1.5 px-4 rounded-xl font-black text-xs transition duration-150 shadow"
+                >
+                  🖨️ {lang === "ar" ? "طباعة التقرير الآن" : "Print Report Now"}
+                </button>
+                <button
+                  onClick={() => setShowJournalReportModal(false)}
+                  className="text-white hover:text-red-200 text-lg font-bold px-2 transition"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Preview Area for UI view */}
+            <div className="p-6 overflow-y-auto bg-slate-50 flex-1">
+              <div className="bg-white p-8 rounded-2xl border shadow-sm max-w-4xl mx-auto text-right" id="journal-report-print-area">
+                
+                {/* Print Header */}
+                <div className="flex justify-between items-start border-b-2 border-[#005185] pb-4 mb-6">
+                  <div className="text-right space-y-1">
+                    <h1 className="text-base font-black text-[#005185]">{lang === "ar" ? "شركة فنون الوليد للخدمات الصناعية" : "Al Waleed Arts Industrial Services Co."}</h1>
+                    <p className="text-[10px] text-slate-400 font-bold">AL WALEED ARTS INDUSTRIAL SERVICES & ADV. CO.</p>
+                    <p className="text-[10px] text-slate-500 font-semibold">{lang === "ar" ? "الرقم الضريبي: ٣١٠٨٨٧٦٦٥٢٠٠٠٠٣" : "VAT ID: 310887665200003"}</p>
+                  </div>
+                  <div className="text-center bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-lg">
+                    <span className="block text-[11px] font-black text-slate-600">
+                      {lang === "ar" ? "ملخص القيود لشهر" : "Journal Summary Period"}
+                    </span>
+                    <span className="block text-xs font-mono font-bold text-[#005185] mt-0.5">
+                      {selectedMonth === "all" ? (lang === "ar" ? "جميع الفترات" : "All Periods") : selectedMonth}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Report Meta Metadata */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "تاريخ الاستخراج" : "Date Generated"}</span>
+                    <span className="text-slate-800 font-bold font-mono mt-0.5 block">{new Date().toLocaleDateString("en-US")}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "المستخدم المستخرج" : "Generated By"}</span>
+                    <span className="text-slate-800 font-bold mt-0.5 block">{user?.username || "Financial Accountant"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "إجمالي قيود الفترة" : "Total Records"}</span>
+                    <span className="text-slate-800 font-bold font-mono mt-0.5 block">{filteredEntries.length}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "نطاق الفحص المالي" : "Financial Scope"}</span>
+                    <span className="text-[#0072BC] font-bold mt-0.5 block">{lang === "ar" ? "قيود اليومية العامة" : "General Ledger"}</span>
+                  </div>
+                </div>
+
+                {/* Total Summary Mini-Bento inside Report */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="border border-slate-200/80 p-3 rounded-xl bg-slate-50/50 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "إجمالي المدين (Debits)" : "Total Debits"}</span>
+                    <span className="text-sm font-black text-slate-800 font-mono mt-1 block">
+                      {filteredEntries.reduce((sum, e) => sum + (Number(e.totalDebit) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                  <div className="border border-slate-200/80 p-3 rounded-xl bg-slate-50/50 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "إجمالي الدائن (Credits)" : "Total Credits"}</span>
+                    <span className="text-sm font-black text-slate-800 font-mono mt-1 block">
+                      {filteredEntries.reduce((sum, e) => sum + (Number(e.totalCredit) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                  <div className="border border-emerald-200 p-3 rounded-xl bg-emerald-50/10 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "القيود المعتمدة والمرحلة" : "Approved Entries"}</span>
+                    <span className="text-sm font-black text-emerald-700 font-mono mt-1 block">
+                      {filteredEntries.filter(e => e.status === "Approved").length} <span className="text-[9px] text-slate-500">{lang === "ar" ? "قيد" : "JV"}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Table of Items */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden mb-8">
+                  <table className="w-full text-right text-[10px] text-slate-700 leading-normal">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-extrabold text-right">
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "رقم القيد" : "Entry No"}</th>
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "التاريخ" : "Date"}</th>
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "بيان القيد العام" : "General Description"}</th>
+                        <th className="p-2.5 text-left font-bold">{lang === "ar" ? "إجمالي المدين" : "Total Debit"}</th>
+                        <th className="p-2.5 text-left font-bold">{lang === "ar" ? "إجمالي الدائن" : "Total Credit"}</th>
+                        <th className="p-2.5 text-center font-bold">{lang === "ar" ? "الحالة" : "Status"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEntries.map((jv, idx) => (
+                        <tr key={jv.id} className={`border-b border-slate-100 font-semibold ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}`}>
+                          <td className="p-2.5 font-mono text-[#0072BC] font-bold">{jv.journalEntryNo}</td>
+                          <td className="p-2.5 font-mono text-slate-500 font-bold">{jv.date}</td>
+                          <td className="p-2.5 text-slate-800 font-bold max-w-[220px] truncate">{jv.description}</td>
+                          <td className="p-2.5 text-left font-mono">{(Number(jv.totalDebit) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-left font-mono">{(Number(jv.totalCredit) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black ${
+                              jv.status === "Approved" 
+                                ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                                : jv.status === "Draft" 
+                                ? "bg-slate-50 text-slate-600" 
+                                : "bg-rose-50 text-rose-600"
+                            }`}>
+                              {jv.status === "Approved" ? (lang === "ar" ? "معتمد" : "Approved") : jv.status === "Draft" ? (lang === "ar" ? "مسودة" : "Draft") : (lang === "ar" ? "ملغى" : "Cancelled")}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Print Signatures and Approvals */}
+                <div className="grid grid-cols-3 gap-6 pt-12 text-center font-extrabold text-[10px] text-slate-800">
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "توقيع المحاسب المالي" : "Financial Accountant Sign"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "اعتماد المدير المالي" : "Finance Director Approval"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "المجلس التنفيذي والختم" : "Executive Board & Stamp"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

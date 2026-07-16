@@ -1,0 +1,1 @@
+sed -i 's/    <div\n      onClick={() => setIsEditing(true)}\n      className={`cursor-pointer/    <div\n      onClick={() => setIsEditing(true)}\n      className={`relative cursor-pointer/g' src/components/finance/MonthlyPayrollRuns.tsx

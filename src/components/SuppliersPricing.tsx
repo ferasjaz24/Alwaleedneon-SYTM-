@@ -167,8 +167,17 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
     if (!selectedReq) return;
     setIsSaving(true);
     try {
+      const newLog = [
+        ...(selectedReq.updatesLog || []),
+        {
+          user: user.username,
+          action: lang === "ar" ? "حفظ مسودة التسعيرة" : "Saved quote draft",
+          timestamp: new Date().toISOString(),
+        }
+      ];
       const payload = {
         pricingDetails: quoteDetails,
+        updatesLog: newLog,
       };
       const res = await fetch(
         `/api/dynamic/pricing_requests/${selectedReq.id}`,
@@ -222,6 +231,28 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
         <h2 style="text-align: center; margin-bottom: 5px;">عرض سعر شراء مواد</h2>
         <h4 style="text-align: center; color: #555; margin-top: 0;">المشروع: ${selectedReq.projectName}</h4>
         
+        <div style="margin-top: 15px; margin-bottom: 20px; border: 1.5px solid #000; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 12px; line-height: 1.6; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
+          <table style="width: 100%; border: none; margin: 0; font-size: 12px;">
+            <tr style="border: none;">
+              <td style="border: none; padding: 4px; width: 50%;"><strong>اسم المشروع:</strong> ${selectedReq.projectName || "---"}</td>
+              <td style="border: none; padding: 4px; width: 50%;"><strong>رقم مرجع التسعير:</strong> ${selectedReq.id || "---"} ${selectedReq.quotationNumber ? `(${selectedReq.quotationNumber})` : ""}</td>
+            </tr>
+            <tr style="border: none;">
+              <td style="border: none; padding: 4px;"><strong>طالب التسعير (اليوزر):</strong> ${selectedReq.requestedBy || "غير معروف"}</td>
+              <td style="border: none; padding: 4px;"><strong>تاريخ ووقت الطلب:</strong> ${selectedReq.requestedAt ? new Date(selectedReq.requestedAt).toLocaleString('ar-EG') : "---"}</td>
+            </tr>
+            ${selectedReq.sentToFinanceBy ? `
+            <tr style="border: none;">
+              <td style="border: none; padding: 4px; color: #4f46e5;"><strong>المصدر للمالية (اليوزر):</strong> ${selectedReq.sentToFinanceBy}</td>
+              <td style="border: none; padding: 4px; color: #4f46e5;"><strong>تاريخ التصدير للمالية:</strong> ${selectedReq.sentToFinanceAt ? new Date(selectedReq.sentToFinanceAt).toLocaleString('ar-EG') : "---"}</td>
+            </tr>
+            ` : ""}
+            <tr style="border: none;">
+              <td style="border: none; padding: 4px;" colspan="2"><strong>حالة الطلب الحالية:</strong> <span style="font-weight: bold; color: #0072BC;">${selectedReq.status}</span></td>
+            </tr>
+          </table>
+        </div>
+
         <div style="margin-top:20px;">
           <h3>المواد المتوفرة (الكمية تغطي الطلب)</h3>
           <table>
@@ -310,12 +341,21 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: lang === "ar" ? "تحويل طلب الشراء والتسعيرة للمسؤول المالي للاعتماد" : "Sent quote to finance for approval",
+              timestamp: new Date().toISOString(),
+            }
+          ];
           // 1. Update Pricing Request
           const payload = {
             status: "في انتظار تعميد المسؤول المالي",
             pricingDetails: quoteDetails,
             sentToFinanceAt: new Date().toISOString(),
             sentToFinanceBy: user.username,
+            updatesLog: newLog,
           };
           const res = await fetch(
             `/api/dynamic/pricing_requests/${selectedReq.id}`,
@@ -362,10 +402,19 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: lang === "ar" ? "إلغاء التحويل وتراجع للتسعير" : "Reverted sending to finance",
+              timestamp: new Date().toISOString(),
+            }
+          ];
           const payload = {
             status: "تم الارسال للتسعير",
             sentToFinanceAt: null,
             sentToFinanceBy: null,
+            updatesLog: newLog,
           };
           const res = await fetch(
             `/api/dynamic/pricing_requests/${selectedReq.id}`,
@@ -410,6 +459,14 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: lang === "ar" ? "إصدار وتقييد أمر الشراء" : "Issued Purchase Order",
+              timestamp: new Date().toISOString(),
+            }
+          ];
           // Update Procurement Request to say order is created
           await fetch(
             `/api/dynamic/material_purchase_requests/${selectedReq.originalRequestId}`,
@@ -424,6 +481,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                 pricingDetails: selectedReq.pricingDetails,
                 inStockItems: selectedReq.inStockItems,
                 outOfStockItems: selectedReq.outOfStockItems,
+                updatesLog: newLog,
               }),
             },
           );
@@ -431,7 +489,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
           await fetch(`/api/dynamic/pricing_requests/${selectedReq.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "تم اصدار امر شراء" }),
+            body: JSON.stringify({ status: "تم اصدار امر شراء", updatesLog: newLog }),
           });
 
           setToast({
@@ -442,7 +500,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
             type: "success",
           });
           fetchItems();
-          setSelectedReq({ ...selectedReq, status: "تم اصدار امر شراء" });
+          setSelectedReq({ ...selectedReq, status: "تم اصدار امر شراء", updatesLog: newLog });
         } catch (e) {
           setToast({
             message: lang === "ar" ? "حدث خطأ" : "Error",
@@ -465,6 +523,14 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: lang === "ar" ? "إلغاء وتراجع عن أمر الشراء المعتمد" : "Reverted Purchase Order",
+              timestamp: new Date().toISOString(),
+            }
+          ];
           await fetch(
             `/api/dynamic/material_purchase_requests/${selectedReq.originalRequestId}`,
             {
@@ -475,6 +541,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                 isOrder: false,
                 orderCreatedBy: null,
                 orderCreatedAt: null,
+                updatesLog: newLog,
               }),
             },
           );
@@ -482,7 +549,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
           await fetch(`/api/dynamic/pricing_requests/${selectedReq.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "في انتظار اصدار امر شراء" }),
+            body: JSON.stringify({ status: "في انتظار اصدار امر شراء", updatesLog: newLog }),
           });
 
           setToast({
@@ -576,6 +643,61 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
               </button>
             </div>
             <div className="p-6 space-y-6">
+              {/* تفاصيل طلب التسعير الفنية والزمنية */}
+              <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "اسم المشروع:" : "Project Name:"}
+                  </p>
+                  <p className="font-extrabold text-slate-800 text-base">{selectedReq.projectName || "---"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "رقم مرجع التسعير:" : "Pricing Reference:"}
+                  </p>
+                  <p className="font-bold text-[#0072BC] font-mono">{selectedReq.id || "---"} {selectedReq.quotationNumber ? `(${selectedReq.quotationNumber})` : ""}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "تاريخ ووقت إرسال الطلب:" : "Request Date & Time:"}
+                  </p>
+                  <p className="font-bold text-slate-700">
+                    {selectedReq.requestedAt ? new Date(selectedReq.requestedAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-US") : "---"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">
+                    {lang === "ar" ? "اسم المستخدم (صاحب الطلب):" : "Requested By (User):"}
+                  </p>
+                  <p className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <span>{selectedReq.requestedBy || "غير معروف"}</span>
+                  </p>
+                </div>
+
+                {selectedReq.sentToFinanceBy && (
+                  <>
+                    <div>
+                      <p className="text-indigo-500 font-bold mb-1">
+                        {lang === "ar" ? "تاريخ التصدير للمالية:" : "Exported to Finance At:"}
+                      </p>
+                      <p className="font-bold text-indigo-700">
+                        {selectedReq.sentToFinanceAt ? new Date(selectedReq.sentToFinanceAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-US") : "---"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-indigo-500 font-bold mb-1">
+                        {lang === "ar" ? "المستخدم المصدر للمالية:" : "Exported to Finance By:"}
+                      </p>
+                      <p className="font-bold text-indigo-700 flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-indigo-400" />
+                        <span>{selectedReq.sentToFinanceBy}</span>
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
               {selectedReq.status === "مرفوض من المالية" &&
                 selectedReq.financeRejectReason && (
                   <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col gap-2">
@@ -814,6 +936,33 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+              {selectedReq.updatesLog && selectedReq.updatesLog.length > 0 && (
+                <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl space-y-2 mt-6">
+                  <h4 className="text-xs font-black text-slate-500">
+                    {lang === "ar"
+                      ? "سجل تتبع التحديثات والحالات:"
+                      : "Status Transition History:"}
+                  </h4>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {selectedReq.updatesLog.map((log: any, i: number) => (
+                      <div
+                        key={i}
+                        className="text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 bg-white p-2.5 border border-slate-100 rounded-lg shadow-sm"
+                      >
+                        <span className="font-bold text-slate-700">
+                          {log.action}{" "}
+                          <span className="text-[#0072BC] font-black px-1">
+                            بواسطة ({log.user})
+                          </span>
+                        </span>
+                        <span className="text-slate-400 font-mono" dir="ltr">
+                          {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

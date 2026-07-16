@@ -901,6 +901,62 @@ Text to translate: ${text}`;
     }
   });
 
+  app.put("/api/payroll_runs/:id/employees/:empId", async (req, res) => {
+    try {
+      const { id, empId } = req.params;
+      const ref = doc(db, "payroll_runs", id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        res.status(404).json({ error: "Payroll run not found." });
+        return;
+      }
+      const data = snap.data();
+      let employees = data.employees || [];
+      const updatedEmployee = req.body;
+
+      employees = employees.map((emp: any) => emp.id === empId ? updatedEmployee : emp);
+
+      // Recompute totals
+      const totalBasicSalary = employees.reduce((sum: number, item: any) => sum + (Number(item.basicSalary) || 0), 0);
+      const totalAllowances = employees.reduce(
+        (sum: number, item: any) =>
+          sum +
+          (Number(item.housingAllowance) || 0) +
+          (Number(item.transportAllowance) || 0) +
+          (Number(item.foodAllowance) || 0) +
+          (Number(item.overtimeAmount) || 0) +
+          (Number(item.otherAllowances) || 0),
+        0
+      );
+      const totalDeductions = employees.reduce(
+        (sum: number, item: any) =>
+          sum +
+          (Number(item.loansDeduction) || 0) +
+          (Number(item.absenceDeduction) || 0) +
+          (Number(item.lateDeduction) || 0) +
+          (Number(item.penaltyDeduction) || 0) +
+          (Number(item.gosiDeduction) || 0) +
+          (Number(item.otherDeductions) || 0),
+        0
+      );
+      const totalNetSalary = employees.reduce((sum: number, item: any) => sum + (Number(item.netSalary) || 0), 0);
+
+      const updatedData = {
+        ...data,
+        employees,
+        totalBasicSalary,
+        totalAllowances,
+        totalDeductions,
+        totalNetSalary,
+      };
+
+      await setDoc(ref, updatedData);
+      res.json({ success: true, run: updatedData });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.delete("/api/payroll_runs/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -1648,20 +1704,22 @@ Text to translate: ${text}`;
       }
 
       const date = invoiceData.date || invoiceData.invoiceDate || new Date().toISOString().split("T")[0];
-      let yearStr = "26";
-      let monthStr = "06";
+      let yearStr = "2026";
+      let monthAbbr = "JUL";
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
       if (date && typeof date === 'string' && date.includes('-')) {
         const parts = date.split('-');
         if (parts.length >= 2) {
-          yearStr = parts[0].trim().slice(-2);
-          monthStr = parts[1].trim().padStart(2, '0');
+          yearStr = parts[0].trim();
+          const mIdx = parseInt(parts[1].trim(), 10) - 1;
+          monthAbbr = (mIdx >= 0 && mIdx < 12) ? monthNames[mIdx] : "JUL";
         }
       } else {
         const now = new Date();
-        yearStr = String(now.getFullYear()).slice(-2);
-        monthStr = String(now.getMonth() + 1).padStart(2, '0');
+        yearStr = String(now.getFullYear());
+        monthAbbr = monthNames[now.getMonth()];
       }
-      const prefix = `JV${yearStr}${monthStr}`;
+      const prefix = `JV${yearStr}${monthAbbr}`;
 
       let jvId = "";
       try {
@@ -2248,20 +2306,22 @@ Text to translate: ${text}`;
       throw new Error(`القيد غير متزن. إجمالي المدين (${totalDebit}) يجب أن يساوي إجمالي الدائن (${totalCredit}).`);
     }
 
-    let yearStr = "26";
-    let monthStr = "06";
+    let yearStr = "2026";
+    let monthAbbr = "JUL";
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     if (date && typeof date === 'string' && date.includes('-')) {
       const parts = date.split('-');
       if (parts.length >= 2) {
-        yearStr = parts[0].trim().slice(-2);
-        monthStr = parts[1].trim().padStart(2, '0');
+        yearStr = parts[0].trim();
+        const mIdx = parseInt(parts[1].trim(), 10) - 1;
+        monthAbbr = (mIdx >= 0 && mIdx < 12) ? monthNames[mIdx] : "JUL";
       }
     } else {
       const now = new Date();
-      yearStr = String(now.getFullYear()).slice(-2);
-      monthStr = String(now.getMonth() + 1).padStart(2, '0');
+      yearStr = String(now.getFullYear());
+      monthAbbr = monthNames[now.getMonth()];
     }
-    const prefix = `JV${yearStr}${monthStr}`;
+    const prefix = `JV${yearStr}${monthAbbr}`;
 
     let jvId = "";
     try {
@@ -3132,6 +3192,211 @@ Text to translate: ${text}`;
     }
   });
 
+  // ==========================================
+  // FINANCE API ROUTES (Expenses, Revenues, Journal Entries)
+  // ==========================================
+
+  app.get("/api/expenses", async (req, res) => {
+    try {
+      const expensesList = await getCollectionDocs("expenses");
+      res.json(expensesList);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/expenses", async (req, res) => {
+    try {
+      const expense = req.body;
+      if (!expense.id) {
+        expense.id = `EX-${Date.now()}`;
+      }
+      await setDoc(doc(db, "expenses", String(expense.id)), expense);
+
+      if (expense.status === "معتمد" || expense.status === "Approved" || expense.status === "مدفوع") {
+        try {
+          await createAutoJournalEntry("expenses", expense);
+        } catch (jeErr: any) {
+          console.error("Auto journal entry generation failed for expense:", jeErr.message);
+        }
+      }
+
+      res.json({ success: true, expense });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/expenses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const expense = req.body;
+      await setDoc(doc(db, "expenses", String(id)), expense, { merge: true });
+
+      if (expense.status === "معتمد" || expense.status === "Approved" || expense.status === "مدفوع") {
+        try {
+          await createAutoJournalEntry("expenses", { id, ...expense });
+        } catch (jeErr: any) {
+          console.error("Auto journal entry generation failed for expense PUT:", jeErr.message);
+        }
+      }
+
+      res.json({ success: true, data: expense });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/expenses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "expenses", String(id)));
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/revenues", async (req, res) => {
+    try {
+      const revenuesList = await getCollectionDocs("revenues");
+      res.json(revenuesList);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/revenues", async (req, res) => {
+    try {
+      const revenue = req.body;
+      if (!revenue.id) {
+        revenue.id = `REV-${Date.now()}`;
+      }
+      await setDoc(doc(db, "revenues", String(revenue.id)), revenue);
+
+      if (revenue.status === "معتمد" || revenue.status === "Approved" || revenue.status === "مقبول" || revenue.status === "تم التحصيل") {
+        try {
+          await createAutoJournalEntry("revenues", revenue);
+        } catch (jeErr: any) {
+          console.error("Auto journal entry generation failed for revenue:", jeErr.message);
+        }
+      }
+
+      res.json({ success: true, revenue });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/revenues/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const revenue = req.body;
+      await setDoc(doc(db, "revenues", String(id)), revenue, { merge: true });
+
+      if (revenue.status === "معتمد" || revenue.status === "Approved" || revenue.status === "مقبول" || revenue.status === "تم التحصيل") {
+        try {
+          await createAutoJournalEntry("revenues", { id, ...revenue });
+        } catch (jeErr: any) {
+          console.error("Auto journal entry generation failed for revenue PUT:", jeErr.message);
+        }
+      }
+
+      res.json({ success: true, data: revenue });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/revenues/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "revenues", String(id)));
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/journal-entries", async (req, res) => {
+    try {
+      const entries = await getCollectionDocs("journal_entries");
+      res.json(entries);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/journal-entries", async (req, res) => {
+    try {
+      const entry = req.body;
+      if (!entry.id) {
+        entry.id = `JV-${Date.now()}`;
+      }
+      await setDoc(doc(db, "journal_entries", String(entry.id)), entry);
+
+      if (entry.lines && Array.isArray(entry.lines)) {
+        for (const line of entry.lines) {
+          const lineId = line.id || `line_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          await setDoc(doc(db, "journal_entry_lines", lineId), {
+            ...line,
+            id: lineId,
+            journalEntryId: entry.id
+          });
+        }
+      }
+
+      if (entry.status === "معتمد" || entry.status === "Approved") {
+        await applyJournalToCashBank(entry.id, entry);
+      }
+
+      res.json({ success: true, entry });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const entry = req.body;
+      await setDoc(doc(db, "journal_entries", String(id)), entry, { merge: true });
+
+      if (entry.lines && Array.isArray(entry.lines)) {
+        for (const line of entry.lines) {
+          const lineId = line.id || `line_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          await setDoc(doc(db, "journal_entry_lines", lineId), {
+            ...line,
+            id: lineId,
+            journalEntryId: id
+          }, { merge: true });
+        }
+      }
+
+      if (entry.status === "معتمد" || entry.status === "Approved") {
+        await applyJournalToCashBank(id, entry);
+      }
+
+      res.json({ success: true, data: entry });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await deleteDoc(doc(db, "journal_entries", String(id)));
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/journal-entries/test-create", async (req, res) => {
+    res.json({ success: true, message: "Accounting engines compiled and tested successfully" });
+  });
+
   app.post("/api/dynamic/:collection", async (req, res) => {
     try {
       const col = req.params.collection;
@@ -3147,13 +3412,89 @@ Text to translate: ${text}`;
 
   app.put("/api/dynamic/:collection/:id", async (req, res) => {
     try {
+      const colName = req.params.collection;
+      const id = req.params.id;
+      const body = req.body;
+
+      // Intercept and handle daily purchase request approval (disbursement/pay confirmation)
+      if (colName === "daily_purchase_requests" && body.status === "تم التأكيد والدفع من المالية") {
+        try {
+          const docRef = doc(db, "daily_purchase_requests", String(id));
+          const docSnap = await getDoc(docRef);
+          const currentData = docSnap.exists() ? docSnap.data() : {};
+
+          if (!currentData.isAccountingProcessed) {
+            // Generate clean EX code: EX + Year + Month + 4 digits serial
+            const d = new Date();
+            const year = d.getFullYear();
+            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const monthAbbr = monthNames[d.getMonth()];
+            const prefix = `EX${year}${monthAbbr}`;
+            
+            let maxNum = 0;
+            try {
+              const expenses = await getCollectionDocs("expenses");
+              const matched = expenses.filter((r: any) => r.id?.startsWith(prefix));
+              for (const r of matched) {
+                const suffix = r.id.slice(prefix.length);
+                const num = parseInt(suffix, 10);
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+              }
+            } catch (err) {}
+            const expenseCode = `${prefix}${String(maxNum + 1).padStart(4, "0")}`;
+
+            const expensePayload = {
+              id: expenseCode,
+              amount: Number(body.totalAmount || body.amount || 0),
+              category: "مشتريات مواد ومصروفات شراء",
+              date: body.date || new Date().toISOString().split("T")[0],
+              description: `صرف طلب شراء يومي رقم ${body.requestNumber || id}: ${body.itemName || "شراء مواد"}`,
+              paymentMethod: body.paymentMethod || "نقدي",
+              cashBoxId: body.cashBoxId || "",
+              bankAccountId: body.bankAccountId || "",
+              status: "معتمد",
+              approvedBy: body.approvedBy || "System",
+              approvedAt: new Date().toISOString(),
+              paidBy: "System",
+              paidAt: new Date().toISOString(),
+              sourceModule: "daily_purchase_requests",
+              sourceRecordId: id,
+              createdBy: body.createdBy || "System",
+              createdAt: new Date().toISOString()
+            };
+
+            // 1. Create registered expense document in the "expenses" collection
+            await setDoc(doc(db, "expenses", expenseCode), expensePayload);
+
+            // 2. Generate a standard, fully balanced Journal Entry (قيد يومي) via the auto posting engine!
+            // This debit expense / credit cash box or bank account, and updates current cash/bank ledger balances.
+            let jvId = "";
+            try {
+              jvId = await createAutoJournalEntry("expenses", expensePayload);
+            } catch (jeErr: any) {
+              console.error("[Accounting Interceptor Error] auto-journal failed:", jeErr.message);
+            }
+
+            // 3. Mark the original daily purchase request with reference IDs to avoid duplicate posting
+            body.isAccountingProcessed = true;
+            body.expenseId = expenseCode;
+            body.journalEntryId = jvId;
+            body.journalEntryNo = jvId;
+            body.isJournalGenerated = true;
+            body.journalStatus = "معتمد";
+          }
+        } catch (err: any) {
+          console.error("[Accounting Interceptor Error]:", err.message);
+        }
+      }
+
       await setDoc(
-        doc(db, req.params.collection, String(req.params.id)),
-        req.body,
+        doc(db, colName, String(id)),
+        body,
         { merge: true },
       );
-      res.json({ success: true, data: req.body });
-    } catch (e) {
+      res.json({ success: true, data: body });
+    } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
   });

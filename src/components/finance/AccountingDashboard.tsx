@@ -1,10 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   FileText, CheckCircle, TrendingUp, Users, Calculator, Calendar, 
   ArrowUpRight, ArrowDownRight, Receipt, CreditCard, ShieldAlert,
   Percent, DollarSign, ListFilter, HelpCircle, Eye, ChevronRight
 } from "lucide-react";
 import { User } from "../../types";
+import { db, auth } from "../../firebase";
+import { collection, getDocs } from "firebase/firestore";
+
+// Firestore Error Handling matching integration guidelines
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error in AccountingDashboard: ', JSON.stringify(errInfo));
+}
 
 interface AccountingDashboardProps {
   lang: "ar" | "en";
@@ -15,6 +52,16 @@ export default function AccountingDashboard({ lang, user }: AccountingDashboardP
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // Database lists
+  const [journalEntries, setJournalEntries] = useState<any[]>([]);
+  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
+  const [supplierInvoicesList, setSupplierInvoicesList] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+  const [payrollRuns, setPayrollRuns] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Month Translation
   const monthsAr = [
@@ -33,42 +80,251 @@ export default function AccountingDashboard({ lang, user }: AccountingDashboardP
       : `${val.toLocaleString("en-US")} SAR`;
   };
 
-  // Monthly simulated stats database based on selected month/year
-  // To make it feel super dynamic and reactive, we calculate numbers based on month index
-  const factor = (selectedMonth * 17) % 5 + 8; // dynamic scaling factor
-  
-  const metricsData = {
-    journalEntriesCount: Math.round(35 + factor * 2.5),
-    approvedJournalsCount: Math.round(30 + factor * 2),
-    customerInvoicesCount: Math.round(10 + factor * 0.8),
-    customerInvoicesTotal: 120000 + (selectedMonth * 14500),
-    supplierInvoicesCount: Math.round(6 + factor * 0.6),
-    supplierInvoicesTotal: 65000 + (selectedMonth * 7200),
-    monthlyPayrollTotal: 128500, // Fixed based on employees average
-    payrollPendingTransfer: 128500,
-    payrollProcessedTransfer: 128500,
-    accruedZakatTax: 25000 + (selectedMonth * 3400),
-    approvedInvoicesVat: (120000 + (selectedMonth * 14500)) * 0.15,
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // 1. Journal Entries
+      let jvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "journal_entries"));
+        jvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "journal_entries");
+      }
+
+      // 2. Customer Invoices
+      let custInvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "customer_invoices"));
+        custInvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "customer_invoices");
+      }
+
+      // 3. Supplier Invoices
+      let suppInvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "supplier_invoices"));
+        suppInvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "supplier_invoices");
+      }
+
+      // 4. Expenses
+      let exps: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "expenses"));
+        exps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "expenses");
+      }
+
+      // 5. Bank Accounts
+      let banks: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "bank_accounts"));
+        banks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "bank_accounts");
+      }
+
+      // 6. Cash Boxes
+      let boxes: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "cash_boxes"));
+        boxes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "cash_boxes");
+      }
+
+      // 7. Payroll Runs
+      let runs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "payroll_runs"));
+        runs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "payroll_runs");
+      }
+
+      setJournalEntries(jvs);
+      setCustomerInvoices(custInvs);
+      setSupplierInvoicesList(suppInvs);
+      setExpenses(exps);
+      setBankAccounts(banks);
+      setCashBoxes(boxes);
+      setPayrollRuns(runs);
+    } catch (err) {
+      console.error("Dashboard calculation preload failed: ", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock details for popup cards
-  const recentJournals = [
-    { id: "JV-2026-001", date: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-04`, desc: lang === "ar" ? "قيد إثبات رواتب الموظفين لشهر" : "Salary accrual entry for", value: metricsData.monthlyPayrollTotal, status: lang === "ar" ? "معتمد" : "Approved" },
-    { id: "JV-2026-002", date: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-08`, desc: lang === "ar" ? "فاتورة مبيعات شركة السعد" : "Sales invoice - Al-Saad Co", value: 45000, status: lang === "ar" ? "معتمد" : "Approved" },
-    { id: "JV-2026-003", date: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-12`, desc: lang === "ar" ? "قيد تسوية سداد موردين" : "Supplier settlement entry", value: 23400, status: lang === "ar" ? "مسودة" : "Draft" },
-    { id: "JV-2026-004", date: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-18`, desc: lang === "ar" ? "شراء مواد خام لوحة نيون" : "Raw materials neon sign purchase", value: 12000, status: lang === "ar" ? "معتمد" : "Approved" },
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const recentInvoices = [
-    { num: "INV-26-041", client: lang === "ar" ? "شركة ريتو كوفي" : "Retro Coffee Co", amount: 35000, vat: 5250, date: `2026-${String(selectedMonth).padStart(2, "0")}-05`, status: lang === "ar" ? "معتمد وصادر" : "Approved & Issued" },
-    { num: "INV-26-042", client: lang === "ar" ? "البوليفارد زون 4" : "Boulevard Zone 4", amount: 85000, vat: 12750, date: `2026-${String(selectedMonth).padStart(2, "0")}-10`, status: lang === "ar" ? "معتمد وصادر" : "Approved & Issued" },
-    { num: "INV-26-043", client: lang === "ar" ? "مجموعة السعد للصناعة" : "Al-Saad Industrial Group", amount: 65400, vat: 9810, date: `2026-${String(selectedMonth).padStart(2, "0")}-15`, status: lang === "ar" ? "مسودة" : "Draft" },
-  ];
+  // ----------------------------------------------------
+  // Dynamic Real-Time Calculations
+  // ----------------------------------------------------
+  const prefix = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
+
+  // 1. Journal Entries Calculations
+  const monthJournals = journalEntries.filter(entry => {
+    return entry.date && String(entry.date).startsWith(prefix) && !entry.isDeleted;
+  });
+  const journalEntriesCount = monthJournals.length;
+  const approvedJournalsCount = monthJournals.filter(entry => entry.status === "Approved").length;
+
+  // 2. Customer Invoices Calculations
+  const monthCustomerInvoices = customerInvoices.filter(inv => {
+    const isApproved = inv.status !== "Draft" && inv.status !== "Cancelled";
+    return isApproved && inv.invoiceDate && String(inv.invoiceDate).startsWith(prefix);
+  });
+  const customerInvoicesCount = monthCustomerInvoices.length;
+  const customerInvoicesTotal = monthCustomerInvoices.reduce((sum, inv) => sum + (Number(inv.grandTotal) || 0), 0);
+  const approvedInvoicesVat = monthCustomerInvoices.reduce((sum, inv) => sum + (Number(inv.vatTotal) || 0), 0);
+
+  // 3. Supplier Invoices & Expenses Calculations
+  const monthSupplierInvoices = supplierInvoicesList.filter(inv => {
+    const isApproved = inv.status === "Approved";
+    return isApproved && inv.invoiceDate && String(inv.invoiceDate).startsWith(prefix);
+  });
+  const supplierInvoicesCount = monthSupplierInvoices.length;
+  const supplierInvoicesTotal = monthSupplierInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0);
+  const supplierInvoicesVat = monthSupplierInvoices.reduce((sum, inv) => sum + (Number(inv.vatAmount) || 0), 0);
+
+  // direct expenses for selected month
+  const monthExpenses = expenses.filter(exp => {
+    const isDirect = !exp.supplierInvoiceId;
+    return exp.expenseDate && String(exp.expenseDate).startsWith(prefix);
+  });
+  const expensesVat = monthExpenses.reduce((sum, exp) => sum + (Number(exp.vatAmount) || 0), 0);
+  const expensesTotal = monthExpenses.reduce((sum, exp) => sum + (Number(exp.totalAmount) || 0), 0);
+
+  // Combine supplier invoices + direct expenses for metrics
+  const combinedSupplierAndExpensesTotal = supplierInvoicesTotal + expensesTotal;
+  const combinedSupplierAndExpensesCount = supplierInvoicesCount + monthExpenses.length;
+  const combinedPurchasesVat = supplierInvoicesVat + expensesVat;
+
+  // 4. Zakat & VAT Accrued
+  // Calculate bank accounts and cash boxes for Zakat (current working capital)
+  const totalBankBalance = bankAccounts
+    .filter(b => !b.isDeleted && b.status === "Active")
+    .reduce((sum, b) => sum + (Number(b.currentBalance || b.current_balance) || 0), 0);
+  const totalCashBalance = cashBoxes
+    .filter(c => !c.isDeleted && c.status === "Active")
+    .reduce((sum, c) => sum + (Number(c.currentBalance || c.current_balance) || 0), 0);
+  const workingCapital = totalBankBalance + totalCashBalance;
+
+  // Annual Sales & Cost
+  const yearStart = `${selectedYear}-01-01`;
+  const yearEnd = `${selectedYear}-12-31`;
+  const annualSalesInvoices = customerInvoices.filter(inv => {
+    const isApproved = inv.status !== "Draft" && inv.status !== "Cancelled";
+    return isApproved && inv.invoiceDate >= yearStart && inv.invoiceDate <= yearEnd;
+  });
+  const annualSalesRevenue = annualSalesInvoices.reduce((sum, inv) => sum + (Number(inv.taxableAmount) || 0), 0);
+
+  const annualSupplierInvoices = supplierInvoicesList.filter(inv => {
+    const isApproved = inv.status === "Approved";
+    return isApproved && inv.invoiceDate >= yearStart && inv.invoiceDate <= yearEnd;
+  });
+  const annualSupplierCost = annualSupplierInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
+
+  const annualExpenses = expenses.filter(exp => {
+    const isDirect = !exp.supplierInvoiceId;
+    return isDirect && exp.expenseDate >= yearStart && exp.expenseDate <= yearEnd;
+  });
+  const annualExpensesCost = annualExpenses.reduce((sum, exp) => sum + (Number(exp.subtotal) || 0), 0);
+
+  const annualTotalCosts = annualSupplierCost + annualExpensesCost;
+  const netAnnualProfit = annualSalesRevenue - annualTotalCosts;
+
+  const zakatBase = Math.max(0, workingCapital + netAnnualProfit);
+  const ZAKAT_RATE = 0.025778;
+  const zakatDueAmount = zakatBase * ZAKAT_RATE;
+
+  // Net VAT for the selected month
+  const netVatAmount = approvedInvoicesVat - combinedPurchasesVat;
+
+  const accruedZakatTax = zakatDueAmount + Math.max(0, netVatAmount);
+
+  // 5. Payroll Calculations
+  const monthPayrollRuns = payrollRuns.filter(run => {
+    return run.month === selectedMonth && run.year === selectedYear && !run.isDeleted;
+  });
+
+  const monthlyPayrollTotal = monthPayrollRuns.reduce((sum, run) => sum + (Number(run.totalNetSalary) || 0), 0);
+  const payrollPendingTransfer = monthPayrollRuns
+    .filter(run => run.status !== "Transferred")
+    .reduce((sum, run) => sum + (Number(run.totalNetSalary) || 0), 0);
+  const payrollProcessedTransfer = monthPayrollRuns
+    .filter(run => run.status === "Transferred")
+    .reduce((sum, run) => sum + (Number(run.totalNetSalary) || 0), 0);
+
+  // Consolidate in metricsData for existing JSX references
+  const metricsData = {
+    journalEntriesCount,
+    approvedJournalsCount,
+    customerInvoicesCount,
+    customerInvoicesTotal,
+    supplierInvoicesCount: combinedSupplierAndExpensesCount,
+    supplierInvoicesTotal: combinedSupplierAndExpensesTotal,
+    monthlyPayrollTotal,
+    payrollPendingTransfer,
+    payrollProcessedTransfer,
+    accruedZakatTax,
+    approvedInvoicesVat
+  };
+
+  // Detail mappings for popup cards
+  const recentJournals = monthJournals.map((j, idx) => ({
+    id: j.journalEntryNo || j.id || `JV-${idx}`,
+    date: j.date,
+    desc: j.description || (lang === "ar" ? "قيد محاسبي" : "Journal Entry"),
+    value: Number(j.totalDebit) || 0,
+    status: j.status === "Approved" ? (lang === "ar" ? "معتمد" : "Approved") : (lang === "ar" ? "مسودة" : "Draft")
+  }));
+
+  const recentInvoices = monthCustomerInvoices.map((inv, idx) => ({
+    num: inv.invoiceNo || `INV-${idx}`,
+    client: inv.customerName || (lang === "ar" ? "عميل عام" : "General Customer"),
+    amount: Number(inv.taxableAmount) || 0,
+    vat: Number(inv.vatTotal) || 0,
+    date: inv.invoiceDate,
+    status: inv.status || (lang === "ar" ? "مسودة" : "Draft")
+  }));
 
   const supplierInvoices = [
-    { num: "SUP-INV-99", supplier: lang === "ar" ? "الوليد للبلاستيك والاكريليك" : "Al-Waleed Plastic & Acrylic", amount: 48000, vat: 7200, date: `2026-${String(selectedMonth).padStart(2, "0")}-02` },
-    { num: "SUP-INV-100", supplier: lang === "ar" ? "مصنع محولات الإضاءة النيون" : "Neon Lighting Transformers Factory", amount: 24600, vat: 3690, date: `2026-${String(selectedMonth).padStart(2, "0")}-12` },
+    ...monthSupplierInvoices.map((inv, idx) => ({
+      num: inv.invoiceNo || `SUP-INV-${idx}`,
+      supplier: inv.supplierName || (lang === "ar" ? "مورد عام" : "General Supplier"),
+      amount: Number(inv.totalAmount) || 0,
+      vat: Number(inv.vatAmount) || 0,
+      date: inv.invoiceDate,
+      status: inv.status || (lang === "ar" ? "معتمد" : "Approved")
+    })),
+    ...monthExpenses.map((exp, idx) => ({
+      num: exp.expenseNo || `EXP-${idx}`,
+      supplier: exp.supplierName || (lang === "ar" ? "مصروف عام" : "General Expense"),
+      amount: Number(exp.totalAmount) || 0,
+      vat: Number(exp.vatAmount) || 0,
+      date: exp.expenseDate,
+      status: exp.paymentStatus || (lang === "ar" ? "معتمد" : "Approved")
+    }))
   ];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4" id="accounting-dashboard-loading">
+        <div className="w-12 h-12 border-4 border-[#0072BC] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm text-slate-500 font-bold">
+          {lang === "ar" ? "جاري تحميل البيانات الحقيقية من قواعد البيانات..." : "Loading real-time financial data..."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6" id="accounting-dashboard-container">

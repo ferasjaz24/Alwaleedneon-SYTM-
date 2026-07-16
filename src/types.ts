@@ -165,6 +165,7 @@ export interface PayrollRun {
     notes?: string;
   };
   isDeleted?: boolean;
+  overtimeCalcMethod?: string;
   deletedAt?: string;
   deletedBy?: string;
   deleteReason?: string;
@@ -177,7 +178,7 @@ export interface PayrollRun {
 
 export interface DeductionItem {
   id: string;
-  type: "Absence Deduction" | "Late Deduction" | "Loan Deduction" | "Penalty Deduction" | "Other Deduction";
+  type: "Absence Deduction" | "Late Deduction" | "Loan Deduction" | "Penalty Deduction" | "Other Deduction" | "GOSI Deduction";
   amount: number;
   reason: string;
   notes?: string;
@@ -207,6 +208,7 @@ export interface PayrollRunEmployee {
   muddahAmount: number;
   overtimeHours: number;
   overtimeAmount: number;
+  overtimeCalcMethod?: string; // 'manual' | 'basic' | 'muddah'
   otherAllowances: number;
   otherAllowancesReason?: string;
   loansDeduction: number;
@@ -240,6 +242,15 @@ export interface PayrollRunEmployee {
   deductionsList?: DeductionItem[];
   transferStatus?: string;
   isTransferred?: boolean;
+  modifications?: {
+    id?: string;
+    field: string;
+    oldValue: any;
+    newValue: any;
+    modifiedBy: string;
+    modifiedAt: string;
+    fromReview?: boolean;
+  }[];
 }
 
 export interface PayrollAuditLog {

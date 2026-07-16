@@ -213,6 +213,15 @@ export default function FinanceApprovals({
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: "تم قبول عرض الشراء واعتماد اصدار امر الشراء",
+              timestamp: new Date().toISOString(),
+            },
+          ];
+
           // 1. Update purchase request -> became an order
           await fetch(
             `/api/dynamic/material_purchase_requests/${selectedReq.originalRequestId}`,
@@ -229,13 +238,7 @@ export default function FinanceApprovals({
                 outOfStockItems: selectedReq.outOfStockItems,
                 financeApprovedBy: user.username,
                 financeApprovedAt: new Date().toISOString(),
-                updatesLog: [
-                  {
-                    user: user.username,
-                    action: "تم قبول عرض الشراء واعتماد اصدار امر الشراء",
-                    timestamp: new Date().toISOString(),
-                  },
-                ],
+                updatesLog: newLog,
               }),
             },
           );
@@ -245,6 +248,7 @@ export default function FinanceApprovals({
             status: "تم اصدار امر شراء",
             financeApprovedBy: user.username,
             financeApprovedAt: new Date().toISOString(),
+            updatesLog: newLog,
           };
           const res = await fetch(
             `/api/dynamic/pricing_requests/${selectedReq.id}`,
@@ -291,11 +295,21 @@ export default function FinanceApprovals({
       onConfirm: async () => {
         setIsSaving(true);
         try {
+          const newLog = [
+            ...(selectedReq.updatesLog || []),
+            {
+              user: user.username,
+              action: `تم رفض عرض الشراء - السبب: ${rejectReason}`,
+              timestamp: new Date().toISOString(),
+            },
+          ];
+
           const payload = {
             status: "مرفوض من المالية",
             financeRejectReason: rejectReason,
             financeRejectedBy: user.username,
             financeRejectedAt: new Date().toISOString(),
+            updatesLog: newLog,
           };
           const res = await fetch(
             `/api/dynamic/pricing_requests/${selectedReq.id}`,
@@ -314,13 +328,7 @@ export default function FinanceApprovals({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 status: "مرفوض من المالية",
-                updatesLog: [
-                  {
-                    user: user.username,
-                    action: `تم رفض عرض الشراء - السبب: ${rejectReason}`,
-                    timestamp: new Date().toISOString(),
-                  },
-                ],
+                updatesLog: newLog,
               }),
             },
           );
@@ -619,6 +627,35 @@ export default function FinanceApprovals({
                     </div>
                   </div>
                 )}
+
+              {/* Updates Log Section (Requirement) */}
+              {selectedReq.updatesLog && selectedReq.updatesLog.length > 0 && (
+                <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl space-y-2 mb-6">
+                  <h4 className="text-xs font-black text-slate-500">
+                    {lang === "ar"
+                      ? "سجل تتبع التحديثات والحالات:"
+                      : "Status Transition History:"}
+                  </h4>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {selectedReq.updatesLog.map((log: any, i: number) => (
+                      <div
+                        key={i}
+                        className="text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 bg-white p-2.5 border border-slate-100 rounded-lg shadow-sm"
+                      >
+                        <span className="font-bold text-slate-700">
+                          {log.action}{" "}
+                          <span className="text-[#0072BC] font-black px-1">
+                            بواسطة ({log.user})
+                          </span>
+                        </span>
+                        <span className="text-slate-400 font-mono" dir="ltr">
+                          {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 mb-8">
                 <button

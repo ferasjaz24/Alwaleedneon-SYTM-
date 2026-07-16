@@ -77,6 +77,7 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
   const [quotations, setQuotations] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [companySettings, setCompanySettings] = useState<any>(null);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Search & Filters
@@ -176,6 +177,17 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
       const clientList = clientSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       setClients(clientList);
 
+      // Load active bank accounts
+      try {
+        const bankSnap = await getDocs(collection(db, "bank_accounts"));
+        const bankList = bankSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter((ba: any) => !ba.isDeleted && ba.status !== "Inactive");
+        setBankAccounts(bankList);
+      } catch (e) {
+        console.error("Error fetching bank accounts:", e);
+      }
+
       // Load company ZATCA settings
       const companyDoc = await getDoc(doc(db, "settings", "zatca"));
       if (companyDoc.exists()) {
@@ -208,6 +220,34 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
       alert("الرجاء السماح بفتح النوافذ المنبثقة لطباعة الفاتورة");
       return;
     }
+
+    const banksHtml = bankAccounts.length > 0
+      ? bankAccounts.map((b: any) => `
+        <div style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px; text-align: right;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; color: #0f172a; font-size: 10px;">
+            <span>🏦 ${b.bankName || "البنك"}</span>
+          </div>
+          <div style="margin-top: 2px; font-size: 9px; color: #334155;">
+            <strong>رقم الآيبان (IBAN):</strong> <span style="font-family: monospace; font-weight: bold;">${b.iban || "—"}</span>
+          </div>
+          <div style="margin-top: 1px; font-size: 9px; color: #334155;">
+            <strong>رقم الحساب:</strong> <span style="font-family: monospace; font-weight: bold;">${b.accountNumber || b.account_number || "—"}</span>
+          </div>
+        </div>
+      `).join("")
+      : `
+        <div style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px; text-align: right;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; color: #0f172a; font-size: 10px;">
+            <span>🏦 مصرف الراجحي</span>
+          </div>
+          <div style="margin-top: 2px; font-size: 9px; color: #334155;">
+            <strong>رقم الآيبان (IBAN):</strong> <span style="font-family: monospace; font-weight: bold;">SA48800000045612347890</span>
+          </div>
+          <div style="margin-top: 1px; font-size: 9px; color: #334155;">
+            <strong>رقم الحساب:</strong> <span style="font-family: monospace; font-weight: bold;">45612347890</span>
+          </div>
+        </div>
+      `;
 
     const qrCodeHtml = inv.qrCodeBase64 ? `
       <div style="text-align: center;">
@@ -496,10 +536,21 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
 
           <!-- Layout of QR Code and Info -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; direction: rtl;">
-            <div style="display: flex; flex-direction: column; gap: 4px; text-align: right;">
-              <p style="margin: 0; font-size: 11px;"><strong>الرقم الضريبي الموحد للمنشأة:</strong> <span style="font-family: monospace;">${inv.companyVatNumber || "310123456700003"}</span></p>
-              <p style="margin: 0; font-size: 11px;"><strong>رقم السجل التجاري:</strong> <span style="font-family: monospace;">${inv.companyCrNumber || "1010123456"}</span></p>
-              <p style="margin: 0; font-size: 10px; color: #64748b;">${inv.companyAddress || "الرياض، المملكة العربية السعودية"}</p>
+            <div style="display: flex; flex-direction: column; gap: 4px; text-align: right; max-width: 65%;">
+              <p style="margin: 0; font-size: 13px; font-weight: 900; color: #0f172a;">${companySettings?.companyNameArabic || inv.companyNameArabic || "شركة فنون الوليد للدعاية والإعلان"}</p>
+              <p style="margin: 0; font-size: 11px; font-weight: bold; color: #475569;">${companySettings?.companyNameEnglish || inv.companyNameEnglish || "Al Waleed Arts Advertising Co."}</p>
+              <p style="margin: 0; font-size: 11px;"><strong>الرقم الضريبي الموحد للمنشأة (VAT):</strong> <span style="font-family: monospace; font-weight: bold; font-size: 12px; letter-spacing: 0.5px;">${companySettings?.vatNumber || inv.companyVatNumber || "310123456700003"}</span></p>
+              <p style="margin: 0; font-size: 11px;"><strong>رقم السجل التجاري (CR):</strong> <span style="font-family: monospace; font-weight: bold;">${companySettings?.crNumber || inv.companyCrNumber || "1010123456"}</span></p>
+              
+              <div style="margin: 0; font-size: 10px; color: #334155; line-height: 1.4;">
+                <strong>العنوان الوطني للمنشأة:</strong> ${companySettings?.nationalAddress || inv.companyAddress || "الرياض، المملكة العربية السعودية"}<br />
+                <strong>البلد:</strong> ${companySettings?.country || "المملكة العربية السعودية"} | 
+                <strong>المدينة:</strong> ${companySettings?.city || "الرياض"} | 
+                <strong>الحي:</strong> ${companySettings?.district || "الياسمين"}<br />
+                <strong>الرمز البريدي:</strong> <span style="font-family: monospace;">${companySettings?.postalCode || "13322"}</span>
+                ${companySettings?.buildingNumber ? ` | <strong>رقم المبنى:</strong> <span style="font-family: monospace;">${companySettings.buildingNumber}</span>` : ""}
+                ${companySettings?.additionalNumber ? ` | <strong>الرقم الإضافي:</strong> <span style="font-family: monospace;">${companySettings.additionalNumber}</span>` : ""}
+              </div>
             </div>
             
             ${qrCodeHtml}
@@ -565,11 +616,9 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
           <div class="totals-area">
             <div class="bank-box">
               <h4 style="margin-top: 0; margin-bottom: 6px; font-size: 10px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">الحسابات البنكية المعتمدة للتحويل / Wire Details:</h4>
-              <p style="margin: 0; font-size: 9px; color: #475569; line-height: 1.6;">
-                يمكنكم سداد قيمة هذه الفاتورة بالتحويل البنكي المباشر لأحد الحسابات التالية:<br />
-                • <strong>مصرف الراجحي:</strong> <span style="font-family: monospace;">SA48800000045612347890</span><br />
-                • <strong>بنك الرياض:</strong> <span style="font-family: monospace;">SA22200000001234567891</span>
-              </p>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                ${banksHtml}
+              </div>
             </div>
 
             <div class="totals-box">
@@ -1859,11 +1908,24 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
               {/* Top Row: Brand & ZATCA QR */}
               <div className="flex justify-between items-start border-b border-slate-300 pb-5">
                 <div className="space-y-1.5 text-right">
-                  <h1 className="text-lg font-extrabold text-[#005185]">{selectedInvoice.companyNameArabic}</h1>
-                  <p className="text-[10px] text-slate-400 font-bold">{selectedInvoice.companyNameEnglish}</p>
-                  <p className="font-semibold">الرقم الضريبي الموحد: <span className="font-mono font-bold">{selectedInvoice.companyVatNumber}</span></p>
-                  <p className="font-semibold">سجل تجاري: <span className="font-mono font-bold">{selectedInvoice.companyCrNumber}</span></p>
-                  <p className="text-slate-500 text-[10px]">{selectedInvoice.companyAddress}</p>
+                  <h1 className="text-lg font-extrabold text-[#005185]">{companySettings?.companyNameArabic || selectedInvoice.companyNameArabic || "شركة فنون الوليد للدعاية والإعلان"}</h1>
+                  <p className="text-[10px] text-slate-400 font-bold">{companySettings?.companyNameEnglish || selectedInvoice.companyNameEnglish || "Al Waleed Arts Advertising Co."}</p>
+                  <p className="font-semibold">الرقم الضريبي الموحد للمنشأة: <span className="font-mono font-bold">{companySettings?.vatNumber || selectedInvoice.companyVatNumber || "310123456700003"}</span></p>
+                  <p className="font-semibold">رقم السجل التجاري: <span className="font-mono font-bold">{companySettings?.crNumber || selectedInvoice.companyCrNumber || "1010123456"}</span></p>
+                  
+                  <div className="text-slate-500 text-[10px] leading-relaxed">
+                    <p className="m-0"><strong>العنوان الوطني للمنشأة:</strong> {companySettings?.nationalAddress || selectedInvoice.companyAddress || "الرياض، المملكة العربية السعودية"}</p>
+                    <p className="m-0">
+                      <strong>البلد:</strong> {companySettings?.country || "المملكة العربية السعودية"} | 
+                      <strong>المدينة:</strong> {companySettings?.city || "الرياض"} | 
+                      <strong>الحي:</strong> {companySettings?.district || "الياسمين"}
+                    </p>
+                    <p className="m-0">
+                      <strong>الرمز البريدي:</strong> <span className="font-mono">{companySettings?.postalCode || "13322"}</span>
+                      {companySettings?.buildingNumber && ` | <strong>رقم المبنى:</strong> ${companySettings.buildingNumber}`}
+                      {companySettings?.additionalNumber && ` | <strong>الرقم الإضافي:</strong> ${companySettings.additionalNumber}`}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="text-center space-y-2">
@@ -1963,13 +2025,38 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
 
               {/* Totals Section */}
               <div className="flex justify-between items-start gap-4">
-                <div className="w-1/2 p-4 rounded-xl border space-y-2">
-                  <h4 className="font-bold border-b pb-1">الحسابات البنكية للتحويل / Wire Details:</h4>
-                  <p className="text-[10px] font-semibold text-slate-500">
-                    يمكنكم سداد مبلغ الفاتورة المعتمد بالتحويل لأحد الحسابات التالية:<br />
-                    • مصرف الراجحي: <span className="font-mono text-slate-700 font-bold">SA48800000045612347890</span><br />
-                    • بنك الرياض: <span className="font-mono text-slate-700 font-bold">SA22200000001234567891</span>
-                  </p>
+                <div className="w-1/2 p-4 rounded-xl border space-y-2 text-right">
+                  <h4 className="font-bold border-b pb-1 text-slate-800">الحسابات البنكية المعتمدة للتحويل / Wire Details:</h4>
+                  <p className="text-[10px] text-slate-500 mb-2">يمكنكم سداد قيمة هذه الفاتورة بالتحويل البنكي المباشر لأحد الحسابات التالية:</p>
+                  <div className="space-y-2 divide-y divide-dashed">
+                    {bankAccounts.length > 0 ? (
+                      bankAccounts.map((b: any, index: number) => (
+                        <div key={b.id || index} className="pt-2 first:pt-0">
+                          <div className="flex justify-between font-bold text-slate-700 text-[11px]">
+                            <span>🏦 {b.bankName || "البنك"}</span>
+                          </div>
+                          <p className="m-0 text-slate-600 mt-1">
+                            رقم الآيبان (IBAN): <span className="font-mono font-bold text-slate-800">{b.iban || "—"}</span>
+                          </p>
+                          <p className="m-0 text-slate-500">
+                            رقم الحساب: <span className="font-mono font-bold text-slate-700">{b.accountNumber || b.account_number || "—"}</span>
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div>
+                        <div className="flex justify-between font-bold text-slate-700">
+                          <span>🏦 مصرف الراجحي</span>
+                        </div>
+                        <p className="m-0 text-slate-600 mt-1">
+                          رقم الآيبان (IBAN): <span className="font-mono font-bold text-slate-800">SA48800000045612347890</span>
+                        </p>
+                        <p className="m-0 text-slate-500">
+                          رقم الحساب: <span className="font-mono font-bold text-slate-700">45612347890</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="w-1/2 bg-slate-50 p-4 rounded-xl border font-bold space-y-2 text-right">

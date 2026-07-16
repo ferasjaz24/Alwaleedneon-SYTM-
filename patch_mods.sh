@@ -1,0 +1,1 @@
+sed -i 's/<InlineEditable \(.*\)onSave={(val) => handleInlineSave(emp.id, "\([^"]*\)", val)}/<InlineEditable mod={emp.modifications?.find(m => m.field === "\2")} \1onSave={(val) => handleInlineSave(emp.id, "\2", val)}/g' src/components/finance/MonthlyPayrollRuns.tsx

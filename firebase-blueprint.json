@@ -39,6 +39,26 @@
         "dateCreated": { "type": "string" }
       },
       "required": ["id", "clientName", "mobile"]
+    },
+    "daily_installation": {
+      "title": "Daily Installation",
+      "description": "Logs daily site installation trips, services, crew members, and progress photos",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "projectName": { "type": "string" },
+        "quoteNumber": { "type": "string" },
+        "serviceAndLocation": { "type": "string" },
+        "location": { "type": "string" },
+        "crew": { "type": "array" },
+        "photoUrl": { "type": "string" },
+        "photoName": { "type": "string" },
+        "date": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "type", "date"]
     }
   },
   "firestore": {
@@ -49,6 +69,10 @@
     "clients/{id}": {
       "schema": "client",
       "description": "Stores client details, corporate classifications, CR numbers, and CRM fields"
+    },
+    "daily_installations/{id}": {
+      "schema": "daily_installation",
+      "description": "Logs daily installation trips, crew details, locations, and progress photos"
     }
   }
 }

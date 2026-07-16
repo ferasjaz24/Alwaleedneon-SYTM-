@@ -36,6 +36,7 @@ import {
   PayrollModificationRequest,
   DeductionItem,
 } from "../../types";
+import { hasAdvancedPermission } from "../../lib/permissions";
 
 function toEnglishDigits(str: string | undefined | null): string {
   if (!str) return "";
@@ -63,7 +64,7 @@ export function getBankStyle(name: string) {
       darkBg: "bg-blue-600 text-white hover:bg-blue-700"
     };
   }
-  if (n.includes("الأهلي") || n.includes("الاهلي") || n.includes("snb") || n.includes("national")) {
+  if (n.includes("الأهلي") || n.includes("الاهلي") || n.includes("snb") || n.includes("national") || n.includes("ahli")) {
     return {
       bg: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       dot: "bg-emerald-500",
@@ -71,7 +72,7 @@ export function getBankStyle(name: string) {
       darkBg: "bg-emerald-600 text-white hover:bg-emerald-700"
     };
   }
-  if (n.includes("الرياض") || n.includes("riyad")) {
+  if (n.includes("الرياض") || n.includes("riyad") || n.includes("riyadh")) {
     return {
       bg: "bg-purple-50 text-purple-700 border border-purple-200",
       dot: "bg-purple-500",
@@ -79,59 +80,20 @@ export function getBankStyle(name: string) {
       darkBg: "bg-purple-600 text-white hover:bg-purple-700"
     };
   }
-  if (n.includes("الإنماء") || n.includes("الانماء") || n.includes("alinma")) {
+  if (n.includes("برق") || n.includes("barq") || n.includes("urpay")) {
     return {
-      bg: "bg-amber-100 text-amber-900 border border-amber-300",
-      dot: "bg-amber-700",
-      accent: "text-amber-800",
-      darkBg: "bg-amber-800 text-white hover:bg-amber-900"
-    };
-  }
-  if (n.includes("الأول") || n.includes("sab") || n.includes("first")) {
-    return {
-      bg: "bg-red-50 text-red-700 border border-red-200",
-      dot: "bg-red-500",
-      accent: "text-red-600",
-      darkBg: "bg-red-600 text-white hover:bg-red-700"
-    };
-  }
-  if (n.includes("البلاد") || n.includes("albilad")) {
-    return {
-      bg: "bg-amber-50 text-amber-800 border border-amber-200",
-      dot: "bg-amber-500",
+      bg: "bg-amber-50 text-amber-700 border border-amber-300 shadow-sm shadow-amber-500/10",
+      dot: "bg-amber-500 animate-pulse",
       accent: "text-amber-600",
       darkBg: "bg-amber-600 text-white hover:bg-amber-700"
     };
   }
-  if (n.includes("العربي") || n.includes("anb") || n.includes("arab")) {
-    return {
-      bg: "bg-teal-50 text-teal-700 border border-teal-200",
-      dot: "bg-teal-500",
-      accent: "text-teal-600",
-      darkBg: "bg-teal-600 text-white hover:bg-teal-700"
-    };
-  }
-  if (n.includes("الجزيرة") || n.includes("jazira")) {
-    return {
-      bg: "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      dot: "bg-cyan-500",
-      accent: "text-cyan-600",
-      darkBg: "bg-cyan-600 text-white hover:bg-cyan-700"
-    };
-  }
-  if (n.includes("الاستثمار") || n.includes("investment")) {
-    return {
-      bg: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      dot: "bg-indigo-500",
-      accent: "text-indigo-600",
-      darkBg: "bg-indigo-600 text-white hover:bg-indigo-700"
-    };
-  }
+  // Default/Fallback: Beautiful Coffee/Warm Brown (بني)
   return {
-    bg: "bg-slate-50 text-slate-700 border border-slate-200",
-    dot: "bg-slate-400",
-    accent: "text-slate-500",
-    darkBg: "bg-slate-600 text-white hover:bg-slate-700"
+    bg: "bg-[#78350f]/10 text-[#78350f] border-[#78350f]/20 shadow-xs",
+    dot: "bg-[#78350f]",
+    accent: "text-[#78350f]",
+    darkBg: "bg-[#78350f] text-white hover:bg-[#92400e]"
   };
 }
 
@@ -147,13 +109,17 @@ const InlineEditable = ({
   onSave, 
   type = "number", 
   className = "", 
-  disabled = false 
+  disabled = false,
+  mod = null,
+  runStatus
 }: { 
   value: any, 
   onSave: (val: any) => void, 
   type?: string, 
   className?: string, 
-  disabled?: boolean 
+  disabled?: boolean,
+  mod?: any,
+  runStatus?: string
 }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [localValue, setLocalValue] = React.useState(value);
@@ -162,8 +128,37 @@ const InlineEditable = ({
     setLocalValue(value);
   }, [value]);
 
+  const displayVal = type === "number" ? (Number(value) || 0).toLocaleString("en-US") : (value || "—");
+
+  const shouldHighlight = mod && mod.fromReview === true;
+
+  const highlightClass = shouldHighlight
+    ? "bg-amber-50/90 border border-amber-500 ring-2 ring-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)] px-1.5 py-0.5 rounded animate-pulse font-bold transition-all duration-300"
+    : "";
+
   if (disabled) {
-    return <span className={className}>{type === "number" ? (Number(value) || 0).toLocaleString('en-US') : value}</span>;
+    return (
+      <div className={`relative inline-block group ${highlightClass}`}>
+        <span className={className}>{displayVal}</span>
+        {shouldHighlight && (
+          <>
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 border border-white cursor-help animate-pulse"></span>
+            <div className="absolute z-[100] invisible group-hover:visible bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] p-2.5 rounded-xl whitespace-nowrap font-arabic shadow-2xl text-right min-w-[150px] pointer-events-none border border-amber-500/20">
+              <div className="font-bold text-amber-400 flex items-center gap-1.5 justify-end">
+                <span>تعديل المراجع: {mod.modifiedBy}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              </div>
+              <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+              <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
+                <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
+                <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>
+              </div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
   if (isEditing) {
@@ -171,8 +166,9 @@ const InlineEditable = ({
       <input
         autoFocus
         type={type}
-        value={localValue}
-        onChange={(e) => setLocalValue(type === "number" ? Number(e.target.value) : e.target.value)}
+        value={localValue === 0 && type === "number" ? "" : localValue}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => setLocalValue(type === "number" ? (e.target.value === "" ? 0 : Number(e.target.value)) : e.target.value)}
         onBlur={() => {
           setIsEditing(false);
           if (localValue !== value) {
@@ -180,14 +176,14 @@ const InlineEditable = ({
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
+          if (e.key === "Enter") {
             setIsEditing(false);
             if (localValue !== value) {
               onSave(localValue);
             }
           }
         }}
-        className="w-full px-1 py-1 border border-indigo-500 rounded text-[11px] font-mono font-bold text-slate-900 text-center shadow-sm focus:outline-none min-w-[60px]"
+        className="w-full px-1 py-1 border border-indigo-500 rounded text-[11px] font-mono font-bold text-slate-900 text-center shadow-sm focus:outline-none min-w-[60px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
     );
   }
@@ -195,17 +191,145 @@ const InlineEditable = ({
   return (
     <div
       onClick={() => setIsEditing(true)}
-      className={`cursor-pointer hover:bg-slate-100 hover:ring-1 hover:ring-slate-300 rounded px-1 py-0.5 min-w-[2rem] text-center transition-all ${className}`}
-      title="انقر للتعديل"
+      className={`relative cursor-pointer hover:bg-slate-100 hover:ring-1 hover:ring-slate-300 transition-all group ${className} ${highlightClass}`}
     >
-      {type === "number" ? (Number(value) || 0).toLocaleString('en-US') : (value || "—")}
+      {displayVal}
+      {shouldHighlight && (
+        <>
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 border border-white cursor-help animate-pulse"></span>
+          <div className="absolute z-[100] invisible group-hover:visible bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] p-2.5 rounded-xl whitespace-nowrap font-arabic shadow-2xl text-right min-w-[150px] pointer-events-none border border-amber-500/20">
+            <div className="font-bold text-amber-400 flex items-center gap-1.5 justify-end">
+              <span>تعديل المراجع: {mod.modifiedBy}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            </div>
+            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+            <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
+              <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
+              <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>
+            </div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
+const ClickableDeduction = ({ 
+  value, 
+  mod, 
+  onClick, 
+  className = "", 
+  disabled,
+  runStatus
+}: { 
+  value: any, 
+  mod?: any, 
+  onClick: () => void, 
+  className?: string, 
+  disabled?: boolean,
+  runStatus?: string
+}) => {
+  const displayVal = (Number(value) || 0).toLocaleString("en-US");
+
+  const shouldHighlight = mod && mod.fromReview === true;
+
+  const highlightClass = shouldHighlight
+    ? "bg-amber-50/90 border border-amber-500 ring-2 ring-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)] px-1.5 py-0.5 rounded animate-pulse font-bold transition-all duration-300"
+    : "";
+
+  return (
+    <div
+      onClick={() => { if (!disabled) onClick(); }}
+      className={`relative inline-block ${disabled ? "" : "cursor-pointer hover:bg-slate-100 hover:ring-1 hover:ring-slate-300"} transition-all group ${className} ${highlightClass}`}
+    >
+      <span>{displayVal}</span>
+      {shouldHighlight && (
+        <>
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 border border-white cursor-help animate-pulse"></span>
+          <div className="absolute z-[100] invisible group-hover:visible bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] p-2.5 rounded-xl whitespace-nowrap font-arabic shadow-2xl text-right min-w-[150px] pointer-events-none border border-amber-500/20">
+            <div className="font-bold text-amber-400 flex items-center gap-1.5 justify-end">
+              <span>تعديل المراجع: {mod.modifiedBy}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            </div>
+            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+            <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
+              <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
+              <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>
+            </div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+function getCompanyAbbreviation(dept: string | undefined | null): string {
+  if (!dept) return "GEN";
+  const normalized = dept.trim().toLowerCase();
+  
+  if (normalized === "كلا الشركتين" || normalized === "كلاهما" || normalized.includes("كلا")) return "ALL";
+  if (normalized.includes("جميع") || normalized.includes("all")) return "ALL";
+  if (normalized.includes("الوليد") || normalized.includes("faw") || normalized.includes("fanoon")) return "FAW";
+  if (normalized.includes("ساين") || normalized.includes("سايق") || normalized.includes("sign") || normalized.includes("sig")) return "SIG";
+  if (normalized.includes("مبيعات") || normalized.includes("sales")) return "SAL";
+  if (normalized.includes("إنتاج") || normalized.includes("انتاج") || normalized.includes("production")) return "PRD";
+  if (normalized.includes("إدارة") || normalized.includes("ادارة") || normalized.includes("admin")) return "ADM";
+  if (normalized.includes("مشتريات") || normalized.includes("procure")) return "PRC";
+  if (normalized.includes("مستودع") || normalized.includes("مخزن") || normalized.includes("warehouse")) return "WRH";
+  if (normalized.includes("مالية") || normalized.includes("محاسبة") || normalized.includes("finance") || normalized.includes("account")) return "FIN";
+
+  let cleanDept = dept.trim();
+  const prefixes = ["شركة", "مؤسسة", "مصنع", "co.", "company", "factory"];
+  for (const prefix of prefixes) {
+    if (cleanDept.toLowerCase().startsWith(prefix)) {
+      cleanDept = cleanDept.substring(prefix.length).trim();
+    }
+  }
+
+  const englishMatches = cleanDept.match(/[a-zA-Z]+/g);
+  if (englishMatches && englishMatches.length > 0) {
+    const combined = englishMatches.join("").toUpperCase();
+    if (combined.length >= 3) {
+      return combined.substring(0, 3);
+    }
+  }
+
+  const arabicToEnglishMap: { [key: string]: string } = {
+    'أ': 'A', 'ا': 'A', 'إ': 'A', 'آ': 'A',
+    'ب': 'B', 'ت': 'T', 'ة': 'T', 'ث': 'T',
+    'ج': 'J', 'ح': 'H', 'خ': 'K',
+    'د': 'D', 'ذ': 'Z', 'ر': 'R', 'ز': 'Z',
+    'س': 'S', 'ش': 'S', 'ص': 'S', 'ض': 'D',
+    'ط': 'T', 'ظ': 'Z', 'ع': 'A', 'غ': 'G',
+    'ف': 'F', 'ق': 'Q', 'ك': 'K', 'ل': 'L',
+    'م': 'M', 'ن': 'N', 'ه': 'H', 'و': 'W',
+    'ي': 'Y', 'ى': 'Y', 'ئ': 'Y', 'ؤ': 'W'
+  };
+
+  let result = "";
+  for (let i = 0; i < cleanDept.length; i++) {
+    const char = cleanDept[i];
+    if (arabicToEnglishMap[char]) {
+      result += arabicToEnglishMap[char];
+    } else if (/[a-zA-Z]/.test(char)) {
+      result += char.toUpperCase();
+    }
+    if (result.length >= 3) break;
+  }
+
+  if (result.length > 0) {
+    return result.padEnd(3, "X").substring(0, 3);
+  }
+
+  return "GEN";
+}
+
 export default function MonthlyPayrollRuns({
   lang,
   user,
+
   employees,
 }: MonthlyPayrollRunsProps) {
   // DB States
@@ -213,6 +337,7 @@ export default function MonthlyPayrollRuns({
   const [hrDeductions, setHrDeductions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [toasts, setToasts] = useState<{messageAr: string, messageEn: string, type: "success" | "error", id: number}[]>([]);
 
   // Active Main Tab
   const [activeTab, setActiveTab] = useState<"drafts" | "pending" | "approved" | "paid" | "all">("drafts");
@@ -254,6 +379,25 @@ export default function MonthlyPayrollRuns({
 
   // Single Payslip Modal
   const [selectedPayslipEmployee, setSelectedPayslipEmployee] = useState<PayrollRunEmployee | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const confirmAction = (title: string, message: string, action: () => void) => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        action();
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   const [isPayslipModalOpen, setIsPayslipModalOpen] = useState(false);
 
   // Bank Info Modal
@@ -360,6 +504,67 @@ export default function MonthlyPayrollRuns({
     }
   };
 
+  const [isSavingAll, setIsSavingAll] = useState(false);
+  const handleSaveAll = async () => {
+    if (!selectedRun) return;
+    setIsSavingAll(true);
+    try {
+      // Recompute totals to ensure absolute consistency
+      const totalBasicSalary = runEmployees.reduce((sum, item) => sum + (item.basicSalary || 0), 0);
+      const totalAllowances = runEmployees.reduce(
+        (sum, item) =>
+          sum +
+          (item.housingAllowance || 0) +
+          (item.transportAllowance || 0) +
+          (item.foodAllowance || 0) +
+          (item.overtimeAmount || 0) +
+          (item.otherAllowances || 0),
+        0
+      );
+      const totalDeductions = runEmployees.reduce(
+        (sum, item) =>
+          sum +
+          (item.loansDeduction || 0) +
+          (item.absenceDeduction || 0) +
+          (item.lateDeduction || 0) +
+          (item.penaltyDeduction || 0) +
+          (item.gosiDeduction || 0) +
+          (item.otherDeductions || 0),
+        0
+      );
+      const totalNetSalary = runEmployees.reduce((sum, item) => sum + (item.netSalary || 0), 0);
+
+      const updatedRun = {
+        ...selectedRun,
+        employees: runEmployees,
+        totalBasicSalary,
+        totalAllowances,
+        totalDeductions,
+        totalNetSalary,
+      };
+
+      const res = await fetch(`/api/payroll_runs/${selectedRun.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedRun),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save payroll run changes");
+      }
+
+      showToast("تم حفظ تعديلات مسودة الرواتب بنجاح", "Draft changes saved successfully", "success");
+      setSelectedRun(updatedRun);
+      setPayrollRuns(prev => prev.map((r) => (r.id === selectedRun.id ? updatedRun : r)));
+      loadPayrollRuns();
+    } catch (err: any) {
+      console.error(err);
+      showToast("حدث خطأ أثناء حفظ التعديلات", "Error saving draft changes: " + err.message, "error");
+    } finally {
+      setIsSavingAll(false);
+    }
+  };
+
   // Fetch Payroll Runs and HR Deductions on load
   const loadPayrollRuns = async () => {
     try {
@@ -397,18 +602,27 @@ export default function MonthlyPayrollRuns({
   useEffect(() => {
     if (isCreateModalOpen) {
       const yearStr = newRunForm.year.toString();
-      const monthStr = newRunForm.month.toString().padStart(2, "0");
+      
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const monthStr = monthNames[newRunForm.month - 1] || "UNK";
+      
+      const compStr = getCompanyAbbreviation(newRunForm.department);
+      
       const randomId = Math.floor(100 + Math.random() * 900);
       setNewRunForm((prev) => ({
         ...prev,
-        payrollNumber: `PR-${yearStr}${monthStr}-${randomId}`,
+        payrollNumber: `PR-${yearStr}-${monthStr}-${compStr}-${randomId}`,
       }));
     }
-  }, [isCreateModalOpen, newRunForm.month, newRunForm.year]);
+  }, [isCreateModalOpen, newRunForm.month, newRunForm.year, newRunForm.department]);
 
   // Toast helper
   const showToast = (messageAr: string, messageEn: string, type: "success" | "error" = "success") => {
-    alert(lang === "ar" ? messageAr : messageEn);
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { messageAr, messageEn, type, id }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
   };
 
   // Helper roles
@@ -424,6 +638,9 @@ export default function MonthlyPayrollRuns({
     user.jobTitle?.includes("مشرف") ||
     user.jobTitle?.includes("مدير");
 
+  const canRevertToDraft = isSuperAdmin || 
+    hasAdvancedPermission(user, "finance", "payroll", "revert_to_draft") || 
+    hasAdvancedPermission(user, "hr", "payroll", "revert_payroll_draft");
   const isAccountant =
     isSuperAdmin ||
     user.jobTitle?.toLowerCase().includes("accountant") ||
@@ -433,7 +650,17 @@ export default function MonthlyPayrollRuns({
     user.role === "المحاسبة المالیة" ||
     user.role === "المحاسبة";
 
+  const isReviewerWithEdit =
+    isSuperAdmin ||
+    hasAdvancedPermission(user, "finance", "payroll", "audit_payroll_edit");
+
+  const isReviewerWithView =
+    isSuperAdmin ||
+    hasAdvancedPermission(user, "finance", "payroll", "audit_payroll_view");
+
   const isReviewer =
+    isReviewerWithEdit ||
+    isReviewerWithView ||
     isSuperAdmin ||
     user.jobTitle?.toLowerCase().includes("manager") ||
     user.jobTitle?.toLowerCase().includes("director") ||
@@ -458,6 +685,18 @@ export default function MonthlyPayrollRuns({
       action,
       details,
     };
+  };
+
+  const getFieldMod = (emp: PayrollRunEmployee, field: string) => {
+    if (!selectedRun) return undefined;
+    const allowedStatuses = ["Draft", "Needs Modification", "Under Modification", "Pending Review"];
+    if (!allowedStatuses.includes(selectedRun.status)) {
+      return undefined;
+    }
+    const allFieldMods = emp.modifications?.filter(m => m.field === field) || [];
+    // Return the latest review modification where fromReview is true
+    const reviewMod = [...allFieldMods].reverse().find(m => m.fromReview === true);
+    return reviewMod;
   };
 
   const getInitialDeductions = (emp: PayrollRunEmployee): DeductionItem[] => {
@@ -592,6 +831,41 @@ export default function MonthlyPayrollRuns({
     const penaltyReasons = validatedDeductions.filter(i => i.type === "Penalty Deduction").map(i => i.reason).join(" ") || "خصم جزاء إداري";
     const otherReasons = validatedDeductions.filter(i => i.type === "Other Deduction").map(i => i.reason).join(" ") || "خصومات أخرى";
 
+    const gosiSum = validatedDeductions.filter(i => i.type === "GOSI Deduction").reduce((sum, i) => sum + i.amount, 0);
+
+    // Track modifications for deduction fields
+    const newMods = [...(selectedDeductionEmployee.modifications || [])];
+    const isReviewState = selectedRun.status === "Pending Review";
+
+    const checkAndPushMod = (field: string, oldValue: number, newValue: number) => {
+      if (oldValue !== newValue) {
+        if (["Draft", "Needs Modification", "Under Modification"].includes(selectedRun.status)) {
+          for (let i = 0; i < newMods.length; i++) {
+            if (newMods[i].field === field) {
+              newMods[i] = { ...newMods[i], fromReview: false };
+            }
+          }
+        }
+        newMods.push({
+          field,
+          oldValue,
+          newValue,
+          modifiedBy: user?.username || "System",
+          modifiedAt: new Date().toISOString(),
+          fromReview: isReviewState
+        });
+      }
+    };
+
+    checkAndPushMod("loansDeduction", Number(selectedDeductionEmployee.loansDeduction || 0), loansSum);
+    checkAndPushMod("absenceDeduction", Number(selectedDeductionEmployee.absenceDeduction || 0), absenceSum);
+    checkAndPushMod("lateDeduction", Number(selectedDeductionEmployee.lateDeduction || 0), lateSum);
+    checkAndPushMod("penaltyDeduction", Number(selectedDeductionEmployee.penaltyDeduction || 0), penaltySum);
+    checkAndPushMod("otherDeductions", Number(selectedDeductionEmployee.otherDeductions || 0), otherSum);
+    if (gosiSum > 0) {
+      checkAndPushMod("gosiDeduction", Number(selectedDeductionEmployee.gosiDeduction || 0), gosiSum);
+    }
+
     // Recalculate employee net
     const calculated = calculateEmployeeNet({
       ...selectedDeductionEmployee,
@@ -599,6 +873,7 @@ export default function MonthlyPayrollRuns({
       absenceDeduction: absenceSum,
       lateDeduction: lateSum,
       penaltyDeduction: penaltySum,
+      gosiDeduction: gosiSum > 0 ? gosiSum : selectedDeductionEmployee.gosiDeduction,
       otherDeductions: otherSum,
     });
 
@@ -616,7 +891,9 @@ export default function MonthlyPayrollRuns({
       deductionsReason: otherReasons,
       deductionsList: validatedDeductions,
       totalDeductions: totalDeductSum,
+      gosiDeduction: gosiSum > 0 ? gosiSum : selectedDeductionEmployee.gosiDeduction,
       netSalary: calculated.netSalary,
+      modifications: newMods,
     };
 
     const newEmployeesList = runEmployees.map((e) => (e.id === selectedDeductionEmployee.id ? updatedEmployee : e));
@@ -1388,6 +1665,104 @@ export default function MonthlyPayrollRuns({
     }
   };
 
+  const handleGlobalOvertimeMethodChange = async (method: string) => {
+    if (!selectedRun) return;
+    
+    const updatedEmployeesList = runEmployees.map(emp => {
+      const merged = { ...emp, overtimeCalcMethod: method };
+      
+      if (method === "basic") {
+        const baseSalaryForOvertime = Number(merged.basicSalary || 0);
+        const hourlyRate = baseSalaryForOvertime / 240;
+        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+      } else if (method === "muddah") {
+        const muddahSalaryForOvertime = Number(merged.muddahAmount || 0);
+        const hourlyRate = muddahSalaryForOvertime / 240;
+        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+      }
+
+      const calculated = calculateEmployeeNet({
+        basicSalary: merged.basicSalary || 0,
+        housingAllowance: merged.housingAllowance || 0,
+        transportAllowance: merged.transportAllowance || 0,
+        foodAllowance: merged.foodAllowance || 0,
+        muddahAmount: merged.muddahAmount || 0,
+        overtimeAmount: merged.overtimeAmount || 0,
+        otherAllowances: merged.otherAllowances || 0,
+        loansDeduction: merged.loansDeduction || 0,
+        gosiDeduction: merged.gosiDeduction || 0,
+        absenceDeduction: merged.absenceDeduction || 0,
+        lateDeduction: merged.lateDeduction || 0,
+        penaltyDeduction: merged.penaltyDeduction || 0,
+        otherDeductions: merged.otherDeductions || 0,
+      });
+
+      return {
+        ...merged,
+        totalEntitlements: calculated.totalEntitlements,
+        totalDeductions: calculated.totalDeductions,
+        netSalary: calculated.netSalary,
+      };
+    });
+
+    const totalBasicSalary = updatedEmployeesList.reduce((sum, item) => sum + (item.basicSalary || 0), 0);
+    const totalAllowances = updatedEmployeesList.reduce(
+      (sum, item) =>
+        sum +
+        (item.housingAllowance || 0) +
+        (item.transportAllowance || 0) +
+        (item.foodAllowance || 0) +
+        (item.overtimeAmount || 0) +
+        (item.otherAllowances || 0),
+      0
+    );
+    const totalDeductions = updatedEmployeesList.reduce(
+      (sum, item) =>
+        sum +
+        (item.loansDeduction || 0) +
+        (item.absenceDeduction || 0) +
+        (item.lateDeduction || 0) +
+        (item.penaltyDeduction || 0) +
+        (item.gosiDeduction || 0) +
+        (item.otherDeductions || 0),
+      0
+    );
+    const totalNetSalary = updatedEmployeesList.reduce((sum, item) => sum + (item.netSalary || 0), 0);
+
+    const updatedRun = {
+      ...selectedRun,
+      overtimeCalcMethod: method,
+      employees: updatedEmployeesList,
+      totalBasicSalary,
+      totalAllowances,
+      totalDeductions,
+      totalNetSalary,
+    };
+
+    setRunEmployees(updatedEmployeesList);
+    setSelectedRun(updatedRun);
+
+    try {
+      const res = await fetch(`/api/payroll_runs/${selectedRun.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedRun),
+      });
+      if (res.ok) {
+        showToast(
+          `تم تعميم طريقة احتساب الإضافي: ${method === 'basic' ? 'الراتب الأساسي' : method === 'muddah' ? 'مبلغ مدد' : 'يدوي'}`,
+          "Overtime method updated globally",
+          "success"
+        );
+        setPayrollRuns(prev => prev.map((r) => (r.id === selectedRun.id ? updatedRun : r)));
+        loadPayrollRuns();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("حدث خطأ أثناء حفظ التعديل العام", "Error saving global method", "error");
+    }
+  };
+
   // Save changes to employee values
   
   const handleInlineSave = async (empId: string, field: string, value: any) => {
@@ -1397,6 +1772,32 @@ export default function MonthlyPayrollRuns({
 
     const merged = { ...targetEmp, [field]: value };
 
+    const oldVal = targetEmp[field as keyof typeof targetEmp];
+    if (oldVal !== value) {
+      if (!merged.modifications) merged.modifications = [];
+
+      const isReviewState = selectedRun.status === "Pending Review";
+
+      // If we are back in Draft/Needs Modification/Under Modification, we clear the review yellow highlight for this edited field
+      if (["Draft", "Needs Modification", "Under Modification"].includes(selectedRun.status)) {
+        merged.modifications = merged.modifications.map(m => {
+          if (m.field === field) {
+            return { ...m, fromReview: false };
+          }
+          return m;
+        });
+      }
+
+      merged.modifications.push({
+        field,
+        oldValue: oldVal,
+        newValue: value,
+        modifiedBy: user?.username || "System",
+        modifiedAt: new Date().toISOString(),
+        fromReview: isReviewState
+      });
+    }
+
     // Auto-fill reasons for deductions if not present
     if (merged.loansDeduction > 0 && !merged.loanDeductionReason?.trim()) merged.loanDeductionReason = "تعديل مباشر";
     if (merged.absenceDeduction > 0 && !merged.absenceDeductionReason?.trim()) merged.absenceDeductionReason = "تعديل مباشر";
@@ -1405,11 +1806,20 @@ export default function MonthlyPayrollRuns({
     if (merged.otherDeductions > 0 && !merged.deductionsReason?.trim()) merged.deductionsReason = "تعديل مباشر";
     if (merged.otherAllowances > 0 && !merged.otherAllowancesReason?.trim()) merged.otherAllowancesReason = "تعديل مباشر";
 
-    // Auto-calculate overtime amount when overtime hours change
-    if (field === 'overtimeHours' || field === 'basicSalary') {
-      const baseSalaryForOvertime = Number(merged.basicSalary || 0);
-      const hourlyRate = baseSalaryForOvertime / 240;
-      merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+    // Auto-calculate overtime amount when overtime hours, basic salary, overtime calc method, or muddah amount change
+    if (field === 'overtimeHours' || field === 'basicSalary' || field === 'overtimeCalcMethod' || field === 'muddahAmount') {
+      const method = merged.overtimeCalcMethod || "basic";
+      if (method === "basic") {
+        const baseSalaryForOvertime = Number(merged.basicSalary || 0);
+        const hourlyRate = baseSalaryForOvertime / 240;
+        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+      } else if (method === "muddah") {
+        const muddahSalaryForOvertime = Number(merged.muddahAmount || 0);
+        const hourlyRate = muddahSalaryForOvertime / 240;
+        merged.overtimeAmount = Math.round((Number(merged.overtimeHours) || 0) * 1.5 * hourlyRate * 100) / 100;
+      } else if (method === "manual") {
+        // In manual, do not overwrite the overtime amount automatically
+      }
     }
 
     const calculated = calculateEmployeeNet({
@@ -1436,6 +1846,13 @@ export default function MonthlyPayrollRuns({
     };
 
     setRunEmployees(prev => prev.map(e => e.id === empId ? updatedEmployee : e));
+    setSelectedRun(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        employees: prev.employees.map(e => e.id === empId ? updatedEmployee : e)
+      };
+    });
 
     try {
       await fetch(`/api/payroll_runs/${selectedRun.id}/employees/${empId}`, {
@@ -1570,6 +1987,53 @@ export default function MonthlyPayrollRuns({
       netSalary: calculated.netSalary,
     };
 
+    const mods = targetEmp.modifications ? [...targetEmp.modifications] : [];
+    const fieldsToTrack = [
+      { key: "basicSalary", val: basic },
+      { key: "housingAllowance", val: housing },
+      { key: "transportAllowance", val: transport },
+      { key: "foodAllowance", val: food },
+      { key: "muddahAmount", val: muddah },
+      { key: "overtimeHours", val: otHours },
+      { key: "overtimeAmount", val: otAmount },
+      { key: "otherAllowances", val: otherAllow },
+      { key: "loansDeduction", val: loans },
+      { key: "absenceDeduction", val: absence },
+      { key: "lateDeduction", val: late },
+      { key: "penaltyDeduction", val: penalty },
+      { key: "gosiDeduction", val: gosi },
+      { key: "otherDeductions", val: otherDeduct },
+      { key: "bankName", val: bName },
+      { key: "iban", val: bIban }
+    ];
+
+    const isReviewState = selectedRun.status === "Pending Review";
+    const isDraftOrModifying = ["Draft", "Needs Modification", "Under Modification"].includes(selectedRun.status);
+
+    fieldsToTrack.forEach(({ key, val }) => {
+      const oldVal = targetEmp[key as keyof typeof targetEmp];
+      if (oldVal !== val && val !== undefined) {
+        if (isDraftOrModifying) {
+          for (let i = 0; i < mods.length; i++) {
+            if (mods[i].field === key) {
+              mods[i] = { ...mods[i], fromReview: false };
+            }
+          }
+        }
+        mods.push({
+          id: `mod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          field: key,
+          oldValue: oldVal,
+          newValue: val,
+          modifiedBy: user?.username || "System",
+          modifiedAt: new Date().toISOString(),
+          fromReview: isReviewState
+        });
+      }
+    });
+
+    updatedEmployee.modifications = mods;
+
     const newEmployeesList = runEmployees.map((e) => (e.id === empId ? updatedEmployee : e));
 
     // Recompute total run figures
@@ -1679,6 +2143,7 @@ export default function MonthlyPayrollRuns({
     const newLog = appendAuditLog(selectedRun.id, logAction, logDetails);
     const updatedRun = {
       ...selectedRun,
+      employees: extraFields.employees || runEmployees,
       ...extraFields,
       status: newStatus,
       auditLogs: [...runAuditLogs, newLog],
@@ -1978,16 +2443,9 @@ export default function MonthlyPayrollRuns({
         logActionToAudit({
           action: "حذف موظف من المسير",
           payrollRunId: selectedRun.id,
-          notes: `تم إزالة الموظف ${employeeId} من مسير الراتب`,
+          notes: `حذف موظف من مسير الرواتب`,
         });
-
-        showToast(
-          "✓ تم حذف الموظف من المسير بنجاح",
-          "✓ Employee removed from payroll run successfully",
-          "success"
-        );
-      } else {
-        throw new Error("Failed to remove employee on backend");
+        showToast("تم حذف الموظف بنجاح", "Employee removed successfully", "success");
       }
     } catch (e: any) {
       console.error(e);
@@ -1996,11 +2454,77 @@ export default function MonthlyPayrollRuns({
       setLoading(false);
     }
   };
+
+  const handleRevertToDraft = () => {
+    confirmAction(
+      "إرجاع إلى مسودة",
+      "هل أنت متأكد من إرجاع مسير الرواتب إلى مسودة؟ ستتمكن من تعديل البيانات مرة أخرى، وسيتم إغلاق بيئة العمل حالياً.",
+      () => {
+        transitionStatus(
+          "Draft",
+          "إرجاع إلى مسودة",
+          `تم إرجاع مسير الرواتب رقم ${selectedRun?.payrollNumber} إلى حالة المسودة بواسطة ${user?.username}.`
+        );
+        setIsViewModalOpen(false);
+        setSelectedRun(null);
+      }
+    );
+  };
+
   const handleSubmitForReview = () => {
-    transitionStatus(
-      "Pending Review",
+    confirmAction(
       "إرسال للمراجعة",
-      `تم إرسال مسير الرواتب رقم ${selectedRun?.payrollNumber} للمراجعة والتدقيق بواسطة المحاسب.`
+      "هل أنت متأكد من تقديم مسير الرواتب للمراجعة؟ سيتم إغلاق بيئة العمل والانتقال إلى القائمة.",
+      () => {
+        // Calculate fresh totals to automatically save current state
+        const totalBasicSalary = runEmployees.reduce((sum, item) => sum + (item.basicSalary || 0), 0);
+        const totalAllowances = runEmployees.reduce(
+          (sum, item) =>
+            sum +
+            (item.housingAllowance || 0) +
+            (item.transportAllowance || 0) +
+            (item.foodAllowance || 0) +
+            (item.overtimeAmount || 0) +
+            (item.otherAllowances || 0),
+          0
+        );
+        const totalDeductions = runEmployees.reduce(
+          (sum, item) =>
+            sum +
+            (item.loansDeduction || 0) +
+            (item.absenceDeduction || 0) +
+            (item.lateDeduction || 0) +
+            (item.penaltyDeduction || 0) +
+            (item.gosiDeduction || 0) +
+            (item.otherDeductions || 0),
+          0
+        );
+        const totalNetSalary = runEmployees.reduce((sum, item) => sum + (item.netSalary || 0), 0);
+
+        // Clear all fromReview flags on submission to review
+        const clearedEmployees = runEmployees.map(emp => {
+          if (!emp.modifications) return emp;
+          return {
+            ...emp,
+            modifications: emp.modifications.map(m => ({ ...m, fromReview: false }))
+          };
+        });
+
+        transitionStatus(
+          "Pending Review",
+          "إرسال للمراجعة",
+          `تم إرسال مسير الرواتب رقم ${selectedRun?.payrollNumber} للمراجعة والتدقيق بواسطة المحاسب.`,
+          {
+            employees: clearedEmployees,
+            totalBasicSalary,
+            totalAllowances,
+            totalDeductions,
+            totalNetSalary
+          }
+        );
+        setIsViewModalOpen(false);
+        setSelectedRun(null);
+      }
     );
   };
 
@@ -2082,23 +2606,39 @@ export default function MonthlyPayrollRuns({
       );
       return;
     }
-
-    transitionStatus(
-      "Pending Final Approval",
+    
+    confirmAction(
       "تأكيد مراجعة المسير",
-      `قام المراجع/المدقق بتأكيد واغلاق مراجعة مسير الرواتب بالكامل وجاهزيته للاعتماد النهائي.`
+      "هل أنت متأكد من تأكيد مراجعة المسير ورفعه للاعتماد النهائي؟ سيتم إغلاق بيئة العمل والانتقال إلى القائمة.",
+      () => {
+        transitionStatus(
+          "Pending Final Approval",
+          "تأكيد مراجعة المسير",
+          `قام المراجع/المدقق بتأكيد واغلاق مراجعة مسير الرواتب بالكامل وجاهزيته للاعتماد النهائي.`
+        );
+        setIsViewModalOpen(false);
+        setSelectedRun(null);
+      }
     );
   };
 
   // Final Approval (General Manager / Authorized Admin locks the entire run)
   const handleFinalApproval = () => {
-    transitionStatus(
-      "Approved",
+    confirmAction(
       "الاعتماد النهائي للمسير",
-      `تم الاعتماد المالي النهائي والقطعي لمسير الرواتب بواسطة الإدارة العليا وصاحب الصلاحية.`,
-      {
-        approvedAt: new Date().toISOString(),
-        approvedBy: user.username,
+      "هل أنت متأكد من الاعتماد النهائي للمسير؟ لا يمكن التراجع عن هذا الإجراء إلا بصلاحيات خاصة. سيتم إغلاق بيئة العمل والانتقال إلى القائمة.",
+      () => {
+        transitionStatus(
+          "Approved",
+          "الاعتماد النهائي للمسير",
+          `تم الاعتماد المالي النهائي والقطعي لمسير الرواتب بواسطة الإدارة العليا وصاحب الصلاحية.`,
+          {
+            approvedAt: new Date().toISOString(),
+            approvedBy: user.username,
+          }
+        );
+        setIsViewModalOpen(false);
+        setSelectedRun(null);
       }
     );
   };
@@ -2106,28 +2646,45 @@ export default function MonthlyPayrollRuns({
   // Register Transfer Details
   const handleRegisterTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const untransferredCount = runEmployees.filter(emp => !emp.isTransferred).length;
+    if (untransferredCount > 0) {
+      showToast(
+        `❌ لا تستطيع تأكيد التحويل. لا يزال هناك ${untransferredCount} موظف لم يتم تحويل رواتبهم.`, 
+        `Cannot transfer. ${untransferredCount} employees pending.`, 
+        "error"
+      );
+      return;
+    }
     if (!transferForm.referenceNumber?.trim()) {
       showToast("⚠️ يرجى إدخال رقم المرجع المصرفي لتوثيق الحوالة!", "⚠️ Bank reference number is required!", "error");
       return;
     }
-
-    transitionStatus(
-      "Transferred",
+    
+    confirmAction(
       "تسجيل تحويل الرواتب",
-      `تم توثيق تحويل الرواتب للمصرف بمرجع حوالة رقم (${transferForm.referenceNumber}) على البنك (${transferForm.bankName}) بتاريخ ${transferForm.transferDate}.`,
-      {
-        transferredAt: new Date().toISOString(),
-        transferredBy: user.username,
-        transferDetails: {
-          bankName: transferForm.bankName,
-          referenceNumber: transferForm.referenceNumber,
-          transferDate: transferForm.transferDate,
-          notes: transferForm.notes,
-        },
+      "هل أنت متأكد من توثيق عملية التحويل؟ سيتم إغلاق بيئة العمل ونقل المسير إلى قائمة المحولات.",
+      () => {
+        transitionStatus(
+          "Transferred",
+          "تسجيل تحويل الرواتب",
+          `تم توثيق تحويل الرواتب للمصرف بمرجع حوالة رقم (${transferForm.referenceNumber}) على البنك (${transferForm.bankName}) بتاريخ ${transferForm.transferDate}.`,
+          {
+            transferredAt: new Date().toISOString(),
+            transferredBy: user.username,
+            bankReference: transferForm.referenceNumber,
+            transferDetails: {
+              bankName: transferForm.bankName,
+              referenceNumber: transferForm.referenceNumber,
+              transferDate: transferForm.transferDate,
+            },
+          }
+        );
+        setIsTransferModalOpen(false);
+        setTransferForm({ bankName: "", referenceNumber: "", transferDate: new Date().toISOString().split("T")[0], notes: "" });
+        setIsViewModalOpen(false);
+        setSelectedRun(null);
       }
     );
-
-    setIsTransferModalOpen(false);
   };
 
   // Filters application
@@ -2912,6 +3469,16 @@ export default function MonthlyPayrollRuns({
                         </button>
                       )}
 
+                      {canRevertToDraft && !["Draft", "Needs Modification", "Under Modification", "Transferred", "Paid"].includes(selectedRun.status) && (
+                        <button
+                          onClick={handleRevertToDraft}
+                          className="px-5 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 font-extrabold rounded-xl text-xs shadow-sm transition-all flex items-center gap-1.5 font-arabic"
+                        >
+                          <AlertCircle className="w-4 h-4" />
+                          إرجاع التعديلات إلى المسودة ↩
+                        </button>
+                      )}
+
                       {selectedRun.status === "Pending Final Approval" && isReviewer && (
                         <button
                           onClick={handleFinalApproval}
@@ -2978,11 +3545,11 @@ export default function MonthlyPayrollRuns({
                     
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-slate-700">ترتيب:</label>
+                        <label className="text-xs font-bold text-slate-300">ترتيب:</label>
                         <select
                           value={sortFilter}
                           onChange={(e) => setSortFilter(e.target.value)}
-                          className="p-2 border border-slate-200 rounded-lg text-xs text-black"
+                          className="p-2 border border-slate-200 rounded-lg text-xs text-black font-bold bg-white"
                         >
                           
                           <option value="highestSalary">أعلى راتب</option>
@@ -2990,11 +3557,24 @@ export default function MonthlyPayrollRuns({
                         </select>
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-slate-700">تصفية البنك:</label>
+                        <label className="text-xs font-bold text-slate-300">طريقة الإضافي العام:</label>
+                        <select
+                          value={selectedRun?.overtimeCalcMethod || "basic"}
+                          onChange={(e) => handleGlobalOvertimeMethodChange(e.target.value)}
+                          disabled={!selectedRun || !["Draft", "Pending Review", "Needs Modification", "Under Modification"].includes(selectedRun.status) || !isAccountant}
+                          className="p-2 border border-slate-200 rounded-lg text-xs text-black font-arabic font-bold bg-white cursor-pointer"
+                        >
+                          <option value="basic">الراتب الأساسي 💵</option>
+                          <option value="muddah">مبلغ مُدد ⏳</option>
+                          <option value="manual">يدوي ✍️</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-300">تصفية البنك:</label>
                         <select
                           value={bankFilter}
                           onChange={(e) => setBankFilter(e.target.value)}
-                          className="p-2 border border-slate-200 rounded-lg text-xs text-black"
+                          className="p-2 border border-slate-200 rounded-lg text-xs text-black font-bold bg-white"
                         >
                           <option value="All">الجميع</option>
                           {Array.from(new Set(runEmployees.map(e => e.bankName || "Cash"))).map(b => (
@@ -3005,11 +3585,11 @@ export default function MonthlyPayrollRuns({
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto border-x border-b border-slate-200 rounded-b-2xl">
+                  <div className="overflow-auto max-h-[calc(100vh-320px)] border-x border-b border-slate-200 rounded-b-2xl relative scrollbar-thin">
                     <table className="w-full min-w-[2200px] text-xs sm:text-[13px] text-right font-sans border-collapse relative">
-                      <thead className="sticky top-0 bg-slate-100 shadow-xs z-10 border-b border-slate-200">
+                      <thead className="sticky top-0 bg-slate-100 shadow-md z-20 border-b border-slate-200">
                         <tr className="text-slate-700 font-extrabold text-xs uppercase bg-slate-100">
-                          <th className="py-4 px-4 text-right sticky right-0 bg-slate-100 z-10 border-l border-slate-200">الموظف وبياناته</th>
+                          <th className="py-4 px-4 text-right sticky right-0 top-0 bg-slate-100 z-30 border-l border-slate-200">الموظف وبياناته</th>
                           <th className="py-4 px-4 text-right text-sky-800">الحساب البنكي 🏦</th>
                           <th className="py-4 px-3 text-right">الأساسي</th>
                           <th className="py-4 px-3 text-right">بدل سكن</th>
@@ -3030,7 +3610,7 @@ export default function MonthlyPayrollRuns({
                           )}
                           <th className="py-4 px-3 text-right text-rose-600">
                             <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => setShowDetailedDeductions(!showDetailedDeductions)}>
-                              خصومات أخرى
+                              إجمالي الخصومات
                               <span className="text-[10px] bg-rose-100 text-rose-700 rounded-full w-4 h-4 flex items-center justify-center">
                                 {showDetailedDeductions ? '◀' : '▶'}
                               </span>
@@ -3068,8 +3648,17 @@ export default function MonthlyPayrollRuns({
                             });
                           }
                           
-                          return filtered.map((emp) => {
-                            const canModifyRow = selectedRun.status === "Draft" || selectedRun.status === "Needs Modification" || selectedRun.status === "Under Modification";
+                          const isReviewerWithEdit = isSuperAdmin || hasAdvancedPermission(user, "finance", "payroll", "audit_payroll_edit");
+                          const isPendingReview = selectedRun.status === "Pending Review";
+                          const isDraftOrModifying = ["Draft", "Needs Modification", "Under Modification"].includes(selectedRun.status);
+                          const canEditCurrentRun = (isDraftOrModifying && isAccountant) || (isPendingReview && isReviewerWithEdit);
+
+                          return filtered.map((originalEmp) => {
+                            const canModifyRow = canEditCurrentRun;
+                            const isAccountant = true; // Shadows the outer variable to simplify disabled checks
+
+                            const emp = originalEmp;
+
                             const netRemaining = Math.max(0, emp.netSalary - (emp.muddahAmount || 0));
                             return (
                               <tr key={emp.id} className="border-b border-slate-100/50 hover:bg-slate-50/50 transition-colors">
@@ -3094,42 +3683,75 @@ export default function MonthlyPayrollRuns({
 
                                 {/* BANK INFO */}
                                 <td className="py-4 px-4 bg-sky-50/20">
-                                  <div className="space-y-1 text-right max-w-[140px]">
+                                  <div className="space-y-1.5 text-right max-w-[140px]">
                                     <div className="flex items-center gap-1">
                                       <span className="text-[9px] text-slate-400">البنك:</span>
-                                      <InlineEditable type="text" value={emp.bankName || ""} onSave={(val) => handleInlineSave(emp.id, "bankName", val)} disabled={!canModifyRow || !isAccountant} className="font-arabic font-bold text-[10px] w-[80px] text-right" />
+                                      <InlineEditable 
+                                        mod={getFieldMod(originalEmp, "bankName")} 
+                                        type="text" 
+                                        value={emp.bankName || ""} 
+                                        onSave={(val) => handleInlineSave(emp.id, "bankName", val)} 
+                                        disabled={!canModifyRow || !isAccountant} 
+                                        className={`font-arabic font-bold text-[10.5px] px-2 py-0.5 rounded-md border text-center transition-all ${getBankStyle(emp.bankName || "").bg}`} 
+                                        runStatus={selectedRun.status}
+                                      />
                                     </div>
                                     <div className="flex items-center gap-1">
                                       <span className="text-[9px] text-slate-400">IBAN:</span>
-                                      <InlineEditable type="text" value={emp.iban || ""} onSave={(val) => handleInlineSave(emp.id, "iban", val)} disabled={!canModifyRow || !isAccountant} className="font-mono font-bold text-[10px] tracking-tight text-right w-[110px]" />
+                                      <InlineEditable 
+                                        mod={getFieldMod(originalEmp, "iban")} 
+                                        type="text" 
+                                        value={emp.iban || ""} 
+                                        onSave={(val) => handleInlineSave(emp.id, "iban", val)} 
+                                        disabled={!canModifyRow || !isAccountant} 
+                                        className="font-mono font-bold text-[10px] tracking-tight text-right w-[110px]" 
+                                        runStatus={selectedRun.status}
+                                      />
                                     </div>
                                   </div>
                                 </td>
 
                                 {/* EARNINGS */}
-                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.basicSalary} onSave={(val) => handleInlineSave(emp.id, "basicSalary", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.housingAllowance} onSave={(val) => handleInlineSave(emp.id, "housingAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.transportAllowance} onSave={(val) => handleInlineSave(emp.id, "transportAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable value={emp.foodAllowance} onSave={(val) => handleInlineSave(emp.id, "foodAllowance", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center" style={{ display: "none" }}><InlineEditable value={emp.muddahAmount} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center"><InlineEditable value={emp.overtimeHours} onSave={(val) => handleInlineSave(emp.id, "overtimeHours", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center"><InlineEditable value={emp.overtimeAmount} onSave={(val) => handleInlineSave(emp.id, "overtimeAmount", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                <td className="py-4 px-3 font-mono font-bold text-[#0072BC] text-center"><InlineEditable value={emp.otherAllowances} onSave={(val) => handleInlineSave(emp.id, "otherAllowances", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable mod={getFieldMod(originalEmp, "basicSalary")} value={emp.basicSalary} onSave={(val) => handleInlineSave(emp.id, "basicSalary", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable mod={getFieldMod(originalEmp, "housingAllowance")} value={emp.housingAllowance} onSave={(val) => handleInlineSave(emp.id, "housingAllowance", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable mod={getFieldMod(originalEmp, "transportAllowance")} value={emp.transportAllowance} onSave={(val) => handleInlineSave(emp.id, "transportAllowance", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-slate-700 text-center"><InlineEditable mod={getFieldMod(originalEmp, "foodAllowance")} value={emp.foodAllowance} onSave={(val) => handleInlineSave(emp.id, "foodAllowance", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center" style={{ display: "none" }}><InlineEditable mod={getFieldMod(originalEmp, "muddahAmount")} value={emp.muddahAmount} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center">
+                                  <InlineEditable 
+                                    mod={getFieldMod(originalEmp, "overtimeHours")} 
+                                    value={emp.overtimeHours} 
+                                    onSave={(val) => handleInlineSave(emp.id, "overtimeHours", val)} 
+                                    disabled={!canModifyRow || !isAccountant} 
+                                    runStatus={selectedRun.status}
+                                  />
+                                </td>
+                                <td className="py-4 px-3 font-mono font-bold text-indigo-600 text-center">
+                                  <InlineEditable 
+                                    mod={getFieldMod(originalEmp, "overtimeAmount")} 
+                                    value={emp.overtimeAmount} 
+                                    onSave={(val) => handleInlineSave(emp.id, "overtimeAmount", val)} 
+                                    disabled={!canModifyRow || !isAccountant || (emp.overtimeCalcMethod || "basic") !== "manual"} 
+                                    runStatus={selectedRun.status}
+                                  />
+                                </td>
+
+                                <td className="py-4 px-3 font-mono font-bold text-[#0072BC] text-center"><InlineEditable mod={getFieldMod(originalEmp, "otherAllowances")} value={emp.otherAllowances} onSave={(val) => handleInlineSave(emp.id, "otherAllowances", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} /></td>
 
                                 {/* DEDUCTIONS */}
                                 {showDetailedDeductions && (
                                   <>
-                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.loansDeduction} onSave={(val) => handleInlineSave(emp.id, "loansDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.absenceDeduction} onSave={(val) => handleInlineSave(emp.id, "absenceDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.lateDeduction} onSave={(val) => handleInlineSave(emp.id, "lateDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.penaltyDeduction} onSave={(val) => handleInlineSave(emp.id, "penaltyDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
-                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><InlineEditable value={emp.gosiDeduction} onSave={(val) => handleInlineSave(emp.id, "gosiDeduction", val)} disabled={!canModifyRow || !isAccountant} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><ClickableDeduction mod={getFieldMod(originalEmp, "loansDeduction")} value={emp.loansDeduction} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><ClickableDeduction mod={getFieldMod(originalEmp, "absenceDeduction")} value={emp.absenceDeduction} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><ClickableDeduction mod={getFieldMod(originalEmp, "lateDeduction")} value={emp.lateDeduction} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><ClickableDeduction mod={getFieldMod(originalEmp, "penaltyDeduction")} value={emp.penaltyDeduction} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} /></td>
+                                    <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center"><ClickableDeduction mod={getFieldMod(originalEmp, "gosiDeduction")} value={emp.gosiDeduction} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} /></td>
                                   </>
                                 )}
                                 
-                                {/* OTHER DEDUCTIONS */}
-                                <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center">
-                                  <InlineEditable value={emp.otherDeductions} onSave={(val) => handleInlineSave(emp.id, "otherDeductions", val)} disabled={!canModifyRow || !isAccountant} />
+                                {/* TOTAL DEDUCTIONS */}
+                                <td className="py-4 px-3 font-mono font-bold text-rose-600 text-center bg-rose-50/10">
+                                  <ClickableDeduction value={emp.totalDeductions || 0} onClick={() => handleOpenDeductionsModal(emp)} disabled={false} runStatus={selectedRun.status} />
                                 </td>
 
                                 {/* SUMMARY */}
@@ -3137,7 +3759,7 @@ export default function MonthlyPayrollRuns({
                                   {emp.netSalary.toLocaleString("en-US")}
                                 </td>
                                 <td className="py-4 px-3 font-mono font-bold text-amber-600 text-center bg-amber-50/30">
-                                  <InlineEditable value={emp.muddahAmount || 0} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} />
+                                  <InlineEditable mod={getFieldMod(originalEmp, "muddahAmount")} value={emp.muddahAmount || 0} onSave={(val) => handleInlineSave(emp.id, "muddahAmount", val)} disabled={!canModifyRow || !isAccountant} runStatus={selectedRun.status} />
                                 </td>
                                 <td className="py-4 px-3 font-mono font-bold text-emerald-600 text-center bg-emerald-50/20">
                                   {netRemaining.toLocaleString("en-US")}
@@ -3145,9 +3767,24 @@ export default function MonthlyPayrollRuns({
 
                                 {/* TRANSFER STATUS */}
                                 <td className="py-4 px-3 text-center">
-                                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${emp.transferStatus === "Transferred" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                                    {emp.transferStatus === "Transferred" ? "تم التحويل" : "بانتظار التحويل"}
-                                  </span>
+                                  {selectedRun.status === "Approved" || selectedRun.status === "Pending Final Approval" ? (
+                                    <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!emp.isTransferred}
+                                        onChange={(e) => {
+                                          const isChecked = e.target.checked;
+                                          handleInlineSave(emp.id, "isTransferred", isChecked);
+                                        }}
+                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                      />
+                                      <span className="text-[10px] font-bold text-slate-600">تم التحويل</span>
+                                    </label>
+                                  ) : (
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${emp.transferStatus === "Transferred" || emp.isTransferred ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                                      {emp.transferStatus === "Transferred" || emp.isTransferred ? "تم التحويل" : "بانتظار التحويل"}
+                                    </span>
+                                  )}
                                 </td>
 
                                 {/* ACTIONS */}
@@ -3391,7 +4028,14 @@ export default function MonthlyPayrollRuns({
               <div className="text-xs text-slate-500 font-arabic">
                 بيئة عمل مسير الرواتب الإلكتروني الموحد لشركة فنون الوليد للصناعة
               </div>
-              <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveAll}
+                  disabled={isSavingAll}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs transition-colors shadow-md hover:shadow-lg font-arabic disabled:opacity-50"
+                >
+                  {isSavingAll ? "جاري الحفظ... ⏳" : "حفظ تعديلات المسودة / Save Draft Changes 💾"}
+                </button>
                 <button
                   onClick={() => {
                     setIsViewModalOpen(false);
@@ -3919,7 +4563,16 @@ export default function MonthlyPayrollRuns({
       )}
 
       {/* DETAILED MULTI-DEDUCTIONS MANAGEMENT MODAL */}
-      {isDeductionModalOpen && selectedDeductionEmployee && (
+      {isDeductionModalOpen && selectedDeductionEmployee && (() => {
+        const isReviewerWithEdit = isSuperAdmin || hasAdvancedPermission(user, "finance", "payroll", "audit_payroll_edit");
+        const isPendingReview = selectedRun && selectedRun.status === "Pending Review";
+        const isDraftOrModifying = selectedRun && ["Draft", "Needs Modification", "Under Modification"].includes(selectedRun.status);
+
+        const canEditDeductions = selectedRun && (
+          (isDraftOrModifying && isAccountant) || 
+          (isPendingReview && isReviewerWithEdit)
+        );
+        return (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs overflow-y-auto">
           <div className="w-full max-w-4xl bg-white rounded-3xl p-6 sm:p-8 relative shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
             {/* Close button */}
@@ -3959,6 +4612,7 @@ export default function MonthlyPayrollRuns({
                   </p>
                   <button
                     type="button"
+                    disabled={!canEditDeductions}
                     onClick={() => {
                       const newId = `DED-NEW-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
                       setLocalDeductions([
@@ -3977,7 +4631,7 @@ export default function MonthlyPayrollRuns({
                         }
                       ]);
                     }}
-                    className="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold font-arabic transition-colors"
+                    className="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold font-arabic transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     إضافة أول بند خصم الآن
                   </button>
@@ -3994,6 +4648,7 @@ export default function MonthlyPayrollRuns({
                         <label className="block mb-1 text-[10.5px] font-bold text-slate-500 font-arabic">نوع الاستقطاع:</label>
                         <select
                           value={item.type}
+                          disabled={!canEditDeductions}
                           onChange={(e) => {
                             const val = e.target.value as any;
                             setLocalDeductions(
@@ -4002,12 +4657,13 @@ export default function MonthlyPayrollRuns({
                               )
                             );
                           }}
-                          className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-xs font-bold font-arabic text-slate-700 focus:outline-none focus:border-rose-500"
+                          className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-xs font-bold font-arabic text-slate-700 focus:outline-none focus:border-rose-500 disabled:opacity-60"
                         >
                           <option value="Loan Deduction">خصم سلفة (Loan Deduction)</option>
                           <option value="Absence Deduction">خصم غياب (Absence Deduction)</option>
                           <option value="Late Deduction">خصم تأخير (Late Deduction)</option>
                           <option value="Penalty Deduction">خصم جزاء إداري (Penalty Deduction)</option>
+                          <option value="GOSI Deduction">خصم تأمينات (GOSI Deduction)</option>
                           <option value="Other Deduction">خصم آخر (Other Deduction)</option>
                         </select>
                       </div>
@@ -4018,6 +4674,7 @@ export default function MonthlyPayrollRuns({
                         <input
                           type="number"
                           value={item.amount === 0 ? "" : item.amount}
+                          disabled={!canEditDeductions}
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             setLocalDeductions(
@@ -4027,7 +4684,7 @@ export default function MonthlyPayrollRuns({
                             );
                           }}
                           placeholder="مثال: 150"
-                          className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold text-rose-600 focus:outline-none focus:border-rose-500 text-center"
+                          className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold text-rose-600 focus:outline-none focus:border-rose-500 text-center disabled:opacity-60"
                         />
                       </div>
 
@@ -4037,6 +4694,7 @@ export default function MonthlyPayrollRuns({
                         <input
                           type="text"
                           value={item.reason}
+                          disabled={!canEditDeductions}
                           onChange={(e) => {
                             setLocalDeductions(
                               localDeductions.map((d) =>
@@ -4044,8 +4702,8 @@ export default function MonthlyPayrollRuns({
                               )
                             );
                           }}
-                          placeholder="مثال: غياب يوم 15 أكتوبر دون عذر"
-                          className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-500"
+                          placeholder={item.type === "Loan Deduction" ? "تاريخ الانتهاء/رقم الدفعة..." : item.type === "Absence Deduction" ? "كم يوم غياب؟" : item.type === "Late Deduction" ? "كم دقيقة تأخير؟" : item.type === "Penalty Deduction" ? "اكتب المخالفة..." : "السبب"}
+                          className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-500 disabled:opacity-60"
                         />
                       </div>
 
@@ -4056,6 +4714,7 @@ export default function MonthlyPayrollRuns({
                           <input
                             type="text"
                             value={item.notes || ""}
+                            disabled={!canEditDeductions}
                             onChange={(e) => {
                               setLocalDeductions(
                                 localDeductions.map((d) =>
@@ -4064,7 +4723,7 @@ export default function MonthlyPayrollRuns({
                               );
                             }}
                             placeholder="اختياري"
-                            className="w-full p-2.5 border border-slate-200 rounded-xl text-[11px] text-slate-600 focus:outline-none focus:border-rose-500"
+                            className="w-full p-2.5 border border-slate-200 rounded-xl text-[11px] text-slate-600 focus:outline-none focus:border-rose-500 disabled:opacity-60"
                           />
                         </div>
                         <div>
@@ -4072,6 +4731,7 @@ export default function MonthlyPayrollRuns({
                           <input
                             type="text"
                             value={item.attachmentUrl || ""}
+                            disabled={!canEditDeductions}
                             onChange={(e) => {
                               setLocalDeductions(
                                 localDeductions.map((d) =>
@@ -4080,7 +4740,7 @@ export default function MonthlyPayrollRuns({
                               );
                             }}
                             placeholder="رابط pdf/img"
-                            className="w-full p-2.5 border border-slate-200 rounded-xl text-[10px] font-mono font-bold text-slate-500 focus:outline-none focus:border-rose-500"
+                            className="w-full p-2.5 border border-slate-200 rounded-xl text-[10px] font-mono font-bold text-slate-500 focus:outline-none focus:border-rose-500 disabled:opacity-60"
                           />
                         </div>
                       </div>
@@ -4089,10 +4749,11 @@ export default function MonthlyPayrollRuns({
                       <div className="md:col-span-1 text-center">
                         <button
                           type="button"
+                          disabled={!canEditDeductions}
                           onClick={() => {
                             setLocalDeductions(localDeductions.filter((d) => d.id !== item.id));
                           }}
-                          className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors inline-flex items-center justify-center"
+                          className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                           title="حذف هذا البند"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -4105,6 +4766,7 @@ export default function MonthlyPayrollRuns({
                   <div className="flex justify-end pt-1">
                     <button
                       type="button"
+                      disabled={!canEditDeductions}
                       onClick={() => {
                         const newId = `DED-NEW-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
                         setLocalDeductions([
@@ -4123,7 +4785,7 @@ export default function MonthlyPayrollRuns({
                           }
                         ]);
                       }}
-                      className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold font-arabic transition-all flex items-center gap-1.5"
+                      className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold font-arabic transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>+ إضافة بند استقطاع إضافي</span>
                     </button>
@@ -4154,8 +4816,9 @@ export default function MonthlyPayrollRuns({
                 </button>
                 <button
                   type="button"
+                  disabled={!canEditDeductions}
                   onClick={handleSaveDeductionsModal}
-                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold font-arabic transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5"
+                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold font-arabic transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>✓ حفظ واعتماد البنود وإعادة الاحتساب</span>
                 </button>
@@ -4163,7 +4826,8 @@ export default function MonthlyPayrollRuns({
             </div>
           </div>
         </div>
-      )}
+      );
+      })()}
 
       {/* REGISTER TRANSFER MODAL */}
       {isTransferModalOpen && (
@@ -4333,6 +4997,47 @@ export default function MonthlyPayrollRuns({
           </div>
         </div>
       )}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2 font-arabic">{confirmDialog.title}</h3>
+            <p className="text-sm text-slate-600 mb-8 font-arabic leading-relaxed">{confirmDialog.message}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-colors font-arabic"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all font-arabic"
+              >
+                تأكيد المتابعة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div key={toast.id} className={`p-4 rounded-xl shadow-xl flex items-center gap-3 w-80 pointer-events-auto animate-in fade-in slide-in-from-right-8 duration-300 ${toast.type === "success" ? "bg-emerald-50 border border-emerald-200 text-emerald-800" : "bg-rose-50 border border-rose-200 text-rose-800"}`}>
+            <div className={`p-1.5 rounded-full ${toast.type === "success" ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
+              {toast.type === "success" ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-sm font-arabic">{toast.messageAr}</div>
+              <div className="text-[10px] opacity-75 mt-0.5">{toast.messageEn}</div>
+            </div>
+            <button onClick={() => setToasts(p => p.filter(t => t.id !== toast.id))} className="opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

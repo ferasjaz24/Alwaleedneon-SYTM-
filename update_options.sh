@@ -1,0 +1,1 @@
+sed -i 's/<option value="Other Deduction">خصم آخر (Other Deduction)<\/option>/<option value="GOSI Deduction">خصم تأمينات (GOSI Deduction)<\/option>\n                          <option value="Other Deduction">خصم آخر (Other Deduction)<\/option>/g' src/components/finance/MonthlyPayrollRuns.tsx

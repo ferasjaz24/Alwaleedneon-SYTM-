@@ -88,6 +88,7 @@ export default function ProcurementRequests({
 
   // Material Availability Check States
   const [materialsStock, setMaterialsStock] = useState<any[]>([]);
+  const [dailyRequests, setDailyRequests] = useState<any[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [inStockItems, setInStockItems] = useState<any[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
@@ -113,9 +114,10 @@ export default function ProcurementRequests({
     setLoading(true);
     try {
       const ts = Date.now();
-      const [res, matRes] = await Promise.all([
+      const [res, matRes, dailyRes] = await Promise.all([
         fetch(`/api/dynamic/material_purchase_requests?t=${ts}`),
         fetch(`/api/dynamic/materials_warehouse?t=${ts}`),
+        fetch(`/api/dynamic/daily_purchase_requests?t=${ts}`),
       ]);
       if (res.ok) {
         const data = await res.json();
@@ -124,6 +126,10 @@ export default function ProcurementRequests({
       if (matRes.ok) {
         const data = await matRes.json();
         setMaterialsStock(Array.isArray(data) ? data : []);
+      }
+      if (dailyRes.ok) {
+        const data = await dailyRes.json();
+        setDailyRequests(Array.isArray(data) ? data : []);
       }
     } catch (e) {
       console.error("Error fetching procurement requests:", e);
@@ -135,6 +141,28 @@ export default function ProcurementRequests({
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  const handleDeleteRequest = async (reqId: string, reqNum: string) => {
+    const confirmMsg = lang === "ar" 
+      ? `هل أنت متأكد من رغبتك في حذف طلب تعميد المشتريات ذو الرقم ${reqNum || reqId} نهائياً؟` 
+      : `Are you sure you want to permanently delete procurement request ${reqNum || reqId}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/dynamic/material_purchase_requests/${reqId}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        alert(lang === "ar" ? "تم حذف الطلب بنجاح" : "Request deleted successfully.");
+        fetchRequests();
+      } else {
+        alert(lang === "ar" ? "حدث خطأ أثناء الحذف" : "Error deleting request.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert(lang === "ar" ? "حدث خطأ غير متوقع" : "An unexpected error occurred.");
+    }
+  };
 
   // Update request state dynamically
   const updateRequestStatusInDb = async (
@@ -245,20 +273,165 @@ export default function ProcurementRequests({
                 (m: any) =>
                   m.name === reqItem.itemName ||
                   m.nameAr === reqItem.itemName ||
-                  m.nameEn === reqItem.itemName,
+                  m.nameEn === reqItem.itemName ||
+                  m.itemName === reqItem.itemName ||
+                  m.itemNameAr === reqItem.itemName ||
+                  m.itemNameEn === reqItem.itemName
               );
               if (mat) {
+                const newQty = Number(mat.currentQty || 0) + Number(reqItem.qty || 0);
                 await fetch(`/api/dynamic/materials_warehouse/${mat.id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    currentQty:
-                      Number(mat.currentQty || 0) + Number(reqItem.qty || 0),
+                    currentQty: newQty,
                   }),
                 });
+
+                // Write a log entry for the received item
+                await fetch("/api/dynamic/materials_log", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: `LOG-ADD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    itemName: mat.itemNameAr || mat.nameAr || mat.name || reqItem.itemName,
+                    itemCode: mat.itemCode || "---",
+                    type: "addition",
+                    qty: Number(reqItem.qty),
+                    project: selectedReq.projectName || selectedReq.quotationNumber || selectedReq.requestNumber || "---",
+                    timestamp: new Date().toISOString(),
+                    user: user?.username || "procurement"
+                  })
+                });
               } else {
-                // Optionally create it if strictly needed, but prompt implies match by name
+                // Create new item in warehouse automatically
+                const newMatId = `MAT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                const newMatCode = `GEN-${Math.floor(1000 + Math.random() * 9000)}`;
+                await fetch("/api/dynamic/materials_warehouse", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: newMatId,
+                    itemCode: newMatCode,
+                    itemNameAr: reqItem.itemName,
+                    itemNameEn: reqItem.itemName,
+                    category: "أخرى",
+                    uom: "حبة",
+                    currentQty: Number(reqItem.qty),
+                    minStock: 0,
+                    purchasePrice: 0,
+                    defaultSellingPrice: 0,
+                    dateCreated: new Date().toISOString()
+                  })
+                });
+
+                // Write log entry for auto-creation and addition
+                await fetch("/api/dynamic/materials_log", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: `LOG-ADD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    itemName: reqItem.itemName,
+                    itemCode: newMatCode,
+                    type: "addition",
+                    qty: Number(reqItem.qty),
+                    project: selectedReq.projectName || selectedReq.quotationNumber || selectedReq.requestNumber || "---",
+                    timestamp: new Date().toISOString(),
+                    user: user?.username || "procurement"
+                  })
+                });
               }
+            }
+          }
+          if (nextStatus === "في انتظار الدفع" || nextStatus === "في انتظار الدفعة") {
+            try {
+              const todayStr = new Date().toISOString().slice(0, 10);
+              
+              // Determine items list from either pricingDetails or items list of purchase request
+              let itemsList: any[] = [];
+              if (selectedReq.pricingDetails && selectedReq.pricingDetails.length > 0) {
+                itemsList = selectedReq.pricingDetails.map((i: any) => ({
+                  itemName: i.materialName || i.itemName || "صنف مادة",
+                  qty: Number(i.quantity || i.qty || 1),
+                  unitPrice: Number(i.price || 0),
+                  total: Number(i.quantity || i.qty || 1) * Number(i.price || 0)
+                }));
+              } else if (selectedReq.items && selectedReq.items.length > 0) {
+                itemsList = selectedReq.items.map((i: any) => ({
+                  itemName: i.itemName,
+                  qty: Number(i.qty),
+                  unitPrice: Number(i.unitPrice || 0),
+                  total: Number(i.qty) * Number(i.unitPrice || 0)
+                }));
+              }
+
+              const poTotal = itemsList.reduce((sum: number, item: any) => sum + item.total, 0);
+
+              let primaryItemName = "";
+              if (itemsList.length === 1) {
+                primaryItemName = itemsList[0].itemName;
+              } else if (itemsList.length > 1) {
+                primaryItemName = `${itemsList[0].itemName} ... (+${itemsList.length - 1} أصناف أخرى)`;
+              } else {
+                primaryItemName = selectedReq.projectName || selectedReq.projectId || "طلب شراء مواد";
+              }
+
+              // Use same request number or fallback
+              const requestNumber = selectedReq.requestNumber || `PR-${selectedReq.id}`;
+
+              const dailyPayload = {
+                id: `DP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                requestNumber: requestNumber,
+                date: todayStr,
+                type: "materials",
+                source: "procurement_system",
+                status: "بانتظار التأكيد من المالية",
+                originalPoId: selectedReq.id,
+                projectName: selectedReq.projectName || selectedReq.projectId || "---",
+                totalAmount: poTotal,
+                itemName: primaryItemName,
+                qty: itemsList.length === 1 ? itemsList[0].qty : 1,
+                unitPrice: itemsList.length === 1 ? itemsList[0].unitPrice : poTotal,
+                reason: `طلب شراء مواد للمشروع ${selectedReq.projectName || "---"} - عرض السعر: ${selectedReq.quotationNumber || "---"} - أمر شراء رقم ${selectedReq.requestNumber || selectedReq.id}`,
+                notes: `تم التعديل تلقائياً من نظام المشتريات والمستودع بعد الاعتماد المالي للأمر رقم ${selectedReq.id}`,
+                itemsList: itemsList,
+                userCreated: user?.username || "system",
+                updatesLog: [
+                  {
+                    user: user?.username || "system",
+                    action: `إنشاء طلب الشراء اليومي تلقائياً من نظام المشتريات لأمر الشراء رقم ${selectedReq.id}`,
+                    timestamp: new Date().toISOString()
+                  }
+                ]
+              };
+
+              await fetch("/api/dynamic/daily_purchase_requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dailyPayload),
+              });
+
+              try {
+                const notifId = `NOTIF-${Date.now()}`;
+                await fetch("/api/dynamic/notifications", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: notifId,
+                    title: "طلب شراء يومي جديد (تلقائي)",
+                    titleEn: "New Daily Purchase Request (Auto)",
+                    message: `تم تحويل طلب شراء المواد للمشروع ${selectedReq.projectName || selectedReq.projectId || "---"} ذو الرقم ${selectedReq.id} إلى بانتظار الدفع في طلبات الشراء اليومية برقم ${requestNumber}`,
+                    messageEn: `Material Purchase Order ${selectedReq.id} has been set to Pending Payment and linked to Daily Purchase ${requestNumber}`,
+                    category: "finance",
+                    timestamp: new Date().toISOString(),
+                    readBy: []
+                  })
+                });
+              } catch (errNotif) {
+                console.error("Failed to send notification for daily purchase", errNotif);
+              }
+            } catch (err) {
+              console.error("Error creating duplicate daily purchase request:", err);
             }
           }
           showLocalToast(
@@ -302,6 +475,127 @@ export default function ProcurementRequests({
         }
       },
     });
+  };
+
+  const handleForceSyncDailyRequest = async (req: MaterialPurchaseRequest) => {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      
+      let itemsList: any[] = [];
+      if (req.pricingDetails && req.pricingDetails.length > 0) {
+        itemsList = req.pricingDetails.map((i: any) => ({
+          itemName: i.materialName || i.itemName || "صنف مادة",
+          qty: Number(i.quantity || i.qty || 1),
+          unitPrice: Number(i.price || 0),
+          total: Number(i.quantity || i.qty || 1) * Number(i.price || 0)
+        }));
+      } else if (req.items && req.items.length > 0) {
+        itemsList = req.items.map((i: any) => ({
+          itemName: i.itemName,
+          qty: Number(i.qty),
+          unitPrice: Number(i.unitPrice || 0),
+          total: Number(i.qty) * Number(i.unitPrice || 0)
+        }));
+      }
+
+      const poTotal = itemsList.reduce((sum: number, item: any) => sum + item.total, 0);
+
+      let primaryItemName = "";
+      if (itemsList.length === 1) {
+        primaryItemName = itemsList[0].itemName;
+      } else if (itemsList.length > 1) {
+        primaryItemName = `${itemsList[0].itemName} ... (+${itemsList.length - 1} أصناف أخرى)`;
+      } else {
+        primaryItemName = req.projectName || req.projectId || "طلب شراء مواد";
+      }
+
+      const requestNumber = req.requestNumber || `PR-${req.id}`;
+
+      const dailyPayload = {
+        id: `DP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        requestNumber: requestNumber,
+        date: todayStr,
+        type: "materials",
+        source: "procurement_system",
+        status: "بانتظار التأكيد من المالية",
+        originalPoId: req.id,
+        projectName: req.projectName || req.projectId || "---",
+        totalAmount: poTotal,
+        itemName: primaryItemName,
+        qty: itemsList.length === 1 ? itemsList[0].qty : 1,
+        unitPrice: itemsList.length === 1 ? itemsList[0].unitPrice : poTotal,
+        reason: `طلب شراء مواد للمشروع ${req.projectName || "---"} - عرض السعر: ${req.quotationNumber || "---"} - أمر شراء رقم ${req.requestNumber || req.id}`,
+        notes: `تم التعديل والمزامنة يدوياً من نظام المشتريات والمستودع بعد الاعتماد المالي للأمر رقم ${req.id}`,
+        itemsList: itemsList,
+        userCreated: user?.username || "system",
+        updatesLog: [
+          {
+            user: user?.username || "system",
+            action: `مزامنة وإنشاء طلب الشراء اليومي يدوياً لأمر الشراء رقم ${req.id}`,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      const res = await fetch("/api/dynamic/daily_purchase_requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dailyPayload),
+      });
+
+      if (res.ok) {
+        const payload: Partial<MaterialPurchaseRequest> = {
+          updatesLog: [
+            ...(req.updatesLog || []),
+            {
+              user: user.username,
+              action: `مزامنة الطلب يدوياً لطلبات الشراء اليومية بالرقم المالي (${requestNumber})`,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        };
+        await updateRequestStatusInDb(req.id, payload);
+
+        try {
+          const notifId = `NOTIF-${Date.now()}`;
+          await fetch("/api/dynamic/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: notifId,
+              title: "طلب شراء يومي مزامن يدوياً",
+              titleEn: "Manual Synced Daily Purchase Request",
+              message: `تمت مزامنة طلب شراء المواد للمشروع ${req.projectName || req.projectId || "---"} ذو الرقم ${req.id} لطلبات الشراء اليومية برقم ${requestNumber}`,
+              messageEn: `Material Purchase Order ${req.id} manually synced and linked to Daily Purchase ${requestNumber}`,
+              category: "finance",
+              timestamp: new Date().toISOString(),
+              readBy: []
+            })
+          });
+        } catch (errNotif) {
+          console.error("Failed to send notification for daily purchase", errNotif);
+        }
+
+        showLocalToast(
+          lang === "ar"
+            ? "تمت مزامنة وإرسال طلب الشراء المالي بنجاح!"
+            : "Purchase request synchronized successfully!",
+          "success"
+        );
+        fetchRequests();
+      } else {
+        showLocalToast(
+          lang === "ar" ? "فشلت عملية المزامنة" : "Sync failed",
+          "err"
+        );
+      }
+    } catch (err) {
+      console.error("Error manual syncing daily purchase request:", err);
+      showLocalToast(
+        lang === "ar" ? "حدث خطأ أثناء المزامنة" : "Error during sync",
+        "err"
+      );
+    }
   };
 
   // Parse Month of requestedAt
@@ -370,8 +664,8 @@ export default function ProcurementRequests({
         statusFilter !== "all" &&
         req.status !== statusFilter &&
         !(
-          statusFilter === "في انتظار الدفع" &&
-          req.status === "في انتظار الدفعة"
+          (statusFilter === "في انتظار الدفع" || statusFilter === "في انتظار الدفعة") &&
+          (req.status === "في انتظار الدفع" || req.status === "في انتظار الدفعة")
         )
       )
         return false;
@@ -690,13 +984,22 @@ export default function ProcurementRequests({
                         {req.status}
                       </span>
                     </td>
-                    <td className="p-3.5 text-center">
+                    <td className="p-3.5 text-center flex items-center justify-center gap-2">
                       <button
                         onClick={() => setSelectedReq(req)}
                         className="px-3.5 py-1.5 bg-slate-100 hover:bg-[#0072BC] text-slate-700 hover:text-white rounded-lg border border-slate-200 hover:border-transparent transition text-[10px] font-black cursor-pointer shadow-sm"
                       >
                         👁️ {lang === "ar" ? "عرض تفصيلي" : "View Sourcing"}
                       </button>
+                      {hasAdvancedPermission(user, 'procurement', 'finance_approval', 'delete_finance_po') && (
+                        <button
+                          onClick={() => handleDeleteRequest(req.id, req.requestNumber)}
+                          className="p-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-100 hover:border-transparent transition cursor-pointer shadow-sm"
+                          title={lang === "ar" ? "حذف الطلب" : "Delete Request"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -776,6 +1079,14 @@ export default function ProcurementRequests({
                 </span>
                 <span className="font-bold font-mono text-slate-700">
                   {new Date(selectedReq.requestedAt).toLocaleString('en-US')}
+                </span>
+              </div>
+              <div>
+                <span className="font-black text-slate-400 block mb-0.5">
+                  {lang === "ar" ? "طالب الشراء:" : "Requested By:"}
+                </span>
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  👤 {selectedReq.requestedBy || "غير معروف"}
                 </span>
               </div>
               <div>
@@ -1001,6 +1312,62 @@ export default function ProcurementRequests({
                 </span>
               </div>
             )}
+
+            {/* Daily Purchase Request Sync Card */}
+            {selectedReq.isOrder && (selectedReq.status === "في انتظار الدفع" || selectedReq.status === "في انتظار الدفعة" || selectedReq.status === "تم الطلب من المورد" || selectedReq.status === "تم استلام المواد") && (() => {
+              const linkedDailyReq = dailyRequests.find(r => r.originalPoId === selectedReq.id);
+              if (linkedDailyReq) {
+                return (
+                  <div className="bg-emerald-50/70 p-4 border border-emerald-200 rounded-2xl text-xs space-y-2 text-right">
+                    <p className="font-black text-emerald-950 flex items-center gap-1.5 justify-end">
+                      <span>{lang === "ar" ? "مرتبط بطلب الشراء اليومي المالي" : "Linked to Daily Finance Request"}</span>
+                      <span className="text-emerald-600 font-bold">🔗</span>
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-700 bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-medium">{lang === "ar" ? "رقم الطلب المالي" : "Finance Req No"}</span>
+                        <span className="font-mono text-indigo-600">{linkedDailyReq.requestNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] font-medium">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] ${
+                          linkedDailyReq.status === "تم التأكيد والدفع من المالية" 
+                            ? "bg-emerald-100 text-emerald-800" 
+                            : linkedDailyReq.status === "مرفوض" 
+                            ? "bg-rose-100 text-rose-800" 
+                            : "bg-amber-100 text-amber-800 animate-pulse"
+                        }`}>
+                          {linkedDailyReq.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              } else if (selectedReq.status === "في انتظار الدفع" || selectedReq.status === "في انتظار الدفعة") {
+                return (
+                  <div className="bg-amber-50/70 p-4 border border-amber-200 rounded-2xl text-xs space-y-3 text-right">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span className="font-black text-amber-950">
+                        {lang === "ar" ? "لم يتم ربطه بطلب شراء مالي يومي" : "Not Linked to Daily Finance Purchase"}
+                      </span>
+                      <span className="text-amber-600 font-bold">⚠️</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {lang === "ar" 
+                        ? "هذا الأمر في حالة (في انتظار الدفع) ولكن لم يُنشأ له طلب مالي يومي بعد (قد يكون تم تغييره مسبقاً قبل التحديث). انقر أدناه لمزامنة وإنشاء الطلب المالي فوراً."
+                        : "This PO is pending payment but no daily request exists. Click below to synchronize and create it now."}
+                    </p>
+                    <button
+                      onClick={() => handleForceSyncDailyRequest(selectedReq)}
+                      className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span>⚡ {lang === "ar" ? "مزامنة وإنشاء طلب الشراء اليومي الآن" : "Sync & Create Daily Request Now"}</span>
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Updates Log Section (Requirement) */}
             {selectedReq.updatesLog && selectedReq.updatesLog.length > 0 && (

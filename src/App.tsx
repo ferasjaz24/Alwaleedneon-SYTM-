@@ -63,6 +63,7 @@ import ProcurementDashboard from "./components/procurement/ProcurementDashboard"
 import ProcurementRequests from "./components/ProcurementRequests";
 import SuppliersPricing from "./components/SuppliersPricing";
 import FinanceApprovals from "./components/FinanceApprovals";
+import DailyPurchaseRequests from "./components/DailyPurchaseRequests";
 import AdvancedPermissionsPortal from "./components/AdvancedPermissionsPortal";
 import AISettingsModal from "./components/AISettingsModal";
 import MainDashboard from "./components/MainDashboard";
@@ -268,6 +269,8 @@ export default function App() {
   const [logPage, setLogPage] = useState(1);
   const [logPerPage, setLogPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
+  const [activeRequests, setActiveRequests] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Global Toast & Action State Managers
   const [toasts, setToasts] = useState<{ id: string; message: string; type: "success" | "error" | "info" }[]>([]);
@@ -680,6 +683,47 @@ export default function App() {
     }
     loadData();
   }, []);
+
+  // Global Fetch interceptor to track active network loads dynamically
+  useEffect(() => {
+    const handleStart = () => setActiveRequests((prev) => prev + 1);
+    const handleEnd = () => setActiveRequests((prev) => Math.max(0, prev - 1));
+
+    window.addEventListener("global-loading-start", handleStart);
+    window.addEventListener("global-loading-end", handleEnd);
+
+    const originalFetch = window.fetch;
+    window.fetch = async function (input: any, init?: any) {
+      window.dispatchEvent(new CustomEvent("global-loading-start"));
+      try {
+        return await originalFetch(input, init);
+      } finally {
+        window.dispatchEvent(new CustomEvent("global-loading-end"));
+      }
+    };
+
+    return () => {
+      window.removeEventListener("global-loading-start", handleStart);
+      window.removeEventListener("global-loading-end", handleEnd);
+      window.fetch = originalFetch;
+    };
+  }, []);
+
+  // Set up tab switching and subtab switching transition state
+  useEffect(() => {
+    setIsNavigating(true);
+    const timer = setTimeout(() => {
+      setIsNavigating(false);
+    }, 450); // 450ms smooth transition
+    return () => clearTimeout(timer);
+  }, [
+    activeTab,
+    activeHrSubTab,
+    activeSalesSubTab,
+    activeProductionSubTab,
+    activeWarehouseSubTab,
+    activeFinanceSubTab,
+  ]);
 
   // Update setActiveLoggerUser whenever active user state changes
   useEffect(() => {
@@ -1647,6 +1691,24 @@ export default function App() {
       className="min-h-screen flex flex-col font-sans bg-[#F1F5F9]/50 text-slate-800 transition-all print:bg-white print:block"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
+      <style>{`
+        @keyframes loading-progress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(-20%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-infinite-loading {
+          animation: loading-progress 1.5s infinite ease-in-out;
+        }
+      `}</style>
+
+      {/* Sleek dynamic top progress/loading bar */}
+      {(isNavigating || activeRequests > 0) && (
+        <div className="fixed top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-sky-400 via-sky-500 to-[#0072BC] z-50 overflow-hidden" style={{ backgroundSize: '200% 200%' }}>
+          <div className="w-full h-full bg-white/40 animate-infinite-loading" />
+        </div>
+      )}
+
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: `<style>${sharedPrintStyles}</style>` + sharedPrintHeader }} />
       <style>{`
         .sidebar-collapsed span:not(.lucide):not(.text-\\[11px\\]) {
@@ -1719,10 +1781,15 @@ export default function App() {
           <div className="flex items-center gap-2 relative">
             <button
               onClick={() => setSystemRefreshKey(prev => prev + 1)}
-              className="p-2.5 rounded-xl bg-slate-200/60 text-slate-600 hover:bg-[#0072BC] hover:text-white transition-colors"
+              className="p-2.5 rounded-xl bg-slate-200/60 text-slate-600 hover:bg-[#0072BC] hover:text-white transition-colors flex items-center gap-2"
               title={lang === 'ar' ? 'تحديث البيانات' : 'Refresh Data'}
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className={`w-5 h-5 ${(activeRequests > 0 || isNavigating) ? "animate-spin text-[#0072BC] hover:text-white" : ""}`} />
+              {(activeRequests > 0 || isNavigating) && (
+                <span className="hidden lg:inline text-[10px] font-extrabold text-[#0072BC] animate-pulse">
+                  {lang === 'ar' ? 'جاري التحميل...' : 'Syncing...'}
+                </span>
+              )}
             </button>
             <NotificationsBell user={user} lang={lang} />
             <div
@@ -2273,6 +2340,11 @@ export default function App() {
                           ar: "💵 بوابة تعميد المشتريات (المالية)",
                           en: "💵 Finance PO Approvals",
                         }] : []),
+                        ...(hasAdvancedPermission(user, 'procurement', 'daily_purchases', 'view_daily_purchases') ? [{
+                          id: "warehouse_daily_purchases",
+                          ar: "📅 طلبات الشراء اليومية",
+                          en: "📅 Daily Purchase Requests",
+                        }] : []),
                       ].filter((sub) => canShowSubmenu(user, "procurement", sub.id)).map((sub) => {
                         const isSubActive =
                           activeTab === "warehouse" &&
@@ -2698,6 +2770,27 @@ export default function App() {
                 >
                   <span>{lang === 'ar' ? 'الرجوع إلى لوحة المؤشرات' : 'Back to Dashboard'}</span>
                 </button>
+              </div>
+            ) : isNavigating ? (
+              <div id="navigation-loading-view" className="flex flex-col items-center justify-center min-h-[450px] p-12 bg-white border border-slate-100 rounded-3xl shadow-sm relative overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-slate-50/20 backdrop-blur-[1px]" />
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  <div className="relative flex items-center justify-center">
+                    {/* Ring background */}
+                    <div className="w-16 h-16 rounded-full border-4 border-sky-100/60 animate-pulse" />
+                    {/* Spin spinner */}
+                    <div className="absolute w-16 h-16 rounded-full border-4 border-transparent border-t-[#0072BC] border-r-[#00AEEF] animate-spin" />
+                    {/* Central pulsing circle */}
+                    <div className="absolute w-6 h-6 rounded-full bg-[#0072BC] animate-ping opacity-75" />
+                    <div className="absolute w-5 h-5 rounded-full bg-[#0072BC]" />
+                  </div>
+                  <h3 className="mt-8 text-base font-black text-slate-800 animate-pulse">
+                    {lang === "ar" ? "جاري تحميل وتحديث الصفحة..." : "Loading and updating page..."}
+                  </h3>
+                  <p className="mt-2 text-xs text-slate-400 font-mono">
+                    {lang === "ar" ? "يرجى الانتظار لحين جلب البيانات المعتمدة..." : "Please wait while fetching certified data..."}
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -5244,6 +5337,16 @@ export default function App() {
                   className="space-y-6"
                 >
                   <FinanceApprovals lang={lang} user={user!} />
+                </div>
+              )}
+
+            {activeTab === "warehouse" &&
+              activeWarehouseSubTab === "warehouse_daily_purchases" && hasAdvancedPermission(user, 'procurement', 'daily_purchases', 'view_daily_purchases') && (
+                <div
+                  id="content-tab-warehouse-daily-purchases"
+                  className="space-y-6"
+                >
+                  <DailyPurchaseRequests lang={lang} user={user!} />
                 </div>
               )}
 

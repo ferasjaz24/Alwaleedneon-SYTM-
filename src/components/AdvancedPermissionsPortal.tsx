@@ -100,6 +100,7 @@ const PERMISSIONS_SCHEMA = {
           { id: 'edit_components', labelAr: 'تعديل الرواتب الأساسية والبدلات', labelEn: 'تعديل الرواتب الأساسية والبدلات', type: 'sensitive' },
           { id: 'create_payroll', labelAr: 'إنشاء مسير راتب شهري', labelEn: 'إنشاء مسير راتب شهري', type: 'add' },
           { id: 'approve_payroll', labelAr: 'اعتماد مسير راتب', labelEn: 'اعتماد مسير راتب', type: 'approve' },
+          { id: 'revert_payroll_draft', labelAr: 'إرجاع مسير الرواتب كمسودة', labelEn: 'إرجاع مسير الرواتب كمسودة', type: 'sensitive' },
           { id: 'print_payroll', labelAr: 'طباعة/تصدير مسير الرواتب', labelEn: 'طباعة/تصدير مسير الرواتب', type: 'export' },
           { id: 'post_mudad', labelAr: 'تسجيل دفعة راتب لبوابة مدد', labelEn: 'تسجيل دفعة راتب لبوابة مدد', type: 'exec' }
         ]
@@ -190,7 +191,8 @@ const PERMISSIONS_SCHEMA = {
         perms: [
           { id: 'view_letters', labelAr: 'عرض خطابات المبيعات', labelEn: 'عرض خطابات المبيعات', type: 'view' },
           { id: 'add_letter', labelAr: 'إنشاء/تعديل خطاب', labelEn: 'إنشاء/تعديل خطاب', type: 'add' },
-          { id: 'send_letter', labelAr: 'إرسال خطاب عبر واتساب/إيميل', labelEn: 'إرسال خطاب عبر واتساب/إيميل', type: 'exec' }
+          { id: 'send_letter', labelAr: 'إرسال خطاب عبر واتساب/إيميل', labelEn: 'إرسال خطاب عبر واتساب/إيميل', type: 'exec' },
+          { id: 'edit_letter_template', labelAr: 'إدارة قوالب خطابات المبيعات', labelEn: 'إدارة قوالب خطابات المبيعات', type: 'sensitive' }
         ]
       },
       reports: {
@@ -267,7 +269,17 @@ const PERMISSIONS_SCHEMA = {
           { id: 'view_finance_po', labelAr: 'عرض بوابات التعميد المالي', labelEn: 'عرض بوابات التعميد المالي', type: 'view' },
           { id: 'approve_finance_po', labelAr: 'اعتماد مالياً و إنشاء أمر شراء', labelEn: 'اعتماد مالياً و إنشاء أمر شراء', type: 'financial' },
           { id: 'undo_po', labelAr: 'التراجع عن أمر شراء بعد إنشائه', labelEn: 'التراجع عن أمر شراء بعد إنشائه', type: 'sensitive' },
-          { id: 'reject_finance_po', labelAr: 'إعادة الطلب/الرفض المالي', labelEn: 'إعادة الطلب/الرفض المالي', type: 'edit' }
+          { id: 'reject_finance_po', labelAr: 'إعادة الطلب/الرفض المالي', labelEn: 'إعادة الطلب/الرفض المالي', type: 'edit' },
+          { id: 'delete_finance_po', labelAr: 'حذف طلب تعميد مشتريات (للإدارة)', labelEn: 'Delete Procurement Request (Admin)', type: 'delete' }
+        ]
+      },
+      daily_purchases: {
+        ar: 'طلبات الشراء اليومية', en: 'Daily Purchase Requests',
+        perms: [
+          { id: 'view_daily_purchases', labelAr: 'عرض طلبات الشراء اليومية', labelEn: 'View Daily Purchases', type: 'view' },
+          { id: 'add_daily_purchase', labelAr: 'إضافة/تعديل طلب شراء يومي', labelEn: 'Add/Edit Daily Purchase', type: 'add' },
+          { id: 'confirm_finance_daily', labelAr: 'تأكيد ودفع الطلبات من المالية', labelEn: 'Finance Confirm & Pay', type: 'approve' },
+          { id: 'delete_daily_purchase', labelAr: 'حذف طلب شراء يومي (للإدارة)', labelEn: 'Delete Daily Purchase (Admin)', type: 'delete' }
         ]
       },
       approved_po: {
@@ -397,7 +409,10 @@ const PERMISSIONS_SCHEMA = {
         ar: 'الرواتب الشهرية للأقسام', en: 'Monthly Payroll',
         perms: [
           { id: 'view_payroll', labelAr: 'الاطلاع على الرواتب الشهرية فقط', labelEn: 'View Payroll Only', type: 'view' },
-          { id: 'edit_payroll', labelAr: 'تعديل ومعالجة الرواتب الشهرية بالكامل', labelEn: 'Process & Edit Payroll', type: 'edit' }
+          { id: 'edit_payroll', labelAr: 'تعديل ومعالجة الرواتب الشهرية بالكامل', labelEn: 'Process & Edit Payroll', type: 'edit' },
+          { id: 'revert_to_draft', labelAr: 'إرجاع مسير الرواتب إلى مسودة', labelEn: 'Revert Payroll to Draft', type: 'sensitive' },
+          { id: 'audit_payroll_edit', labelAr: 'مراجعة وتدقيق - مع إمكانية التعديل', labelEn: 'Review & Audit - With Edit', type: 'edit' },
+          { id: 'audit_payroll_view', labelAr: 'مراجعة وتدقيق - للاطلاع فقط دون تعديل', labelEn: 'Review & Audit - View Only', type: 'view' }
         ]
       },
       cash_bank: {

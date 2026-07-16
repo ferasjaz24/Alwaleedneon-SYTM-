@@ -226,6 +226,7 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
     if (subId === 'warehouse_procurement') return hasAdvancedPermission(user, 'procurement', 'requests', 'view_requests');
     if (subId === 'warehouse_suppliers_pricing') return hasAdvancedPermission(user, 'procurement', 'suppliers', 'view_suppliers');
     if (subId === 'warehouse_finance_approval') return hasAdvancedPermission(user, 'procurement', 'finance_approval', 'view_finance_po');
+    if (subId === 'warehouse_daily_purchases') return hasAdvancedPermission(user, 'procurement', 'daily_purchases', 'view_daily_purchases');
   }
 
   if (module === 'production') {

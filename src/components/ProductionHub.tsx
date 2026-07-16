@@ -61,6 +61,31 @@ export default function ProductionHub({
   const [installationRequests, setInstallationRequests] = useState<any[]>([]);
   const [installationOrders, setInstallationOrders] = useState<any[]>([]);
 
+  // Daily Installations states
+  const [dailyInstallations, setDailyInstallations] = useState<any[]>([]);
+  const [showDailyModal, setShowDailyModal] = useState(false);
+  const [dailyEditingItem, setDailyEditingItem] = useState<any | null>(null);
+  
+  // Daily form states
+  const [dailyType, setDailyType] = useState<"project" | "internal" | "other">("project");
+  const [dailySelectedProjectId, setDailySelectedProjectId] = useState("");
+  const [dailyServiceAndLocation, setDailyServiceAndLocation] = useState("");
+  const [dailyLocation, setDailyLocation] = useState("");
+  const [dailySelectedCrew, setDailySelectedCrew] = useState<string[]>([]);
+  const [dailyPhoto, setDailyPhoto] = useState<string | null>(null);
+  const [dailyPhotoName, setDailyPhotoName] = useState<string | null>(null);
+  const [dailyDate, setDailyDate] = useState(new Date().toISOString().split("T")[0]);
+  const [dailySearchQuery, setDailySearchQuery] = useState("");
+  const [dailyInstallationDetails, setDailyInstallationDetails] = useState("");
+  const [dailyProcedureType, setDailyProcedureType] = useState<"installation" | "maintenance" | "removal">("installation");
+  const [isSavingDaily, setIsSavingDaily] = useState(false);
+
+  // Daily filter states
+  const [dailyFilterDate, setDailyFilterDate] = useState("");
+  const [dailyFilterLocation, setDailyFilterLocation] = useState("");
+  const [dailyFilterMonth, setDailyFilterMonth] = useState("all");
+  const [selectedDailyPreview, setSelectedDailyPreview] = useState<any | null>(null);
+
   const [selectedPreviewFile, setSelectedPreviewFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
 
   const roleStr = user?.role?.toLowerCase() || "";
@@ -163,7 +188,7 @@ export default function ProductionHub({
 
   // Tab managers
   const [installationPortal, setInstallationPortal] = useState<
-    "requests" | "orders"
+    "requests" | "orders" | "daily"
   >("requests");
 
   // Popup Management States
@@ -389,6 +414,7 @@ export default function ProductionHub({
         rSalesQuotes,
         rWarehouse,
         rClients,
+        rDailyInstalls,
       ] = await Promise.all([
         fetch(`/api/dynamic/sales_production_requests?t=${ts}`).then((r) =>
           r.ok ? r.json() : [],
@@ -418,6 +444,7 @@ export default function ProductionHub({
           r.ok ? r.json() : [],
         ),
         fetch(`/api/clients?t=${ts}`).then((r) => (r.ok ? r.json() : [])),
+        fetch(`/api/dynamic/daily_installations?t=${ts}`).then((r) => (r.ok ? r.json() : [])),
       ]);
 
       setInboundRequests(Array.isArray(rInbound) ? rInbound : []);
@@ -430,6 +457,7 @@ export default function ProductionHub({
       setSalesQuotations(Array.isArray(rSalesQuotes) ? rSalesQuotes : []);
       setMaterialsList(Array.isArray(rWarehouse) ? rWarehouse : []);
       setClients(Array.isArray(rClients) ? rClients : []);
+      setDailyInstallations(Array.isArray(rDailyInstalls) ? rDailyInstalls : []);
     } catch (e) {
       console.error("Error loading data in ProductionHub:", e);
     } finally {
@@ -484,6 +512,554 @@ export default function ProductionHub({
       return false;
     }
   };
+
+  // Daily Installations Handlers
+  const candidateProjects = (() => {
+    const list: any[] = [];
+    const seen = new Set<string>();
+    
+    // Add active projects
+    activeProjects.forEach(p => {
+      const name = p.projectName || p.projectTitle || p.title;
+      const qNum = p.quotationNumber || p.quoteId || p.id;
+      if (name && !seen.has(`${name}-${qNum}`)) {
+        seen.add(`${name}-${qNum}`);
+        list.push({ id: p.id, projectName: name, quotationNumber: qNum });
+      }
+    });
+
+    // Add production orders
+    productionOrders.forEach(o => {
+      const name = o.projectName || o.projectTitle || o.title;
+      const qNum = o.quotationNumber || o.quoteId || o.id;
+      if (name && !seen.has(`${name}-${qNum}`)) {
+        seen.add(`${name}-${qNum}`);
+        list.push({ id: o.id, projectName: name, quotationNumber: qNum });
+      }
+    });
+
+    // Add sales quotations
+    salesQuotations.forEach(q => {
+      const name = q.projectName || q.projectTitle || q.title;
+      const qNum = q.quotationNumber || q.quoteId || q.id;
+      if (name && !seen.has(`${name}-${qNum}`)) {
+        seen.add(`${name}-${qNum}`);
+        list.push({ id: q.id, projectName: name, quotationNumber: qNum });
+      }
+    });
+
+    return list;
+  })();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 800 * 1024) {
+        alert(lang === "ar" ? "حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 800 كيلوبايت." : "Image size is too large, please select an image under 800KB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDailyPhoto(reader.result as string);
+        setDailyPhotoName(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const getShortMonthAbbrev = (dateStr: string) => {
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        return months[d.getMonth()];
+      }
+    } catch(e) {}
+    return "OCT";
+  };
+
+  const handleSaveDaily = async () => {
+    if (isSavingDaily) return;
+    if (!dailyDate) {
+      displayToast(lang === "ar" ? "يرجى تحديد تاريخ التركيب" : "Please specify installation date", "err");
+      return;
+    }
+    
+    let projName = "";
+    let quoteNum = "";
+    
+    if (dailyType === "project") {
+      if (!dailySelectedProjectId) {
+        displayToast(lang === "ar" ? "يرجى تحديد المشروع" : "Please select a project", "err");
+        return;
+      }
+      const matched = candidateProjects.find(p => p.id === dailySelectedProjectId);
+      if (matched) {
+        projName = matched.projectName;
+        quoteNum = matched.quotationNumber;
+      }
+    } else {
+      if (!dailyServiceAndLocation.trim()) {
+        displayToast(lang === "ar" ? "يرجى كتابة تفاصيل الخدمة" : "Please enter service details", "err");
+        return;
+      }
+    }
+
+    // Prevent duplicate entries for the same project/service on the same date
+    if (!dailyEditingItem) {
+      const isDuplicate = dailyInstallations.some(item => {
+        if (item.date !== dailyDate) return false;
+        if (dailyType === "project") {
+          return item.type === "project" && item.projectName === projName && item.quoteNumber === quoteNum;
+        } else {
+          return item.type !== "project" && item.serviceAndLocation?.trim().toLowerCase() === dailyServiceAndLocation.trim().toLowerCase();
+        }
+      });
+
+      if (isDuplicate) {
+        const confirmDuplicate = window.confirm(
+          lang === "ar"
+            ? "تنبيه: هذا المشروع/الخدمة مسجلة بالفعل في هذا التاريخ! هل أنت متأكد من رغبتك في إضافة سجل مكرر؟"
+            : "Warning: This project/service is already registered on this date! Are you sure you want to log a duplicate entry?"
+        );
+        if (!confirmDuplicate) return;
+      }
+    }
+    
+    setIsSavingDaily(true);
+
+    const yr = dailyDate.split("-")[0] || new Date().getFullYear().toString();
+    const monthAbbrev = getShortMonthAbbrev(dailyDate);
+    const randNum = Math.floor(100 + Math.random() * 900); // 3 digits
+    const generatedShortId = `INS-${yr}-${monthAbbrev}-${randNum}`;
+
+    const recordPayload = {
+      id: dailyEditingItem ? dailyEditingItem.id : generatedShortId,
+      type: dailyType,
+      projectName: dailyType === "project" ? projName : "",
+      quoteNumber: dailyType === "project" ? quoteNum : "",
+      serviceAndLocation: dailyType !== "project" ? dailyServiceAndLocation : "",
+      location: dailyLocation,
+      crew: dailySelectedCrew,
+      photoUrl: dailyPhoto,
+      photoName: dailyPhotoName,
+      date: dailyDate,
+      createdBy: user.username,
+      createdAt: dailyEditingItem ? dailyEditingItem.createdAt : new Date().toISOString(),
+      installationDetails: dailyInstallationDetails,
+      procedureType: dailyProcedureType,
+    };
+    
+    const success = dailyEditingItem 
+      ? await updateRequestInDb("daily_installations", dailyEditingItem.id, recordPayload)
+      : await createRecordInDb("daily_installations", recordPayload);
+       
+    setIsSavingDaily(false);
+
+    if (success) {
+      displayToast(
+        lang === "ar" 
+          ? (dailyEditingItem ? "تم تعديل التركيب اليومي بنجاح" : "تم تسجيل التركيب اليومي بنجاح")
+          : (dailyEditingItem ? "Daily installation edited successfully" : "Daily installation registered successfully")
+      );
+      setShowDailyModal(false);
+      setDailyEditingItem(null);
+      // Reset states
+      setDailyType("project");
+      setDailySelectedProjectId("");
+      setDailyServiceAndLocation("");
+      setDailyLocation("");
+      setDailySelectedCrew([]);
+      setDailyPhoto(null);
+      setDailyPhotoName(null);
+      setDailyDate(new Date().toISOString().split("T")[0]);
+      setDailySearchQuery("");
+      setDailyInstallationDetails("");
+      setDailyProcedureType("installation");
+      loadAllData();
+    } else {
+      displayToast(lang === "ar" ? "فشل حفظ البيانات" : "Failed to save record", "err");
+    }
+  };
+
+  const handleDeleteDaily = async (item: any) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: lang === "ar" ? "حذف سجل التركيب" : "Delete Installation Record",
+      message:
+        lang === "ar"
+          ? `هل أنت متأكد تماماً من رغبتك في حذف هذا السجل "${item.projectName || item.serviceAndLocation || item.id}" نهائياً؟`
+          : `Are you sure you want to permanently delete this installation record "${item.projectName || item.serviceAndLocation || item.id}"?`,
+      isDestructive: true,
+      countdown: 0,
+      onConfirm: async () => {
+        const success = await deleteRecordInDb("daily_installations", item.id);
+        if (success) {
+          displayToast(lang === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
+          loadAllData();
+        } else {
+          displayToast(lang === "ar" ? "فشل الحذف" : "Deletion failed", "err");
+        }
+      },
+    });
+  };
+
+  const handleEditDaily = (item: any) => {
+    setDailyEditingItem(item);
+    setDailyType(item.type);
+    
+    if (item.type === "project") {
+      const matched = candidateProjects.find(p => p.projectName === item.projectName && p.quotationNumber === item.quoteNumber);
+      if (matched) {
+        setDailySelectedProjectId(matched.id);
+      } else {
+        setDailySelectedProjectId("");
+      }
+    } else {
+      setDailySelectedProjectId("");
+    }
+    
+    setDailyServiceAndLocation(item.serviceAndLocation || "");
+    setDailyLocation(item.location || "");
+    setDailySelectedCrew(item.crew || []);
+    setDailyPhoto(item.photoUrl || null);
+    setDailyPhotoName(item.photoName || null);
+    setDailyDate(item.date || new Date().toISOString().split("T")[0]);
+    setDailySearchQuery("");
+    setDailyInstallationDetails(item.installationDetails || "");
+    setDailyProcedureType(item.procedureType || "installation");
+    
+    setShowDailyModal(true);
+  };
+
+  const handlePrintDailyReport = () => {
+    const filtered = dailyInstallations.filter(item => {
+      if (dailyFilterDate && item.date !== dailyFilterDate) return false;
+      if (dailyFilterLocation) {
+        const q = dailyFilterLocation.toLowerCase();
+        const locMatch = item.location?.toLowerCase().includes(q);
+        const servMatch = item.serviceAndLocation?.toLowerCase().includes(q);
+        const projMatch = item.projectName?.toLowerCase().includes(q);
+        if (!locMatch && !servMatch && !projMatch) return false;
+      }
+      if (dailyFilterMonth !== "all") {
+        const itemMonth = new Date(item.date).getMonth() + 1;
+        if (String(itemMonth) !== dailyFilterMonth) return false;
+      }
+      return true;
+    });
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const monthNamesAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+    const monthName = dailyFilterMonth !== "all" ? monthNamesAr[parseInt(dailyFilterMonth) - 1] : "كل الشهور";
+
+    // Calculate report statistics
+    const totalCount = filtered.length;
+    const installCount = filtered.filter(item => !item.procedureType || item.procedureType === "installation").length;
+    const maintenanceCount = filtered.filter(item => item.procedureType === "maintenance").length;
+    const removalCount = filtered.filter(item => item.procedureType === "removal").length;
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>${lang === "ar" ? "تقرير المخرجات والتركيبات الميدانية - شركة الوليد" : "Siting Report - Al-Waleed"}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700&display=swap');
+            body {
+              font-family: 'Cairo', 'Inter', sans-serif;
+              direction: rtl;
+              padding: 0;
+              margin: 0;
+              background-color: #ffffff;
+              color: #1e293b;
+              -webkit-print-color-adjust: exact;
+            }
+            .page {
+              width: 210mm;
+              min-height: 297mm;
+              padding: 15mm 15mm;
+              margin: auto;
+              box-sizing: border-box;
+              position: relative;
+              display: flex;
+              flex-direction: column;
+            }
+            .header-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            .header-logo {
+              text-align: right;
+              font-size: 18px;
+              font-weight: 800;
+              color: #0072BC;
+              line-height: 1.3;
+            }
+            .header-logo span {
+              font-size: 11px;
+              color: #64748b;
+              font-weight: normal;
+              display: block;
+              margin-top: 4px;
+            }
+            .header-title {
+              text-align: center;
+              font-size: 15px;
+              font-weight: bold;
+              color: #1e293b;
+              background: #f1f5f9;
+              padding: 8px 15px;
+              border-radius: 6px;
+              border: 1px solid #cbd5e1;
+            }
+            .header-meta {
+              text-align: left;
+              font-size: 11px;
+              color: #475569;
+              line-height: 1.6;
+            }
+            .divider {
+              height: 4px;
+              background: linear-gradient(to left, #0072BC, #38bdf8);
+              margin-bottom: 20px;
+              border-radius: 2px;
+            }
+            
+            /* Stats grid bento layout */
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 12px;
+              margin-bottom: 20px;
+            }
+            .stat-card {
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 10px;
+              padding: 10px 12px;
+              text-align: center;
+            }
+            .stat-value {
+              font-size: 18px;
+              font-weight: 800;
+              color: #0072BC;
+              margin-bottom: 2px;
+            }
+            .stat-label {
+              font-size: 10px;
+              color: #64748b;
+              font-weight: bold;
+            }
+
+            .section-title {
+              font-size: 13px;
+              font-weight: bold;
+              color: #0072BC;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 5px;
+              margin-bottom: 12px;
+              margin-top: 10px;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
+              border: 1px solid #e2e8f0;
+              padding: 10px 12px;
+              text-align: right;
+              font-size: 11px;
+              line-height: 1.4;
+            }
+            th {
+              background-color: #f1f5f9;
+              color: #1e293b;
+              font-weight: bold;
+            }
+            tr:nth-child(even) {
+              background-color: #fafbfc;
+            }
+            .id-badge {
+              font-family: monospace;
+              font-weight: bold;
+              color: #475569;
+              background-color: #f1f5f9;
+              padding: 2px 5px;
+              border-radius: 4px;
+              border: 1px solid #cbd5e1;
+              font-size: 10px;
+            }
+            .procedure-badge {
+              font-size: 10px;
+              font-weight: bold;
+              padding: 2px 6px;
+              border-radius: 12px;
+              display: inline-block;
+            }
+            .badge-install {
+              background-color: #ecfdf5;
+              color: #047857;
+              border: 1px solid #a7f3d0;
+            }
+            .badge-maint {
+              background-color: #eff6ff;
+              color: #1d4ed8;
+              border: 1px solid #bfdbfe;
+            }
+            .badge-removal {
+              background-color: #fef2f2;
+              color: #b91c1c;
+              border: 1px solid #fecaca;
+            }
+
+            .signatures {
+              margin-top: auto;
+              padding-top: 30px;
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 15px;
+              text-align: center;
+            }
+            .signature-col {
+              border-top: 1px dashed #cbd5e1;
+              padding-top: 10px;
+              font-size: 11px;
+              font-weight: bold;
+              color: #475569;
+            }
+            .footer {
+              border-top: 1px solid #e2e8f0;
+              padding-top: 8px;
+              margin-top: 25px;
+              font-size: 9px;
+              color: #94a3b8;
+              display: flex;
+              justify-content: space-between;
+            }
+            @media print {
+              body { margin: 0; padding: 0; }
+              .page { margin: 0; border: none; box-shadow: none; width: auto; height: auto; min-height: 100%; }
+              @page { size: A4 portrait; margin: 15mm 10mm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <table class="header-table">
+              <tr>
+                <td class="header-logo" style="width: 40%;">
+                  شركة الوليد للدعاية والإعلان
+                  <span>قسم التركيبات والتشغيل الميداني</span>
+                </td>
+                <td style="width: 25%;">
+                  <div class="header-title">${lang === "ar" ? "تقرير التركيب والتشغيل الشهري" : "Monthly Installation Report"}</div>
+                </td>
+                <td class="header-meta" style="width: 35%; text-align: left;">
+                  <div><b>فلترة الشهر:</b> ${monthName}</div>
+                  <div><b>تاريخ التصدير:</b> ${new Date().toLocaleDateString("ar-SA")}</div>
+                  <div><b>مسؤول التصدير:</b> ${user.username}</div>
+                </td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value">${totalCount}</div>
+                <div class="stat-label">إجمالي العمليات الميدانية</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #047857;">${installCount}</div>
+                <div class="stat-label">تركيب جديد</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #1d4ed8;">${maintenanceCount}</div>
+                <div class="stat-label">صيانة وإصلاح</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #b91c1c;">${removalCount}</div>
+                <div class="stat-label">فك وإزالة</div>
+              </div>
+            </div>
+
+            <div class="section-title">جدول تفاصيل العمليات والتركيبات المنجزة</div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 15%;">كود العملية</th>
+                  <th style="width: 12%;">التاريخ</th>
+                  <th style="width: 15%;">نوع الإجراء</th>
+                  <th>الوجهة / المشروع / الخدمة الميدانية</th>
+                  <th style="width: 20%;">فريق العمل المكلف</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filtered.map((item, idx) => {
+                  const procedureBadge = item.procedureType === "maintenance"
+                    ? `<span class="procedure-badge badge-maint">🛠️ صيانة</span>`
+                    : item.procedureType === "removal"
+                      ? `<span class="procedure-badge badge-removal">🗑️ فك وإزالة</span>`
+                      : `<span class="procedure-badge badge-install">🏗️ تركيب جديد</span>`;
+                  
+                  const detailsText = item.type === "project"
+                    ? `${item.projectName} (Quotation: ${item.quoteNumber || "N/A"})`
+                    : item.serviceAndLocation || "N/A";
+
+                  const crewNames = item.crew?.map((empId: string) => {
+                    const emp = employees.find(e => e.id === empId);
+                    return emp ? (emp.arabicName || emp.englishName) : empId;
+                  }).join(", ") || "N/A";
+
+                  return `
+                    <tr>
+                      <td style="text-align: center;">${idx + 1}</td>
+                      <td><span class="id-badge">${item.id}</span></td>
+                      <td>${item.date}</td>
+                      <td style="text-align: center;">${procedureBadge}</td>
+                      <td>
+                        <div style="font-weight: bold; color: #1e293b;">${detailsText}</div>
+                        ${item.location ? `<div style="font-size: 9px; color: #64748b; margin-top: 3px;">📍 ${item.location}</div>` : ""}
+                      </td>
+                      <td style="font-size: 10px; color: #475569;">${crewNames}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+
+            <div class="signatures">
+              <div class="signature-col">
+                مسؤول قسم التركيبات والتشغيل<br/><br/><br/>...................................
+              </div>
+              <div class="signature-col">
+                قسم المراقبة ومطابقة المعايير<br/><br/><br/>...................................
+              </div>
+              <div class="signature-col">
+                اعتماد المدير العام للشركة<br/><br/><br/>...................................
+              </div>
+            </div>
+
+            <div class="footer">
+              <div>شركة الوليد للدعاية والإعلان والتركيبات الميدانية | الرياض، المملكة العربية السعودية</div>
+              <div>الرقم الضريبي: 300055555500003</div>
+            </div>
+          </div>
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
 
   // Automated Status Change to 'قيد المراجعة' upon Viewing Details (Requirement)
   const handleViewInboundDetails = async (req: any) => {
@@ -648,6 +1224,9 @@ export default function ProductionHub({
         projectPayload,
       );
       if (created) {
+        // Deduct raw materials and log transaction
+        await deductMaterialsForProject(projectPayload);
+
         await deleteRecordInDb("production_orders", ord.id);
         if (ord.requestId) {
           await updateRequestInDb("sales_production_requests", ord.requestId, {
@@ -1511,11 +2090,19 @@ export default function ProductionHub({
       return;
     }
 
+    const generateBRQNumber = () => {
+      const d = new Date();
+      const year = d.getFullYear();
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const monthAbbr = monthNames[d.getMonth()];
+      const prefix = `BRQ${year}${monthAbbr}`;
+      const count = procurementRequests.filter((r: any) => r.requestNumber?.startsWith(prefix)).length;
+      return `${prefix}${String(count + 1).padStart(4, "0")}`;
+    };
+
     const docPayload = {
       id: associatedProc?.id || `PRQ-${Date.now()}`,
-      requestNumber:
-        associatedProc?.requestNumber ||
-        `PRQ-${String(procurementRequests.length + 1).padStart(4, "0")}`,
+      requestNumber: associatedProc?.requestNumber || generateBRQNumber(),
       projectId: selectedInbound.id,
       projectName: selectedInbound.projectName,
       quotationNumber: selectedInbound.quotationNumber,
@@ -1797,6 +2384,68 @@ export default function ProductionHub({
     }
   };
 
+  const deductMaterialsForProject = async (projectOrOrder: any) => {
+    try {
+      let itemsToDeduct = projectOrOrder.items || [];
+      if (!itemsToDeduct || itemsToDeduct.length === 0) {
+        const associatedProc = procurementRequests.find(
+          (p) =>
+            p.projectId === projectOrOrder.id ||
+            p.quotationNumber === projectOrOrder.quotationNumber ||
+            p.projectId === projectOrOrder.orderId
+        );
+        if (associatedProc && associatedProc.items) {
+          itemsToDeduct = associatedProc.items;
+        }
+      }
+
+      if (itemsToDeduct && itemsToDeduct.length > 0) {
+        const mRes = await fetch("/api/dynamic/materials_warehouse");
+        if (mRes.ok) {
+          const materials = await mRes.json();
+          for (const item of itemsToDeduct) {
+            const mat = materials.find(
+              (m: any) =>
+                m.name === item.itemName ||
+                m.nameAr === item.itemName ||
+                m.nameEn === item.itemName ||
+                m.itemName === item.itemName ||
+                m.itemNameAr === item.itemName ||
+                m.itemNameEn === item.itemName
+            );
+            if (mat) {
+              const deduction = Number(item.qty || 0);
+              const newQty = Math.max(0, Number(mat.currentQty || 0) - deduction);
+              await fetch(`/api/dynamic/materials_warehouse/${mat.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ currentQty: newQty }),
+              });
+
+              // Write a deduction log entry
+              await fetch("/api/dynamic/materials_log", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: `LOG-DED-${Date.now()}-${Math.floor(Math.random() * 1050)}`,
+                  itemName: mat.itemNameAr || mat.nameAr || mat.name || item.itemName,
+                  itemCode: mat.itemCode || "---",
+                  type: "deduction",
+                  qty: deduction,
+                  project: projectOrOrder.projectName || projectOrOrder.quotationNumber || "---",
+                  timestamp: new Date().toISOString(),
+                  user: user?.username || "production"
+                })
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error in deductMaterialsForProject", e);
+    }
+  };
+
   // 4. Start Manufacturing -> Move to active projects
   const handleStartManufacturing = async () => {
     if (!selectedOrder) return;
@@ -1837,6 +2486,9 @@ export default function ProductionHub({
       projectPayload,
     );
     if (created) {
+      // Deduct raw materials and log transaction
+      await deductMaterialsForProject(projectPayload);
+
       await deleteRecordInDb("production_orders", selectedOrder.id);
 
       // Update sales quotation and request statuses to In progress
@@ -2501,6 +3153,27 @@ export default function ProductionHub({
     }
     return true;
   });
+
+  const filteredDailyInstallations = dailyInstallations.filter((item) => {
+    if (dailyFilterDate && item.date !== dailyFilterDate) return false;
+    if (dailyFilterLocation) {
+      const q = dailyFilterLocation.toLowerCase();
+      const locMatch = item.location?.toLowerCase().includes(q);
+      const servMatch = item.serviceAndLocation?.toLowerCase().includes(q);
+      const projMatch = item.projectName?.toLowerCase().includes(q);
+      const crewMatch = item.crew?.some((empId: string) => {
+        const emp = employees.find(e => e.id === empId);
+        const name = emp ? (emp.arabicName || emp.englishName || "").toLowerCase() : "";
+        return name.includes(q);
+      });
+      if (!locMatch && !servMatch && !projMatch && !crewMatch) return false;
+    }
+    if (dailyFilterMonth !== "all") {
+      const itemMonth = new Date(item.date).getMonth() + 1;
+      if (String(itemMonth) !== dailyFilterMonth) return false;
+    }
+    return true;
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -3680,13 +4353,13 @@ export default function ProductionHub({
         </div>
       )}
 
-      {/* SUB-TAB 4: INSTALLATION DEPARTMENT (Two portals inside) */}
+      {/* SUB-TAB 4: INSTALLATION DEPARTMENT (Three portals inside) */}
       {activeSubTab === "prod_installation" && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Truck className="w-7 h-7 text-indigo-700" />
+                <Truck className="w-7 h-7 text-[#0072BC]" />
                 {lang === "ar"
                   ? "قسم وإدارة التركيـبات والتشغيل الميداني"
                   : "Field Siting & Commissioning"}
@@ -3726,11 +4399,216 @@ export default function ProductionHub({
                   ? "بوابة أوامر التركيب"
                   : "Installation Active Orders"}
               </button>
+              <button
+                onClick={() => setInstallationPortal("daily")}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black transition ${
+                  installationPortal === "daily"
+                    ? "bg-emerald-600 text-white shadow-md"
+                    : "text-slate-500 hover:text-emerald-600"
+                }`}
+              >
+                📅{" "}
+                {lang === "ar"
+                  ? "بوابة التركيبات اليومية"
+                  : "Daily Installations"}
+              </button>
             </div>
           </div>
 
-          {/* Search bar specifically for installation */}
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {installationPortal === "daily" ? (
+            <div className="space-y-6">
+              {/* Daily Installations Dashboard Controls */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                  <button
+                    onClick={() => {
+                      setDailyEditingItem(null);
+                      setDailyType("project");
+                      setDailySelectedProjectId("");
+                      setDailyServiceAndLocation("");
+                      setDailyLocation("");
+                      setDailySelectedCrew([]);
+                      setDailyPhoto(null);
+                      setDailyPhotoName(null);
+                      setDailyDate(new Date().toISOString().split("T")[0]);
+                      setDailyInstallationDetails("");
+                      setDailyProcedureType("installation");
+                      setShowDailyModal(true);
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs cursor-pointer transition shadow flex items-center gap-1.5"
+                  >
+                    <span>➕</span>
+                    {lang === "ar" ? "تسجيل تركيب يومي جديد" : "Register Daily Installation"}
+                  </button>
+                  <button
+                    onClick={handlePrintDailyReport}
+                    className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-black text-xs cursor-pointer transition shadow flex items-center gap-1.5"
+                  >
+                    <span>🖨️</span>
+                    {lang === "ar" ? "طباعة تقرير الشهر" : "Print Monthly Report"}
+                  </button>
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:flex md:items-center md:gap-3 md:w-auto">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 mb-1">
+                      {lang === "ar" ? "تاريخ التركيب" : "Installation Date"}
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full md:w-36 p-2 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                      value={dailyFilterDate}
+                      onChange={(e) => setDailyFilterDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 mb-1">
+                      {lang === "ar" ? "بحث بالموقع / الخدمة" : "Search Site / Service"}
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full md:w-48 p-2 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                      value={dailyFilterLocation}
+                      onChange={(e) => setDailyFilterLocation(e.target.value)}
+                      placeholder="..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 mb-1">
+                      {lang === "ar" ? "فلترة بالشهر" : "Filter by Month"}
+                    </label>
+                    <select
+                      className="w-full md:w-36 p-2 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                      value={dailyFilterMonth}
+                      onChange={(e) => setDailyFilterMonth(e.target.value)}
+                    >
+                      <option value="all">📅 {lang === "ar" ? "كل الشهور" : "All Months"}</option>
+                      <option value="1">1 - January</option>
+                      <option value="2">2 - February</option>
+                      <option value="3">3 - March</option>
+                      <option value="4">4 - April</option>
+                      <option value="5">5 - May</option>
+                      <option value="6">6 - June</option>
+                      <option value="7">7 - July</option>
+                      <option value="8">8 - August</option>
+                      <option value="9">9 - September</option>
+                      <option value="10">10 - October</option>
+                      <option value="11">11 - November</option>
+                      <option value="12">12 - December</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid / List of Daily Siting Actions */}
+              <div className="grid grid-cols-1 gap-4">
+                {filteredDailyInstallations.map((item) => {
+                  const typeLabel = item.type === "project" 
+                    ? (lang === "ar" ? "لمشروع" : "Project")
+                    : item.type === "internal"
+                      ? (lang === "ar" ? "لخدمة داخلية" : "Internal Service")
+                      : (lang === "ar" ? "أخرى" : "Other");
+
+                  const crewCount = item.crew?.length || 0;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white p-5 rounded-2xl border border-slate-150 hover:border-slate-250 hover:shadow-sm transition flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-right"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
+                        {item.photoUrl ? (
+                          <div 
+                            onClick={() => setSelectedDailyPreview(item)}
+                            className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 cursor-zoom-in border border-slate-200 shrink-0 shadow-sm animate-in fade-in"
+                          >
+                            <img src={item.photoUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-slate-300 shrink-0 text-lg">
+                            📷
+                          </div>
+                        )}
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                              {item.id}
+                            </span>
+                            <span className="text-xs bg-emerald-50 text-emerald-700 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100">
+                              {typeLabel}
+                            </span>
+                            <span className="text-xs bg-[#0072BC]/5 text-[#0072BC] font-extrabold px-2.5 py-0.5 rounded-full border border-[#0072BC]/15">
+                              {item.procedureType === "maintenance"
+                                ? (lang === "ar" ? "🛠️ صيانة لوحة" : "🛠️ Maintenance")
+                                : item.procedureType === "removal"
+                                  ? (lang === "ar" ? "🗑️ فك / إزالة لوحة" : "🗑️ Removal")
+                                  : (lang === "ar" ? "🏗️ تركيب لوحة جديدة" : "🏗️ New Installation")}
+                            </span>
+                            <span className="text-xs font-black text-slate-400">
+                              📅 {item.date}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-extrabold text-slate-900">
+                            {item.type === "project" 
+                              ? `${item.projectName} (Quotation: ${item.quoteNumber || "N/A"})`
+                              : item.serviceAndLocation || "N/A"}
+                          </h4>
+
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
+                            {item.location && (
+                              <span className="flex items-center gap-1">
+                                📍 {item.location}
+                              </span>
+                            )}
+                            {crewCount > 0 && (
+                              <span className="flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                                👥 {lang === "ar" ? `فريق العمل: ${crewCount} فنيين` : `Crew: ${crewCount} technicians`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0">
+                        <button
+                          onClick={() => setSelectedDailyPreview(item)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition cursor-pointer"
+                        >
+                          👁️ {lang === "ar" ? "معاينة" : "Preview"}
+                        </button>
+                        <button
+                          onClick={() => handleEditDaily(item)}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold text-xs transition cursor-pointer"
+                        >
+                          ✏️ {lang === "ar" ? "تعديل" : "Edit"}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDaily(item)}
+                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition cursor-pointer"
+                          title={lang === "ar" ? "حذف" : "Delete"}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredDailyInstallations.length === 0 && (
+                  <div className="bg-white p-12 text-center text-slate-400 font-bold text-xs rounded-2xl border border-dashed border-slate-200">
+                    {lang === "ar" ? "لا توجد تركيبات يومية مسجلة تطابق خيارات البحث." : "No daily installations match the filter criteria."}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Search bar specifically for installation */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-[11px] font-black text-slate-400 mb-1">
                 {lang === "ar" ? "بحث باسم المشروع" : "Project Name"}
@@ -4209,6 +5087,810 @@ export default function ProductionHub({
                   : "Portal empty."}
               </div>
             )}
+          </div>
+          </>
+          )}
+        </div>
+      )}
+
+      {/* DAILY INSTALLATION FORM MODAL */}
+      {showDailyModal && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1500] flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-5 animate-in zoom-in-95 leading-relaxed text-right border">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-slate-150 pb-3">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  <span>📅</span>{" "}
+                  {dailyEditingItem 
+                    ? (lang === "ar" ? "تعديل سجل تركيب يومي" : "Edit Daily Installation Record") 
+                    : (lang === "ar" ? "تسجيل تركيب ميداني يومي" : "Register Daily Field Siting")}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  {lang === "ar" 
+                    ? "قم بتسجيل وتوثيق مخرجات التركيبات وتحديد فنيي التشغيل الميداني والصور المؤرشفة." 
+                    : "Log and document daily installation outcomes, assign field technicians, and attach photos."}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDailyModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full transition text-slate-400 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content Form */}
+            <div className="space-y-4 text-xs font-bold text-slate-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Installation Type */}
+                <div>
+                  <label className="block text-[11px] font-black text-slate-400 mb-1">
+                    {lang === "ar" ? "جهة عملية التركيب" : "Installation Destination"}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDailyType("project");
+                        setDailyServiceAndLocation("");
+                      }}
+                      className={`py-2 px-3 rounded-xl border text-center font-black transition ${
+                        dailyType === "project"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {lang === "ar" ? "لمشروع" : "Project"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDailyType("internal");
+                        setDailySelectedProjectId("");
+                      }}
+                      className={`py-2 px-3 rounded-xl border text-center font-black transition ${
+                        dailyType === "internal"
+                          ? "bg-blue-50 text-blue-700 border-blue-300"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {lang === "ar" ? "خدمة داخلية" : "Internal"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDailyType("other");
+                        setDailySelectedProjectId("");
+                      }}
+                      className={`py-2 px-3 rounded-xl border text-center font-black transition ${
+                        dailyType === "other"
+                          ? "bg-purple-50 text-purple-700 border-purple-300"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {lang === "ar" ? "أخرى" : "Other"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Installation Date */}
+                <div>
+                  <label className="block text-[11px] font-black text-slate-400 mb-1">
+                    {lang === "ar" ? "تاريخ عملية التركيب" : "Installation Date"}
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full p-2.5 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                    value={dailyDate}
+                    onChange={(e) => setDailyDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Required Field Action Type (NEW) */}
+              <div className="border-t border-slate-100 pt-3">
+                <label className="block text-[11px] font-black text-slate-400 mb-1.5">
+                  ⚙️ {lang === "ar" ? "نوع الإجراء الميداني المطلوب" : "Required Field Action Type"}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDailyProcedureType("installation")}
+                    className={`py-2.5 px-3 rounded-xl border text-center font-black transition flex items-center justify-center gap-1.5 ${
+                      dailyProcedureType === "installation"
+                        ? "bg-[#0072BC]/10 text-[#0072BC] border-[#0072BC]/40 shadow-sm"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🏗️</span>
+                    {lang === "ar" ? "تركيب لوحة جديدة" : "New Installation"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDailyProcedureType("maintenance")}
+                    className={`py-2.5 px-3 rounded-xl border text-center font-black transition flex items-center justify-center gap-1.5 ${
+                      dailyProcedureType === "maintenance"
+                        ? "bg-amber-50 text-amber-700 border-amber-300 shadow-sm"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🛠️</span>
+                    {lang === "ar" ? "صيانة لوحة" : "Signboard Maintenance"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDailyProcedureType("removal")}
+                    className={`py-2.5 px-3 rounded-xl border text-center font-black transition flex items-center justify-center gap-1.5 ${
+                      dailyProcedureType === "removal"
+                        ? "bg-rose-50 text-rose-700 border-rose-300 shadow-sm"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🗑️</span>
+                    {lang === "ar" ? "فك / إزالة لوحة" : "Signboard Removal"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic input fields based on Type selection */}
+              {dailyType === "project" ? (
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <label className="block text-[11px] font-black text-slate-400">
+                    {lang === "ar" ? "البحث عن المشروع وتحديده" : "Search & Assign Project"}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 p-2 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                      placeholder={lang === "ar" ? "اكتب اسم المشروع أو كود عرض السعر لتصفية القائمة..." : "Type project or quote key..."}
+                      value={dailySearchQuery}
+                      onChange={(e) => setDailySearchQuery(e.target.value)}
+                    />
+                    {dailySearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setDailySearchQuery("")}
+                        className="px-2.5 text-slate-400 hover:text-slate-600 font-bold"
+                      >
+                        {lang === "ar" ? "تفريغ" : "Clear"}
+                      </button>
+                    )}
+                  </div>
+                  <select
+                    className="w-full p-2.5 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                    value={dailySelectedProjectId}
+                    onChange={(e) => setDailySelectedProjectId(e.target.value)}
+                  >
+                    <option value="">
+                      -- {lang === "ar" ? "اختر المشروع من القائمة" : "Select Project"} --
+                    </option>
+                    {candidateProjects
+                      .filter(p => {
+                        const q = dailySearchQuery.toLowerCase();
+                        return p.projectName?.toLowerCase().includes(q) || p.quotationNumber?.toLowerCase().includes(q);
+                      })
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.projectName} ({p.quotationNumber})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1 border-t border-slate-100 pt-3">
+                  <label className="block text-[11px] font-black text-slate-400 mb-1">
+                    {lang === "ar" ? "تفاصيل الخدمة أو سبب التركيب الميداني" : "Service / Reason Description"}
+                  </label>
+                  <textarea
+                    rows={2}
+                    className="w-full p-2.5 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                    placeholder={lang === "ar" ? "اكتب تفاصيل الخدمة والوجهة الفنية هنا..." : "Describe the details of the service..."}
+                    value={dailyServiceAndLocation}
+                    onChange={(e) => setDailyServiceAndLocation(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Physical Location */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 mb-1">
+                  📍 {lang === "ar" ? "وصف موقع التركيب الفعلي أو إحداثيات GPS" : "Siting Physical Location or GPS coordinates"}
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                  placeholder={lang === "ar" ? "مثال: الرياض - طريق الملك فهد، أو رابط خرائط Google" : "e.g. Google Maps URL or street address"}
+                  value={dailyLocation}
+                  onChange={(e) => setDailyLocation(e.target.value)}
+                />
+              </div>
+
+              {/* Technical Siting Details (NEW) */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 mb-1">
+                  📝 {lang === "ar" ? "تفاصيل التركيب والأعمال المنفذة" : "Technical Installation Details"}
+                </label>
+                <textarea
+                  rows={2}
+                  className="w-full p-2.5 text-xs border rounded-xl font-bold bg-slate-50 outline-none"
+                  placeholder={lang === "ar" ? "اكتب تفاصيل التركيب الفنية، المقاسات، نوع المواد، أو أي ملاحظات فنية..." : "Enter structural details, size, material types, or technical remarks..."}
+                  value={dailyInstallationDetails}
+                  onChange={(e) => setDailyInstallationDetails(e.target.value)}
+                />
+              </div>
+
+              {/* Crew selection checklist */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black text-slate-400 mb-1">
+                  👥 {lang === "ar" ? "الفنيين المشاركين في قوافل التركيب والتشغيل" : "Assigned Installation Technicians"}
+                </label>
+                <div className="border rounded-2xl p-3 bg-slate-50 max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {employees
+                    .filter(e => e.department === "production" || e.department === "installation" || e.jobTitle?.toLowerCase().includes("tech") || e.jobTitle?.toLowerCase().includes("install") || e.id)
+                    .map((emp) => {
+                      const isChecked = dailySelectedCrew.includes(emp.id);
+                      const name = emp.arabicName || emp.englishName || emp.id;
+                      return (
+                        <label
+                          key={emp.id}
+                          className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer select-none border border-transparent hover:border-slate-200 transition"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setDailySelectedCrew(dailySelectedCrew.filter(id => id !== emp.id));
+                              } else {
+                                setDailySelectedCrew([...dailySelectedCrew, emp.id]);
+                              }
+                            }}
+                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                          />
+                          <span className="text-[11px] font-bold text-slate-800 truncate">
+                            {name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Drag & Drop Photo Upload */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black text-slate-400 mb-1">
+                  📷 {lang === "ar" ? "إرفاق صورة موثقة للتركيب والتشغيل الميداني" : "Attach Installation Verification Photo"}
+                </label>
+                <div 
+                  className="border-2 border-dashed border-slate-200 hover:border-emerald-500 transition rounded-2xl p-4 text-center cursor-pointer relative bg-slate-50"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      if (file.size > 800 * 1024) {
+                        alert(lang === "ar" ? "حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 800 كيلوبايت." : "Image size is too large, please select an image under 800KB.");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setDailyPhoto(reader.result as string);
+                        setDailyPhotoName(file.name);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                  />
+                  {dailyPhoto ? (
+                    <div className="space-y-2 flex flex-col items-center">
+                      <img src={dailyPhoto} alt="Verification" className="w-24 h-24 object-cover rounded-xl border shadow-sm mx-auto" />
+                      <p className="text-[10px] text-emerald-600 font-extrabold">
+                        ✓ {dailyPhotoName || (lang === "ar" ? "تم تحميل الصورة" : "Photo loaded")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setDailyPhoto(null);
+                          setDailyPhotoName(null);
+                        }}
+                        className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-black hover:bg-rose-100 cursor-pointer z-20"
+                      >
+                        {lang === "ar" ? "إزالة الصورة" : "Remove Photo"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="text-2xl block">📤</span>
+                      <p className="text-[11px] text-slate-500 font-extrabold">
+                        {lang === "ar" 
+                          ? "اسحب الصورة هنا أو اضغط للتصفح والتحميل" 
+                          : "Drag & drop image here or click to browse"}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-bold">
+                        {lang === "ar" ? "يدعم صيغ الصور (أقصى حجم: 800KB)" : "Supports image formats (Max size: 800KB)"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex justify-end gap-2 border-t border-slate-150 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowDailyModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition cursor-pointer"
+              >
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                disabled={isSavingDaily}
+                onClick={handleSaveDaily}
+                className={`px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer shadow-md flex items-center gap-1.5 ${
+                  isSavingDaily 
+                    ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
+                    : "bg-[#059669] hover:bg-emerald-700 text-white"
+                }`}
+              >
+                {isSavingDaily ? (
+                  <>
+                    <span className="animate-spin">🔄</span>
+                    {lang === "ar" ? "جاري الحفظ والتوثيق..." : "Saving..."}
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    {lang === "ar" ? "حفظ وتوثيق" : "Save Record"}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DAILY INSTALLATION PREVIEW LIGHTBOX MODAL */}
+      {selectedDailyPreview && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1500] flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-5 animate-in zoom-in-95 text-right border relative">
+            
+            {/* Print & Close upper buttons */}
+            <div className="absolute top-4 left-4 flex gap-1.5 z-20">
+              <button
+                onClick={() => {
+                  const printWindow = window.open("", "_blank");
+                  if (!printWindow) return;
+                  
+                  const crewNames = selectedDailyPreview.crew?.map((empId: string) => {
+                    const emp = employees.find(e => e.id === empId);
+                    return emp ? (emp.arabicName || emp.englishName) : empId;
+                  }).join(", ") || "N/A";
+
+                  const detailsText = selectedDailyPreview.type === "project"
+                    ? `${selectedDailyPreview.projectName} (Quotation: ${selectedDailyPreview.quoteNumber || "N/A"})`
+                    : selectedDailyPreview.serviceAndLocation || "N/A";
+
+                  const typeText = selectedDailyPreview.type === "project" 
+                    ? (lang === "ar" ? "لمشروع" : "Project")
+                    : selectedDailyPreview.type === "internal"
+                      ? (lang === "ar" ? "لخدمة داخلية" : "Internal Service")
+                      : (lang === "ar" ? "أخرى" : "Other");
+
+                  const procedureTypeLabel = selectedDailyPreview.procedureType === "maintenance"
+                    ? (lang === "ar" ? "🛠️ صيانة لوحة إعلانية" : "🛠️ Signboard Maintenance")
+                    : selectedDailyPreview.procedureType === "removal"
+                      ? (lang === "ar" ? "🗑️ فك وإزالة لوحة" : "🗑️ Signboard Removal")
+                      : (lang === "ar" ? "🏗️ تركيب لوحة جديدة" : "🏗️ New Signboard Installation");
+
+                  const installationDetailsText = selectedDailyPreview.installationDetails || (lang === "ar" ? "لا توجد تفاصيل فنية إضافية مسجلة." : "No additional technical details logged.");
+
+                  const htmlContent = `
+                    <html>
+                      <head>
+                        <title>${lang === "ar" ? "سند إنجاز تركيب ميداني - شركة الوليد" : "Field Siting Report - Al-Waleed"}</title>
+                        <style>
+                          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+                          body {
+                            font-family: 'Cairo', sans-serif;
+                            direction: rtl;
+                            padding: 0;
+                            margin: 0;
+                            background-color: #ffffff;
+                            color: #1e293b;
+                            -webkit-print-color-adjust: exact;
+                          }
+                          .page {
+                            width: 210mm;
+                            min-height: 297mm;
+                            padding: 20mm 15mm;
+                            margin: auto;
+                            box-sizing: border-box;
+                            position: relative;
+                            display: flex;
+                            flex-direction: column;
+                          }
+                          .header-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 25px;
+                          }
+                          .header-logo {
+                            text-align: right;
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: #0072BC;
+                            line-height: 1.3;
+                          }
+                          .header-logo span {
+                            font-size: 11px;
+                            color: #64748b;
+                            font-weight: normal;
+                            display: block;
+                            margin-top: 4px;
+                          }
+                          .header-title {
+                            text-align: center;
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #1e293b;
+                            background: #f1f5f9;
+                            padding: 8px 15px;
+                            border-radius: 6px;
+                            border: 1px solid #cbd5e1;
+                          }
+                          .header-meta {
+                            text-align: left;
+                            font-size: 11px;
+                            color: #475569;
+                            line-height: 1.6;
+                          }
+                          .divider {
+                            height: 4px;
+                            background: linear-gradient(to left, #0072BC, #38bdf8);
+                            margin-bottom: 20px;
+                            border-radius: 2px;
+                          }
+                          .section-title {
+                            font-size: 13px;
+                            font-weight: bold;
+                            color: #0072BC;
+                            border-bottom: 2px solid #e2e8f0;
+                            padding-bottom: 5px;
+                            margin-bottom: 12px;
+                            margin-top: 15px;
+                          }
+                          .grid {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 15px;
+                            margin-bottom: 15px;
+                          }
+                          .card {
+                            background-color: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 8px;
+                            padding: 12px;
+                          }
+                          .field {
+                            margin: 6px 0;
+                            font-size: 12px;
+                          }
+                          .label {
+                            font-weight: bold;
+                            color: #475569;
+                            display: inline-block;
+                            min-width: 110px;
+                          }
+                          .value {
+                            color: #0f172a;
+                          }
+                          .details-box {
+                            background-color: #f8fafc;
+                            border-right: 4px solid #0072BC;
+                            border-top: 1px solid #e2e8f0;
+                            border-bottom: 1px solid #e2e8f0;
+                            border-left: 1px solid #e2e8f0;
+                            border-radius: 0 8px 8px 0;
+                            padding: 12px;
+                            font-size: 12px;
+                            line-height: 1.6;
+                            margin-bottom: 20px;
+                          }
+                          .image-box {
+                            text-align: center;
+                            margin: 20px 0;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 12px;
+                            padding: 10px;
+                            background-color: #fafafa;
+                          }
+                          .image-box img {
+                            max-width: 100%;
+                            max-height: 250px;
+                            border-radius: 8px;
+                            object-fit: contain;
+                          }
+                          .signatures {
+                            margin-top: auto;
+                            padding-top: 30px;
+                            display: grid;
+                            grid-template-columns: 1fr 1fr 1fr;
+                            gap: 15px;
+                            text-align: center;
+                          }
+                          .signature-col {
+                            border-top: 1px dashed #cbd5e1;
+                            padding-top: 10px;
+                            font-size: 11px;
+                            font-weight: bold;
+                            color: #475569;
+                          }
+                          .footer {
+                            border-top: 1px solid #e2e8f0;
+                            padding-top: 8px;
+                            margin-top: 25px;
+                            font-size: 9px;
+                            color: #94a3b8;
+                            display: flex;
+                            justify-content: space-between;
+                          }
+                          @media print {
+                            body { margin: 0; padding: 0; }
+                            .page { margin: 0; border: none; box-shadow: none; width: auto; height: auto; min-height: 100%; }
+                            @page { size: A4 portrait; margin: 15mm 10mm; }
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="page">
+                          <table class="header-table">
+                            <tr>
+                              <td class="header-logo" style="width: 35%;">
+                                شركة الوليد للدعاية والإعلان
+                                <span>قسم التركيبات والتشغيل الميداني</span>
+                              </td>
+                              <td style="width: 30%;">
+                                <div class="header-title">سند إنجاز تركيب ميداني</div>
+                              </td>
+                              <td class="header-meta" style="width: 35%; text-align: left;">
+                                <div><b>رقم السند:</b> ${selectedDailyPreview.id}</div>
+                                <div><b>تاريخ الإجراء:</b> ${selectedDailyPreview.date}</div>
+                                <div><b>المستند بواسطة:</b> ${selectedDailyPreview.createdBy}</div>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <div class="divider"></div>
+                          
+                          <div class="section-title">بيانات الإجراء الميداني المعتمد</div>
+                          <div class="grid">
+                            <div class="card">
+                              <div class="field"><span class="label">جهة العملية:</span> <span class="value">${typeText}</span></div>
+                              <div class="field"><span class="label">المشروع / العقد:</span> <span class="value">${detailsText}</span></div>
+                            </div>
+                            <div class="card">
+                              <div class="field"><span class="label">نوع الإجراء:</span> <span class="value" style="font-weight: bold; color: #0072BC;">${procedureTypeLabel}</span></div>
+                              <div class="field"><span class="label">الموقع والوجهة:</span> <span class="value">${selectedDailyPreview.location || "N/A"}</span></div>
+                            </div>
+                          </div>
+
+                          <div class="section-title">فريق العمل الفني الميداني</div>
+                          <div class="card" style="margin-bottom: 15px;">
+                            <div class="field" style="margin: 0;"><span class="label" style="min-width: 80px;">الفنيين المنفذين:</span> <span class="value" style="font-weight: bold; color: #334155;">${crewNames}</span></div>
+                          </div>
+
+                          <div class="section-title">تفاصيل التركيب والأعمال الفنية المنفذة</div>
+                          <div class="details-box">
+                            ${installationDetailsText.replace(/\n/g, "<br/>")}
+                          </div>
+
+                          ${selectedDailyPreview.photoUrl ? `
+                            <div class="section-title">توثيق الإثبات والتشغيل الميداني</div>
+                            <div class="image-box">
+                              <img src="${selectedDailyPreview.photoUrl}" />
+                            </div>
+                          ` : ""}
+
+                          <div class="signatures">
+                            <div class="signature-col">
+                              الفني المسؤول / المنفذ<br/><br/><br/>...................................
+                            </div>
+                            <div class="signature-col">
+                              قسم مراقبة الجودة والتشغيل<br/><br/><br/>...................................
+                            </div>
+                            <div class="signature-col">
+                              اعتماد مدير العمليات<br/><br/><br/>...................................
+                            </div>
+                          </div>
+
+                          <div class="footer">
+                            <div>شركة الوليد للدعاية والإعلان والتركيبات الميدانية | الرياض، المملكة العربية السعودية</div>
+                            <div>الرقم الضريبي: 300055555500003</div>
+                          </div>
+                        </div>
+                        <script>window.onload = function() { window.print(); }</script>
+                      </body>
+                    </html>
+                  `;
+                  printWindow.document.write(htmlContent);
+                  printWindow.document.close();
+                }}
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition text-slate-600 cursor-pointer"
+                title={lang === "ar" ? "طباعة السند" : "Print Docket"}
+              >
+                <span>🖨️</span>
+              </button>
+              <button
+                onClick={() => setSelectedDailyPreview(null)}
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition text-slate-400 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Header Title */}
+            <div className="border-b border-slate-150 pb-3 pr-10">
+              <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded border">
+                ID: {selectedDailyPreview.id}
+              </span>
+              <h3 className="text-md font-black text-slate-900 mt-2 flex items-center gap-1.5">
+                <span>🔍</span>{" "}
+                {lang === "ar" ? "لوحة معاينة التركيب الميداني" : "Field Installation Audit Board"}
+              </h3>
+            </div>
+
+            {/* Visual breakdown bento blocks */}
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 block font-bold mb-0.5">
+                    {lang === "ar" ? "تاريخ التركيب:" : "Siting Date:"}
+                  </span>
+                  <span className="font-black text-slate-800 text-sm">
+                    📅 {selectedDailyPreview.date}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 block font-bold mb-0.5">
+                    {lang === "ar" ? "نوع العملية:" : "Operation Type:"}
+                  </span>
+                  <span className="font-black text-slate-800 text-sm">
+                    ⚡ {selectedDailyPreview.type === "project" 
+                      ? (lang === "ar" ? "تركيب لمشروع" : "Project installation")
+                      : selectedDailyPreview.type === "internal"
+                        ? (lang === "ar" ? "خدمة داخلية" : "Internal Service")
+                        : (lang === "ar" ? "أخرى" : "Other")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Project / Service description banner */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-150 space-y-1">
+                <span className="text-slate-400 block font-bold">
+                  {lang === "ar" ? "تفاصيل الوجهة أو المشروع الميداني:" : "Field Project/Destination details:"}
+                </span>
+                <span className="font-black text-slate-800 text-sm block">
+                  {selectedDailyPreview.type === "project"
+                    ? `${selectedDailyPreview.projectName} (Quotation: ${selectedDailyPreview.quoteNumber || "N/A"})`
+                    : selectedDailyPreview.serviceAndLocation}
+                </span>
+              </div>
+
+              {/* Required Field Action Type (NEW) */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-slate-400 block font-bold mb-0.5">
+                  ⚙️ {lang === "ar" ? "نوع الإجراء الميداني المعتمد:" : "Approved Field Procedure:"}
+                </span>
+                <span className="font-black text-[#0072BC] text-sm">
+                  {selectedDailyPreview.procedureType === "maintenance"
+                    ? (lang === "ar" ? "🛠️ صيانة لوحة إعلانية" : "🛠️ Signboard Maintenance")
+                    : selectedDailyPreview.procedureType === "removal"
+                      ? (lang === "ar" ? "🗑️ فك وإزالة لوحة" : "🗑️ Signboard Removal")
+                      : (lang === "ar" ? "🏗️ تركيب لوحة جديدة" : "🏗️ New Signboard Installation")}
+                </span>
+              </div>
+
+              {/* Technical installation details (NEW) */}
+              {selectedDailyPreview.installationDetails && (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-150 space-y-1">
+                  <span className="text-slate-400 block font-bold">
+                    📝 {lang === "ar" ? "تفاصيل التركيب والأعمال المنفذة:" : "Technical installation details & notes:"}
+                  </span>
+                  <span className="font-medium text-slate-800 text-xs block whitespace-pre-line leading-relaxed">
+                    {selectedDailyPreview.installationDetails}
+                  </span>
+                </div>
+              )}
+
+              {/* GPS Location Site */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+                <div>
+                  <span className="text-slate-400 block font-bold mb-0.5">
+                    📍 {lang === "ar" ? "الموقع الجغرافي / الوصف المكتوب:" : "Siting Location Description:"}
+                  </span>
+                  <span className="font-black text-slate-800 text-sm">
+                    {selectedDailyPreview.location || (lang === "ar" ? "غير محدد" : "N/A")}
+                  </span>
+                </div>
+                {selectedDailyPreview.location && selectedDailyPreview.location.startsWith("http") && (
+                  <a
+                    href={selectedDailyPreview.location}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-black text-[10px] shadow"
+                  >
+                    🗺️ {lang === "ar" ? "الخرائط" : "Maps"}
+                  </a>
+                )}
+              </div>
+
+              {/* Technicians Involved */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-slate-400 block font-bold mb-1">
+                  👥 {lang === "ar" ? "أعضاء الفريق الفني المكلفين بالتشغيل:" : "Assigned Field Technicians:"}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {selectedDailyPreview.crew && selectedDailyPreview.crew.length > 0 ? (
+                    selectedDailyPreview.crew.map((empId: string) => {
+                      const emp = employees.find(e => e.id === empId);
+                      const name = emp ? (emp.arabicName || emp.englishName) : empId;
+                      return (
+                        <span key={empId} className="bg-white border border-slate-200 px-2 py-1 rounded-md text-[10px] font-black text-slate-700 shadow-sm">
+                          👤 {name}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-slate-400 italic font-bold">
+                      {lang === "ar" ? "لم يتم تحديد فنيين" : "No crew members selected"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Proof Image */}
+              {selectedDailyPreview.photoUrl && (
+                <div className="space-y-1.5">
+                  <span className="text-slate-400 block font-bold">
+                    📷 {lang === "ar" ? "صورة الإثبات والتوثيق الميداني:" : "Field Siting Proof Photo:"}
+                  </span>
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 max-h-56 flex items-center justify-center">
+                    <img
+                      src={selectedDailyPreview.photoUrl}
+                      alt="Installation Proof"
+                      className="w-full h-full object-contain max-h-56"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Audit trail details */}
+              <div className="text-[10px] text-slate-400 flex justify-between items-center pt-2 border-t font-bold">
+                <span>👤 {lang === "ar" ? "سُجِّل بواسطة:" : "Logged by:"} {selectedDailyPreview.createdBy}</span>
+                <span>⏱ {new Date(selectedDailyPreview.createdAt).toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 border-t border-slate-150 pt-3">
+              <button
+                onClick={() => setSelectedDailyPreview(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs transition cursor-pointer shadow-md"
+              >
+                {lang === "ar" ? "إغلاق المعاينة" : "Close Portal"}
+              </button>
+            </div>
           </div>
         </div>
       )}

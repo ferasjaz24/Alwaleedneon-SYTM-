@@ -138,17 +138,16 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
 
   const generateRevId = () => {
     const d = new Date();
-    const yy = String(d.getFullYear()).slice(-2);
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const prefix = `RV-${yy}${mm}-`;
-    const thisMonth = revenues.filter(r => r.id?.startsWith(prefix));
+    const year = d.getFullYear();
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthAbbr = monthNames[d.getMonth()];
+    const prefix = `RV${year}${monthAbbr}`;
+    const matched = revenues.filter(r => r.id?.startsWith(prefix));
     let max = 0;
-    for (const r of thisMonth) {
-      const parts = r.id.split('-');
-      if (parts.length >= 3) {
-        const num = parseInt(parts[2]);
-        if (!isNaN(num) && num > max) max = num;
-      }
+    for (const r of matched) {
+      const suffix = r.id.slice(prefix.length);
+      const num = parseInt(suffix, 10);
+      if (!isNaN(num) && num > max) max = num;
     }
     return `${prefix}${String(max + 1).padStart(4, '0')}`;
   };
@@ -1147,17 +1146,16 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
 
   const generateExpId = () => {
     const d = new Date();
-    const yy = String(d.getFullYear()).slice(-2);
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const prefix = `EX-${yy}${mm}-`;
-    const thisMonth = expenses.filter(r => r.id?.startsWith(prefix));
+    const year = d.getFullYear();
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthAbbr = monthNames[d.getMonth()];
+    const prefix = `EX${year}${monthAbbr}`;
+    const matched = expenses.filter(r => r.id?.startsWith(prefix));
     let max = 0;
-    for (const r of thisMonth) {
-      const parts = r.id.split('-');
-      if (parts.length >= 3) {
-        const num = parseInt(parts[2]);
-        if (!isNaN(num) && num > max) max = num;
-      }
+    for (const r of matched) {
+      const suffix = r.id.slice(prefix.length);
+      const num = parseInt(suffix, 10);
+      if (!isNaN(num) && num > max) max = num;
     }
     return `${prefix}${String(max + 1).padStart(4, '0')}`;
   };

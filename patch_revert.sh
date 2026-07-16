@@ -1,0 +1,1 @@
+sed -i 's/const handleSubmitForReview/const handleRevertToDraft = () => {\n    transitionStatus(\n      "Draft",\n      "إرجاع إلى مسودة",\n      `تم إرجاع مسير الرواتب رقم ${selectedRun?.payrollNumber} إلى حالة المسودة بواسطة ${user?.username}.`\n    );\n  };\n\n  const handleSubmitForReview/g' src/components/finance/MonthlyPayrollRuns.tsx

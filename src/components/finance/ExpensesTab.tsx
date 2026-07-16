@@ -49,6 +49,9 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
   const [searchNo, setSearchNo] = useState("");
   const [searchSupplier, setSearchSupplier] = useState("");
   const [filterPayment, setFilterPayment] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>("2026-07");
+  const [showReportPrintModal, setShowReportPrintModal] = useState<boolean>(false);
+  const [showExpensesPrintMenu, setShowExpensesPrintMenu] = useState<boolean>(false);
 
   // Selected Expense for payment modal
   const [selectedExpenseForPayment, setSelectedExpenseForPayment] = useState<ExpenseRecord | null>(null);
@@ -96,6 +99,288 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
     }, 4000);
   };
 
+  const handlePrintExpenses = (autoPrint: boolean) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert(lang === "ar" ? "يرجى السماح بالنوافذ المنبثقة لطباعة التقرير." : "Please allow popups to print the report.");
+      return;
+    }
+
+    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0);
+    const totalPaid = filteredExpenses.filter(e => e.paymentStatus === "Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0);
+    const totalUnpaid = filteredExpenses.filter(e => e.paymentStatus === "Pending Payment").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0);
+    const totalVat = filteredExpenses.reduce((sum, e) => sum + (Number(e.vatAmount) || 0), 0);
+
+    const filterValueText = lang === "ar"
+      ? `حالة الدفع: ${filterPayment === "all" ? "الكل" : filterPayment === "Paid" ? "مسدد" : "معلق"}`
+      : `Payment Status: ${filterPayment}`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="${lang === "ar" ? "ar" : "en"}" dir="${lang === "ar" ? "rtl" : "ltr"}">
+      <head>
+        <meta charset="utf-8">
+        <title>${lang === "ar" ? "تقرير المصروفات والمستحقات" : "Expenses & Liabilities Report"}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
+          
+          body {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+            direction: rtl;
+            text-align: right;
+            padding: 20px;
+            color: #000 !important;
+            font-size: 13px;
+            background-color: #f1f5f9;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .invoice-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1.5px solid #000;
+            padding: 30px;
+            border-radius: 8px;
+            position: relative;
+            box-sizing: border-box;
+            background-color: white;
+          }
+
+          .header-line {
+            border-top: 2px solid #0072BC;
+            border-bottom: 1px solid #000;
+            height: 1px;
+            margin: 15px 0;
+          }
+
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 25px;
+          }
+
+          .items-table th {
+            background-color: #0072BC !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            padding: 8px;
+            font-size: 11px;
+            border: 1.5px solid #000 !important;
+            text-align: center;
+          }
+
+          .items-table td {
+            padding: 6px 8px;
+            border: 1.5px solid #000 !important;
+            font-size: 11px;
+            color: #000 !important;
+            font-weight: 600;
+            text-align: center;
+            vertical-align: middle;
+          }
+
+          .items-table tr:nth-child(even) {
+            background-color: #fcfcfc !important;
+          }
+
+          /* Floating action print button */
+          .print-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 99999;
+            background-color: #0072BC;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 114, 188, 0.3);
+            font-family: 'Tajawal', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+          }
+
+          .print-button:hover {
+            background-color: #005185;
+            transform: translateY(-1px);
+          }
+
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            body {
+              padding: 0;
+              background-color: white !important;
+            }
+            .invoice-container {
+              border: none;
+              padding: 0;
+              width: 100%;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 12mm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <button class="print-button no-print" onclick="window.print()">🖨️ ${lang === "ar" ? "طباعة التقرير" : "Print Report"}</button>
+        
+        <div class="invoice-container">
+          <!-- Standard Header layout -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 12px; margin-bottom: 20px; user-select: none; direction: ltr;">
+            <!-- معلومات الشركة -->
+            <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
+              <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'Tajawal', sans-serif;" dir="rtl">
+                شركة فنون الوليد للصناعة
+              </h2>
+              <h3 style="font-size: 10px; font-weight: bold; color: #555; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
+                FONOUN ALWALEED INDUSTRIAL CO.
+              </h3>
+            </div>
+            
+            <!-- الحالة في منتصف رأس الصفحة -->
+            <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
+              <span style="font-size: 12px; font-weight: 800; padding: 4px 12px; border: 2px solid #0072BC; color: #0072BC; border-radius: 6px; font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; white-space: nowrap;">
+                ${lang === "ar" ? "تقرير المصروفات" : "Expenses Report"}
+              </span>
+            </div>
+
+            <!-- الشعار -->
+            <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
+              <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
+            </div>
+          </div>
+
+          <!-- Report Filter Criteria -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1.5px solid #000; text-align: center; font-size: 11px; direction: rtl;">
+            <tr style="background: #f1f5f9; font-weight: bold; color: #000;">
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "تاريخ الاستخراج" : "Date Generated"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "الفترة المحددة" : "Selected Period"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "معايير التصفية والفلترة" : "Filter Criteria"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "المستخرج بواسطة" : "Generated By"}</td>
+            </tr>
+            <tr style="color: #000; font-weight: bold;">
+              <td style="padding: 8px; border: 1.5px solid #000;">${new Date().toLocaleDateString("en-US")}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${selectedMonth === "all" ? (lang === "ar" ? "جميع الفترات" : "All Periods") : selectedMonth}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${filterValueText}</td>
+              <td style="padding: 8px; border: 1.5px solid #000;">${user?.username || "Financial Accountant"}</td>
+            </tr>
+          </table>
+
+          <!-- Total Summary Box -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; border: 1.5px solid #000; text-align: center; font-size: 11px; direction: rtl;">
+            <tr style="background: #f1f5f9; font-weight: bold; color: #000;">
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "إجمالي المصروفات" : "Total Expenses"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "المدفوع والمسدد" : "Total Paid"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "الالتزامات المعلقة" : "Total Unpaid"}</td>
+              <td style="padding: 8px; border: 1.5px solid #000; width: 25%;">${lang === "ar" ? "قيمة الضريبة VAT" : "Total VAT"}</td>
+            </tr>
+            <tr style="color: #000; font-weight: bold; font-size: 13px;">
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800;">${totalExpenses.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800; color: #059669;">${totalPaid.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800; color: #dc2626;">${totalUnpaid.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+              <td style="padding: 8px; border: 1.5px solid #000; font-weight: 800;">${totalVat.toLocaleString("en-US", { minimumFractionDigits: 2 })} SAR</td>
+            </tr>
+          </table>
+
+          <!-- Detail Table -->
+          <table class="items-table" style="direction: rtl;">
+            <thead>
+              <tr>
+                <th style="width: 100px;">${lang === "ar" ? "رقم المصروف" : "Expense No"}</th>
+                <th>${lang === "ar" ? "طبيعة المعاملة والمستفيد" : "Nature & Party"}</th>
+                <th style="width: 120px;">${lang === "ar" ? "رقم السند/الفاتورة" : "Voucher/Invoice No"}</th>
+                <th style="width: 90px;">${lang === "ar" ? "تاريخ الاستحقاق" : "Date"}</th>
+                <th style="width: 100px;">${lang === "ar" ? "قبل الضريبة" : "Subtotal"}</th>
+                <th style="width: 80px;">${lang === "ar" ? "الضريبة" : "VAT"}</th>
+                <th style="width: 100px;">${lang === "ar" ? "الإجمالي" : "Total Amount"}</th>
+                <th style="width: 85px;">${lang === "ar" ? "حالة السداد" : "Status"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredExpenses.map((exp) => `
+                <tr>
+                  <td style="font-weight: bold; font-family: monospace;">${exp.expenseNo}</td>
+                  <td style="text-align: right; padding-right: 12px; font-weight: bold;">${exp.supplierName}</td>
+                  <td style="font-family: monospace;">${exp.invoiceNo}</td>
+                  <td style="font-family: monospace;">${exp.expenseDate}</td>
+                  <td style="font-family: monospace; text-align: left; padding-left: 10px;">${(Number(exp.subtotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td style="font-family: monospace; text-align: left; padding-left: 10px;">${(Number(exp.vatAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td style="font-family: monospace; text-align: left; padding-left: 10px; font-weight: bold; color: #dc2626;">${(Number(exp.totalAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td>
+                    <span style="font-weight: bold; color: ${
+                      exp.paymentStatus === 'Paid' ? '#059669' : '#dc2626'
+                    };">
+                      ${exp.paymentStatus === 'Paid' ? (lang === 'ar' ? 'مسدد' : 'Paid') : (lang === 'ar' ? 'معلق' : 'Unpaid')}
+                    </span>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+          <!-- Signatures Section -->
+          <div style="margin-top: 35px; display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #000; padding-top: 15px; direction: rtl;">
+            <div style="text-align: right; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">توقيع واعتماد قسم الحسابات والتدقيق المالي</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للصناعة</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+            <div style="text-align: center; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">اعتماد المدير المالي والتدقيق</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">مراجعة الصلاحيات الحسابية</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+            <div style="text-align: left; width: 30%;">
+              <div style="font-size: 11px; font-weight: bold; color: #000;">المجلس التنفيذي والختم الرسمي</div>
+              <div style="font-size: 10px; color: #555; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للخدمات الصناعية</div>
+              <div style="width: 150px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
+            </div>
+          </div>
+
+          <!-- Standard Corporate Footer -->
+          <div style="margin-top: 45px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'Tajawal', sans-serif;">
+            <div style="text-align: left; line-height: 1.6;">
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
+            </div>
+            <div style="text-align: right; line-height: 1.6;">
+              <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
+              <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
+            </div>
+          </div>
+
+        </div>
+
+        ${autoPrint ? `
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            }
+          </script>
+        ` : ""}
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -104,10 +389,9 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
       const expList = expSnap.docs
         .map((d) => ({ id: d.id, ...d.data() } as ExpenseRecord))
         .sort((a, b) => {
-          const dateA = a.expenseDate || "";
-          const dateB = b.expenseDate || "";
-          if (dateA !== dateB) return dateB.localeCompare(dateA);
-          return (b.expenseNo || "").localeCompare(a.expenseNo || "");
+          const timeA = new Date(a.createdAt || a.expenseDate || 0).getTime();
+          const timeB = new Date(b.createdAt || b.expenseDate || 0).getTime();
+          return timeB - timeA;
         });
       setExpenses(expList);
 
@@ -281,12 +565,16 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
     });
   };
 
-  // Filter lists
+  // Filter lists with smart month selection
   const filteredExpenses = expenses.filter((exp) => {
     const matchNo = (exp.expenseNo || "").toLowerCase().includes((searchNo || "").toLowerCase()) || (exp.invoiceNo || "").toLowerCase().includes((searchNo || "").toLowerCase());
     const matchSup = (exp.supplierName || "").toLowerCase().includes((searchSupplier || "").toLowerCase());
     const matchPay = filterPayment === "all" ? true : exp.paymentStatus === filterPayment;
-    return matchNo && matchSup && matchPay;
+    
+    // Support matching both YYYY-MM dates and specific custom formats
+    const matchMonth = selectedMonth === "all" || !selectedMonth || (exp.expenseDate && exp.expenseDate.startsWith(selectedMonth));
+    
+    return matchNo && matchSup && matchPay && matchMonth;
   });
 
   return (
@@ -329,29 +617,83 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
       )}
 
       {/* Header Info */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 no-print">
         <div>
           <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-            💰 {lang === "ar" ? "المصروفات والمستحقات للموردين" : "Expenses & Supplier Liabilities"}
+            💰 {lang === "ar" ? "المصروفات والمستحقات والذمم الدائنة" : "Expenses & Liabilities"}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
             {lang === "ar"
-              ? "متابعة مستحقات الموردين وتأكيد سداد المصروفات وتوليد القيود المحاسبية للخصم من البنك أو الصندوق."
-              : "Track supplier liabilities, release expenses payments and generate bank journal entries."}
+              ? "متابعة وتقارير المصروفات والمدفوعات والذمم الدائنة المعتمدة تلقائياً من قيود اليومية أو المسجلة يدوياً."
+              : "Track and report expenses, liabilities, and payments approved automatically from general journal entries."}
           </p>
+        </div>
+
+        {/* Date Selector & Print Report Button */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/60 p-1.5 rounded-2xl">
+            <span className="text-[11px] font-black text-slate-500 mr-1.5 flex items-center gap-1">
+              📅 {lang === "ar" ? "الشهر المالي:" : "Month:"}
+            </span>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="px-3 py-1 text-xs font-bold border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0072BC] bg-white text-slate-700"
+            />
+            {selectedMonth !== "all" && (
+              <button
+                onClick={() => setSelectedMonth("all")}
+                className="px-2.5 py-1 text-[10px] font-black text-slate-500 hover:text-white bg-slate-200 hover:bg-[#0072BC] rounded-lg transition-all"
+              >
+                {lang === "ar" ? "الكل" : "All"}
+              </button>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowExpensesPrintMenu(!showExpensesPrintMenu)}
+              className="px-4 py-2 text-xs font-black text-white bg-[#0072BC] hover:bg-[#005185] rounded-xl shadow-md hover:shadow-lg transition-all duration-150 flex items-center gap-2"
+            >
+              🖨️ {lang === "ar" ? "خيارات تقرير المصروفات" : "Expenses Report Options"}
+            </button>
+            {showExpensesPrintMenu && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-1.5 z-30 font-bold text-slate-700 text-xs text-right animate-fade-in no-print">
+                <button
+                  onClick={() => {
+                    setShowExpensesPrintMenu(false);
+                    handlePrintExpenses(false);
+                  }}
+                  className="w-full text-right px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-slate-800 transition"
+                >
+                  👁️ {lang === "ar" ? "معاينة تقرير المصروفات" : "Preview Expenses Report"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowExpensesPrintMenu(false);
+                    handlePrintExpenses(true);
+                  }}
+                  className="w-full text-right px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-[#0072BC] border-t border-slate-100 transition"
+                >
+                  🖨️ {lang === "ar" ? "طباعة تقرير المصروفات" : "Print Expenses Report"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         {/* Card 1: Total Expenses */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between transition-all duration-150 hover:shadow-md">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-400 block">
-              {lang === "ar" ? "إجمالي المصروفات" : "Total Expenses"}
+              {lang === "ar" ? "إجمالي المصروفات للمدة" : "Total Expenses"}
             </span>
             <span className="text-base font-black text-slate-800 font-mono">
-              {expenses.reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500 font-sans">SAR</span>
+              {filteredExpenses.reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500 font-sans">SAR</span>
             </span>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
@@ -360,13 +702,13 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
         </div>
 
         {/* Card 2: Total Unpaid Liabilities */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between transition-all duration-150 hover:shadow-md">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-400 block">
-              {lang === "ar" ? "إجمالي الذمم الدائنة غير المدفوعة" : "Total Unpaid Liabilities"}
+              {lang === "ar" ? "الذمم الدائنة المطلوبة" : "Unpaid Liabilities"}
             </span>
             <span className="text-base font-black text-rose-600 font-mono">
-              {expenses.filter(e => e.paymentStatus === "Pending Payment").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-rose-500 font-sans">SAR</span>
+              {filteredExpenses.filter(e => e.paymentStatus === "Pending Payment").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-rose-500 font-sans">SAR</span>
             </span>
           </div>
           <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
@@ -375,13 +717,13 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
         </div>
 
         {/* Card 3: Pending Partial Expenses */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between transition-all duration-150 hover:shadow-md">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-400 block">
-              {lang === "ar" ? "مصروفات جزئية معلقة" : "Pending Partial Expenses"}
+              {lang === "ar" ? "صرف جزئي معلق للمدة" : "Pending Partial"}
             </span>
             <span className="text-base font-black text-amber-600 font-mono">
-              {expenses.filter(e => e.paymentStatus === "Partially Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-amber-500 font-sans">SAR</span>
+              {filteredExpenses.filter(e => e.paymentStatus === "Partially Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-amber-500 font-sans">SAR</span>
             </span>
           </div>
           <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
@@ -390,13 +732,13 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
         </div>
 
         {/* Card 4: Actually Paid Expenses */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between transition-all duration-150 hover:shadow-md">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-400 block">
-              {lang === "ar" ? "إجمالي المصروفات المدفوعة فعلياً" : "Actually Paid Expenses"}
+              {lang === "ar" ? "المصروفات المدفوعة فعلياً" : "Actually Paid"}
             </span>
             <span className="text-base font-black text-emerald-600 font-mono">
-              {expenses.filter(e => e.paymentStatus === "Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-emerald-500 font-sans">SAR</span>
+              {filteredExpenses.filter(e => e.paymentStatus === "Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-emerald-500 font-sans">SAR</span>
             </span>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
@@ -425,7 +767,7 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
 
         <div>
           <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-            {lang === "ar" ? "المورد" : "Supplier"}
+            {lang === "ar" ? "طبيعة المعاملة أو الجهة" : "Transaction Nature or Party"}
           </label>
           <div className="relative">
             <Search className="absolute right-3.5 top-3 w-4 h-4 text-slate-400" />
@@ -433,7 +775,7 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
               type="text"
               value={searchSupplier}
               onChange={(e) => setSearchSupplier(e.target.value)}
-              placeholder={lang === "ar" ? "البحث باسم المورد..." : "Search supplier..."}
+              placeholder={lang === "ar" ? "البحث بطبيعة المعاملة أو الجهة..." : "Search nature or party..."}
               className="w-full pl-4 pr-10 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0072BC]"
             />
           </div>
@@ -472,8 +814,8 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
               <thead>
                 <tr className="bg-slate-50 text-slate-600 border-b border-slate-100 font-bold">
                   <th className="p-4">{lang === "ar" ? "رقم المصروف" : "Expense No"}</th>
-                  <th className="p-4">{lang === "ar" ? "المورد" : "Supplier"}</th>
-                  <th className="p-4">{lang === "ar" ? "رقم فاتورة المورد" : "Supplier Invoice"}</th>
+                  <th className="p-4">{lang === "ar" ? "طبيعة المعاملة والمستفيد" : "Transaction Nature & Party"}</th>
+                  <th className="p-4">{lang === "ar" ? "رقم السند/الفاتورة" : "Voucher/Invoice No"}</th>
                   <th className="p-4">{lang === "ar" ? "المشروع" : "Project"}</th>
                   <th className="p-4">{lang === "ar" ? "تاريخ الاستحقاق" : "Date"}</th>
                   <th className="p-4 text-left">{lang === "ar" ? "المبلغ المطلوب" : "Amount"}</th>
@@ -805,6 +1147,190 @@ export default function ExpensesTab({ lang, user }: { lang: "ar" | "en"; user: a
               >
                 {lang === "ar" ? "إغلاق" : "Close"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXPENSES MONTHLY/PERIODICAL REPORT PRINT MODAL */}
+      {showReportPrintModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #expenses-report-print-area, #expenses-report-print-area * {
+                visibility: visible !important;
+              }
+              #expenses-report-print-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                background: white !important;
+                color: black !important;
+                direction: rtl !important;
+                font-family: sans-serif !important;
+              }
+              .no-print-modal {
+                display: none !important;
+              }
+            }
+          `}} />
+          
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl border overflow-hidden flex flex-col my-8 max-h-[90vh] no-print-modal">
+            <div className="bg-[#005185] p-5 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📄</span>
+                <h2 className="text-sm font-black">
+                  {lang === "ar" ? "تقرير المصروفات والمستحقات المالي" : "Financial Expenses & Liabilities Report"}
+                </h2>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-white hover:bg-slate-100 text-[#005185] py-1.5 px-4 rounded-xl font-black text-xs transition duration-150 shadow"
+                >
+                  🖨️ {lang === "ar" ? "طباعة التقرير الآن" : "Print Report Now"}
+                </button>
+                <button
+                  onClick={() => setShowReportPrintModal(false)}
+                  className="text-white hover:text-red-200 text-lg font-bold px-2 transition"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Preview Area for UI view */}
+            <div className="p-6 overflow-y-auto bg-slate-50 flex-1">
+              <div className="bg-white p-8 rounded-2xl border shadow-sm max-w-4xl mx-auto" id="expenses-report-print-area">
+                
+                {/* Print Header */}
+                <div className="flex justify-between items-start border-b-2 border-[#005185] pb-4 mb-6">
+                  <div className="text-right space-y-1">
+                    <h1 className="text-base font-black text-[#005185]">{lang === "ar" ? "شركة فنون الوليد للخدمات الصناعية" : "Al Waleed Arts Industrial Services Co."}</h1>
+                    <p className="text-[10px] text-slate-400 font-bold">AL WALEED ARTS INDUSTRIAL SERVICES & ADV. CO.</p>
+                    <p className="text-[10px] text-slate-500 font-semibold">{lang === "ar" ? "الرقم الضريبي: ٣١٠٨٨٧٦٦٥٢٠٠٠٠٣" : "VAT ID: 310887665200003"}</p>
+                  </div>
+                  <div className="text-center bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-lg">
+                    <span className="block text-[11px] font-black text-slate-600">
+                      {lang === "ar" ? "تقرير مصروفات الفترة" : "Expenses Period Report"}
+                    </span>
+                    <span className="block text-xs font-mono font-bold text-[#005185] mt-0.5">
+                      {selectedMonth === "all" ? (lang === "ar" ? "جميع الفترات" : "All Periods") : selectedMonth}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Report Meta Metadata */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "تاريخ الاستخراج" : "Date Generated"}</span>
+                    <span className="text-slate-800 font-bold font-mono mt-0.5 block">{new Date().toLocaleDateString("en-US")}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "المستخدم المستخرج" : "Generated By"}</span>
+                    <span className="text-slate-800 font-bold mt-0.5 block">{user?.username || "Financial Accountant"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "عدد قيود المصروفات" : "Total Records"}</span>
+                    <span className="text-slate-800 font-bold font-mono mt-0.5 block">{filteredExpenses.length}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">{lang === "ar" ? "نطاق الفحص المالي" : "Financial Scope"}</span>
+                    <span className="text-[#0072BC] font-bold mt-0.5 block">{lang === "ar" ? "المصروفات والالتزامات المعتمدة" : "Approved Balances"}</span>
+                  </div>
+                </div>
+
+                {/* Total Summary Mini-Bento inside Report */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                  <div className="border border-slate-200/80 p-3 rounded-xl bg-slate-50/50 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "إجمالي المصروفات" : "Total Expenses"}</span>
+                    <span className="text-sm font-black text-slate-800 font-mono mt-1 block">
+                      {filteredExpenses.reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                  <div className="border border-[#005185]/30 p-3 rounded-xl bg-blue-50/20 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "المدفوع والمسدد" : "Total Paid"}</span>
+                    <span className="text-sm font-black text-emerald-700 font-mono mt-1 block">
+                      {filteredExpenses.filter(e => e.paymentStatus === "Paid").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                  <div className="border border-rose-200 p-3 rounded-xl bg-rose-50/10 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "الالتزامات غير المدفوعة" : "Total Unpaid"}</span>
+                    <span className="text-sm font-black text-rose-600 font-mono mt-1 block">
+                      {filteredExpenses.filter(e => e.paymentStatus === "Pending Payment").reduce((sum, e) => sum + (Number(e.totalAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                  <div className="border border-amber-200 p-3 rounded-xl bg-amber-50/10 text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">{lang === "ar" ? "قيمة الضريبة المستردة" : "Total VAT"}</span>
+                    <span className="text-sm font-black text-amber-700 font-mono mt-1 block">
+                      {filteredExpenses.reduce((sum, e) => sum + (Number(e.vatAmount) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-500">SAR</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Table of Items */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden mb-8">
+                  <table className="w-full text-right text-[10px] text-slate-700 leading-normal">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-extrabold text-right">
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "رقم المصروف" : "Expense No"}</th>
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "طبيعة المعاملة والمستفيد" : "Nature & Party"}</th>
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "رقم السند" : "Voucher"}</th>
+                        <th className="p-2.5 font-bold">{lang === "ar" ? "تاريخ الاستحقاق" : "Date"}</th>
+                        <th className="p-2.5 text-left font-bold">{lang === "ar" ? "قبل الضريبة" : "Subtotal"}</th>
+                        <th className="p-2.5 text-left font-bold">{lang === "ar" ? "الضريبة" : "VAT"}</th>
+                        <th className="p-2.5 text-left font-bold">{lang === "ar" ? "الإجمالي" : "Total Amount"}</th>
+                        <th className="p-2.5 text-center font-bold">{lang === "ar" ? "حالة السداد" : "Status"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredExpenses.map((exp, idx) => (
+                        <tr key={exp.id} className={`border-b border-slate-100 font-semibold ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}`}>
+                          <td className="p-2.5 font-mono text-rose-600 font-bold">{exp.expenseNo}</td>
+                          <td className="p-2.5 font-bold text-slate-800">{exp.supplierName}</td>
+                          <td className="p-2.5 font-mono text-slate-500 font-bold">{exp.invoiceNo}</td>
+                          <td className="p-2.5 text-slate-500 font-mono font-bold">{exp.expenseDate}</td>
+                          <td className="p-2.5 text-left font-mono">{(Number(exp.subtotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-left font-mono text-amber-700">{(Number(exp.vatAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-left font-mono font-black text-rose-700">{(Number(exp.totalAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black ${
+                              exp.paymentStatus === "Paid" 
+                                ? "bg-emerald-50 text-emerald-600" 
+                                : "bg-rose-50 text-rose-600"
+                            }`}>
+                              {exp.paymentStatus === "Paid" ? (lang === "ar" ? "مسدد" : "Paid") : (lang === "ar" ? "معلق" : "Unpaid")}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Print Signatures and Approvals */}
+                <div className="grid grid-cols-3 gap-6 pt-12 text-center font-extrabold text-[10px] text-slate-800">
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "توقيع المحاسب المالي" : "Financial Accountant Sign"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "اعتماد المدير المالي" : "Finance Director Approval"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                  <div className="space-y-12">
+                    <p className="text-[#005185] border-b pb-1.5">{lang === "ar" ? "المجلس التنفيذي والختم" : "Executive Board & Stamp"}</p>
+                    <span className="block text-slate-400 font-normal">________________________</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         </div>

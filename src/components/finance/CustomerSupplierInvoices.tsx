@@ -1079,12 +1079,58 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
       `;
     }).join("");
 
+    // Load company ZATCA settings dynamically from Firestore to comply with official regulations
+    let companyZatcaNameAr = "شركة فنون الوليد للدعاية والإعلان";
+    let companyZatcaNameEn = "Al Waleed Arts Advertising Co.";
+    let companyZatcaVatNumber = "310123456700003";
+    let companyZatcaCrNumber = "1010123456";
+    let companyZatcaAddress = "7322 طريق الملك عبد العزيز، الياسمين، الرياض، المملكة العربية السعودية";
+
+    try {
+      const { doc: fDoc, getDoc: fGetDoc } = await import("firebase/firestore");
+      const { db: fDb } = await import("../../firebase");
+      const zatcaSnap = await fGetDoc(fDoc(fDb, "settings", "zatca"));
+      if (zatcaSnap.exists()) {
+        const zData = zatcaSnap.data();
+        if (zData.companyNameArabic) companyZatcaNameAr = zData.companyNameArabic;
+        if (zData.companyNameEnglish) companyZatcaNameEn = zData.companyNameEnglish;
+        if (zData.vatNumber) companyZatcaVatNumber = zData.vatNumber;
+        if (zData.crNumber) companyZatcaCrNumber = zData.crNumber;
+        
+        const addrParts = [
+          zData.buildingNumber,
+          zData.nationalAddress,
+          zData.district,
+          zData.city,
+          zData.postalCode,
+          zData.country
+        ].filter(Boolean);
+        if (addrParts.length > 0) {
+          companyZatcaAddress = addrParts.join("، ");
+        } else if (zData.nationalAddress) {
+          companyZatcaAddress = zData.nationalAddress;
+        }
+      }
+    } catch (e) {
+      console.error("Error loading ZATCA settings for invoice print:", e);
+    }
+
     let qrImgHTML = "";
     if (inv.status !== "بانتظار الاعتماد" && inv.status !== "مسودة") {
+      let invoiceDateISO = new Date().toISOString();
+      try {
+        if (inv.date) {
+          const parsed = new Date(inv.date);
+          if (!isNaN(parsed.getTime())) {
+            invoiceDateISO = parsed.toISOString();
+          }
+        }
+      } catch (e) {}
+
       const zatcaBase64 = generateZatcaQR(
-        "شركة فنون الوليد للصناعة",
-        "310123456700003", // Example VAT for the company
-        new Date().toISOString(),
+        companyZatcaNameAr,
+        companyZatcaVatNumber,
+        invoiceDateISO,
         inv.totalAmount.toString(),
         inv.taxAmount.toString()
       );
@@ -1352,10 +1398,10 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               <!-- معلومات الشركة -->
               <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
                 <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
-                  شركة فنون الوليد للصناعة
+                  ${companyZatcaNameAr}
                 </h2>
                 <h3 style="font-size: 10px; font-weight: bold; color: #555; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
-                  FONOUN ALWALEED INDUSTRIAL CO.
+                  ${companyZatcaNameEn}
                 </h3>
               </div>
               
@@ -1369,6 +1415,26 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               <!-- الشعار -->
               <div style="text-align: right; width: 40%; display: flex; justify-content: flex-end;">
                 <img src="https://i.postimg.cc/0jQj3XVc/Alwaleed-Logo-Vertical-Blue.png" referrerpolicy="no-referrer" alt="Fonoun Alwaleed Logo" style="width: 120px; height: 120px; object-fit: contain;" />
+              </div>
+            </div>
+
+            <!-- ZATCA Compliance Header: Company details parallel to the ZATCA QR Code -->
+            <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 25px; border: 1.5px solid #000; border-radius: 8px; padding: 12px; background-color: #fafafa; font-family: 'GE SS Two', 'Gotham Pro', sans-serif; direction: rtl;">
+              <div style="width: 70%; text-align: right; display: flex; flex-direction: column; justify-content: space-between; font-size: 12px; line-height: 1.6; color: #000;">
+                <div>
+                  <h2 style="font-size: 15px; font-weight: 800; color: #0072BC; margin: 0 0 4px 0;">بيانات مصدر الفاتورة (بيانات الشركة الضريبية)</h2>
+                </div>
+                <div>
+                  <div style="margin-bottom: 2px;"><strong>الاسم الرسمي:</strong> ${companyZatcaNameAr}</div>
+                  <div style="margin-bottom: 2px;"><strong>الرقم الضريبي للشركة (VAT):</strong> <span style="font-family: monospace; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">${companyZatcaVatNumber}</span></div>
+                  <div style="margin-bottom: 2px;"><strong>السجل التجاري (CR):</strong> <span style="font-family: monospace; font-size: 12px; font-weight: bold;">${companyZatcaCrNumber}</span></div>
+                  <div style="margin-bottom: 2px;"><strong>العنوان الوطني للشركة:</strong> ${companyZatcaAddress}</div>
+                </div>
+              </div>
+
+              <div style="width: 25%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1.5px dashed #ccc; padding-right: 15px; direction: ltr;">
+                ${qrImgHTML || `<div style="border: 1.5px dashed #ef4444; padding: 10px; text-align: center; font-size: 10px; color: #ef4444; font-weight: bold;" dir="rtl">مسودة غير صادرة<br/>(لا يوجد باركود زكاة)</div>`}
+                <div style="font-size: 9px; color: #444; margin-top: 5px; font-weight: bold; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">هيئة الزكاة والضريبة والجمارك</div>
               </div>
             </div>
 
@@ -1400,12 +1466,12 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               <!-- Our Company details -->
               <div class="party-card">
                 <div class="party-title">الشركة الموردة / المصدرة للمستند</div>
-                <div class="party-row"><strong>الاسم:</strong> ${companyInfo.name}</div>
-                <div class="party-row"><strong>الرقم الضريبي (VAT):</strong> ${companyInfo.taxNumber}</div>
-                <div class="party-row"><strong>السجل التجاري (CR):</strong> ${companyInfo.crNumber}</div>
-                <div class="party-row"><strong>العنوان:</strong> ${companyInfo.country}، ${companyInfo.city}، ${companyInfo.address}</div>
-                <div class="party-row"><strong>الهاتف:</strong> ${companyInfo.phone}</div>
-                <div class="party-row"><strong>البريد الإلكتروني:</strong> ${companyInfo.email}</div>
+                <div class="party-row"><strong>الاسم:</strong> ${companyZatcaNameAr}</div>
+                <div class="party-row"><strong>الرقم الضريبي (VAT):</strong> ${companyZatcaVatNumber}</div>
+                <div class="party-row"><strong>السجل التجاري (CR):</strong> ${companyZatcaCrNumber}</div>
+                <div class="party-row"><strong>العنوان:</strong> ${companyZatcaAddress}</div>
+                <div class="party-row"><strong>الهاتف:</strong> ${companyInfo.phone || "+966 13 833 4115"}</div>
+                <div class="party-row"><strong>البريد الإلكتروني:</strong> ${companyInfo.email || "info@alwaleedneon.com"}</div>
               </div>
             </div>
 
@@ -1506,7 +1572,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             <div class="stamp-box">
               <div style="text-align: right;">
                 <div style="font-size: 12px; font-weight: bold; color: #000;">توقيع واعتماد قسم الحسابات والتدقيق المالي</div>
-                <div style="font-size: 11px; color: #000; margin-top: 4px; font-weight: bold;">شركة فنون الوليد للصناعة</div>
+                <div style="font-size: 11px; color: #000; margin-top: 4px; font-weight: bold;">${companyZatcaNameAr}</div>
                 <div style="width: 180px; border-bottom: 1.5px solid #000; margin-top: 35px;"></div>
               </div>
               <div style="text-align: left; width: 150px;">
@@ -1515,15 +1581,40 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               </div>
             </div>
 
-            <!-- Footer identical to Quotations -->
+            <!-- Dynamic corporate bank accounts in footer -->
             <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
-              <div style="text-align: left; line-height: 1.6;">
+              <div style="text-align: left; line-height: 1.6; width: 45%;">
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
-              </div>
-              <div style="text-align: right; line-height: 1.6;">
                 <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
-                <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Riyad Bank Iban:</span> SA6 320 000 003 220 402 999 901</p>
+              </div>
+              <div style="text-align: right; line-height: 1.6; width: 50%; display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="font-size: 11px; font-weight: bold; color: #0072BC; margin-bottom: 6px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">الحسابات البنكية المعتمدة للتحويل (Approved Bank Accounts):</div>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; align-items: flex-end;">
+                  ${(() => {
+                    const activeBanks = bankAccounts.filter((b: any) => b.status === "Active" || !b.status);
+                    const list = activeBanks.length > 0 ? activeBanks : bankAccounts;
+                    if (list.length > 0) {
+                      return list.map((b: any) => `
+                        <div style="border: 1px solid #ddd; padding: 6px 10px; border-radius: 6px; background-color: #fafafa; display: inline-block; text-align: right; min-width: 250px; line-height: 1.4;" dir="rtl">
+                          <div style="font-weight: bold; color: #0072BC; font-size: 11px;">🏦 ${b.bankName || "البنك"}</div>
+                          <div style="font-size: 10px; color: #333; margin-top: 2px;"><strong>اسم الحساب:</strong> ${b.accountName || "شركة فنون الوليد"}</div>
+                          <div style="font-size: 10px; color: #333;"><strong>رقم الحساب:</strong> <span style="font-family: monospace;">${b.accountNumber || "---"}</span></div>
+                          <div style="font-size: 10px; color: #333;"><strong>IBAN:</strong> <span style="font-family: monospace; font-weight: bold;">${b.iban || "---"}</span></div>
+                        </div>
+                      `).join("");
+                    } else {
+                      return `
+                        <div style="border: 1px solid #ddd; padding: 6px 10px; border-radius: 6px; background-color: #fafafa; display: inline-block; text-align: right; min-width: 250px; line-height: 1.4;" dir="rtl">
+                          <div style="font-weight: bold; color: #0072BC; font-size: 11px;">🏦 مصرف الراجحي</div>
+                          <div style="font-size: 10px; color: #333; margin-top: 2px;"><strong>اسم الحساب:</strong> شركة فنون الوليد للدعاية والإعلان</div>
+                          <div style="font-size: 10px; color: #333;"><strong>رقم الحساب:</strong> <span style="font-family: monospace;">1234567890</span></div>
+                          <div style="font-size: 10px; color: #333;"><strong>IBAN:</strong> <span style="font-family: monospace; font-weight: bold;">SA1234567890123456789012</span></div>
+                        </div>
+                      `;
+                    }
+                  })()}
+                </div>
               </div>
             </div>
           </div>

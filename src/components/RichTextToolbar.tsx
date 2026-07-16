@@ -115,16 +115,15 @@ export default function RichTextToolbar() {
 
       <div className="w-px h-6 bg-slate-300 mx-1"></div>
 
-      <div className="flex items-center gap-1 relative z-40">
+      <div className="flex items-center gap-1">
         <label className="text-xs text-slate-500 font-bold">اللون</label>
-        <div className="relative rounded overflow-hidden w-8 h-8 border border-slate-300 shadow-sm cursor-pointer">
-          <input 
-            type="color" 
-            onMouseDown={handleMouseDown}
-            onChange={(e) => execCommand('foreColor', e.target.value)}
-            className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
-          />
-        </div>
+        <input 
+          type="color" 
+          onMouseDown={handleMouseDown}
+          onChange={(e) => execCommand('foreColor', e.target.value)}
+          className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer p-0 bg-transparent transition-all hover:scale-105 active:scale-95"
+          title="اختر لون الخط"
+        />
       </div>
     </div>
   );
