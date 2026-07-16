@@ -850,12 +850,17 @@ body {
       });
       if (res.ok) {
         const saved = await res.json();
-        setQuotes(prev => {
-          const ex = prev.find(p => p.id === saved.item.id);
-          if (ex) return prev.map(p => p.id === saved.item.id ? saved.item : p);
-          return [saved.item, ...prev];
-        });
-        setEditorQtn(saved.item);
+        const savedItem = saved?.item || saved?.data || saved;
+        
+        if (savedItem && savedItem.id) {
+          setQuotes(prev => {
+            const ex = prev.find(p => p.id === savedItem.id);
+            if (ex) return prev.map(p => p.id === savedItem.id ? savedItem : p);
+            return [savedItem, ...prev];
+          });
+          setEditorQtn(savedItem);
+        }
+
         if (showAlerts) {
            if (forceStatus === 'معتمد' && !skipConfirm) {
               showToast(lang === 'ar' ? `تم اعتماد عرض السعر رقم ${payload.quotationNumber}` : `Quotation ${payload.quotationNumber} approved successfully`, 'success');
@@ -865,9 +870,17 @@ body {
               showToast(lang === 'ar' ? 'تم الحفظ بنجاح' : 'Saved successfully', 'success');
            }
         }
-        if (forceStatus === 'مسودة' && !skipConfirm) {
+        if (forceStatus === 'مسودة') {
           setMode('list');
           setEditorQtn(null);
+        }
+      } else {
+        if (showAlerts) {
+          setDialogConfig({
+            isOpen: true,
+            type: 'alert',
+            message: lang === 'ar' ? 'فشل الحفظ: حدث خطأ في السيرفر أثناء معالجة الطلب!' : 'Save failed: Server error occurred!'
+          });
         }
       }
     } catch(e) {
@@ -1154,7 +1167,7 @@ body {
               </table>
            </div>
         </div>
-      ) : (
+      ) : editorQtn ? (
         <EditorScreen lang={lang} 
            quote={editorQtn as SalesQuotation} 
            onChange={setEditorQtn as any} 
@@ -1212,12 +1225,13 @@ body {
              });
            }}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
 function EditorScreen({quote, lang, onChange, onBack, onSave, onPreview, onCopy, clients, warehouseItems, allQuotes, termsTemplate, termsTemplates, setTermsTemplates, user, onUnapprove, onDelete, showToast, setDialogConfig}: any) {
+  if (!quote) return null;
   const [tab, setTab] = useState<'basic' | 'print'>('basic');
   const [qtnGenType, setQtnGenType] = useState<'auto'|'manual'>('manual');
   
