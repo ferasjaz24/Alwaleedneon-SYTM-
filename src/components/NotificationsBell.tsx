@@ -52,13 +52,24 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
     const advanced = user.permissions?.advanced?.notifications?.general;
     if (!advanced) return false;
 
-    if (advanced.includes('view_all')) return true;
-    if (type === 'hr' && advanced.includes('view_hr')) return true;
-    if (type === 'sales' && advanced.includes('view_sales')) return true;
-    if (type === 'finance' && advanced.includes('view_finance')) return true;
-    if (type === 'production' && advanced.includes('view_production')) return true;
-    if (type === 'purchasing' && advanced.includes('view_purchasing')) return true;
-    if (type === 'system' && advanced.includes('view_public')) return true;
+    const hasPerm = (permId: string) => {
+      if (Array.isArray(advanced)) {
+        return advanced.includes(permId);
+      }
+      if (typeof advanced === 'object' && advanced !== null) {
+        const val = (advanced as any)[permId];
+        return val === 'all' || val === 'own' || val === true;
+      }
+      return false;
+    };
+
+    if (hasPerm('view_all')) return true;
+    if (type === 'hr' && hasPerm('view_hr')) return true;
+    if (type === 'sales' && hasPerm('view_sales')) return true;
+    if (type === 'finance' && hasPerm('view_finance')) return true;
+    if (type === 'production' && hasPerm('view_production')) return true;
+    if (type === 'purchasing' && hasPerm('view_purchasing')) return true;
+    if (type === 'system' && hasPerm('view_public')) return true;
 
     return false;
   };

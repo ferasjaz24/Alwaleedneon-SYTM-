@@ -9,7 +9,8 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { Employee, User, Quotation, ClearanceProfile } from "./src/types";
-import { db } from "./src/lib/firebase.js";
+import { db, auth } from "./src/lib/firebase.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -454,7 +455,33 @@ async function seedInitialDataIfEmpty() {
   // Disabled
 }
 
+async function authenticateServer() {
+  const email = "system-server@alwaleed-factory.com";
+  const password = "SystemServerSecurePassword2026_ERP";
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    console.log("System server authenticated successfully with Firebase Auth.");
+  } catch (error: any) {
+    if (
+      error.code === "auth/user-not-found" ||
+      error.code === "auth/invalid-credential" ||
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/invalid-email"
+    ) {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        console.log("System server account created and authenticated successfully.");
+      } catch (createErr) {
+        console.error("Failed to create system server account:", createErr);
+      }
+    } else {
+      console.error("Failed to authenticate system server:", error);
+    }
+  }
+}
+
 export async function startServer() {
+  await authenticateServer();
   const PORT = process.env.NODE_ENV === "production" ? parseInt(process.env.PORT || "8080", 10) : 3000;
 
   const app = express();

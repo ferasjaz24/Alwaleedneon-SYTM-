@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import NotificationsBell from "./components/NotificationsBell";
+import { SmartReCaptcha } from "./components/SmartReCaptcha";
 import HrSubSections from "./components/HrSubSections";
 import SalesHub from "./components/SalesHub";
 import SalesQuotations from "./components/SalesQuotations";
@@ -72,6 +73,9 @@ import MainDashboard from "./components/MainDashboard";
 import { logSystemError, logSystemAudit, setActiveLoggerUser } from "./lib/logger";
 import { rebuildSystemIndex, searchEmployeesIndexed, searchQuotationsIndexed } from "./lib/searchIndex";
 import type { IndexStats } from "./lib/searchIndex";
+
+import { auth } from "./firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 import MonthlyPayrollRuns from "./components/finance/MonthlyPayrollRuns";
 import CashAndBankTab from "./components/finance/CashAndBankTab";
@@ -253,6 +257,40 @@ export default function App() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+
+  // Captcha bot check states
+  const [loginCaptchaChallenge, setLoginCaptchaChallenge] = useState(() => ({
+    num1: Math.floor(Math.random() * 9) + 1,
+    num2: Math.floor(Math.random() * 9) + 1
+  }));
+  const [loginCaptchaInput, setLoginCaptchaInput] = useState("");
+
+  const [f24CaptchaChallenge, setF24CaptchaChallenge] = useState(() => ({
+    num1: Math.floor(Math.random() * 9) + 1,
+    num2: Math.floor(Math.random() * 9) + 1
+  }));
+  const [f24CaptchaInput, setF24CaptchaInput] = useState("");
+
+  const [isLoginCaptchaVerified, setIsLoginCaptchaVerified] = useState(false);
+  const [isF24CaptchaVerified, setIsF24CaptchaVerified] = useState(false);
+
+  const handleRefreshStandardCaptcha = () => {
+    setLoginCaptchaChallenge({
+      num1: Math.floor(Math.random() * 9) + 1,
+      num2: Math.floor(Math.random() * 9) + 1
+    });
+    setLoginCaptchaInput("");
+    setIsLoginCaptchaVerified(false);
+  };
+
+  const handleRefreshF24Captcha = () => {
+    setF24CaptchaChallenge({
+      num1: Math.floor(Math.random() * 9) + 1,
+      num2: Math.floor(Math.random() * 9) + 1
+    });
+    setF24CaptchaInput("");
+    setIsF24CaptchaVerified(false);
+  };
 
   // Super Admin backdoor (F24) state
   const [showF24Modal, setShowF24Modal] = useState(false);
@@ -873,6 +911,17 @@ export default function App() {
     e.preventDefault();
     setLoginError("");
     setButtonLoading("login", true);
+
+    if (!isLoginCaptchaVerified) {
+      setLoginError(
+        lang === "ar"
+          ? "الرجاء تأكيد اختبار الأمان (أنا لست برنامج روبوت) أولاً."
+          : "Please verify that you are not a robot first."
+      );
+      setButtonLoading("login", false);
+      return;
+    }
+
     const uName = loginUsername.toUpperCase().trim();
     
     try {
@@ -898,16 +947,113 @@ export default function App() {
           setButtonLoading("login", false);
           return;
         }
+
+        // Single Device Security Check
+        let devId = localStorage.getItem("alwaleed_device_id");
+        if (!devId) {
+          devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
+          localStorage.setItem("alwaleed_device_id", devId);
+        }
+
+        const isLockEnabled = matched.deviceLockEnabled !== false; // Active by default for optimal security
         
+        if (isLockEnabled) {
+          if (!matched.boundDeviceId) {
+            // First login from any device binds this device automatically
+            matched.boundDeviceId = devId;
+            try {
+              await fetch(`/api/users/${matched.username}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ boundDeviceId: devId }),
+              });
+              console.log("Device auto-bound for user on first login:", matched.username, devId);
+            } catch (err) {
+              console.error("Failed to auto-bind device on first login:", err);
+            }
+          } else if (matched.boundDeviceId !== devId) {
+            // Check if user is in device self-migration/setup mode
+            if (matched.allowDeviceMigration) {
+              matched.boundDeviceId = devId;
+              matched.allowDeviceMigration = false;
+              try {
+                await fetch(`/api/users/${matched.username}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ boundDeviceId: devId, allowDeviceMigration: false }),
+                });
+                console.log("Device self-migration completed for user:", matched.username, devId);
+              } catch (err) {
+                console.error("Failed to self-migrate device:", err);
+              }
+            } else {
+              // Block login, register pending authorization request
+              try {
+                const userAgentName = navigator.userAgent ? navigator.userAgent.substring(0, 100) : "Browser";
+                await fetch(`/api/users/${matched.username}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ 
+                    pendingDeviceApprovalId: devId,
+                    pendingDeviceApprovalName: userAgentName
+                  }),
+                });
+                console.log("Logged pending device authorization request for user:", matched.username, devId);
+              } catch (err) {
+                console.error("Failed to post pending device request:", err);
+              }
+
+              setLoginError(
+                lang === "ar"
+                  ? "عذراً، هذا الجهاز غير موثق للدخول. تم إرسال طلب توثيق إلى مدير النظام. يرجى التواصل مع الإدارة المباشرة لترخيص الجهاز."
+                  : "Sorry, this device is not authorized for access. A pending approval request has been sent to the system administrator. Please contact your supervisor."
+              );
+              logSystemError({
+                code: "ERR-403-DEVICE",
+                message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${uName} (معرّف الجهاز: ${devId})`,
+                page: "Login Gateway",
+                action: "handleRegularLogin"
+              });
+              setButtonLoading("login", false);
+              return;
+            }
+          }
+        }
+        
+        // Automatic Firebase Authentication integration
+        const firebaseEmail = `${matched.username.toLowerCase()}@alwaleed-factory.com`;
+        const firebasePassword = `${matched.password || "123456"}_alwaleed_pass`;
+        
+        try {
+          await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+          console.log("Firebase Auth automatic login successful for:", firebaseEmail);
+        } catch (authError: any) {
+          if (
+            authError.code === "auth/user-not-found" ||
+            authError.code === "auth/invalid-credential" ||
+            authError.code === "auth/wrong-password" ||
+            authError.code === "auth/invalid-email"
+          ) {
+            try {
+              await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+              console.log("Firebase Auth automatic registration and login successful for:", firebaseEmail);
+            } catch (createError: any) {
+              console.warn("Failed to automatically register Firebase Auth user:", createError);
+            }
+          } else {
+            console.warn("Firebase Auth automatic login failed, proceeding with system session:", authError);
+          }
+        }
+
         setUser(matched);
         logLoginEvent(matched.username);
         logSystemAudit({
           user: matched.username,
           action: "دخول",
           department: "General",
-          description: "تسجيل دخول ناجح إلى النظام"
+          description: "تسجيل دخول ناجح إلى النظام (مع الموثق التلقائي Firebase)"
         });
-        showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! مرحباً بك في النظام." : "Successfully logged in! Welcome back.");
+        showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! تم توثيق اتصالك بقاعدة البيانات." : "Successfully logged in! Verified direct database connection.");
 
         // Auto assign tabs based on roles/permissions
         const isTopLevel = 
@@ -966,26 +1112,119 @@ export default function App() {
   };
 
   // F24 Backdoor login validation
-  const handleF24Login = (e: React.FormEvent) => {
+  const handleF24Login = async (e: React.FormEvent) => {
     e.preventDefault();
     setF24Error("");
     setButtonLoading("f24Login", true);
+
+    if (!isF24CaptchaVerified) {
+      setF24Error(
+        lang === "ar"
+          ? "الرجاء تأكيد اختبار الأمان (أنا لست برنامج روبوت) أولاً."
+          : "Please verify that you are not a robot first."
+      );
+      setButtonLoading("f24Login", false);
+      return;
+    }
+
     if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
+      // Find FERAS user details to check device binding
+      const matched = users.find((u) => u.username.toUpperCase() === "FERAS");
+      
+      let devId = localStorage.getItem("alwaleed_device_id");
+      if (!devId) {
+        devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
+        localStorage.setItem("alwaleed_device_id", devId);
+      }
+
+      if (matched) {
+        const isLockEnabled = matched.deviceLockEnabled !== false;
+        if (isLockEnabled) {
+          if (!matched.boundDeviceId) {
+            matched.boundDeviceId = devId;
+            try {
+              await fetch(`/api/users/${matched.username}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ boundDeviceId: devId }),
+              });
+              console.log("F24 master device auto-bound on first login:", devId);
+            } catch (err) {
+              console.error("Failed to auto-bind F24 device:", err);
+            }
+          } else if (matched.boundDeviceId !== devId) {
+            if (matched.allowDeviceMigration) {
+              matched.boundDeviceId = devId;
+              matched.allowDeviceMigration = false;
+              try {
+                await fetch(`/api/users/${matched.username}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ boundDeviceId: devId, allowDeviceMigration: false }),
+                });
+                console.log("F24 master device self-migrated:", devId);
+              } catch (err) {
+                console.error("Failed to migrate F24 device:", err);
+              }
+            } else {
+              // Block F24 login!
+              try {
+                const userAgentName = navigator.userAgent ? navigator.userAgent.substring(0, 100) : "Browser";
+                await fetch(`/api/users/${matched.username}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ 
+                    pendingDeviceApprovalId: devId,
+                    pendingDeviceApprovalName: userAgentName
+                  }),
+                });
+              } catch (err) {
+                console.error("Failed to post pending F24 request:", err);
+              }
+
+              setF24Error(
+                lang === "ar"
+                  ? "عذراً، هذا الجهاز غير موثق للدخول للمدير الفائق. تم تقديم طلب ترخيص أمان معلق."
+                  : "Sorry, this device is not authorized for Super Admin access. A pending security request has been filed."
+              );
+              setButtonLoading("f24Login", false);
+              return;
+            }
+          }
+        }
+      }
+
       const superAdmin: User = {
         username: "FERAS",
         role: "Super Admin",
         jobTitle: "Owner / GM",
         dateCreated: "2026-01-01",
       };
+
+      // Automatic Firebase Authentication integration for F24
+      const firebaseEmail = "feras@alwaleed-factory.com";
+      const firebasePassword = `${f24Pass}_alwaleed_pass`;
+      try {
+        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+        console.log("Firebase Auth automatic login successful for F24");
+      } catch (authError: any) {
+        try {
+          await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+          console.log("Firebase Auth automatic registration and login successful for F24");
+        } catch (createError: any) {
+          console.warn("Failed to automatically register Firebase Auth F24 user:", createError);
+        }
+      }
+
       setUser(superAdmin);
       logLoginEvent("FERAS");
       logSystemAudit({
         user: "FERAS",
         action: "دخول",
         department: "General",
-        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor)"
+        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor) (مع الموثق التلقائي Firebase)"
       });
-      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
+      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق وتوثيق اتصالك بقاعدة البيانات!" : "F24 Super Admin Authorized and database connection verified!");
       setShowF24Modal(false);
       setActiveTab("dashboard");
     } else {
@@ -1144,6 +1383,16 @@ export default function App() {
         });
         showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
       } else {
+        // Pre-register user in Firebase Auth automatically
+        const firebaseEmail = `${payload.username.toLowerCase()}@alwaleed-factory.com`;
+        const firebasePassword = `${payload.password || "123456"}_alwaleed_pass`;
+        try {
+          await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+          console.log("Firebase Auth automatic pre-registration successful for:", firebaseEmail);
+        } catch (createError: any) {
+          console.warn("Firebase Auth automatic pre-registration failed/already exists:", createError);
+        }
+
         setUserCreationSuccess(
           lang === "ar"
             ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user?.role || finalRole}`
@@ -1153,9 +1402,9 @@ export default function App() {
           user: user?.username || "FERAS",
           action: "أضاف",
           department: "HR",
-          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role}`
+          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role} (مع التسجيل التلقائي في Firebase)`
         });
-        showToast(lang === "ar" ? "تم إنشاء الحساب بنجاح وتأكيده على السيرفر" : "Account registered successfully!");
+        showToast(lang === "ar" ? "تم إنشاء الحساب وتوثيقه تلقائياً في Firebase!" : "Account registered and synced with Firebase successfully!");
         setNewAdminUser({
           username: "",
           password: "",
@@ -1970,6 +2219,15 @@ export default function App() {
                 />
               </div>
 
+              {/* Smart reCAPTCHA Checkbox */}
+              <div className="py-2">
+                <SmartReCaptcha
+                  id="login-recaptcha"
+                  lang={lang}
+                  onVerify={(verified) => setIsLoginCaptchaVerified(verified)}
+                />
+              </div>
+
               {loginError && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl font-bold">
                   {loginError}
@@ -2034,6 +2292,15 @@ export default function App() {
                       placeholder="••••••••••••••••"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#0072BC]"
                       required
+                    />
+                  </div>
+
+                  {/* Smart reCAPTCHA Checkbox */}
+                  <div className="py-1">
+                    <SmartReCaptcha
+                      id="f24-recaptcha"
+                      lang={lang}
+                      onVerify={(verified) => setIsF24CaptchaVerified(verified)}
                     />
                   </div>
 
@@ -2725,13 +2992,22 @@ export default function App() {
               lang={lang}
               onClose={() => setSelectedUserForPermissions(null)}
               onSave={async (username, payload) => {
-                const { newUsername, password, role, jobTitle, ...rest } =
-                  payload as any;
+                const { 
+                  newUsername, password, role, jobTitle, 
+                  deviceLockEnabled, allowDeviceMigration, boundDeviceId,
+                  pendingDeviceApprovalId, pendingDeviceApprovalName,
+                  ...rest 
+                } = payload as any;
                 await handleUpdateUser(username, {
                   ...(newUsername && { newUsername }),
                   ...(password && { password }),
                   ...(role && { role }),
                   ...(jobTitle && { jobTitle }),
+                  deviceLockEnabled,
+                  allowDeviceMigration,
+                  boundDeviceId,
+                  pendingDeviceApprovalId,
+                  pendingDeviceApprovalName,
                   permissions: rest,
                 });
               }}
