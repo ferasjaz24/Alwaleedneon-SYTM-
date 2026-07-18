@@ -201,12 +201,10 @@ export async function getDoc(docRef: AdminDocRef) {
           ...(localItem.pendingDeviceApprovalName !== undefined && { pendingDeviceApprovalName: localItem.pendingDeviceApprovalName }),
         };
         // Auto-heal Firestore if fields were missing
-        if (adminDb) {
-          try {
-            await adminDb.collection("users").doc(docRef.docId).set(docData, { merge: true });
-          } catch (err: any) {
-            console.warn(`[FIREBASE-HEAL] Failed to heal user ${docRef.docId}:`, err.message);
-          }
+        try {
+          await setDoc(docRef, docData, { merge: true });
+        } catch (err: any) {
+          // Silent fallback: handled by setDoc
         }
       }
     }
