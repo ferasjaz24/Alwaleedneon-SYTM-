@@ -42,6 +42,7 @@ import {
   UserCheck,
   Smartphone,
   AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import { fallbackUsers } from "./utils/fallbackUsers";
@@ -340,6 +341,7 @@ export default function App() {
   } | null>(null);
   const [deviceRequestLoading, setDeviceRequestLoading] = useState(false);
   const [deviceRequestSuccess, setDeviceRequestSuccess] = useState(false);
+  const [showConcurrentSessionModal, setShowConcurrentSessionModal] = useState(false);
 
   // Captcha bot check states
   const [loginCaptchaChallenge, setLoginCaptchaChallenge] = useState(() => ({
@@ -713,6 +715,48 @@ export default function App() {
     htmlEl.setAttribute("lang", lang);
   }, [lang]);
 
+  // Concurrency and Session Heartbeat Loop
+  useEffect(() => {
+    if (!user || !user.username) return;
+
+    const token = sessionStorage.getItem("alwaleed_session_token");
+    if (!token) return;
+
+    const sendHeartbeat = async () => {
+      try {
+        const res = await fetch("/api/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user.username, sessionToken: token }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.terminated) {
+            // Log out user due to concurrent login session takeover
+            setUser(null);
+            sessionStorage.removeItem("alwaleed_session_token");
+            showToast(
+              lang === "ar"
+                ? "تنبيه أمني: تم تسجيل خروجك من هذا المتصفح لوجود جلسة نشطة مستخدمة على جهاز أو متصفح آخر."
+                : "Security Notice: You have been logged out from this browser because your account is active on another device/browser.",
+              "error"
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to send heartbeat:", err);
+      }
+    };
+
+    // Run heartbeat immediately
+    sendHeartbeat();
+
+    // Set up heartbeat every 20 seconds
+    const interval = setInterval(sendHeartbeat, 20000);
+
+    return () => clearInterval(interval);
+  }, [user, lang]);
+
   // Apply Accessibility Settings
   useEffect(() => {
     const htmlEl = document.documentElement;
@@ -1070,7 +1114,7 @@ export default function App() {
   };
 
   // Standard login trigger
-  const handleRegularLogin = async (e: React.FormEvent) => {
+  const handleRegularLogin = async (e: React.FormEvent, force: boolean = false) => {
     e.preventDefault();
     setLoginError("");
     setButtonLoading("login", true);
@@ -1105,7 +1149,8 @@ export default function App() {
           devOS: getDeviceOS(),
           devBrowser: getDeviceBrowser(),
           devType: getDeviceType(),
-          hardwareId: getCrossBrowserFingerprint()
+          hardwareId: getCrossBrowserFingerprint(),
+          forceLogin: force
         })
       });
 
@@ -1149,6 +1194,9 @@ export default function App() {
           }
         }
 
+        if (loginData?.sessionToken) {
+          sessionStorage.setItem("alwaleed_session_token", loginData.sessionToken);
+        }
         setUser(matched);
         setSystemRefreshKey((prev) => prev + 1);
         logLoginEvent(matched.username);
@@ -1189,6 +1237,10 @@ export default function App() {
         } else {
           setActiveTab("dashboard");
         }
+      } else if (response.status === 409) {
+        setShowConcurrentSessionModal(true);
+        setButtonLoading("login", false);
+        return;
       } else if (response.status === 403) {
         let errorData: any = {};
         try {
@@ -1442,72 +1494,8 @@ export default function App() {
         localStorage.setItem("alwaleed_device_id", devId);
       }
 
-      if (matched) {
-        const isLockEnabled = matched.deviceLockEnabled !== false;
-        const currentDeviceName = getDeviceFriendlyName();
-        if (isLockEnabled) {
-          if (!matched.boundDeviceId) {
-            matched.boundDeviceId = devId;
-            matched.boundDeviceName = currentDeviceName;
-            try {
-              await fetch(`/api/users/${matched.username}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName }),
-              });
-              console.log("F24 master device auto-bound on first login:", devId);
-            } catch (err) {
-              console.error("Failed to auto-bind F24 device:", err);
-            }
-          } else if (matched.boundDeviceId !== devId) {
-            if (matched.allowDeviceMigration) {
-              matched.boundDeviceId = devId;
-              matched.boundDeviceName = currentDeviceName;
-              matched.allowDeviceMigration = false;
-              try {
-                await fetch(`/api/users/${matched.username}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName, allowDeviceMigration: false }),
-                });
-                console.log("F24 master device self-migrated:", devId);
-              } catch (err) {
-                console.error("Failed to migrate F24 device:", err);
-              }
-            } else {
-              // Block F24 login!
-              try {
-                await fetch(`/api/users/${matched.username}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ 
-                    pendingDeviceApprovalId: devId,
-                    pendingDeviceApprovalName: currentDeviceName
-                  }),
-                });
-              } catch (err) {
-                console.error("Failed to post pending F24 request:", err);
-              }
-
-              // Open custom Device Mismatch block modal
-              setDeviceBlockDetails({
-                username: matched.username,
-                devId: devId,
-                devName: currentDeviceName,
-                boundDeviceName: matched.boundDeviceName || (lang === "ar" ? "جهاز الإدارة المقيد" : "Admin-restricted bound device")
-              });
-
-              setF24Error(
-                lang === "ar"
-                  ? "عذراً، هذا الجهاز غير موثق للدخول للمدير الفائق لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى التواصل مع الدعم الفني لتوثيق هذا الجهاز."
-                  : "Error: This device is not authorized for Super Admin access. This account is already linked to another device."
-              );
-              setButtonLoading("f24Login", false);
-              return;
-            }
-          }
-        }
-      }
+      // Feras/F24 bypass: Developer has absolute entry bypass from any device/browser anytime.
+      console.log("[F24] Super Admin / Developer bypass: skipping all device fingerprint checks.");
 
       const superAdmin: User = {
         username: "FERAS",
@@ -3312,6 +3300,7 @@ export default function App() {
                   newUsername, password, role, jobTitle, 
                   deviceLockEnabled, allowDeviceMigration, openLoginAnywhere, boundDeviceId, boundDeviceName,
                   pendingDeviceApprovalId, pendingDeviceApprovalName,
+                  allowMultiBrowserOnSameDevice, boundHardwareId, blockConcurrentLogins, allowAutoMigration,
                   ...rest 
                 } = payload as any;
                 await handleUpdateUser(username, {
@@ -3326,6 +3315,10 @@ export default function App() {
                   boundDeviceName,
                   pendingDeviceApprovalId,
                   pendingDeviceApprovalName,
+                  allowMultiBrowserOnSameDevice,
+                  boundHardwareId,
+                  blockConcurrentLogins,
+                  allowAutoMigration,
                   permissions: rest,
                 });
               }}
@@ -6192,6 +6185,81 @@ export default function App() {
                 className="w-full mt-3 py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-slate-300 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-800"
               >
                 ✕ {lang === "ar" ? "العودة لصفحة تسجيل الدخول" : "Return to Login Screen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONCURRENT SESSION TAKEOVER ALERT MODAL */}
+      {showConcurrentSessionModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 md:p-8 text-white relative shadow-2xl overflow-hidden text-right">
+            
+            {/* Glowing warning element */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-600 to-amber-500"></div>
+            
+            {/* Header section with AlertTriangle & Shield */}
+            <div className="flex items-center justify-center gap-3 mb-6 flex-row-reverse">
+              <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl">
+                <ShieldAlert className="w-8 h-8 animate-pulse" />
+              </div>
+              <div className="text-right">
+                <h3 className="text-xl font-black text-white tracking-wide">
+                  {lang === "ar" ? "تنبيه أمني: يوجد جلسة نشطة مفتوحة" : "Security Alert: Active Session Running"}
+                </h3>
+                <p className="text-xs text-amber-400 font-bold tracking-widest uppercase mt-0.5">
+                  {lang === "ar" ? "سياسة منع الدخول المتعدد مفعلة" : "Active Concurrency Block Policy Enabled"}
+                </p>
+              </div>
+            </div>
+
+            {/* Main Explanatory Statement requested by the user */}
+            <div className="space-y-4">
+              <p className="text-sm font-bold text-slate-200 leading-relaxed bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                {lang === "ar" ? (
+                  <>
+                    <span className="text-amber-400 text-lg block mb-2 font-black">حسابك مسجل دخول به حالياً في مكان آخر!</span>
+                    لأغراض أمنية ولمنع مشاركة الحسابات، يمنع النظام تسجيل الدخول المتزامن من عدة أجهزة أو متصفحات مختلفة في نفس الوقت.
+                  </>
+                ) : (
+                  <>
+                    <span className="text-amber-400 text-lg block mb-2 font-black">Account is currently in use elsewhere!</span>
+                    To prevent unauthorized account sharing and maintain security, the system restricts concurrent logins across multiple devices or browsers.
+                  </>
+                )}
+              </p>
+
+              <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-300 space-y-1 text-center text-xs">
+                <div>⚠️ {lang === "ar" ? "ماذا تريد أن تفعل؟" : "What would you like to do?"}</div>
+                <div className="text-slate-400">
+                  {lang === "ar" 
+                    ? "يمكنك إلغاء الجلسة السابقة (تسجيل خروج الجهاز الآخر تلقائياً) ومتابعة الدخول من هنا فوراً." 
+                    : "You can terminate the other active session (automatically logging out the other device) and log in from here immediately."}
+                </div>
+              </div>
+
+              {/* Force Takeover Button */}
+              <button
+                onClick={(e) => {
+                  setShowConcurrentSessionModal(false);
+                  handleRegularLogin(e, true);
+                }}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] transition text-white font-black rounded-xl text-sm flex items-center justify-center gap-2 border border-amber-500 shadow-lg shadow-amber-950/20 text-center"
+              >
+                <span>🔑</span>
+                <span>{lang === "ar" ? "إلغاء الجلسة السابقة ومتابعة الدخول" : "Terminate Other Session & Log In"}</span>
+              </button>
+
+              {/* Cancel Button */}
+              <button
+                onClick={() => {
+                  setShowConcurrentSessionModal(false);
+                }}
+                className="w-full py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-slate-300 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-800 text-center"
+              >
+                <span>✕</span>
+                <span>{lang === "ar" ? "إلغاء والعودة" : "Cancel & Return"}</span>
               </button>
             </div>
           </div>

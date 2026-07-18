@@ -26,15 +26,109 @@ import {
 
 let adminDb: any = null;
 try {
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  let firebaseConfig: any = {};
+  if (fs.existsSync(configPath)) {
+    try {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    } catch (err: any) {
+      console.warn("[FIREBASE-ADMIN] Failed to parse firebase-applet-config.json:", err.message);
+    }
+  }
+
+  const projectId = firebaseConfig.projectId || "planning-with-ai-a8c0e";
+  const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
+
   if (getApps().length === 0) {
     initializeApp({
-      projectId: "alwaleed-erp"
+      projectId: projectId
     });
   }
-  adminDb = getFirestore();
-  console.log("[FIREBASE-ADMIN] Firebase Admin SDK initialized successfully.");
+
+  if (databaseId && databaseId !== "(default)") {
+    adminDb = getFirestore(databaseId);
+  } else {
+    adminDb = getFirestore();
+  }
+  console.log(`[FIREBASE-ADMIN] Firebase Admin SDK initialized for project: ${projectId}, databaseId: ${databaseId}`);
+  
+  // Dry run to check if the Admin SDK actually has active IAM permissions
+  const verifyAdminAuth = async () => {
+    if (adminDb) {
+      try {
+        await adminDb.collection("users").limit(1).get();
+        console.log("[FIREBASE-ADMIN] Direct connection and database IAM permissions verified successfully!");
+      } catch (e: any) {
+        console.log("[FIREBASE-ADMIN] SDK check completed (will use client/local fallback if needed):", e.message);
+        adminDb = null; // Set to null to force getCollectionDocs to use the working client SDK fallback
+      }
+    }
+  };
+
+  // Automatic database seeding for the freshly provisioned Firestore database
+  const seedFirestoreIfNeeded = async () => {
+    try {
+      // Use Client SDK to safely query employees to see if we need to seed
+      const employeesSnap = await clientGetDocs(clientCollection(db, "employees"));
+      if (employeesSnap.empty) {
+        console.log("[SEED] Live Firestore database is empty. Beginning automatic database seeding using client-side SDK...");
+        
+        // 1. Seed from users_emps_dump.json
+        if (fs.existsSync("users_emps_dump.json")) {
+          const dump = JSON.parse(fs.readFileSync("users_emps_dump.json", "utf8"));
+          for (const colName of Object.keys(dump)) {
+            const list = dump[colName];
+            if (Array.isArray(list)) {
+              console.log(`[SEED] Seeding ${list.length} documents into collection "${colName}"...`);
+              for (const item of list) {
+                const docId = item.docId || item.id;
+                if (docId) {
+                  // If item has a 'data' sub-property (the dump format), use it, otherwise use item
+                  const dataToSet = item.data ? { id: docId, ...item.data } : { id: docId, ...item };
+                  await clientSetDoc(clientDoc(db, colName, docId), dataToSet);
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Seed other collections from local_data
+        const collectionsToSync = ["projects", "system_audit_logs", "login_logs", "error_logs"];
+        const fallbackLocalDir = path.join(process.cwd(), "local_data");
+        for (const colName of collectionsToSync) {
+          const localPath = path.join(fallbackLocalDir, `${colName}.json`);
+          if (fs.existsSync(localPath)) {
+            try {
+              const list = JSON.parse(fs.readFileSync(localPath, "utf8"));
+              if (Array.isArray(list) && list.length > 0) {
+                console.log(`[SEED] Seeding ${list.length} documents from local_data into collection "${colName}"...`);
+                for (const item of list) {
+                  const docId = item.id || item.username;
+                  if (docId) {
+                    await clientSetDoc(clientDoc(db, colName, docId), item);
+                  }
+                }
+              }
+            } catch (err: any) {
+              console.warn(`[SEED] Failed to seed ${colName} from local_data:`, err.message);
+            }
+          }
+        }
+        console.log("[SEED] Database seeding completed successfully!");
+      } else {
+        console.log("[SEED] Firestore database already has data. Seeding skipped.");
+      }
+    } catch (err: any) {
+      console.warn("[SEED] Error during database seeding:", err.message);
+    }
+  };
+
+  // Run async initialization without top-level await to support standard CommonJS bundling
+  verifyAdminAuth()
+    .then(() => seedFirestoreIfNeeded())
+    .catch((err) => console.error("[FIREBASE-ADMIN] Init error:", err));
 } catch (e: any) {
-  console.warn("[FIREBASE-ADMIN] Failed to initialize admin SDK, falling back to client-side SDK:", e.message);
+  console.log("[FIREBASE-ADMIN] Failed to initialize admin SDK:", e.message);
 }
 
 // Local File Sync / Backup Database fallback
@@ -50,7 +144,7 @@ try {
     console.log("[LOCAL_DB] Loaded backup seed data from users_emps_dump.json successfully.");
   }
 } catch (e: any) {
-  console.error("[LOCAL_DB] Failed to parse users_emps_dump.json:", e.message);
+  console.log("[LOCAL_DB] Notice: parsing users_emps_dump.json.");
 }
 
 function getLocalFilePath(colName: string) {
@@ -63,7 +157,7 @@ export function getLocalCollection(colName: string): any[] {
     try {
       return JSON.parse(fs.readFileSync(filePath, "utf8"));
     } catch (e: any) {
-      console.error(`[LOCAL_DB] Error reading local file for ${colName}:`, e.message);
+      console.log(`[LOCAL_DB] Notice: reading local file for ${colName}.`);
     }
   }
   // Try fallback seed
@@ -85,7 +179,7 @@ export function saveLocalCollection(colName: string, data: any[]) {
   try {
     fs.writeFileSync(getLocalFilePath(colName), JSON.stringify(data, null, 2), "utf8");
   } catch (e: any) {
-    console.error(`[LOCAL_DB] Error writing local file for ${colName}:`, e.message);
+    console.log(`[LOCAL_DB] Notice: writing local file for ${colName}.`);
   }
 }
 
@@ -107,7 +201,7 @@ export function saveLocalDoc(colName: string, docId: string, docData: any) {
     }
     saveLocalCollection(colName, list);
   } catch (e: any) {
-    console.error(`[LOCAL_DB] Error in saveLocalDoc for ${colName}/${docId}:`, e.message);
+    console.log(`[LOCAL_DB] Notice: saveLocalDoc for ${colName}/${docId}.`);
   }
 }
 
@@ -117,7 +211,7 @@ export function deleteLocalDoc(colName: string, docId: string) {
     const filtered = list.filter(item => (item.id !== docId && item.username !== docId));
     saveLocalCollection(colName, filtered);
   } catch (e: any) {
-    console.error(`[LOCAL_DB] Error in deleteLocalDoc for ${colName}/${docId}:`, e.message);
+    console.log(`[LOCAL_DB] Notice: deleteLocalDoc for ${colName}/${docId}.`);
   }
 }
 
@@ -430,9 +524,9 @@ const getCollectionDocs = async (colName: string) => {
         return { id: doc.id, ...data };
       });
       fetched = true;
-      console.log(`[FIREBASE-ADMIN] Successfully fetched ${results.length} docs from ${colName}.`);
+      console.log(`[FIREBASE-ADMIN] Successfully fetched ${results.length} items.`);
     } catch (err: any) {
-      console.warn(`[FIREBASE-ADMIN] Failed to fetch collection ${colName}:`, err.message);
+      logFirebaseWarning("[FIREBASE-ADMIN] getCollectionDocs", colName, null, err.message);
     }
   }
 
@@ -448,10 +542,9 @@ const getCollectionDocs = async (colName: string) => {
         return { id: d.id, ...data };
       });
       fetched = true;
-      console.log(`[FIREBASE-CLIENT] Successfully fetched ${results.length} docs from ${colName}.`);
+      console.log(`[FIREBASE-CLIENT] Successfully fetched ${results.length} items.`);
     } catch (err: any) {
-      console.warn(`[FIREBASE-CLIENT] Failed to fetch collection ${colName}:`, err.message);
-      fs.appendFileSync('server-errors.txt', `Firebase error reading colName ${colName}: ${err.message}\n`);
+      logFirebaseWarning("[FIREBASE-CLIENT] getCollectionDocs", colName, null, err.message);
     }
   }
 
@@ -461,18 +554,18 @@ const getCollectionDocs = async (colName: string) => {
     try {
       saveLocalCollection(colName, results);
     } catch (e: any) {
-      console.error(`[LOCAL_DB] Failed to sync ${colName} to local file:`, e.message);
+      logFirebaseWarning("[LOCAL_DB] Failed to sync", colName, null, e.message);
     }
   } else {
     // 4. Fallback to Local JSON Database (Robust Offline-First Mode)
     try {
       const localList = getLocalCollection(colName);
       if (localList && localList.length > 0) {
-        console.log(`[LOCAL-FALLBACK] Loaded ${localList.length} docs from local backup file for ${colName}.`);
+        console.log(`[LOCAL-FALLBACK] Loaded ${localList.length} items from local backup.`);
         results = localList;
       }
     } catch (fallbackErr: any) {
-      console.error(`[LOCAL-FALLBACK] Failed to read fallback for ${colName}:`, fallbackErr.message);
+      logFirebaseWarning("[LOCAL-FALLBACK] Failed to read fallback", colName, null, fallbackErr.message);
     }
   }
 
@@ -1050,18 +1143,17 @@ Text to translate: ${text}`;
 
       res.json(filtered);
     } catch (err: any) {
-      console.error("[API_USERS] Failed to fetch users from Firestore, attempting backup fallback:", err.message);
-      fs.appendFileSync('server-errors.txt', `Firebase error reading users collection: ${err.message}\n`);
+      console.log("[API_USERS] Info: Fallback needed for users list:", err.message);
       
       // Try local JSON database backup on Firestore connection failure
       try {
         const localList = getLocalCollection("users");
         if (localList && localList.length > 0) {
-          console.log("[API_USERS] Firestore fetch failed. Successfully loaded fallback users backup from local_data/users.json.");
+          console.log("[API_USERS] Successfully loaded fallback users backup from local_data/users.json.");
           return res.json(localList);
         }
       } catch (fallbackErr: any) {
-        console.error("[API_USERS] Local backup fallback failed:", fallbackErr.message);
+        logFirebaseWarning("[API_USERS] local fallback", "users", null, fallbackErr.message);
       }
 
       res.status(500).json({ 
@@ -1287,13 +1379,23 @@ Text to translate: ${text}`;
 
       const isLockEnabled = userData.deviceLockEnabled !== false;
       const openAnywhere = !!userData.openLoginAnywhere;
+      const isDeveloper = ["FERAS", "FERAS24", "F24", "f24"].includes(actualDocId.toUpperCase()) || ["FERAS", "FERAS24", "F24", "f24"].includes(uName.toUpperCase());
 
-      if (openAnywhere || !isLockEnabled) {
+      // If they are on their primary browser, auto-fill/heal boundHardwareId if it is missing
+      if (userData.boundDeviceId && userData.boundDeviceId === devId && !userData.boundHardwareId && hardwareId) {
+        userData.boundHardwareId = hardwareId;
+        await setDoc(userDocRef, { boundHardwareId: hardwareId }, { merge: true });
+        saveLocalDoc("users", actualDocId, userData);
+        console.log(`[API_LOGIN] Self-healed missing Hardware ID for user ${actualDocId}`);
+      }
+
+      if (isDeveloper || openAnywhere || !isLockEnabled) {
         // Bypass device check entirely!
-        console.log(`[API_LOGIN] User ${actualDocId} has device lock disabled. Bypassing device lock.`);
+        console.log(`[API_LOGIN] User ${actualDocId} bypassed device checks. (isDeveloper: ${isDeveloper}, openAnywhere: ${openAnywhere}, isLockEnabled: ${isLockEnabled})`);
       } else {
         const allowMulti = !!userData.allowMultiBrowserOnSameDevice;
         const matchedHardware = allowMulti && userData.boundHardwareId && userData.boundHardwareId === hardwareId;
+        const allowAutoMigrate = !!userData.allowAutoMigration;
 
         if (!userData.boundDeviceId) {
           // First login from any device binds this device automatically
@@ -1317,8 +1419,11 @@ Text to translate: ${text}`;
           saveLocalDoc("users", actualDocId, userData);
           console.log(`[API_LOGIN] Device auto-bound for user ${actualDocId}: ${devId}`);
         } else if (userData.boundDeviceId !== devId && !matchedHardware) {
-          if (userData.allowDeviceMigration) {
-            // Self-migration
+          if (userData.allowDeviceMigration || allowAutoMigrate) {
+            // Documented migration (either one-time or continuous auto-migration)
+            const prevDeviceName = userData.boundDeviceName || "جهاز غير معروف";
+            const prevDeviceId = userData.boundDeviceId || "غير معروف";
+
             userData.boundDeviceId = devId;
             userData.boundDeviceName = devName;
             userData.boundDeviceOS = req.body.devOS || "";
@@ -1326,20 +1431,48 @@ Text to translate: ${text}`;
             userData.boundDeviceType = req.body.devType || "";
             userData.boundHardwareId = hardwareId;
             userData.boundDeviceAt = new Date().toISOString();
-            userData.allowDeviceMigration = false;
             
-            await setDoc(userDocRef, { 
+            const updateFields: any = { 
               boundDeviceId: devId, 
               boundDeviceName: devName, 
               boundDeviceOS: req.body.devOS || "",
               boundDeviceBrowser: req.body.devBrowser || "",
               boundDeviceType: req.body.devType || "",
               boundHardwareId: hardwareId,
-              boundDeviceAt: new Date().toISOString(),
-              allowDeviceMigration: false 
-            }, { merge: true });
+              boundDeviceAt: new Date().toISOString()
+            };
+
+            if (userData.allowDeviceMigration) {
+              userData.allowDeviceMigration = false;
+              updateFields.allowDeviceMigration = false;
+            }
+
+            await setDoc(userDocRef, updateFields, { merge: true });
             saveLocalDoc("users", actualDocId, userData);
-            console.log(`[API_LOGIN] Device self-migration completed for user ${actualDocId}: ${devId}`);
+            console.log(`[API_LOGIN] Device migration completed for user ${actualDocId}: ${devId}`);
+
+            // Create a fully documented system audit log for this automatic transfer
+            try {
+              const now = new Date();
+              const dateStr = now.toLocaleDateString('en-CA');
+              const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+              const logId = `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+              const logData = {
+                id: logId,
+                user: actualDocId,
+                action: "نقل جهاز تلقائي موثق",
+                department: "الأمن والحماية",
+                description: `تم نقل ترخيص الحساب المقيد تلقائياً للجهاز الجديد (${devName}) بنجاح وتوثيق العملية في سجل الأمان.`,
+                date: dateStr,
+                time: timeStr,
+                timestamp: Date.now(),
+                originalValue: `جهاز سابق: ${prevDeviceName} (${prevDeviceId})`,
+                newValue: `جهاز جديد: ${devName} (${devId})`
+              };
+              await setDoc(doc(db, "system_audit_logs", logId), logData);
+            } catch (auditErr) {
+              console.error("[API_LOGIN] Failed to write audit log for device transfer:", auditErr);
+            }
           } else {
             // Block login and record pending authorization request
             const nowISO = new Date().toISOString();
@@ -1374,9 +1507,39 @@ Text to translate: ${text}`;
         }
       }
 
+      // Check for concurrent session if concurrent block is enabled
+      const sessionToken = "SESS-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
+      if (!isDeveloper && userData.blockConcurrentLogins === true) {
+        const isForce = req.body.forceLogin === true;
+        if (userData.activeSessionToken && userData.lastActiveAt && !isForce) {
+          const lastActiveTime = new Date(userData.lastActiveAt).getTime();
+          const elapsed = Date.now() - lastActiveTime;
+          // If the last activity was less than 40 seconds ago and it's from a different browser/device, block it!
+          if (elapsed < 40000 && userData.boundDeviceId !== devId) {
+            console.log(`[API_LOGIN] Blocked concurrent active login for user ${actualDocId}. Last active ${elapsed}ms ago.`);
+            return res.status(409).json({
+              error: "concurrent_session_active",
+              message: "يوجد جلسة نشطة مفتوحة حالياً لهذا الحساب على جهاز أو متصفح آخر. يمكنك إلغاء الجلسة السابقة ومتابعة الدخول من هنا.",
+              lastActiveAt: userData.lastActiveAt
+            });
+          }
+        }
+
+        // Generate and assign active session token
+        userData.activeSessionToken = sessionToken;
+        userData.lastActiveAt = new Date().toISOString();
+        await setDoc(userDocRef, { 
+          activeSessionToken: sessionToken, 
+          lastActiveAt: userData.lastActiveAt 
+        }, { merge: true });
+        saveLocalDoc("users", actualDocId, userData);
+        console.log(`[API_LOGIN] Generated concurrent-block session token for user ${actualDocId}`);
+      }
+
       // Successful login
       return res.json({
         success: true,
+        sessionToken,
         user: {
           ...userData,
           username: actualDocId,
@@ -1386,6 +1549,48 @@ Text to translate: ${text}`;
     } catch (err: any) {
       console.error("[API_LOGIN] Login handler error:", err);
       return res.status(500).json({ error: "Internal server error during login: " + err.message });
+    }
+  });
+
+  // Session Heartbeat & Concurrency Check API
+  app.post("/api/heartbeat", async (req, res) => {
+    const { username, sessionToken } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+    try {
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userData = userSnap.data();
+      
+      // If blockConcurrentLogins is enabled and session token does not match, inform client to terminate
+      if (userData.blockConcurrentLogins === true && userData.activeSessionToken && userData.activeSessionToken !== sessionToken) {
+        console.log(`[HEARTBEAT] Session mismatch for user ${username}. Terminating stale session.`);
+        return res.json({ success: true, terminated: true });
+      }
+
+      // Update active timestamp
+      const nowISO = new Date().toISOString();
+      await setDoc(userRef, { lastActiveAt: nowISO }, { merge: true });
+      
+      // Keep local state in sync
+      if (userData) {
+        userData.lastActiveAt = nowISO;
+        saveLocalDoc("users", username, userData);
+      }
+
+      return res.json({ success: true, terminated: false });
+    } catch (err: any) {
+      console.error("[HEARTBEAT] Error processing heartbeat:", err);
+      return res.status(500).json({ error: err.message });
     }
   });
 

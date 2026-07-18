@@ -570,6 +570,12 @@ export default function AdvancedPermissionsPortal({
   const [allowMultiBrowserOnSameDevice, setAllowMultiBrowserOnSameDevice] = useState<boolean>(
      !!user.allowMultiBrowserOnSameDevice
   );
+  const [blockConcurrentLogins, setBlockConcurrentLogins] = useState<boolean>(
+     !!user.blockConcurrentLogins
+  );
+  const [allowAutoMigration, setAllowAutoMigration] = useState<boolean>(
+     !!user.allowAutoMigration
+  );
   const [boundHardwareId, setBoundHardwareId] = useState<string>(
      user.boundHardwareId || ""
   );
@@ -744,7 +750,9 @@ export default function AdvancedPermissionsPortal({
        boundDeviceId,
        boundDeviceName,
        pendingDeviceApprovalId,
-       pendingDeviceApprovalName
+       pendingDeviceApprovalName,
+       blockConcurrentLogins,
+       allowAutoMigration
     };
 
     await onSave(user.username, payload);
@@ -946,9 +954,10 @@ export default function AdvancedPermissionsPortal({
                                         <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowMultiBrowserOnSameDevice ? '-translate-x-5' : 'translate-x-0'}`} />
                                      </button>
                                   </div>
+
                                   <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                                      <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800">تفعيل حظر الدخول المتعدد</span>
+                                        <span className="block text-sm font-black text-slate-800">تفعيل قفل الجهاز الموثق</span>
                                         <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
                                            عند تفعيل هذا الخيار، سيتم إلزام المستخدم بالدخول من جهاز واحد فقط موثق ومسجل لدى النظام.
                                         </span>
@@ -964,9 +973,25 @@ export default function AdvancedPermissionsPortal({
 
                                   <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                                      <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800 font-sans">السماح بالنقل التلقائي الموثق</span>
+                                        <span className="block text-sm font-black text-slate-800">تفعيل حظر الدخول المتعدد (منع الجلسات المتزامنة)</span>
                                         <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، يستطيع المستخدم الانتقال لجهازه الجديد تلقائياً بمجرد تسجيل الدخول (Setup Mode) وسيتم قفله على الجهاز الجديد وإلغاء الجهاز القديم فوراً.
+                                           عند التفعيل، سيتم حظر تسجيل دخول الموظف إذا كان هناك جلسة نشطة مستخدمة بالفعل على جهاز/متصفح آخر في نفس الوقت لمنع مشاركة الحسابات.
+                                        </span>
+                                     </div>
+                                     <button
+                                        type="button"
+                                        onClick={() => setBlockConcurrentLogins(!blockConcurrentLogins)}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${blockConcurrentLogins ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                     >
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${blockConcurrentLogins ? '-translate-x-5' : 'translate-x-0'}`} />
+                                     </button>
+                                  </div>
+
+                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                     <div className="flex-1">
+                                        <span className="block text-sm font-black text-slate-800 font-sans">السماح بالنقل التلقائي الموثق (لمرة واحدة)</span>
+                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
+                                           عند التفعيل، يستطيع المستخدم الانتقال لجهازه الجديد تلقائياً لمرة واحدة بمجرد تسجيل الدخول (Setup Mode) وسيتم قفله على الجهاز الجديد وإلغاء القديم فوراً.
                                         </span>
                                      </div>
                                      <button
@@ -975,6 +1000,22 @@ export default function AdvancedPermissionsPortal({
                                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowDeviceMigration ? 'bg-indigo-600' : 'bg-slate-300'}`}
                                      >
                                         <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowDeviceMigration ? '-translate-x-5' : 'translate-x-0'}`} />
+                                     </button>
+                                  </div>
+
+                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                     <div className="flex-1">
+                                        <span className="block text-sm font-black text-slate-800 font-sans">السماح بالنقل التلقائي الموثق للجهاز بشكل مستمر</span>
+                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
+                                           عند التفعيل، سيتم نقل ترخيص حساب المستخدم وتحديث جهازه الموثق تلقائياً عند الدخول من أي جهاز جديد مع توثيق وتسجيل النقل بالكامل في سجلات التدقيق الأمني.
+                                        </span>
+                                     </div>
+                                     <button
+                                        type="button"
+                                        onClick={() => setAllowAutoMigration(!allowAutoMigration)}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowAutoMigration ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                     >
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowAutoMigration ? '-translate-x-5' : 'translate-x-0'}`} />
                                      </button>
                                   </div>
 
