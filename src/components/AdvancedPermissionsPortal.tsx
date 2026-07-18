@@ -591,19 +591,19 @@ export default function AdvancedPermissionsPortal({
       });
       if (res.ok) {
          if (targetUsername.toUpperCase() === user.username.toUpperCase()) {
-            setBoundDeviceId(targetDevId);
-            setBoundDeviceName(targetDevName);
+            setBoundDeviceId("");
+            setBoundDeviceName("");
             setPendingDeviceApprovalId("");
             setPendingDeviceApprovalName("");
          }
          // Update localUsers list
          setLocalUsers(prev => prev.map(u => {
             if (u.username.toUpperCase() === targetUsername.toUpperCase()) {
-               return { ...u, boundDeviceId: targetDevId, boundDeviceName: targetDevName, pendingDeviceApprovalId: "", pendingDeviceApprovalName: "" };
+               return { ...u, boundDeviceId: "", boundDeviceName: "", pendingDeviceApprovalId: "", pendingDeviceApprovalName: "" };
             }
             return u;
          }));
-         alert("تم قبول وتوثيق الجهاز للمستخدم " + targetUsername + " بنجاح!");
+         alert("تم قبول طلب استبدال الجهاز للمستخدم " + targetUsername + " بنجاح! بإمكان الموظف الآن الدخول من جهازه الجديد ليتم ربطه تلقائياً.");
       } else {
          const errData = await res.json();
          alert("فشل قبول وتوثيق الجهاز: " + (errData.error || "خطأ غير معروف"));
@@ -981,6 +981,26 @@ export default function AdvancedPermissionsPortal({
                                         {boundDeviceName && (
                                            <div className="text-[11px] text-[#0072BC] font-black text-center bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100">
                                               اسم الجهاز: {boundDeviceName}
+                                           </div>
+                                        )}
+                                        {user.boundDeviceOS && (
+                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
+                                              💻 نظام التشغيل: <span className="font-semibold text-slate-800">{user.boundDeviceOS}</span>
+                                           </div>
+                                        )}
+                                        {user.boundDeviceBrowser && (
+                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
+                                              🌐 المتصفح: <span className="font-semibold text-slate-800">{user.boundDeviceBrowser}</span>
+                                           </div>
+                                        )}
+                                        {user.boundDeviceType && (
+                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
+                                              📱 نوع الجهاز: <span className="font-semibold text-slate-800">{user.boundDeviceType}</span>
+                                           </div>
+                                        )}
+                                        {user.boundDeviceAt && (
+                                           <div className="text-[10px] text-slate-500 font-bold text-right py-0.5 px-1">
+                                              🕒 تم الاقتران في: {new Date(user.boundDeviceAt).toLocaleString("ar-EG")}
                                            </div>
                                         )}
                                         <button

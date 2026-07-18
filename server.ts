@@ -1239,16 +1239,27 @@ Text to translate: ${text}`;
       const isLockEnabled = userData.deviceLockEnabled !== false;
       const openAnywhere = !!userData.openLoginAnywhere;
 
-      if (openAnywhere) {
+      if (openAnywhere || !isLockEnabled) {
         // Bypass device check entirely!
-        console.log(`[API_LOGIN] User ${actualDocId} has openLoginAnywhere enabled. Bypassing device lock.`);
-      } else if (isLockEnabled) {
+        console.log(`[API_LOGIN] User ${actualDocId} has device lock disabled. Bypassing device lock.`);
+      } else {
         if (!userData.boundDeviceId) {
           // First login from any device binds this device automatically
           userData.boundDeviceId = devId;
           userData.boundDeviceName = devName;
+          userData.boundDeviceOS = req.body.devOS || "";
+          userData.boundDeviceBrowser = req.body.devBrowser || "";
+          userData.boundDeviceType = req.body.devType || "";
+          userData.boundDeviceAt = new Date().toISOString();
           
-          await setDoc(userDocRef, { boundDeviceId: devId, boundDeviceName: devName }, { merge: true });
+          await setDoc(userDocRef, { 
+            boundDeviceId: devId, 
+            boundDeviceName: devName,
+            boundDeviceOS: req.body.devOS || "",
+            boundDeviceBrowser: req.body.devBrowser || "",
+            boundDeviceType: req.body.devType || "",
+            boundDeviceAt: new Date().toISOString()
+          }, { merge: true });
           saveLocalDoc("users", actualDocId, userData);
           console.log(`[API_LOGIN] Device auto-bound for user ${actualDocId}: ${devId}`);
         } else if (userData.boundDeviceId !== devId) {
@@ -1256,11 +1267,19 @@ Text to translate: ${text}`;
             // Self-migration
             userData.boundDeviceId = devId;
             userData.boundDeviceName = devName;
+            userData.boundDeviceOS = req.body.devOS || "";
+            userData.boundDeviceBrowser = req.body.devBrowser || "";
+            userData.boundDeviceType = req.body.devType || "";
+            userData.boundDeviceAt = new Date().toISOString();
             userData.allowDeviceMigration = false;
             
             await setDoc(userDocRef, { 
               boundDeviceId: devId, 
               boundDeviceName: devName, 
+              boundDeviceOS: req.body.devOS || "",
+              boundDeviceBrowser: req.body.devBrowser || "",
+              boundDeviceType: req.body.devType || "",
+              boundDeviceAt: new Date().toISOString(),
               allowDeviceMigration: false 
             }, { merge: true });
             saveLocalDoc("users", actualDocId, userData);
@@ -1355,14 +1374,22 @@ Text to translate: ${text}`;
         return res.status(400).json({ error: "No pending device request found." });
       }
 
-      userData.boundDeviceId = newId;
-      userData.boundDeviceName = newName || "متصفح موثق";
+      userData.boundDeviceId = "";
+      userData.boundDeviceName = "";
+      userData.boundDeviceOS = "";
+      userData.boundDeviceBrowser = "";
+      userData.boundDeviceType = "";
+      userData.boundDeviceAt = "";
       userData.pendingDeviceApprovalId = "";
       userData.pendingDeviceApprovalName = "";
 
       await setDoc(userRef, { 
-        boundDeviceId: userData.boundDeviceId, 
-        boundDeviceName: userData.boundDeviceName,
+        boundDeviceId: "", 
+        boundDeviceName: "",
+        boundDeviceOS: "",
+        boundDeviceBrowser: "",
+        boundDeviceType: "",
+        boundDeviceAt: "",
         pendingDeviceApprovalId: "",
         pendingDeviceApprovalName: ""
       }, { merge: true });

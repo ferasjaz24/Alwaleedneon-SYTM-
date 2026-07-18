@@ -243,6 +243,37 @@ export const financeSubmenus = [
   }
 ];
 
+function getDeviceOS(): string {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return "جهاز غير معروف / Unknown OS";
+  const ua = navigator.userAgent;
+  if (ua.includes("Windows")) return "جهاز كمبيوتر ويندوز / Windows PC";
+  if (ua.includes("Macintosh") || ua.includes("Mac OS")) return "جهاز ماك / Mac Device";
+  if (ua.includes("iPhone")) return "هاتف آيفون / iPhone";
+  if (ua.includes("iPad")) return "جهاز آيباد / iPad";
+  if (ua.includes("Android")) return "جهاز أندرويد / Android Device";
+  if (ua.includes("Linux")) return "جهاز لينكس / Linux Device";
+  return "جهاز غير معروف / Unknown OS";
+}
+
+function getDeviceBrowser(): string {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return "متصفح غير معروف / Unknown Browser";
+  const ua = navigator.userAgent;
+  if (ua.includes("Chrome") && !ua.includes("Edg") && !ua.includes("OPR")) return "جوجل كروم / Google Chrome";
+  if (ua.includes("Safari") && !ua.includes("Chrome")) return "متصفح سفاري / Safari";
+  if (ua.includes("Firefox")) return "متصفح فايرفوكس / Firefox";
+  if (ua.includes("Edg")) return "متصفح إيدج / Microsoft Edge";
+  if (ua.includes("OPR") || ua.includes("Opera")) return "متصفح أوبرا / Opera";
+  return "متصفح غير معروف / Unknown Browser";
+}
+
+function getDeviceType(): string {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return "جهاز كمبيوتر / Desktop Computer";
+  const ua = navigator.userAgent;
+  if (ua.includes("Mobi") || ua.includes("iPhone") || ua.includes("Android")) return "جهاز محمول / Mobile Phone";
+  if (ua.includes("iPad") || ua.includes("Tablet")) return "جهاز لوحي / Tablet";
+  return "جهاز كمبيوتر / Desktop Computer";
+}
+
 function getDeviceFriendlyName(): string {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return "Unknown Device";
@@ -1053,7 +1084,10 @@ export default function App() {
           username: loginUsername,
           password: loginPassword,
           devId,
-          devName: currentDeviceName
+          devName: currentDeviceName,
+          devOS: getDeviceOS(),
+          devBrowser: getDeviceBrowser(),
+          devType: getDeviceType()
         })
       });
 
@@ -1138,12 +1172,17 @@ export default function App() {
           setActiveTab("dashboard");
         }
       } else if (response.status === 403) {
-        const errorData = await response.json();
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          console.error("Failed to parse 403 response as JSON:", e);
+        }
         setDeviceBlockDetails({
-          username: errorData.username,
-          devId: errorData.devId,
-          devName: errorData.devName,
-          boundDeviceName: errorData.boundDeviceName
+          username: errorData.username || loginUsername,
+          devId: errorData.devId || devId,
+          devName: errorData.devName || currentDeviceName,
+          boundDeviceName: errorData.boundDeviceName || "جهاز آخر مرتبط"
         });
         setLoginError(
           lang === "ar"
