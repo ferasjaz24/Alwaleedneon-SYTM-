@@ -301,6 +301,22 @@ const customFetch = async function (
     return originalFetch.apply(this, [input, init]);
   }
 
+  // Backend-only routes that should NEVER be intercepted by direct client-side Firebase
+  const isBackendOnlyRoute = 
+    pathname.includes("/api/login") ||
+    pathname.includes("/api/verify-device") ||
+    pathname.includes("/api/translate") ||
+    (pathname.includes("/api/users/") && (
+      pathname.includes("/approve-device") || 
+      pathname.includes("/reject-device") || 
+      pathname.includes("/request-device-change")
+    ));
+
+  if (isBackendOnlyRoute) {
+    console.log("[CLIENT-FIREBASE-INTERCEPT] Backend-only route. Bypassing interceptor:", pathname);
+    return originalFetch.apply(this, [input, init]);
+  }
+
   // If the browser user is not authenticated yet, bypass the interceptor and let the Express server handle it.
   // The Express server is authenticated as a system-server on the backend, so it can securely access the DB.
   const isSettingsOrStatus = pathname.includes("/api/settings/gemini") || pathname.includes("/api/db-status");

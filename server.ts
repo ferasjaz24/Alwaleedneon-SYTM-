@@ -184,14 +184,30 @@ export async function getDoc(docRef: AdminDocRef) {
       const localList = getLocalCollection(docRef.colPath);
       const localItem = localList.find(item => (item.id === docRef.docId || item.username === docRef.docId));
       if (localItem) {
+        // Ensure critical fields from local backup are fully preserved if missing in Firestore
         docData = {
+          ...localItem,
           ...docData,
+          password: docData.password || localItem.password,
+          role: docData.role || localItem.role,
+          empId: docData.empId || localItem.empId,
+          jobTitle: docData.jobTitle || localItem.jobTitle,
+          permissions: docData.permissions || localItem.permissions,
+          // Let localItem device state overwrite if present
           ...(localItem.boundDeviceId !== undefined && { boundDeviceId: localItem.boundDeviceId }),
           ...(localItem.deviceLockEnabled !== undefined && { deviceLockEnabled: localItem.deviceLockEnabled }),
           ...(localItem.allowDeviceMigration !== undefined && { allowDeviceMigration: localItem.allowDeviceMigration }),
           ...(localItem.pendingDeviceApprovalId !== undefined && { pendingDeviceApprovalId: localItem.pendingDeviceApprovalId }),
           ...(localItem.pendingDeviceApprovalName !== undefined && { pendingDeviceApprovalName: localItem.pendingDeviceApprovalName }),
         };
+        // Auto-heal Firestore if fields were missing
+        if (adminDb) {
+          try {
+            await adminDb.collection("users").doc(docRef.docId).set(docData, { merge: true });
+          } catch (err: any) {
+            console.warn(`[FIREBASE-HEAL] Failed to heal user ${docRef.docId}:`, err.message);
+          }
+        }
       }
     }
     saveLocalDoc(docRef.colPath, docRef.docId, docData);
@@ -263,7 +279,13 @@ export async function getDocs(colRef: AdminCollectionRef) {
         return {
           username: d.id,
           id: d.id,
+          ...(localItem || {}),
           ...remoteData,
+          password: remoteData?.password || localItem?.password,
+          role: remoteData?.role || localItem?.role,
+          empId: remoteData?.empId || localItem?.empId,
+          jobTitle: remoteData?.jobTitle || localItem?.jobTitle,
+          permissions: remoteData?.permissions || localItem?.permissions,
           ...(localItem?.boundDeviceId !== undefined && { boundDeviceId: localItem.boundDeviceId }),
           ...(localItem?.deviceLockEnabled !== undefined && { deviceLockEnabled: localItem.deviceLockEnabled }),
           ...(localItem?.allowDeviceMigration !== undefined && { allowDeviceMigration: localItem.allowDeviceMigration }),
@@ -273,6 +295,22 @@ export async function getDocs(colRef: AdminCollectionRef) {
       }
       return { id: d.id, ...remoteData };
     });
+
+    // For users, append any local users that are not in Firestore yet to ensure they are fully visible
+    if (colRef.path === "users") {
+      localList.forEach(localItem => {
+        const username = localItem.username || localItem.id;
+        const existsInRemote = mappedToLocal.some(u => u.id?.toUpperCase() === username?.toUpperCase() || u.username?.toUpperCase() === username?.toUpperCase());
+        if (!existsInRemote) {
+          mappedToLocal.push({
+            username: username,
+            id: username,
+            ...localItem
+          });
+        }
+      });
+    }
+
     if (mappedToLocal.length > 0) {
       saveLocalCollection(colRef.path, mappedToLocal);
     }
@@ -1186,7 +1224,18 @@ Text to translate: ${text}`;
       }
 
       if (userData.password !== password) {
-        return res.status(401).json({ error: "Incorrect passcode entered." });
+        // Self-healing check: check if the local JSON backup has the correct passcode for this user
+        const localList = getLocalCollection("users");
+        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+        if (matchedLocal && matchedLocal.password === password) {
+          console.log(`[API_LOGIN] Self-healing passcode sync for user ${actualDocId} matching local backup.`);
+          userData.password = password;
+          // Sync password from local backup to Firestore!
+          await setDoc(userDocRef, { password: password }, { merge: true });
+          saveLocalDoc("users", actualDocId, userData);
+        } else {
+          return res.status(401).json({ error: "Incorrect passcode entered." });
+        }
       }
 
       const isLockEnabled = userData.deviceLockEnabled !== false;
@@ -1321,7 +1370,14 @@ Text to translate: ${text}`;
       }, { merge: true });
       saveLocalDoc("users", username, userData);
 
-      return res.json({ success: true, user: userData });
+      return res.json({ 
+        success: true, 
+        user: {
+          ...userData,
+          username: username,
+          id: username
+        } 
+      });
     } catch (err: any) {
       console.error("[API_APPROVE_DEVICE] Error:", err);
       return res.status(500).json({ error: err.message });
@@ -1352,7 +1408,14 @@ Text to translate: ${text}`;
       }, { merge: true });
       saveLocalDoc("users", username, userData);
 
-      return res.json({ success: true, user: userData });
+      return res.json({ 
+        success: true, 
+        user: {
+          ...userData,
+          username: username,
+          id: username
+        } 
+      });
     } catch (err: any) {
       console.error("[API_REJECT_DEVICE] Error:", err);
       return res.status(500).json({ error: err.message });
