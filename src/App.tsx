@@ -959,17 +959,49 @@ export default function App() {
     try {
       // PROACTIVE FIX: Fetch fresh users list from backend to prevent stale local React state on logout
       let currentUsers = users;
+      let apiErrorOccurred = false;
+      let apiErrorMessage = "";
+      
       try {
         const freshUsersRes = await fetch("/api/users");
         if (freshUsersRes.ok) {
           const freshData = await freshUsersRes.json();
-          if (Array.isArray(freshData) && freshData.length > 0) {
+          if (Array.isArray(freshData)) {
             currentUsers = freshData;
             setUsers(freshData);
+          } else {
+            apiErrorOccurred = true;
+            apiErrorMessage = "بيانات المستخدمين غير صالحة من الخادم.";
+          }
+        } else {
+          apiErrorOccurred = true;
+          try {
+            const errData = await freshUsersRes.json();
+            apiErrorMessage = errData.error || `استجابة خاطئة من الخادم بوضع: ${freshUsersRes.status}`;
+          } catch {
+            apiErrorMessage = `استجابة خاطئة من الخادم بوضع: ${freshUsersRes.status}`;
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load fresh users on login:", err);
+        apiErrorOccurred = true;
+        apiErrorMessage = err.message || "فشل الاتصال بالخادم";
+      }
+
+      if (apiErrorOccurred && currentUsers.length === 0) {
+        setLoginError(
+          lang === "ar"
+            ? `خطأ في خادم النظام (كود 600): ${apiErrorMessage}. يرجى المحاولة لاحقاً أو التواصل مع الدعم الفني.`
+            : `System server error (Error 600): ${apiErrorMessage}. Please try again later or contact support.`
+        );
+        logSystemError({
+          code: "ERR-600-SYS",
+          message: `خطأ اتصال الخادم أثناء تسجيل الدخول: ${apiErrorMessage}`,
+          page: "Login Gateway",
+          action: "handleRegularLogin"
+        });
+        setButtonLoading("login", false);
+        return;
       }
 
       // Validate from loaded system users
@@ -1157,6 +1189,11 @@ export default function App() {
       }
     } catch (err: any) {
       console.error(err);
+      setLoginError(
+        lang === "ar"
+          ? `حدث خطأ غير متوقع في خادم النظام (كود 600): ${err.message || "فشل الاتصال"}`
+          : `An unexpected system server error occurred (Error 600): ${err.message || "Connection failed"}`
+      );
       logSystemError({
         code: "ERR-500-SYS",
         message: err.message || "Unknown login error",

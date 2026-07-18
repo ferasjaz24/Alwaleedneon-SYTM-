@@ -933,7 +933,57 @@ Text to translate: ${text}`;
   });
 
   app.get("/api/users", async (req, res) => {
-    res.json(await getCollectionDocs("users"));
+    try {
+      // 1. Try fetching from Firestore collection
+      const snap = await getDocs(collection(db, "users"));
+      const results = snap.docs.map((d) => {
+        const data = d.data();
+        return { username: d.id, id: d.id, ...data } as any;
+      });
+
+      const seen = new Set();
+      const filtered = results.filter((u: any) => {
+        if (!u) return false;
+        const uname = u.username || u.id;
+        if (!uname || seen.has(uname)) {
+          return false;
+        }
+        seen.add(uname);
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        // If Firestore is empty, fallback to local backup files
+        const localList = getLocalCollection("users");
+        if (localList && localList.length > 0) {
+          console.log("[API_USERS] Firestore returned 0 users, falling back to local database backup.");
+          return res.json(localList);
+        }
+        return res.status(500).json({ 
+          error: "Database read returned zero users (Error 600). Please seed the database or restore connection." 
+        });
+      }
+
+      res.json(filtered);
+    } catch (err: any) {
+      console.error("[API_USERS] Failed to fetch users from Firestore, attempting backup fallback:", err.message);
+      fs.appendFileSync('server-errors.txt', `Firebase error reading users collection: ${err.message}\n`);
+      
+      // Try local JSON database backup on Firestore connection failure
+      try {
+        const localList = getLocalCollection("users");
+        if (localList && localList.length > 0) {
+          console.log("[API_USERS] Firestore fetch failed. Successfully loaded fallback users backup from local_data/users.json.");
+          return res.json(localList);
+        }
+      } catch (fallbackErr: any) {
+        console.error("[API_USERS] Local backup fallback failed:", fallbackErr.message);
+      }
+
+      res.status(500).json({ 
+        error: `Failed to load users from database (Error 600): ${err.message || "Unknown Firestore failure"}` 
+      });
+    }
   });
 
   app.get("/api/login-logs", async (req, res) => {
