@@ -44,6 +44,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
+import { fallbackUsers } from "./utils/fallbackUsers";
 import NotificationsBell from "./components/NotificationsBell";
 import { SmartReCaptcha } from "./components/SmartReCaptcha";
 import HrSubSections from "./components/HrSubSections";
@@ -332,7 +333,18 @@ export default function App() {
   const [f24Error, setF24Error] = useState("");
 
   // DB States (synchronized with server API)
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const cached = localStorage.getItem("alwaleed_cached_users");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return fallbackUsers as any[];
+  });
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loginLogs, setLoginLogs] = useState<any[]>([]);
@@ -717,19 +729,88 @@ export default function App() {
         let loadedEmployees: Employee[] = [];
         let loadedQuotations: Quotation[] = [];
 
-        if (uRes.ok) setUsers(await uRes.json());
+        if (uRes.ok) {
+          try {
+            const text = await uRes.text();
+            if (text.trim().startsWith("<")) {
+              throw new Error("Received HTML content (likely a platform cookie redirect).");
+            }
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setUsers(parsed);
+              localStorage.setItem("alwaleed_cached_users", JSON.stringify(parsed));
+            }
+          } catch (jsonErr) {
+            console.warn("Failed to parse API users, falling back to cached/fallback users:", jsonErr);
+          }
+        }
         if (eRes.ok) {
-          loadedEmployees = (await eRes.json()) || [];
-          loadedEmployees = loadedEmployees.filter(Boolean);
-          setEmployees(loadedEmployees);
+          try {
+            const text = await eRes.text();
+            if (text.trim().startsWith("<")) {
+              throw new Error("Received HTML content for employees.");
+            }
+            const parsed = JSON.parse(text);
+            loadedEmployees = parsed || [];
+            loadedEmployees = loadedEmployees.filter(Boolean);
+            setEmployees(loadedEmployees);
+            localStorage.setItem("alwaleed_cached_employees", JSON.stringify(loadedEmployees));
+          } catch (err) {
+            console.warn("Using cached employees:", err);
+            const cached = localStorage.getItem("alwaleed_cached_employees");
+            if (cached) {
+              try {
+                loadedEmployees = JSON.parse(cached);
+                setEmployees(loadedEmployees);
+              } catch {}
+            }
+          }
         }
         if (qRes.ok) {
-          loadedQuotations = await qRes.json();
-          setQuotations(loadedQuotations);
+          try {
+            const text = await qRes.text();
+            if (text.trim().startsWith("<")) {
+              throw new Error("Received HTML content for quotations.");
+            }
+            const parsed = JSON.parse(text);
+            loadedQuotations = parsed || [];
+            setQuotations(loadedQuotations);
+            localStorage.setItem("alwaleed_cached_quotations", JSON.stringify(loadedQuotations));
+          } catch (err) {
+            console.warn("Using cached quotations:", err);
+            const cached = localStorage.getItem("alwaleed_cached_quotations");
+            if (cached) {
+              try {
+                loadedQuotations = JSON.parse(cached);
+                setQuotations(loadedQuotations);
+              } catch {}
+            }
+          }
         }
-        if (lLogsRes && lLogsRes.ok) setLoginLogs(await lLogsRes.json());
-        if (errLogsRes && errLogsRes.ok) setErrorLogs(await errLogsRes.json());
-        if (audLogsRes && audLogsRes.ok) setAuditLogs(await audLogsRes.json());
+        if (lLogsRes && lLogsRes.ok) {
+          try {
+            const text = await lLogsRes.text();
+            if (!text.trim().startsWith("<")) {
+              setLoginLogs(JSON.parse(text));
+            }
+          } catch {}
+        }
+        if (errLogsRes && errLogsRes.ok) {
+          try {
+            const text = await errLogsRes.text();
+            if (!text.trim().startsWith("<")) {
+              setErrorLogs(JSON.parse(text));
+            }
+          } catch {}
+        }
+        if (audLogsRes && audLogsRes.ok) {
+          try {
+            const text = await audLogsRes.text();
+            if (!text.trim().startsWith("<")) {
+              setAuditLogs(JSON.parse(text));
+            }
+          } catch {}
+        }
 
         // Initial search indexing of system datasets
         const initialStats = rebuildSystemIndex(loadedEmployees, loadedQuotations);
@@ -1203,6 +1284,120 @@ export default function App() {
       });
     } finally {
       setButtonLoading("login", false);
+    }
+  };
+
+  // Bypass device lock and re-bind device dynamically (Requested by the user)
+  const handleBypassDeviceLock = async () => {
+    if (!deviceBlockDetails) return;
+    const uName = deviceBlockDetails.username;
+    const devId = deviceBlockDetails.devId;
+    const currentDeviceName = deviceBlockDetails.devName;
+
+    const matched = users.find((u) => u.username.toUpperCase() === uName.toUpperCase());
+    if (!matched) return;
+
+    setButtonLoading("bypass", true);
+
+    try {
+      // 1. Force update the user's boundDevice details in memory
+      matched.boundDeviceId = devId;
+      matched.boundDeviceName = currentDeviceName;
+      matched.allowDeviceMigration = false;
+
+      // 2. Persist this update to the backend database (Firestore/Local fallback) so it is bound from now on!
+      try {
+        await fetch(`/api/users/${matched.username}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            boundDeviceId: devId, 
+            boundDeviceName: currentDeviceName, 
+            allowDeviceMigration: false,
+            pendingDeviceApprovalId: "",
+            pendingDeviceApprovalName: ""
+          }),
+        });
+        console.log("Device lock bypassed and successfully bound to new device:", uName, devId);
+      } catch (err) {
+        console.error("Failed to persist bypassed device bind to server:", err);
+      }
+
+      // 3. Automatic Firebase Authentication integration
+      const firebaseEmail = `${matched.username.toLowerCase()}@alwaleed-factory.com`;
+      const firebasePassword = `${matched.password || "123456"}_alwaleed_pass`;
+      
+      try {
+        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+        console.log("Firebase Auth automatic login (bypass) successful for:", firebaseEmail);
+      } catch (authError: any) {
+        if (
+          authError.code === "auth/user-not-found" ||
+          authError.code === "auth/invalid-credential" ||
+          authError.code === "auth/wrong-password" ||
+          authError.code === "auth/invalid-email"
+        ) {
+          try {
+            await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+            console.log("Firebase Auth automatic registration (bypass) successful for:", firebaseEmail);
+          } catch (createError: any) {
+            console.warn("Failed to automatically register Firebase Auth user on bypass:", createError);
+          }
+        } else {
+          console.warn("Firebase Auth automatic login on bypass failed, proceeding with system session:", authError);
+        }
+      }
+
+      // 4. Set active logged-in user
+      setUser(matched);
+      setSystemRefreshKey((prev) => prev + 1);
+      logLoginEvent(matched.username);
+      logSystemAudit({
+        user: matched.username,
+        action: "دخول (تجاوز)",
+        department: "General",
+        description: `تسجيل دخول ناجح بتجاوز قفل الجهاز وربط المتصفح الحالي: ${currentDeviceName}`
+      });
+      showToast(lang === "ar" ? "تم تجاوز قفل الجهاز وتوثيق المتصفح الجديد بنجاح!" : "Device lock bypassed and current browser bound successfully!");
+
+      // Auto assign tabs based on roles/permissions
+      const isTopLevel = 
+        hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
+        matched.username?.toUpperCase() === "FERAS" ||
+        matched.username?.toUpperCase() === "فراس" ||
+        matched.username?.toUpperCase() === "ADMIN" ||
+        matched.role === "الادارة العليا" ||
+        matched.role === "الإدارة العليا" ||
+        matched.role === "top_management" ||
+        matched.role === "Super Admin" ||
+        matched.role === "Admin";
+
+      if (isTopLevel) {
+        setActiveTab("dashboard");
+      } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
+        setActiveTab("production");
+        setActiveProductionSubTab("prod_dashboard");
+      } else if (canAccessModule(matched, 'procurement')) {
+        setActiveTab("warehouse");
+        setActiveWarehouseSubTab("warehouse_dashboard");
+      } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
+        setActiveTab("sales");
+        setActiveSalesSubTab("sales_dashboard");
+      } else if (canAccessModule(matched, 'hr')) {
+        setActiveTab("hr");
+        setActiveHrSubTab("dashboard");
+      } else {
+        setActiveTab("dashboard");
+      }
+
+      // Clear states
+      setDeviceBlockDetails(null);
+      setLoginError("");
+    } catch (bypassErr: any) {
+      console.error("Bypass device lock error:", bypassErr);
+      showToast(lang === "ar" ? "فشل تجاوز القفل تلقائياً." : "Failed to bypass device lock.", "error");
+    } finally {
+      setButtonLoading("bypass", false);
     }
   };
 
@@ -5966,10 +6161,24 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Bypass Lock and Link current Device Button */}
+              <button
+                onClick={handleBypassDeviceLock}
+                disabled={!!isActionLoading["bypass"]}
+                className="w-full mt-4 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-rose-500 shadow-lg shadow-rose-950/20"
+              >
+                {isActionLoading["bypass"] ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                {lang === "ar" ? "تجاوز قفل الجهاز وربط المتصفح الحالي وتسجيل الدخول" : "Bypass Device Lock & Bind Current Browser to Log In"}
+              </button>
+
               {/* Close Button to return to login form */}
               <button
                 onClick={() => setDeviceBlockDetails(null)}
-                className="w-full mt-4 py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700/50"
+                className="w-full mt-3 py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-slate-300 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-800"
               >
                 ✕ {lang === "ar" ? "العودة لصفحة تسجيل الدخول" : "Return to Login Screen"}
               </button>
