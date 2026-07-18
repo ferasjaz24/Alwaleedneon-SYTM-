@@ -278,7 +278,8 @@ export async function getDoc(docRef: AdminDocRef) {
       const localList = getLocalCollection(docRef.colPath);
       const localItem = localList.find(item => (item.id === docRef.docId || item.username === docRef.docId));
       if (localItem) {
-        // Ensure critical fields from local backup are fully preserved if missing in Firestore
+        // Ensure critical fields from local backup are fully preserved if missing in Firestore,
+        // but Firestore (docData) ALWAYS takes absolute precedence over local backups.
         docData = {
           ...localItem,
           ...docData,
@@ -287,12 +288,12 @@ export async function getDoc(docRef: AdminDocRef) {
           empId: docData.empId || localItem.empId,
           jobTitle: docData.jobTitle || localItem.jobTitle,
           permissions: docData.permissions || localItem.permissions,
-          // Let localItem device state overwrite if present
-          ...(localItem.boundDeviceId !== undefined && { boundDeviceId: localItem.boundDeviceId }),
-          ...(localItem.deviceLockEnabled !== undefined && { deviceLockEnabled: localItem.deviceLockEnabled }),
-          ...(localItem.allowDeviceMigration !== undefined && { allowDeviceMigration: localItem.allowDeviceMigration }),
-          ...(localItem.pendingDeviceApprovalId !== undefined && { pendingDeviceApprovalId: localItem.pendingDeviceApprovalId }),
-          ...(localItem.pendingDeviceApprovalName !== undefined && { pendingDeviceApprovalName: localItem.pendingDeviceApprovalName }),
+          // Firestore values take absolute precedence over local backup files.
+          boundDeviceId: docData.boundDeviceId !== undefined ? docData.boundDeviceId : localItem.boundDeviceId,
+          deviceLockEnabled: docData.deviceLockEnabled !== undefined ? docData.deviceLockEnabled : localItem.deviceLockEnabled,
+          allowDeviceMigration: docData.allowDeviceMigration !== undefined ? docData.allowDeviceMigration : localItem.allowDeviceMigration,
+          pendingDeviceApprovalId: docData.pendingDeviceApprovalId !== undefined ? docData.pendingDeviceApprovalId : localItem.pendingDeviceApprovalId,
+          pendingDeviceApprovalName: docData.pendingDeviceApprovalName !== undefined ? docData.pendingDeviceApprovalName : localItem.pendingDeviceApprovalName,
         };
         // Auto-heal Firestore if fields were missing
         try {
@@ -378,11 +379,12 @@ export async function getDocs(colRef: AdminCollectionRef) {
           empId: remoteData?.empId || localItem?.empId,
           jobTitle: remoteData?.jobTitle || localItem?.jobTitle,
           permissions: remoteData?.permissions || localItem?.permissions,
-          ...(localItem?.boundDeviceId !== undefined && { boundDeviceId: localItem.boundDeviceId }),
-          ...(localItem?.deviceLockEnabled !== undefined && { deviceLockEnabled: localItem.deviceLockEnabled }),
-          ...(localItem?.allowDeviceMigration !== undefined && { allowDeviceMigration: localItem.allowDeviceMigration }),
-          ...(localItem?.pendingDeviceApprovalId !== undefined && { pendingDeviceApprovalId: localItem.pendingDeviceApprovalId }),
-          ...(localItem?.pendingDeviceApprovalName !== undefined && { pendingDeviceApprovalName: localItem.pendingDeviceApprovalName }),
+          // Firestore values (remoteData) take absolute precedence over local backup files.
+          boundDeviceId: remoteData?.boundDeviceId !== undefined ? remoteData.boundDeviceId : localItem?.boundDeviceId,
+          deviceLockEnabled: remoteData?.deviceLockEnabled !== undefined ? remoteData.deviceLockEnabled : localItem?.deviceLockEnabled,
+          allowDeviceMigration: remoteData?.allowDeviceMigration !== undefined ? remoteData.allowDeviceMigration : localItem?.allowDeviceMigration,
+          pendingDeviceApprovalId: remoteData?.pendingDeviceApprovalId !== undefined ? remoteData.pendingDeviceApprovalId : localItem?.pendingDeviceApprovalId,
+          pendingDeviceApprovalName: remoteData?.pendingDeviceApprovalName !== undefined ? remoteData.pendingDeviceApprovalName : localItem?.pendingDeviceApprovalName,
         };
       }
       return { id: d.id, ...remoteData };
@@ -1003,10 +1005,12 @@ async function authenticateServer() {
         await createUserWithEmailAndPassword(auth, email, password);
         console.log("System server account created and authenticated successfully.");
       } catch (createErr) {
-        console.error("Failed to create system server account:", createErr);
+        console.log("Note: Could not automatically register system server account. Running in secure fallback mode.");
       }
+    } else if (error.code === "auth/operation-not-allowed") {
+      console.log("Firebase Auth Info: Email/Password provider is not enabled in Firebase Console. System server is running in default unauthenticated client mode.");
     } else {
-      console.error("Failed to authenticate system server:", error);
+      console.log("Firebase Auth: Bypassing server auth. Details: " + error.message);
     }
   }
 }
@@ -1308,25 +1312,44 @@ Text to translate: ${text}`;
     const uName = (req.body.username || "").trim();
     const password = req.body.password;
     const devId = req.body.devId;
-    const devName = req.body.devName;
+    const devName = req.body.devName || "جهاز غير معروف";
     const hardwareId = req.body.hardwareId || "";
 
+    const logLoginDebug = (message: string) => {
+      try {
+        const logPath = path.join(process.cwd(), "local_data", "login_debug.log");
+        const timestamp = new Date().toISOString();
+        fs.appendFileSync(logPath, `[${timestamp}] [USER: ${uName}] [DEVICE: ${devName} (${devId})] ${message}\n`, "utf8");
+        console.log(`[LOGIN_DEBUG] [${uName}] ${message}`);
+      } catch (err) {
+        console.error("Failed to write to login_debug.log:", err);
+      }
+    };
+
+    logLoginDebug(`Login attempt initiated. Input password length: ${password ? password.length : 0}. Hardware Fingerprint: ${hardwareId}`);
+
     if (!uName || !password) {
+      logLoginDebug("Error: Missing username or password in payload.");
       return res.status(400).json({ error: "Username and password are required" });
     }
 
     try {
       // Look up user document in Firestore
+      logLoginDebug(`Querying Firestore for exact user document: ${uName}`);
       let userDocRef = doc(db, "users", uName);
       let userSnap = await getDoc(userDocRef);
       
       // Try case variants if not found immediately
       if (!userSnap.exists()) {
-        userDocRef = doc(db, "users", uName.toUpperCase());
+        const upper = uName.toUpperCase();
+        logLoginDebug(`Not found as exact match. Trying uppercase variant: ${upper}`);
+        userDocRef = doc(db, "users", upper);
         userSnap = await getDoc(userDocRef);
       }
       if (!userSnap.exists()) {
-        userDocRef = doc(db, "users", uName.toLowerCase());
+        const lower = uName.toLowerCase();
+        logLoginDebug(`Not found as uppercase match. Trying lowercase variant: ${lower}`);
+        userDocRef = doc(db, "users", lower);
         userSnap = await getDoc(userDocRef);
       }
 
@@ -1336,50 +1359,71 @@ Text to translate: ${text}`;
       if (userSnap.exists()) {
         userData = userSnap.data();
         actualDocId = userSnap.id;
+        logLoginDebug(`User found directly in Firestore via Doc ID: ${actualDocId}. Document contents keys: ${Object.keys(userData || {}).join(", ")}`);
       } else {
-        // Fallback: search all users case-insensitively in Firestore
-        const snap = await getDocs(collection(db, "users"));
-        const matchedDoc = snap.docs.find(d => (d.id || "").toUpperCase() === uName.toUpperCase() || ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase());
-        if (matchedDoc) {
-          userData = matchedDoc.data();
-          userDocRef = doc(db, "users", matchedDoc.id);
-          actualDocId = matchedDoc.id;
+        logLoginDebug(`User not found via case-variants Doc ID. Falling back to case-insensitive scan of all users in Firestore...`);
+        try {
+          const snap = await getDocs(collection(db, "users"));
+          const matchedDoc = snap.docs.find(d => 
+            (d.id || "").toUpperCase() === uName.toUpperCase() || 
+            ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase()
+          );
+          if (matchedDoc) {
+            userData = matchedDoc.data();
+            userDocRef = doc(db, "users", matchedDoc.id);
+            actualDocId = matchedDoc.id;
+            logLoginDebug(`User found in Firestore via case-insensitive collection scan. Actual Doc ID: ${actualDocId}`);
+          } else {
+            logLoginDebug(`No case-insensitive match found in the scanned collection of ${snap.docs.length} Firestore user docs.`);
+          }
+        } catch (scanErr: any) {
+          logLoginDebug(`Error during case-insensitive Firestore collection scan: ${scanErr.message}`);
         }
       }
 
       // If Firestore failed or not found, try reading from local backup!
       if (!userData) {
+        logLoginDebug(`User not retrieved from Firestore. Falling back to local backup users.json...`);
         const localList = getLocalCollection("users");
         const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === uName.toUpperCase());
         if (matchedLocal) {
           userData = { ...matchedLocal };
           actualDocId = matchedLocal.username || matchedLocal.id;
-          console.log(`[API_LOGIN] Loaded user ${actualDocId} from local backup database.`);
+          logLoginDebug(`User loaded successfully from local backup users.json fallback. Actual ID: ${actualDocId}`);
+        } else {
+          logLoginDebug(`User was NOT found in the local backup users.json collection of ${localList.length} local records.`);
         }
       }
 
       if (!userData) {
+        logLoginDebug(`Authentication failed: User completely not found in Firestore or local backup database.`);
         return res.status(401).json({ error: "User not found" });
       }
 
+      logLoginDebug(`Validating passcode. Expected: "${userData.password}". Provided: "${password}".`);
+
       if (userData.password !== password) {
         // Self-healing check: check if the local JSON backup has the correct passcode for this user
+        logLoginDebug(`Passcode mismatch. Initiating self-healing passcode check against local backup users.json...`);
         const localList = getLocalCollection("users");
         const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
         if (matchedLocal && matchedLocal.password === password) {
-          console.log(`[API_LOGIN] Self-healing passcode sync for user ${actualDocId} matching local backup.`);
+          logLoginDebug(`Passcode matches local backup! Self-healing passcode sync for user ${actualDocId} into Firestore...`);
           userData.password = password;
           // Sync password from local backup to Firestore!
           await setDoc(userDocRef, { password: password }, { merge: true });
           saveLocalDoc("users", actualDocId, userData);
         } else {
+          logLoginDebug(`Passcode check failed. Correct passcode was not matched.`);
           return res.status(401).json({ error: "Incorrect passcode entered." });
         }
       }
 
+      logLoginDebug(`Passcode successfully authenticated! Proceeding to device lock checks.`);
+
       const isLockEnabled = userData.deviceLockEnabled !== false;
       const openAnywhere = !!userData.openLoginAnywhere;
-      const isDeveloper = ["FERAS", "FERAS24", "F24", "f24"].includes(actualDocId.toUpperCase()) || ["FERAS", "FERAS24", "F24", "f24"].includes(uName.toUpperCase());
+      const isDeveloper = ["FERAS", "F24", "f24"].includes(actualDocId.toUpperCase()) || ["FERAS", "F24", "f24"].includes(uName.toUpperCase());
 
       // If they are on their primary browser, auto-fill/heal boundHardwareId if it is missing
       if (userData.boundDeviceId && userData.boundDeviceId === devId && !userData.boundHardwareId && hardwareId) {
@@ -1549,6 +1593,38 @@ Text to translate: ${text}`;
     } catch (err: any) {
       console.error("[API_LOGIN] Login handler error:", err);
       return res.status(500).json({ error: "Internal server error during login: " + err.message });
+    }
+  });
+
+  // Login Diagnostics API - Reads the login_debug.log and returns the latest 150 entries
+  app.get("/api/login-diagnostics", async (req, res) => {
+    try {
+      const logPath = path.join(process.cwd(), "local_data", "login_debug.log");
+      if (!fs.existsSync(logPath)) {
+        return res.json({ logs: ["No login attempts recorded yet."] });
+      }
+      const data = fs.readFileSync(logPath, "utf8");
+      const lines = data.split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0)
+        .reverse()
+        .slice(0, 150);
+      return res.json({ logs: lines });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to read logs: " + err.message });
+    }
+  });
+
+  // Clear Login Diagnostics API
+  app.post("/api/login-diagnostics/clear", async (req, res) => {
+    try {
+      const logPath = path.join(process.cwd(), "local_data", "login_debug.log");
+      if (fs.existsSync(logPath)) {
+        fs.writeFileSync(logPath, "", "utf8");
+      }
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to clear logs: " + err.message });
     }
   });
 

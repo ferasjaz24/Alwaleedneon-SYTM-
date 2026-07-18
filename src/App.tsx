@@ -1016,6 +1016,13 @@ export default function App() {
     }
   }, [activeTab]);
 
+  // Fetch login diagnostics when superadmin tab is active
+  useEffect(() => {
+    if (activeTab === ("super_admin" as any)) {
+      fetchLoginDiagnostics();
+    }
+  }, [activeTab]);
+
   // Smoothly scroll to the top whenever active tab or any sub-tab changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1037,12 +1044,44 @@ export default function App() {
   ]);
 
   // Update list functions
+  const [loginDiagnostics, setLoginDiagnostics] = useState<string[]>([]);
+  const [isDiagLoading, setIsDiagLoading] = useState(false);
+
+  const fetchLoginDiagnostics = async () => {
+    setIsDiagLoading(true);
+    try {
+      const response = await fetch("/api/login-diagnostics");
+      if (response.ok) {
+        const data = await response.json();
+        setLoginDiagnostics(data.logs || []);
+      }
+    } catch (err) {
+      console.error("Failed to load login diagnostics:", err);
+    } finally {
+      setIsDiagLoading(false);
+    }
+  };
+
+  const clearLoginDiagnostics = async () => {
+    if (!window.confirm(lang === "ar" ? "هل أنت متأكد من مسح سجل التشخيص؟" : "Are you sure you want to clear diagnostic logs?")) return;
+    try {
+      const response = await fetch("/api/login-diagnostics/clear", { method: "POST" });
+      if (response.ok) {
+        setLoginDiagnostics([]);
+      }
+    } catch (err) {
+      console.error("Failed to clear login diagnostics:", err);
+    }
+  };
+
   const handleReloadLoginLogs = async () => {
     try {
       const res = await fetch("/api/login-logs");
       if (res.ok) {
         setLoginLogs(await res.json());
       }
+      // Also automatically fetch diagnostics log
+      fetchLoginDiagnostics();
     } catch (e) {
       console.error("Failed to load login logs:", e);
     }
@@ -1485,8 +1524,8 @@ export default function App() {
         console.error("Failed to load fresh users for F24 check:", err);
       }
 
-      // Find FERAS user details to check device binding (checking both "FERAS" and "FERAS24" for safety)
-      const matched = currentUsers.find((u) => u && u.username && (u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "FERAS24"));
+      // Find FERAS user details to check device binding (checking "FERAS" or "F24" for safety)
+      const matched = currentUsers.find((u) => u && u.username && (u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "F24"));
       
       let devId = localStorage.getItem("alwaleed_device_id");
       if (!devId) {
@@ -3897,6 +3936,72 @@ export default function App() {
                           </>
                         );
                       })()}
+                    </div>
+                  </div>
+
+                  {/* Real-time Login Diagnostics & Connection Tracing Card */}
+                  <div className="lg:col-span-3 glass-panel rounded-3xl p-6 bg-slate-950 text-slate-100 shadow-xl border border-slate-800 flex flex-col gap-4">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <div>
+                        <h3 className="font-bold text-lg text-white flex items-center gap-2">
+                          <Terminal className="w-5 h-5 text-sky-400" />
+                          <span>{lang === "ar" ? "🔍 لوحة تشخيص وحماية تسجيل الدخول الفورية" : "🔍 Instant Login Diagnostics & Trace Panel"}</span>
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {lang === "ar"
+                            ? "أداة أمان متطورة لتشخيص الأخطاء في الوقت الفعلي وفحص جودة اتصال محاولات الدخول من الهواتف والأجهزة الخارجية بقاعدة بيانات Firestore."
+                            : "Advanced diagnostics tool for real-time connection debugging of external/mobile devices to the cloud database."}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {loginDiagnostics.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={clearLoginDiagnostics}
+                            className="px-3 py-1.5 bg-rose-950/50 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs rounded-xl font-bold transition"
+                          >
+                            {lang === "ar" ? "مسح السجل" : "Clear Diagnostic"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={fetchLoginDiagnostics}
+                          disabled={isDiagLoading}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs rounded-xl font-bold transition flex items-center gap-1.5"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isDiagLoading ? "animate-spin text-sky-400" : ""}`} />
+                          <span>{lang === "ar" ? "تحديث التشخيص" : "Refresh Trace"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-80 leading-relaxed space-y-1.5">
+                      {loginDiagnostics.length === 0 ? (
+                        <div className="text-center text-slate-500 py-6">
+                          {lang === "ar" 
+                            ? "اضغط على تحديث لجلب السجلات، أو قم بمحاولة تسجيل دخول من جهاز آخر ليظهر تشخيصها هنا." 
+                            : "Click Refresh to load logs, or attempt a login from another device to capture active connection traces."}
+                        </div>
+                      ) : (
+                        loginDiagnostics.map((logLine, idx) => {
+                          let colorClass = "text-slate-300";
+                          if (/error|failed|not found/i.test(logLine)) {
+                            colorClass = "text-rose-400 font-bold bg-rose-950/20 px-1 rounded";
+                          } else if (/successfully|success|matches|authenticated/i.test(logLine)) {
+                            colorClass = "text-emerald-400 font-bold bg-emerald-950/20 px-1 rounded";
+                          } else if (/initiated|attempt/i.test(logLine)) {
+                            colorClass = "text-sky-300 font-semibold";
+                          } else if (/Querying Firestore|Firestore found/i.test(logLine)) {
+                            colorClass = "text-yellow-200";
+                          }
+
+                          return (
+                            <div key={idx} className={`border-b border-slate-800/40 pb-1 ${colorClass}`}>
+                              {logLine}
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 

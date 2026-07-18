@@ -8,106 +8,129 @@
     "permissions": {
       "advanced": {
         "procurement": {
+          "items": {
+            "approve_item": true,
+            "manage_items": true,
+            "view_items": true
+          },
+          "dashboard": {
+            "view_dashboard": "all"
+          },
           "materials": {
             "manage_materials": true,
             "view_materials": true,
-            "adjust_qty": true,
-            "inventory_audit": true
+            "inventory_audit": true,
+            "adjust_qty": true
+          },
+          "finance_approval": {
+            "view_finance_po": true,
+            "undo_po": true,
+            "approve_finance_po": true,
+            "reject_finance_po": true
+          },
+          "requests": {
+            "view_requests": true,
+            "send_pricing": true,
+            "approve_request": true,
+            "add_request": true
+          },
+          "approved_po": {
+            "view_pos": true,
+            "cancel_po": true,
+            "receive_items": true
           },
           "suppliers": {
             "issue_rfq": true,
             "manage_suppliers": true,
             "view_suppliers": true
-          },
-          "finance_approval": {
-            "approve_finance_po": true,
-            "view_finance_po": true,
-            "reject_finance_po": true,
-            "undo_po": true
-          },
-          "requests": {
-            "add_request": true,
-            "view_requests": true,
-            "approve_request": true,
-            "send_pricing": true
-          },
-          "items": {
-            "view_items": true,
-            "manage_items": true,
-            "approve_item": true
-          },
-          "dashboard": {
-            "view_dashboard": "all"
-          },
-          "approved_po": {
-            "view_pos": true,
-            "receive_items": true,
-            "cancel_po": true
           }
         },
-        "hr": {
-          "employees": {
-            "add_emp": "all",
-            "delete_emp": "all",
-            "qiwa_muqeem": "all",
-            "view_salary": "all",
-            "disable_emp": "all",
-            "manage_files": "all",
-            "view_emp": "all",
-            "edit_emp": "all",
-            "edit_salary": "all"
+        "sales": {
+          "quotations": {
+            "edit_quote": true,
+            "approve_quote": true,
+            "delete_approved_quote": true,
+            "unapprove_quote": true,
+            "view_quotes": true,
+            "add_quote": true,
+            "delete_quote": true,
+            "send_production": true
           },
-          "deductions": {
-            "view_deductions": "all",
-            "edit_deduction": "all",
-            "approve_deduction": "all",
-            "add_deduction": "all"
+          "reports": {
+            "view_reports": true,
+            "export_reports": true
           },
-          "leaves": {
-            "add_leave": "all",
-            "edit_balances": "all",
-            "edit_leave": "all",
-            "approve_leave": "all",
-            "delete_leave": "all",
-            "view_balances": "all"
+          "prod_orders": {
+            "delete_prod_order": true,
+            "resend_prod": true,
+            "view_prod_orders": true
           },
-          "letters": {
-            "edit_letter_template": "all",
-            "view_letters": "all",
-            "create_letter": "all"
+          "pricing_study": {
+            "view_pricing_study": "all",
+            "edit_pricing_study": "all"
+          },
+          "clients": {
+            "view_clients": true,
+            "import_clients": true,
+            "edit_client": true,
+            "delete_client": true,
+            "add_client": true
           },
           "dashboard": {
-            "view_dashboard": "all",
-            "view_leave_emp": "all",
-            "view_attendance": "all",
-            "view_total_deductions": "all",
-            "view_active_emp": "all",
-            "view_total_salaries": "all",
-            "view_expiries": "all",
-            "view_total_emp": "all",
-            "view_total_loans": "all"
+            "view_financial": "all",
+            "view_dashboard": "all"
           },
-          "self_service": {
-            "view_attachments": "all",
-            "close_inquiry": "all",
-            "reply_inquiry": "all",
-            "print_inquiry": "all",
-            "forward_inquiry": "all",
-            "view_inquiries": "all",
-            "delete_inquiry": "all"
+          "reps": {
+            "approve_comission": true,
+            "view_reps": true,
+            "manage_targets": true
           },
-          "payroll": {
-            "post_mudad": "all",
-            "approve_payroll": "all",
-            "create_payroll": "all",
-            "edit_components": "all",
+          "collection": {
+            "edit_plan": true,
+            "delete_payment": true,
+            "approve_payment": true,
+            "unapprove_payment": true,
+            "add_payment": true,
+            "view_collection": true,
+            "add_plan": true
+          },
+          "letters": {
+            "view_letters": true,
+            "send_letter": true,
+            "add_letter": true
+          }
+        },
+        "notifications": {
+          "general": {
+            "view_private": "all",
+            "view_hr": "all",
+            "view_finance": "all",
+            "view_purchasing": "all",
+            "view_sales": "all",
+            "view_production": "all",
+            "view_public": "all",
+            "view_all": "all"
+          }
+        },
+        "dashboard": {
+          "quick_shortcuts": {
+            "view_procurement_shortcuts": "all",
+            "view_production_shortcuts": "all",
+            "view_main_shortcuts": "all"
+          },
+          "metrics": {
+            "view_procurement": "all",
+            "view_production": "all",
             "view_payroll": "all",
-            "print_payroll": "all"
-          },
-          "performance": {
-            "view_perf": "all",
-            "add_perf": "all",
-            "approve_perf": "all"
+            "view_financial": "all",
+            "view_alerts": "all",
+            "view_logs": "all",
+            "filter_date": "all",
+            "view_hr": "all",
+            "view_sales": "all",
+            "export_metrics": "all",
+            "view_main": "all",
+            "view_inventory": "all"
           }
         },
         "settings": {
@@ -116,195 +139,172 @@
             "view_audit": false
           },
           "users": {
-            "edit_user": false,
-            "manage_permissions": false,
             "view_users": false,
+            "manage_permissions": false,
+            "edit_user": false,
             "add_user": false
           },
           "general": {
             "database_backup": false,
-            "view_settings": false,
-            "edit_settings": false
+            "edit_settings": false,
+            "view_settings": false
           }
         },
-        "production": {
+        "hr": {
+          "employees": {
+            "edit_salary": "all",
+            "view_salary": "all",
+            "qiwa_muqeem": "all",
+            "view_emp": "all",
+            "edit_emp": "all",
+            "disable_emp": "all",
+            "manage_files": "all",
+            "add_emp": "all",
+            "delete_emp": "all"
+          },
+          "performance": {
+            "view_perf": "all",
+            "approve_perf": "all",
+            "add_perf": "all"
+          },
+          "leaves": {
+            "approve_leave": "all",
+            "edit_leave": "all",
+            "view_balances": "all",
+            "add_leave": "all",
+            "edit_balances": "all",
+            "delete_leave": "all"
+          },
+          "self_service": {
+            "delete_inquiry": "all",
+            "view_attachments": "all",
+            "close_inquiry": "all",
+            "reply_inquiry": "all",
+            "forward_inquiry": "all",
+            "view_inquiries": "all",
+            "print_inquiry": "all"
+          },
+          "deductions": {
+            "view_deductions": "all",
+            "approve_deduction": "all",
+            "add_deduction": "all",
+            "edit_deduction": "all"
+          },
           "dashboard": {
-            "view_dashboard": "all"
+            "view_expiries": "all",
+            "view_dashboard": "all",
+            "view_total_salaries": "all",
+            "view_total_loans": "all",
+            "view_leave_emp": "all",
+            "view_active_emp": "all",
+            "view_attendance": "all",
+            "view_total_emp": "all",
+            "view_total_deductions": "all"
           },
-          "projects": {
-            "mark_complete_no_auth": true,
-            "mark_ready": true,
-            "view_projects": true,
-            "manage_stages": true
+          "payroll": {
+            "print_payroll": "all",
+            "approve_payroll": "all",
+            "create_payroll": "all",
+            "edit_components": "all",
+            "view_payroll": "all",
+            "post_mudad": "all"
           },
-          "received": {
-            "accept_reject": true,
-            "view_cost_pricing": true,
-            "view_received": true,
-            "create_order": true
-          },
-          "orders": {
-            "manage_orders": true,
-            "approve_orders": true,
-            "view_orders": true
-          },
-          "installation": {
-            "complete_install": true,
-            "view_install": true,
-            "schedule_install": true
-          },
-          "daily_followup": {
-            "manage_daily_followup": "all",
-            "edit_daily_followup": "all",
-            "delete_daily_followup": false,
-            "view_daily_followup": "all"
+          "letters": {
+            "create_letter": "all",
+            "view_letters": "all",
+            "edit_letter_template": "all"
           }
         },
         "finance": {
-          "zatca": {
-            "edit_zatca": "all",
-            "view_zatca": "all"
-          },
-          "zakat_tax": {
-            "register_tax_payment": "all",
-            "export_zakat_tax": "all",
-            "view_zakat_tax": "all"
+          "revenues": {
+            "edit_revenues": "all",
+            "view_revenues": "all"
           },
           "customer_invoices": {
-            "add_invoice": "all",
             "view_portal": "all",
-            "preview_invoice": "all",
-            "export_all": "all",
+            "add_invoice": "all",
+            "edit_invoice": "all",
             "approve_invoice": "all",
-            "edit_invoice": "all"
+            "export_all": "all",
+            "preview_invoice": "all"
           },
-          "payroll": {
-            "view_payroll": "all",
-            "edit_payroll": "all"
+          "zakat_tax": {
+            "view_zakat_tax": "all",
+            "register_tax_payment": "all",
+            "export_zakat_tax": "all"
           },
           "expenses": {
             "edit_expenses": "all",
             "view_expenses": "all"
           },
-          "journal": {
-            "view_entries": "all",
-            "approve_entry": "all",
-            "upload_attachment": "all",
-            "add_entry": "all",
-            "print_entry": "all",
-            "view_projects": "all",
-            "edit_entry": "all",
-            "submit_approval": "all"
+          "zatca": {
+            "view_zatca": "all",
+            "edit_zatca": "all"
           },
-          "revenues": {
-            "view_revenues": "all",
-            "edit_revenues": "all"
-          },
-          "cash_bank": {
-            "view_portal": "all",
-            "manage_cash_boxes": "all"
-          },
-          "supplier_invoices": {
-            "edit_invoice": "all",
-            "view_portal": "all",
-            "add_invoice": "all",
-            "approve_invoice": "all"
-          },
-          "reports": {
-            "export_reports": "all",
-            "view_reports": "all"
+          "payroll": {
+            "view_payroll": "all",
+            "edit_payroll": "all"
           },
           "dashboard": {
             "edit_dashboard": "all",
             "view_dashboard": "all"
-          }
-        },
-        "sales": {
-          "reps": {
-            "manage_targets": true,
-            "view_reps": true,
-            "approve_comission": true
           },
-          "quotations": {
-            "send_production": true,
-            "delete_approved_quote": true,
-            "add_quote": true,
-            "approve_quote": true,
-            "delete_quote": true,
-            "edit_quote": true,
-            "unapprove_quote": true,
-            "view_quotes": true
+          "cash_bank": {
+            "manage_cash_boxes": "all",
+            "view_portal": "all"
           },
-          "letters": {
-            "send_letter": true,
-            "add_letter": true,
-            "view_letters": true
+          "journal": {
+            "submit_approval": "all",
+            "approve_entry": "all",
+            "view_entries": "all",
+            "add_entry": "all",
+            "view_projects": "all",
+            "print_entry": "all",
+            "edit_entry": "all",
+            "upload_attachment": "all"
           },
-          "prod_orders": {
-            "view_prod_orders": true,
-            "delete_prod_order": true,
-            "resend_prod": true
+          "supplier_invoices": {
+            "add_invoice": "all",
+            "approve_invoice": "all",
+            "view_portal": "all",
+            "edit_invoice": "all"
           },
           "reports": {
-            "view_reports": true,
-            "export_reports": true
+            "view_reports": "all",
+            "export_reports": "all"
+          }
+        },
+        "production": {
+          "installation": {
+            "complete_install": true,
+            "schedule_install": true,
+            "view_install": true
+          },
+          "projects": {
+            "manage_stages": true,
+            "mark_ready": true,
+            "view_projects": true,
+            "mark_complete_no_auth": true
           },
           "dashboard": {
-            "view_financial": "all",
             "view_dashboard": "all"
           },
-          "pricing_study": {
-            "view_pricing_study": "all",
-            "edit_pricing_study": "all"
+          "received": {
+            "create_order": true,
+            "accept_reject": true,
+            "view_cost_pricing": true,
+            "view_received": true
           },
-          "collection": {
-            "add_plan": true,
-            "edit_plan": true,
-            "delete_payment": true,
-            "unapprove_payment": true,
-            "view_collection": true,
-            "approve_payment": true,
-            "add_payment": true
+          "orders": {
+            "view_orders": true,
+            "approve_orders": true,
+            "manage_orders": true
           },
-          "clients": {
-            "view_clients": true,
-            "import_clients": true,
-            "delete_client": true,
-            "add_client": true,
-            "edit_client": true
-          }
-        },
-        "notifications": {
-          "general": {
-            "view_finance": "all",
-            "view_public": "all",
-            "view_hr": "all",
-            "view_production": "all",
-            "view_all": "all",
-            "view_purchasing": "all",
-            "view_sales": "all",
-            "view_private": "all"
-          }
-        },
-        "dashboard": {
-          "quick_shortcuts": {
-            "view_production_shortcuts": "all",
-            "view_main_shortcuts": "all",
-            "view_procurement_shortcuts": "all"
-          },
-          "metrics": {
-            "export_metrics": "all",
-            "view_sales": "all",
-            "view_logs": "all",
-            "view_production": "all",
-            "view_inventory": "all",
-            "view_main": "all",
-            "view_procurement": "all",
-            "view_payroll": "all",
-            "view_alerts": "all",
-            "view_financial": "all",
-            "view_hr": "all",
-            "filter_date": "all"
+          "daily_followup": {
+            "edit_daily_followup": "all",
+            "delete_daily_followup": false,
+            "manage_daily_followup": "all",
+            "view_daily_followup": "all"
           }
         }
       },
@@ -312,119 +312,119 @@
         "global": "all"
       },
       "moduleAccess": {
-        "reports": {
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "enabled": true,
-          "add": true,
-          "exportExcel": true,
-          "approve": true,
-          "print": true,
-          "deleteSensitive": true,
+        "procurement": {
           "view": true,
-          "delete": true,
-          "viewCosts": true,
+          "approve": true,
+          "exportExcel": true,
+          "add": true,
           "exportPdf": true,
+          "edit": true,
+          "print": true,
+          "enabled": true,
+          "viewCosts": true,
+          "viewAccess": "all",
           "editAccess": "all",
-          "edit": true
+          "delete": true,
+          "deleteAccess": "all",
+          "deleteSensitive": true
         },
         "sales": {
-          "add": true,
-          "enabled": true,
-          "deleteAccess": "all",
-          "viewAccess": "all",
-          "viewCosts": true,
           "delete": true,
-          "edit": true,
-          "editAccess": "all",
-          "exportPdf": true,
-          "view": true,
+          "deleteAccess": "all",
           "deleteSensitive": true,
           "print": true,
-          "approve": true,
-          "exportExcel": true
+          "edit": true,
+          "enabled": true,
+          "viewCosts": true,
+          "viewAccess": "all",
+          "editAccess": "all",
+          "exportExcel": true,
+          "add": true,
+          "exportPdf": true,
+          "view": true,
+          "approve": true
         },
         "notifications": {
           "viewAccess": "all",
-          "enabled": true,
-          "editAccess": "all"
-        },
-        "hr": {
-          "exportExcel": true,
-          "approve": true,
-          "print": true,
-          "deleteSensitive": true,
-          "view": true,
           "editAccess": "all",
-          "exportPdf": true,
-          "edit": true,
-          "delete": true,
-          "viewCosts": true,
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "enabled": true,
-          "add": true
-        },
-        "procurement": {
-          "view": true,
-          "viewCosts": true,
-          "delete": true,
-          "edit": true,
-          "editAccess": "all",
-          "exportPdf": true,
-          "print": true,
-          "approve": true,
-          "exportExcel": true,
-          "deleteSensitive": true,
-          "add": true,
-          "viewAccess": "all",
-          "enabled": true,
-          "deleteAccess": "all"
+          "enabled": true
         },
         "settings": {
+          "print": false,
+          "edit": false,
           "view": true,
           "viewCosts": false,
+          "enabled": false,
+          "approve": false,
           "delete": false,
-          "edit": false,
+          "exportExcel": false,
           "add": false,
           "exportPdf": false,
-          "print": false,
-          "exportExcel": false,
-          "approve": false,
-          "deleteSensitive": false,
-          "enabled": false
-        },
-        "production": {
-          "viewAccess": "all",
-          "enabled": true,
-          "deleteAccess": "all",
-          "add": true,
-          "print": true,
-          "approve": true,
-          "exportExcel": true,
-          "deleteSensitive": true,
-          "view": true,
-          "viewCosts": true,
-          "delete": true,
-          "edit": true,
-          "editAccess": "all",
-          "exportPdf": true
+          "deleteSensitive": false
         },
         "finance": {
-          "delete": true,
-          "viewCosts": true,
-          "editAccess": "all",
           "exportPdf": true,
-          "edit": true,
+          "exportExcel": true,
+          "add": true,
+          "approve": true,
           "view": true,
           "deleteSensitive": true,
-          "approve": true,
-          "exportExcel": true,
-          "print": true,
-          "add": true,
           "deleteAccess": "all",
+          "delete": true,
+          "editAccess": "all",
+          "viewAccess": "all",
+          "viewCosts": true,
           "enabled": true,
-          "viewAccess": "all"
+          "print": true,
+          "edit": true
+        },
+        "reports": {
+          "exportExcel": true,
+          "add": true,
+          "exportPdf": true,
+          "view": true,
+          "approve": true,
+          "delete": true,
+          "deleteAccess": "all",
+          "deleteSensitive": true,
+          "edit": true,
+          "print": true,
+          "viewCosts": true,
+          "enabled": true,
+          "viewAccess": "all",
+          "editAccess": "all"
+        },
+        "production": {
+          "delete": true,
+          "deleteAccess": "all",
+          "deleteSensitive": true,
+          "edit": true,
+          "print": true,
+          "viewCosts": true,
+          "enabled": true,
+          "viewAccess": "all",
+          "editAccess": "all",
+          "add": true,
+          "exportExcel": true,
+          "exportPdf": true,
+          "view": true,
+          "approve": true
+        },
+        "hr": {
+          "add": true,
+          "exportExcel": true,
+          "exportPdf": true,
+          "view": true,
+          "approve": true,
+          "delete": true,
+          "deleteAccess": "all",
+          "deleteSensitive": true,
+          "edit": true,
+          "print": true,
+          "enabled": true,
+          "viewCosts": true,
+          "viewAccess": "all",
+          "editAccess": "all"
         }
       }
     },
@@ -445,367 +445,76 @@
     "boundDeviceName": "",
     "password": "2424",
     "permissions": {
-      "moduleAccess": {
-        "notifications": {
-          "enabled": true,
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "editAccess": "all"
-        },
-        "sales": {
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "enabled": true,
-          "editAccess": "all"
-        },
-        "finance": {
-          "enabled": true,
-          "deleteAccess": "all",
-          "viewAccess": "all",
-          "editAccess": "all"
-        },
-        "production": {
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "enabled": true,
-          "editAccess": "all"
-        },
-        "hr": {
-          "enabled": true,
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "editAccess": "all"
-        },
-        "procurement": {
-          "editAccess": "all",
-          "viewAccess": "all",
-          "deleteAccess": "all",
-          "enabled": true
-        }
-      },
       "advanced": {
+        "notifications": {
+          "general": {
+            "view_finance": "all",
+            "view_all": "all",
+            "view_sales": "all",
+            "view_production": "all",
+            "view_purchasing": "all",
+            "view_public": "all",
+            "view_hr": "all",
+            "view_private": "all"
+          }
+        },
+        "dashboard": {
+          "metrics": {
+            "view_financial": "all",
+            "view_payroll": "all",
+            "view_production": "all",
+            "view_procurement": "all",
+            "view_inventory": "all",
+            "view_main": "all",
+            "export_metrics": "all",
+            "view_sales": "all",
+            "filter_date": "all",
+            "view_hr": "all",
+            "view_logs": "all",
+            "view_alerts": "all"
+          },
+          "quick_shortcuts": {
+            "view_main_shortcuts": "all",
+            "view_production_shortcuts": "all",
+            "view_procurement_shortcuts": "all"
+          }
+        },
         "procurement": {
-          "dashboard": {
-            "view_dashboard": "all"
-          },
-          "approved_po": {
-            "receive_items": "all",
-            "cancel_po": "all",
-            "view_pos": "all"
-          },
-          "requests": {
-            "add_request": "all",
-            "send_pricing": "all",
-            "approve_request": "all",
-            "view_requests": "all"
-          },
           "items": {
             "view_items": "all",
-            "manage_items": "all",
-            "approve_item": "all"
+            "approve_item": "all",
+            "manage_items": "all"
           },
           "finance_approval": {
             "undo_po": "all",
-            "reject_finance_po": "all",
             "view_finance_po": "all",
+            "reject_finance_po": "all",
             "approve_finance_po": "all"
           },
+          "dashboard": {
+            "view_dashboard": "all"
+          },
           "materials": {
-            "view_materials": "all",
-            "manage_materials": "all",
+            "inventory_audit": "all",
             "adjust_qty": "all",
-            "inventory_audit": "all"
+            "view_materials": "all",
+            "manage_materials": "all"
+          },
+          "requests": {
+            "add_request": "all",
+            "approve_request": "all",
+            "view_requests": "all",
+            "send_pricing": "all"
           },
           "suppliers": {
-            "view_suppliers": "all",
             "manage_suppliers": "all",
+            "view_suppliers": "all",
             "issue_rfq": "all"
-          }
-        },
-        "hr": {
-          "performance": {
-            "approve_perf": "all",
-            "view_perf": "all",
-            "add_perf": "all"
           },
-          "payroll": {
-            "approve_payroll": "all",
-            "post_mudad": "all",
-            "edit_components": "all",
-            "create_payroll": "all",
-            "view_payroll": "all",
-            "print_payroll": "all"
-          },
-          "self_service": {
-            "forward_inquiry": "all",
-            "view_inquiries": "all",
-            "delete_inquiry": "all",
-            "view_attachments": "all",
-            "close_inquiry": "all",
-            "reply_inquiry": "all",
-            "print_inquiry": "all"
-          },
-          "dashboard": {
-            "view_expiries": "all",
-            "view_total_emp": "all",
-            "view_total_loans": "all",
-            "view_total_deductions": "all",
-            "view_dashboard": "all",
-            "view_leave_emp": "all",
-            "view_attendance": "all",
-            "view_active_emp": "all",
-            "view_total_salaries": "all"
-          },
-          "letters": {
-            "edit_letter_template": "all",
-            "view_letters": "all",
-            "create_letter": "all"
-          },
-          "leaves": {
-            "edit_leave": "all",
-            "add_leave": "all",
-            "edit_balances": "all",
-            "view_balances": "all",
-            "delete_leave": "all",
-            "approve_leave": "all"
-          },
-          "deductions": {
-            "add_deduction": "all",
-            "edit_deduction": "all",
-            "approve_deduction": "all",
-            "view_deductions": "all"
-          },
-          "employees": {
-            "add_emp": "all",
-            "qiwa_muqeem": "all",
-            "delete_emp": "all",
-            "view_emp": "all",
-            "view_salary": "all",
-            "disable_emp": "all",
-            "manage_files": "all",
-            "edit_emp": "all",
-            "edit_salary": "all"
-          }
-        },
-        "production": {
-          "projects": {
-            "mark_complete_no_auth": "all",
-            "mark_ready": "all",
-            "view_projects": "all",
-            "manage_stages": "all"
-          },
-          "dashboard": {
-            "view_dashboard": "all"
-          },
-          "received": {
-            "accept_reject": "all",
-            "view_received": "all",
-            "view_cost_pricing": "all",
-            "create_order": "all"
-          },
-          "orders": {
-            "view_orders": "all",
-            "approve_orders": "all",
-            "manage_orders": "all"
-          },
-          "installation": {
-            "complete_install": "all",
-            "schedule_install": "all",
-            "view_install": "all"
-          },
-          "daily_followup": {
-            "view_daily_followup": "all",
-            "delete_daily_followup": "all",
-            "edit_daily_followup": "all",
-            "manage_daily_followup": "all"
-          }
-        },
-        "settings": {
-          "audit": {
-            "view_audit": "all",
-            "delete_audit": "all"
-          },
-          "users": {
-            "add_user": "all",
-            "view_users": "all",
-            "manage_permissions": "all",
-            "edit_user": "all"
-          },
-          "general": {
-            "view_settings": "all",
-            "edit_settings": "all",
-            "database_backup": "all"
-          }
-        },
-        "finance": {
-          "payroll": {
-            "view_payroll": "all",
-            "edit_payroll": "all"
-          },
-          "expenses": {
-            "edit_expenses": "all",
-            "view_expenses": "all"
-          },
-          "customer_invoices": {
-            "edit_paid_amount": "all",
-            "use_filters": "all",
-            "edit_approved_invoice": "all",
-            "zatca_monitor": "all",
-            "upload_attachment": "all",
-            "modify_qr": "all",
-            "view_portal": "all",
-            "edit_pending": "all",
-            "open_add_modal": "all",
-            "edit_due_date": "all",
-            "approve_invoice": "all",
-            "delete_approved": "all",
-            "preview_invoice": "all",
-            "edit_discount": "all",
-            "edit_amount": "all",
-            "create_from_quote": "all",
-            "zatca_send": "all",
-            "delete_payment": "all",
-            "delete_paid": "all",
-            "print_cancelled": "all",
-            "edit_items": "all",
-            "delete_unapproved": "all",
-            "register_unapproved_payment": "all",
-            "delete_approved_attachment": "all",
-            "edit_template": "all",
-            "search_invoices": "all",
-            "export_approved": "all",
-            "view_attachment": "all",
-            "view_details": "all",
-            "zatca_settings": "all",
-            "edit_approved": "all",
-            "export_cancelled": "all",
-            "reject_invoice": "all",
-            "edit_draft": "all",
-            "save_draft": "all",
-            "edit_company_data": "all",
-            "zatca_export_xml": "all",
-            "edit_attachment": "all",
-            "add_invoice": "all",
-            "register_payment": "all",
-            "zatca_resend": "all",
-            "unapprove_invoice": "all",
-            "zatca_view_log": "all",
-            "edit_payment": "all",
-            "edit_invoice": "all",
-            "unapprove_issued": "all",
-            "delete_draft": "all",
-            "upload_receipt": "all",
-            "edit_before_approval": "all",
-            "zatca_validate": "all",
-            "print_invoice": "all",
-            "view_log": "all",
-            "view_qr": "all",
-            "edit_vat": "all",
-            "cancel_invoice": "all",
-            "zatca_generate_qr": "all",
-            "export_all": "all",
-            "send_approval": "all",
-            "view_table": "all",
-            "zatca_generate_xml": "all",
-            "issue_invoice": "all",
-            "export_pdf": "all",
-            "edit_tax_data": "all"
-          },
-          "zakat_tax": {
-            "view_zakat_tax": "all",
-            "register_tax_payment": "all",
-            "export_zakat_tax": "all"
-          },
-          "zatca": {
-            "view_zatca": "all",
-            "edit_zatca": "all"
-          },
-          "reports": {
-            "view_reports": "all",
-            "export_reports": "all"
-          },
-          "supplier_invoices": {
-            "export_pdf": "all",
-            "view_table": "all",
-            "edit_recorded": "all",
-            "request_revision": "all",
-            "search_invoices": "all",
-            "view_details": "all",
-            "view_attachment": "all",
-            "delete_unapproved": "all",
-            "view_qr": "all",
-            "edit_vat": "all",
-            "edit_items": "all",
-            "export_all": "all",
-            "send_approval": "all",
-            "delete_approved_attachment": "all",
-            "cancel_invoice": "all",
-            "delete_paid": "all",
-            "print_invoice": "all",
-            "upload_receipt": "all",
-            "delete_payment": "all",
-            "edit_before_approval": "all",
-            "save_recorded": "all",
-            "view_log": "all",
-            "edit_payment": "all",
-            "create_from_po": "all",
-            "edit_invoice": "all",
-            "add_invoice": "all",
-            "edit_attachment": "all",
-            "edit_amount": "all",
-            "register_payment": "all",
-            "unapprove_invoice": "all",
-            "edit_due_date": "all",
-            "link_payment_account": "all",
-            "delete_approved": "all",
-            "preview_invoice": "all",
-            "edit_discount": "all",
-            "approve_invoice": "all",
-            "edit_pending": "all",
-            "view_portal": "all",
-            "unapprove_paid": "all",
-            "open_add_modal": "all",
-            "delete_recorded": "all",
-            "edit_approved_invoice": "all",
-            "edit_approved": "all",
-            "use_filters": "all",
-            "reject_invoice": "all",
-            "edit_paid_amount": "all",
-            "pay_unapproved": "all",
-            "upload_attachment": "all"
-          },
-          "dashboard": {
-            "edit_dashboard": "all",
-            "view_dashboard": "all"
-          },
-          "journal": {
-            "add_entry": "all",
-            "upload_attachment": "all",
-            "submit_approval": "all",
-            "view_projects": "all",
-            "print_entry": "all",
-            "edit_entry": "all",
-            "view_entries": "all",
-            "approve_entry": "all"
-          },
-          "revenues": {
-            "view_revenues": "all",
-            "edit_revenues": "all"
-          },
-          "cash_bank": {
-            "delete_transaction": "all",
-            "approve_transfer": "all",
-            "manage_reconciliation": "all",
-            "view_audit_log": "all",
-            "view_portal": "all",
-            "manage_bank_accounts": "all",
-            "view_archive": "all",
-            "view_dashboard": "all",
-            "manage_cash_boxes": "all",
-            "add_transfer": "all",
-            "approve_transaction": "all",
-            "edit_transaction": "all",
-            "add_transaction": "all"
+          "approved_po": {
+            "view_pos": "all",
+            "cancel_po": "all",
+            "receive_items": "all"
           }
         },
         "sales": {
@@ -814,87 +523,378 @@
             "view_reps": "all",
             "approve_comission": "all"
           },
-          "prod_orders": {
-            "resend_prod": "all",
-            "delete_prod_order": "all",
-            "view_prod_orders": "all"
-          },
-          "quotations": {
-            "delete_approved_quote": "all",
-            "send_production": "all",
-            "approve_quote": "all",
-            "add_quote": "all",
-            "unapprove_quote": "all",
-            "edit_quote": "all",
-            "delete_quote": "all",
-            "view_quotes": "all"
+          "collection": {
+            "add_plan": "all",
+            "view_collection": "all",
+            "unapprove_payment": "all",
+            "add_payment": "all",
+            "edit_plan": "all",
+            "approve_payment": "all",
+            "delete_payment": "all"
           },
           "letters": {
-            "add_letter": "all",
+            "send_letter": "all",
             "view_letters": "all",
-            "send_letter": "all"
+            "add_letter": "all"
           },
-          "dashboard": {
-            "view_dashboard": "all",
-            "view_financial": "all"
+          "quotations": {
+            "unapprove_quote": "all",
+            "delete_approved_quote": "all",
+            "edit_quote": "all",
+            "approve_quote": "all",
+            "send_production": "all",
+            "delete_quote": "all",
+            "add_quote": "all",
+            "view_quotes": "all"
           },
           "reports": {
-            "view_reports": "all",
-            "export_reports": "all"
+            "export_reports": "all",
+            "view_reports": "all"
           },
-          "clients": {
-            "add_client": "all",
-            "delete_client": "all",
-            "import_clients": "all",
-            "view_clients": "all",
-            "edit_client": "all"
+          "prod_orders": {
+            "view_prod_orders": "all",
+            "resend_prod": "all",
+            "delete_prod_order": "all"
           },
           "pricing_study": {
             "edit_pricing_study": "all",
             "view_pricing_study": "all"
           },
-          "collection": {
-            "delete_payment": "all",
-            "edit_plan": "all",
-            "add_plan": "all",
-            "approve_payment": "all",
-            "add_payment": "all",
-            "view_collection": "all",
-            "unapprove_payment": "all"
+          "clients": {
+            "delete_client": "all",
+            "import_clients": "all",
+            "view_clients": "all",
+            "edit_client": "all",
+            "add_client": "all"
+          },
+          "dashboard": {
+            "view_financial": "all",
+            "view_dashboard": "all"
           }
+        },
+        "finance": {
+          "reports": {
+            "view_reports": "all",
+            "export_reports": "all"
+          },
+          "supplier_invoices": {
+            "delete_paid": "all",
+            "print_invoice": "all",
+            "view_details": "all",
+            "delete_payment": "all",
+            "view_attachment": "all",
+            "edit_items": "all",
+            "view_portal": "all",
+            "edit_payment": "all",
+            "view_qr": "all",
+            "reject_invoice": "all",
+            "edit_approved_invoice": "all",
+            "unapprove_invoice": "all",
+            "open_add_modal": "all",
+            "send_approval": "all",
+            "export_pdf": "all",
+            "edit_discount": "all",
+            "create_from_po": "all",
+            "search_invoices": "all",
+            "delete_unapproved": "all",
+            "edit_paid_amount": "all",
+            "upload_attachment": "all",
+            "add_invoice": "all",
+            "edit_before_approval": "all",
+            "delete_approved": "all",
+            "use_filters": "all",
+            "edit_amount": "all",
+            "delete_approved_attachment": "all",
+            "edit_due_date": "all",
+            "export_all": "all",
+            "upload_receipt": "all",
+            "save_recorded": "all",
+            "edit_pending": "all",
+            "view_table": "all",
+            "edit_attachment": "all",
+            "unapprove_paid": "all",
+            "delete_recorded": "all",
+            "view_log": "all",
+            "pay_unapproved": "all",
+            "link_payment_account": "all",
+            "request_revision": "all",
+            "edit_approved": "all",
+            "register_payment": "all",
+            "edit_vat": "all",
+            "edit_recorded": "all",
+            "edit_invoice": "all",
+            "approve_invoice": "all",
+            "preview_invoice": "all",
+            "cancel_invoice": "all"
+          },
+          "zatca": {
+            "edit_zatca": "all",
+            "view_zatca": "all"
+          },
+          "journal": {
+            "view_entries": "all",
+            "approve_entry": "all",
+            "submit_approval": "all",
+            "edit_entry": "all",
+            "print_entry": "all",
+            "upload_attachment": "all",
+            "add_entry": "all",
+            "view_projects": "all"
+          },
+          "dashboard": {
+            "view_dashboard": "all",
+            "edit_dashboard": "all"
+          },
+          "cash_bank": {
+            "add_transaction": "all",
+            "manage_cash_boxes": "all",
+            "manage_reconciliation": "all",
+            "add_transfer": "all",
+            "approve_transaction": "all",
+            "delete_transaction": "all",
+            "edit_transaction": "all",
+            "view_dashboard": "all",
+            "approve_transfer": "all",
+            "view_audit_log": "all",
+            "manage_bank_accounts": "all",
+            "view_archive": "all",
+            "view_portal": "all"
+          },
+          "payroll": {
+            "view_payroll": "all",
+            "edit_payroll": "all"
+          },
+          "zakat_tax": {
+            "view_zakat_tax": "all",
+            "register_tax_payment": "all",
+            "export_zakat_tax": "all"
+          },
+          "expenses": {
+            "edit_expenses": "all",
+            "view_expenses": "all"
+          },
+          "revenues": {
+            "view_revenues": "all",
+            "edit_revenues": "all"
+          },
+          "customer_invoices": {
+            "zatca_view_log": "all",
+            "view_attachment": "all",
+            "delete_payment": "all",
+            "delete_paid": "all",
+            "view_details": "all",
+            "print_invoice": "all",
+            "zatca_generate_xml": "all",
+            "zatca_send": "all",
+            "unapprove_issued": "all",
+            "reject_invoice": "all",
+            "edit_approved_invoice": "all",
+            "edit_items": "all",
+            "view_portal": "all",
+            "issue_invoice": "all",
+            "edit_payment": "all",
+            "export_pdf": "all",
+            "save_draft": "all",
+            "open_add_modal": "all",
+            "edit_tax_data": "all",
+            "add_invoice": "all",
+            "zatca_validate": "all",
+            "delete_unapproved": "all",
+            "edit_paid_amount": "all",
+            "search_invoices": "all",
+            "edit_draft": "all",
+            "edit_due_date": "all",
+            "zatca_generate_qr": "all",
+            "export_all": "all",
+            "use_filters": "all",
+            "delete_approved": "all",
+            "delete_approved_attachment": "all",
+            "edit_amount": "all",
+            "edit_attachment": "all",
+            "edit_pending": "all",
+            "zatca_settings": "all",
+            "view_log": "all",
+            "edit_invoice": "all",
+            "preview_invoice": "all",
+            "edit_approved": "all",
+            "edit_template": "all",
+            "view_qr": "all",
+            "zatca_export_xml": "all",
+            "zatca_monitor": "all",
+            "edit_discount": "all",
+            "send_approval": "all",
+            "export_approved": "all",
+            "unapprove_invoice": "all",
+            "edit_company_data": "all",
+            "edit_before_approval": "all",
+            "delete_draft": "all",
+            "upload_attachment": "all",
+            "upload_receipt": "all",
+            "register_unapproved_payment": "all",
+            "modify_qr": "all",
+            "export_cancelled": "all",
+            "view_table": "all",
+            "zatca_resend": "all",
+            "approve_invoice": "all",
+            "print_cancelled": "all",
+            "cancel_invoice": "all",
+            "register_payment": "all",
+            "create_from_quote": "all",
+            "edit_vat": "all"
+          }
+        },
+        "production": {
+          "received": {
+            "view_received": "all",
+            "view_cost_pricing": "all",
+            "create_order": "all",
+            "accept_reject": "all"
+          },
+          "projects": {
+            "mark_complete_no_auth": "all",
+            "manage_stages": "all",
+            "mark_ready": "all",
+            "view_projects": "all"
+          },
+          "dashboard": {
+            "view_dashboard": "all"
+          },
+          "installation": {
+            "complete_install": "all",
+            "schedule_install": "all",
+            "view_install": "all"
+          },
+          "daily_followup": {
+            "edit_daily_followup": "all",
+            "view_daily_followup": "all",
+            "delete_daily_followup": "all",
+            "manage_daily_followup": "all"
+          },
+          "orders": {
+            "view_orders": "all",
+            "approve_orders": "all",
+            "manage_orders": "all"
+          }
+        },
+        "hr": {
+          "performance": {
+            "add_perf": "all",
+            "view_perf": "all",
+            "approve_perf": "all"
+          },
+          "leaves": {
+            "approve_leave": "all",
+            "edit_leave": "all",
+            "view_balances": "all",
+            "add_leave": "all",
+            "edit_balances": "all",
+            "delete_leave": "all"
+          },
+          "self_service": {
+            "forward_inquiry": "all",
+            "print_inquiry": "all",
+            "view_inquiries": "all",
+            "delete_inquiry": "all",
+            "view_attachments": "all",
+            "close_inquiry": "all",
+            "reply_inquiry": "all"
+          },
+          "deductions": {
+            "view_deductions": "all",
+            "add_deduction": "all",
+            "edit_deduction": "all",
+            "approve_deduction": "all"
+          },
+          "employees": {
+            "manage_files": "all",
+            "disable_emp": "all",
+            "edit_emp": "all",
+            "delete_emp": "all",
+            "add_emp": "all",
+            "qiwa_muqeem": "all",
+            "view_emp": "all",
+            "edit_salary": "all",
+            "view_salary": "all"
+          },
+          "payroll": {
+            "post_mudad": "all",
+            "create_payroll": "all",
+            "print_payroll": "all",
+            "approve_payroll": "all",
+            "view_payroll": "all",
+            "edit_components": "all"
+          },
+          "dashboard": {
+            "view_active_emp": "all",
+            "view_attendance": "all",
+            "view_total_emp": "all",
+            "view_total_deductions": "all",
+            "view_leave_emp": "all",
+            "view_total_loans": "all",
+            "view_dashboard": "all",
+            "view_expiries": "all",
+            "view_total_salaries": "all"
+          },
+          "letters": {
+            "create_letter": "all",
+            "view_letters": "all",
+            "edit_letter_template": "all"
+          }
+        },
+        "settings": {
+          "audit": {
+            "view_audit": "all",
+            "delete_audit": "all"
+          },
+          "users": {
+            "manage_permissions": "all",
+            "view_users": "all",
+            "edit_user": "all",
+            "add_user": "all"
+          },
+          "general": {
+            "view_settings": "all",
+            "edit_settings": "all",
+            "database_backup": "all"
+          }
+        }
+      },
+      "moduleAccess": {
+        "sales": {
+          "viewAccess": "all",
+          "enabled": true,
+          "editAccess": "all",
+          "deleteAccess": "all"
+        },
+        "procurement": {
+          "enabled": true,
+          "editAccess": "all",
+          "deleteAccess": "all",
+          "viewAccess": "all"
         },
         "notifications": {
-          "general": {
-            "view_sales": "all",
-            "view_private": "all",
-            "view_hr": "all",
-            "view_finance": "all",
-            "view_public": "all",
-            "view_production": "all",
-            "view_all": "all",
-            "view_purchasing": "all"
-          }
+          "editAccess": "all",
+          "deleteAccess": "all",
+          "enabled": true,
+          "viewAccess": "all"
         },
-        "dashboard": {
-          "quick_shortcuts": {
-            "view_procurement_shortcuts": "all",
-            "view_main_shortcuts": "all",
-            "view_production_shortcuts": "all"
-          },
-          "metrics": {
-            "view_production": "all",
-            "view_logs": "all",
-            "view_inventory": "all",
-            "view_sales": "all",
-            "export_metrics": "all",
-            "filter_date": "all",
-            "view_payroll": "all",
-            "view_alerts": "all",
-            "view_hr": "all",
-            "view_financial": "all",
-            "view_main": "all",
-            "view_procurement": "all"
-          }
+        "hr": {
+          "viewAccess": "all",
+          "enabled": true,
+          "deleteAccess": "all",
+          "editAccess": "all"
+        },
+        "production": {
+          "enabled": true,
+          "deleteAccess": "all",
+          "editAccess": "all",
+          "viewAccess": "all"
+        },
+        "finance": {
+          "deleteAccess": "all",
+          "editAccess": "all",
+          "enabled": true,
+          "viewAccess": "all"
         }
       },
       "scopes": {
@@ -921,146 +921,149 @@
     "jobTitle": "مشرف انتاج",
     "role": "Production",
     "permissions": {
+      "scopes": {
+        "global": "all"
+      },
       "moduleAccess": {
-        "production": {
-          "enabled": true,
-          "deleteAccess": "all",
-          "viewAccess": "all",
-          "add": true,
-          "deleteSensitive": false,
-          "print": true,
+        "sales": {
           "exportExcel": true,
-          "approve": false,
-          "edit": true,
+          "add": true,
           "exportPdf": true,
-          "editAccess": "all",
-          "viewCosts": true,
-          "delete": true,
-          "view": true
-        },
-        "settings": {
-          "exportExcel": false,
-          "approve": false,
-          "print": false,
-          "enabled": false,
-          "deleteSensitive": false,
           "view": true,
-          "exportPdf": false,
-          "edit": false,
-          "add": false,
+          "approve": false,
+          "deleteAccess": "own",
           "delete": false,
-          "viewCosts": false
+          "deleteSensitive": false,
+          "enabled": true,
+          "viewCosts": false,
+          "edit": false,
+          "print": true,
+          "editAccess": "all",
+          "viewAccess": "all"
         },
         "procurement": {
-          "exportExcel": false,
-          "approve": false,
-          "print": false,
-          "deleteSensitive": false,
-          "view": true,
-          "exportPdf": false,
-          "editAccess": "none",
-          "edit": false,
-          "delete": false,
-          "viewCosts": false,
-          "viewAccess": "none",
-          "enabled": false,
-          "add": false
-        },
-        "hr": {
           "add": false,
-          "enabled": false,
-          "viewAccess": "none",
-          "viewCosts": false,
-          "delete": false,
-          "edit": false,
-          "editAccess": "none",
+          "exportExcel": false,
           "exportPdf": false,
           "view": true,
+          "approve": false,
+          "delete": false,
           "deleteSensitive": false,
           "print": false,
-          "approve": false,
-          "exportExcel": false
-        },
-        "finance": {
-          "deleteSensitive": false,
-          "print": true,
-          "exportExcel": true,
-          "approve": false,
           "edit": false,
-          "editAccess": "own",
-          "exportPdf": true,
           "viewCosts": false,
-          "delete": false,
-          "view": true,
-          "deleteAccess": "own",
-          "enabled": true,
-          "viewAccess": "own",
-          "add": true
+          "enabled": false,
+          "viewAccess": "none",
+          "editAccess": "none"
         },
         "reports": {
-          "viewAccess": "own",
-          "enabled": false,
-          "deleteAccess": "own",
-          "add": false,
-          "print": false,
-          "approve": false,
-          "exportExcel": false,
-          "deleteSensitive": false,
-          "view": true,
-          "viewCosts": false,
           "delete": false,
+          "deleteAccess": "own",
+          "deleteSensitive": false,
+          "print": false,
+          "edit": false,
+          "enabled": false,
+          "viewCosts": false,
+          "viewAccess": "own",
+          "editAccess": "own",
+          "exportExcel": false,
+          "add": false,
+          "exportPdf": false,
+          "view": true,
+          "approve": false
+        },
+        "production": {
+          "deleteSensitive": false,
+          "delete": true,
+          "deleteAccess": "all",
+          "viewAccess": "all",
+          "editAccess": "all",
+          "print": true,
+          "edit": true,
+          "enabled": true,
+          "viewCosts": true,
+          "exportPdf": true,
+          "add": true,
+          "exportExcel": true,
+          "approve": false,
+          "view": true
+        },
+        "finance": {
+          "view": true,
+          "approve": false,
+          "add": true,
+          "exportExcel": true,
+          "exportPdf": true,
+          "enabled": true,
+          "viewCosts": false,
+          "print": true,
           "edit": false,
           "editAccess": "own",
-          "exportPdf": false
-        },
-        "sales": {
-          "view": true,
+          "viewAccess": "own",
+          "deleteAccess": "own",
           "delete": false,
-          "viewCosts": false,
-          "exportPdf": true,
-          "editAccess": "all",
-          "edit": false,
-          "approve": false,
-          "exportExcel": true,
-          "print": true,
+          "deleteSensitive": false
+        },
+        "hr": {
+          "delete": false,
           "deleteSensitive": false,
-          "add": true,
-          "viewAccess": "all",
-          "enabled": true,
-          "deleteAccess": "own"
+          "enabled": false,
+          "viewCosts": false,
+          "edit": false,
+          "print": false,
+          "editAccess": "none",
+          "viewAccess": "none",
+          "exportExcel": false,
+          "add": false,
+          "exportPdf": false,
+          "view": true,
+          "approve": false
+        },
+        "settings": {
+          "enabled": false,
+          "viewCosts": false,
+          "view": true,
+          "edit": false,
+          "print": false,
+          "approve": false,
+          "add": false,
+          "exportExcel": false,
+          "delete": false,
+          "deleteSensitive": false,
+          "exportPdf": false
         }
       },
       "advanced": {
         "production": {
-          "projects": {
-            "view_projects": "all",
-            "manage_stages": "all",
-            "mark_complete_no_auth": "all",
-            "mark_ready": "all"
+          "daily_followup": {
+            "manage_daily_followup": "all",
+            "view_daily_followup": "all",
+            "edit_daily_followup": "all"
+          },
+          "orders": {
+            "manage_orders": "all",
+            "view_orders": "all",
+            "approve_orders": "all"
+          },
+          "received": {
+            "accept_reject": "all",
+            "create_order": "all",
+            "view_cost_pricing": "all",
+            "view_received": "all"
           },
           "dashboard": {
             "view_dashboard": "all"
           },
-          "received": {
-            "accept_reject": "all",
-            "view_received": "all",
-            "view_cost_pricing": "all",
-            "create_order": "all"
+          "projects": {
+            "manage_stages": "all",
+            "view_projects": "all",
+            "mark_ready": "all",
+            "mark_complete_no_auth": "all"
           },
           "installation": {
-            "view_install": "all",
             "schedule_install": "all",
+            "view_install": "all",
             "complete_install": "all"
-          },
-          "orders": {
-            "manage_orders": "all",
-            "approve_orders": "all",
-            "view_orders": "all"
-          },
-          "daily_followup": {
-            "view_daily_followup": "all",
-            "edit_daily_followup": "all",
-            "manage_daily_followup": "all"
           }
         },
         "procurement": {
@@ -1069,48 +1072,45 @@
           }
         },
         "sales": {
+          "reports": {
+            "view_reports": false,
+            "export_reports": false
+          },
+          "prod_orders": {
+            "delete_prod_order": "own",
+            "resend_prod": "own",
+            "view_prod_orders": "own"
+          },
+          "quotations": {
+            "edit_quote": "own",
+            "view_quotes": "own",
+            "send_production": "own",
+            "add_quote": "own"
+          },
           "dashboard": {
             "view_financial": "own",
             "view_dashboard": "own"
           },
-          "reports": {
-            "export_reports": false,
-            "view_reports": false
+          "letters": {
+            "add_letter": "own",
+            "view_letters": "own",
+            "send_letter": "own"
           },
-          "prod_orders": {
-            "delete_prod_order": "own",
-            "view_prod_orders": "own",
-            "resend_prod": "own"
+          "collection": {
+            "delete_payment": "own",
+            "edit_plan": "own",
+            "add_plan": "own",
+            "view_collection": "own",
+            "add_payment": "own"
           },
           "clients": {
-            "delete_client": false,
             "add_client": "own",
+            "delete_client": false,
             "view_clients": "own",
             "import_clients": "all",
             "edit_client": "own"
-          },
-          "collection": {
-            "add_payment": "own",
-            "view_collection": "own",
-            "edit_plan": "own",
-            "delete_payment": "own",
-            "add_plan": "own"
-          },
-          "quotations": {
-            "view_quotes": "own",
-            "add_quote": "own",
-            "edit_quote": "own",
-            "send_production": "own"
-          },
-          "letters": {
-            "send_letter": "own",
-            "view_letters": "own",
-            "add_letter": "own"
           }
         }
-      },
-      "scopes": {
-        "global": "all"
       }
     },
     "password": "1969",
@@ -1122,150 +1122,150 @@
     "empId": "EMP-9738",
     "password": "1991",
     "permissions": {
-      "scopes": {
-        "global": "all"
-      },
       "advanced": {
         "procurement": {
-          "materials": {
-            "adjust_qty": true,
-            "view_materials": true,
-            "manage_materials": true
-          },
-          "suppliers": {
-            "issue_rfq": "all",
-            "manage_suppliers": "all",
-            "view_suppliers": "all"
-          },
-          "items": {
-            "manage_items": true,
-            "view_items": true,
-            "approve_item": true
-          },
           "requests": {
-            "view_requests": true,
+            "add_request": true,
             "send_pricing": true,
-            "add_request": true
-          },
-          "finance_approval": {
-            "view_finance_po": false,
-            "approve_finance_po": false,
-            "undo_po": false,
-            "reject_finance_po": false
-          },
-          "dashboard": {
-            "view_dashboard": "all"
+            "view_requests": true
           },
           "approved_po": {
             "view_pos": true,
             "receive_items": true,
             "cancel_po": false
+          },
+          "suppliers": {
+            "issue_rfq": "all",
+            "view_suppliers": "all",
+            "manage_suppliers": "all"
+          },
+          "items": {
+            "approve_item": true,
+            "manage_items": true,
+            "view_items": true
+          },
+          "dashboard": {
+            "view_dashboard": "all"
+          },
+          "materials": {
+            "adjust_qty": true,
+            "view_materials": true,
+            "manage_materials": true
+          },
+          "finance_approval": {
+            "approve_finance_po": false,
+            "reject_finance_po": false,
+            "view_finance_po": false,
+            "undo_po": false
           }
         }
       },
+      "scopes": {
+        "global": "all"
+      },
       "moduleAccess": {
         "procurement": {
-          "viewAccess": "all",
+          "deleteSensitive": false,
           "deleteAccess": "all",
-          "enabled": true,
-          "add": true,
-          "print": true,
-          "exportExcel": true,
-          "approve": false,
-          "deleteSensitive": false,
-          "view": true,
-          "edit": true,
-          "exportPdf": true,
+          "delete": true,
           "editAccess": "all",
+          "viewAccess": "all",
+          "enabled": true,
           "viewCosts": true,
-          "delete": true
-        },
-        "hr": {
-          "add": false,
-          "enabled": false,
-          "viewAccess": "none",
-          "edit": false,
-          "editAccess": "none",
-          "exportPdf": false,
-          "viewCosts": false,
-          "delete": false,
-          "view": true,
-          "deleteSensitive": false,
-          "print": false,
+          "edit": true,
+          "print": true,
+          "exportPdf": true,
+          "exportExcel": true,
+          "add": true,
           "approve": false,
-          "exportExcel": false
+          "view": true
+        },
+        "sales": {
+          "approve": false,
+          "view": true,
+          "exportPdf": false,
+          "add": false,
+          "exportExcel": false,
+          "viewAccess": "none",
+          "editAccess": "none",
+          "print": false,
+          "edit": false,
+          "viewCosts": false,
+          "enabled": false,
+          "deleteSensitive": false,
+          "delete": false
         },
         "settings": {
-          "delete": false,
-          "viewCosts": false,
           "exportPdf": false,
-          "add": false,
-          "edit": false,
-          "view": true,
           "deleteSensitive": false,
-          "enabled": false,
-          "approve": false,
-          "exportExcel": false,
-          "print": false
-        },
-        "production": {
+          "delete": false,
           "add": false,
-          "viewAccess": "none",
-          "enabled": false,
+          "exportExcel": false,
+          "approve": false,
+          "print": false,
           "view": true,
           "edit": false,
-          "exportPdf": false,
-          "editAccess": "none",
-          "viewCosts": false,
-          "delete": false,
-          "print": false,
+          "enabled": false,
+          "viewCosts": false
+        },
+        "hr": {
           "exportExcel": false,
+          "add": false,
+          "exportPdf": false,
+          "view": true,
           "approve": false,
-          "deleteSensitive": false
+          "delete": false,
+          "deleteSensitive": false,
+          "print": false,
+          "edit": false,
+          "enabled": false,
+          "viewCosts": false,
+          "viewAccess": "none",
+          "editAccess": "none"
         },
         "finance": {
-          "approve": false,
-          "exportExcel": false,
           "print": false,
-          "deleteSensitive": false,
-          "enabled": false,
-          "view": true,
-          "delete": false,
-          "viewCosts": false,
-          "exportPdf": false,
           "edit": false,
+          "view": true,
+          "viewCosts": false,
+          "enabled": false,
+          "approve": false,
+          "delete": false,
+          "exportExcel": false,
+          "add": false,
+          "exportPdf": false,
+          "deleteSensitive": false
+        },
+        "production": {
+          "editAccess": "none",
+          "viewAccess": "none",
+          "enabled": false,
+          "viewCosts": false,
+          "print": false,
+          "edit": false,
+          "deleteSensitive": false,
+          "delete": false,
+          "approve": false,
+          "view": true,
+          "exportPdf": false,
+          "exportExcel": false,
           "add": false
         },
         "reports": {
-          "deleteSensitive": false,
-          "exportExcel": true,
-          "approve": false,
-          "print": true,
-          "editAccess": "own",
-          "exportPdf": true,
-          "edit": false,
-          "delete": false,
-          "viewCosts": false,
-          "view": true,
           "enabled": true,
-          "deleteAccess": "own",
-          "viewAccess": "own",
-          "add": true
-        },
-        "sales": {
-          "deleteSensitive": false,
-          "exportExcel": false,
-          "approve": false,
-          "print": false,
-          "exportPdf": false,
-          "editAccess": "none",
-          "edit": false,
-          "delete": false,
           "viewCosts": false,
+          "print": true,
+          "edit": false,
+          "editAccess": "own",
+          "viewAccess": "own",
+          "deleteAccess": "own",
+          "delete": false,
+          "deleteSensitive": false,
           "view": true,
-          "enabled": false,
-          "viewAccess": "none",
-          "add": false
+          "approve": false,
+          "exportExcel": true,
+          "add": true,
+          "exportPdf": true
         }
       }
     },
@@ -1278,111 +1278,125 @@
     "empId": "EMP-9378",
     "permissions": {
       "moduleAccess": {
-        "procurement": {
-          "enabled": true,
-          "viewAccess": "all",
-          "add": false,
-          "deleteSensitive": false,
-          "print": false,
-          "exportExcel": false,
-          "approve": false,
-          "edit": false,
-          "editAccess": "all",
-          "exportPdf": false,
-          "viewCosts": false,
-          "delete": false,
-          "view": true
-        },
         "hr": {
+          "approve": false,
+          "view": true,
           "exportPdf": false,
+          "add": false,
+          "exportExcel": false,
+          "viewAccess": "none",
           "editAccess": "none",
-          "edit": false,
-          "delete": false,
-          "viewCosts": false,
-          "view": true,
-          "deleteSensitive": false,
-          "approve": false,
-          "exportExcel": false,
           "print": false,
-          "add": false,
+          "edit": false,
+          "viewCosts": false,
           "enabled": false,
-          "viewAccess": "none"
-        },
-        "settings": {
           "deleteSensitive": false,
-          "enabled": false,
-          "exportExcel": false,
-          "approve": false,
-          "print": false,
-          "delete": false,
-          "viewCosts": false,
-          "exportPdf": false,
-          "add": false,
-          "edit": false,
-          "view": true
-        },
-        "production": {
-          "print": false,
-          "approve": false,
-          "exportExcel": false,
-          "deleteSensitive": false,
-          "view": true,
-          "viewCosts": false,
-          "delete": false,
-          "edit": false,
-          "exportPdf": false,
-          "editAccess": "all",
-          "viewAccess": "all",
-          "enabled": true,
-          "add": false
-        },
-        "finance": {
-          "add": true,
-          "viewAccess": "own",
-          "deleteAccess": "own",
-          "enabled": true,
-          "view": true,
-          "edit": true,
-          "exportPdf": true,
-          "editAccess": "own",
-          "viewCosts": false,
-          "delete": true,
-          "print": true,
-          "exportExcel": true,
-          "approve": false,
-          "deleteSensitive": false
+          "delete": false
         },
         "reports": {
-          "approve": false,
           "exportExcel": false,
-          "print": false,
-          "enabled": true,
-          "deleteSensitive": false,
-          "view": true,
-          "exportPdf": false,
           "add": false,
-          "edit": false,
           "delete": false,
-          "viewCosts": false
+          "deleteSensitive": false,
+          "exportPdf": false,
+          "enabled": true,
+          "viewCosts": false,
+          "edit": false,
+          "view": true,
+          "print": false,
+          "approve": false
         },
-        "sales": {
-          "add": true,
-          "deleteAccess": "own",
+        "production": {
+          "add": false,
+          "exportExcel": false,
+          "exportPdf": false,
+          "view": true,
+          "approve": false,
+          "delete": false,
+          "deleteSensitive": false,
+          "edit": false,
+          "print": false,
+          "viewCosts": false,
           "enabled": true,
           "viewAccess": "all",
-          "exportPdf": true,
-          "editAccess": "all",
-          "edit": true,
-          "delete": true,
-          "viewCosts": false,
+          "editAccess": "all"
+        },
+        "finance": {
           "view": true,
-          "deleteSensitive": false,
           "approve": false,
           "exportExcel": true,
-          "print": true
+          "add": true,
+          "exportPdf": true,
+          "viewCosts": false,
+          "enabled": true,
+          "edit": true,
+          "print": true,
+          "editAccess": "own",
+          "viewAccess": "own",
+          "deleteAccess": "own",
+          "delete": true,
+          "deleteSensitive": false
+        },
+        "settings": {
+          "enabled": false,
+          "viewCosts": false,
+          "print": false,
+          "edit": false,
+          "view": true,
+          "approve": false,
+          "exportExcel": false,
+          "add": false,
+          "delete": false,
+          "exportPdf": false,
+          "deleteSensitive": false
+        },
+        "sales": {
+          "exportPdf": true,
+          "add": true,
+          "exportExcel": true,
+          "approve": false,
+          "view": true,
+          "deleteSensitive": false,
+          "delete": true,
+          "deleteAccess": "own",
+          "viewAccess": "all",
+          "editAccess": "all",
+          "print": true,
+          "edit": true,
+          "enabled": true,
+          "viewCosts": false
+        },
+        "procurement": {
+          "view": true,
+          "approve": false,
+          "add": false,
+          "exportExcel": false,
+          "exportPdf": false,
+          "edit": false,
+          "print": false,
+          "viewCosts": false,
+          "enabled": true,
+          "viewAccess": "all",
+          "editAccess": "all",
+          "delete": false,
+          "deleteSensitive": false
         }
       },
+      "scopes": {
+        "global": "all"
+      },
       "advanced": {
+        "production": {
+          "installation": {
+            "view_install": "all"
+          },
+          "projects": {
+            "view_projects": "all"
+          },
+          "dashboard": {
+            "view_dashboard": "all"
+          }
+        },
         "dashboard": {
           "metrics": {
             "view_main": false,
@@ -1390,36 +1404,6 @@
           }
         },
         "sales": {
-          "collection": {
-            "delete_payment": "own",
-            "edit_plan": "own",
-            "add_plan": "own",
-            "approve_payment": "own",
-            "add_payment": "own",
-            "view_collection": "own"
-          },
-          "quotations": {
-            "add_quote": "own",
-            "approve_quote": false,
-            "delete_approved_quote": false,
-            "send_production": "own",
-            "view_quotes": "own",
-            "edit_quote": "own",
-            "unapprove_quote": false,
-            "delete_quote": false
-          },
-          "letters": {
-            "add_letter": "own",
-            "view_letters": "own",
-            "send_letter": "own"
-          },
-          "clients": {
-            "view_clients": true,
-            "import_clients": true,
-            "add_client": true,
-            "delete_client": "own",
-            "edit_client": "all"
-          },
           "prod_orders": {
             "view_prod_orders": "all",
             "resend_prod": "own"
@@ -1428,35 +1412,51 @@
             "export_reports": false,
             "view_reports": "own"
           },
+          "quotations": {
+            "unapprove_quote": false,
+            "delete_approved_quote": false,
+            "approve_quote": false,
+            "edit_quote": "own",
+            "send_production": "own",
+            "delete_quote": false,
+            "add_quote": "own",
+            "view_quotes": "own"
+          },
+          "letters": {
+            "add_letter": "own",
+            "view_letters": "own",
+            "send_letter": "own"
+          },
           "dashboard": {
             "view_financial": "own",
             "view_dashboard": "own"
-          }
-        },
-        "production": {
-          "projects": {
-            "view_projects": "all"
           },
-          "installation": {
-            "view_install": "all"
+          "clients": {
+            "delete_client": "own",
+            "edit_client": "all",
+            "view_clients": true,
+            "import_clients": true,
+            "add_client": true
           },
-          "dashboard": {
-            "view_dashboard": "all"
+          "collection": {
+            "edit_plan": "own",
+            "delete_payment": "own",
+            "approve_payment": "own",
+            "view_collection": "own",
+            "add_plan": "own",
+            "add_payment": "own"
           }
         },
         "procurement": {
+          "items": {
+            "manage_items": "all",
+            "approve_item": "all",
+            "view_items": "all"
+          },
           "dashboard": {
             "view_dashboard": false
-          },
-          "items": {
-            "approve_item": "all",
-            "manage_items": "all",
-            "view_items": "all"
           }
         }
-      },
-      "scopes": {
-        "global": "all"
       }
     },
     "password": "1982",
