@@ -414,35 +414,83 @@ export function serverTimestamp() {
 }
 
 // Firestore Helpers
-const getCollectionDocs = async (colName) => {
-  try {
-    const snap = await getDocs(collection(db, colName));
-    const results = snap.docs.map((d) => {
-      const data = d.data();
-      if (colName === "users") {
-        return { username: d.id, id: d.id, ...data } as any;
-      }
-      return { id: d.id, ...data } as any;
-    });
+const getCollectionDocs = async (colName: string) => {
+  let results: any[] = [];
+  let fetched = false;
 
-    if (colName === "users") {
-      const seen = new Set();
-      return results.filter((u: any) => {
-        if (!u) return false;
-        const uname = u.username || u.id;
-        if (!uname || seen.has(uname)) {
-          return false;
+  // 1. Try Firebase Admin SDK (Full read permissions, bypasses rules)
+  if (adminDb) {
+    try {
+      const snap = await adminDb.collection(colName).get();
+      results = snap.docs.map((doc: any) => {
+        const data = doc.data();
+        if (colName === "users") {
+          return { username: doc.id, id: doc.id, ...data };
         }
-        seen.add(uname);
-        return true;
+        return { id: doc.id, ...data };
       });
+      fetched = true;
+      console.log(`[FIREBASE-ADMIN] Successfully fetched ${results.length} docs from ${colName}.`);
+    } catch (err: any) {
+      console.warn(`[FIREBASE-ADMIN] Failed to fetch collection ${colName}:`, err.message);
     }
-
-    return results;
-  } catch (err: any) {
-    fs.appendFileSync('server-errors.txt', `Firebase error reading colName ${colName}: ${err.message}\n`);
-    return [];
   }
+
+  // 2. Try client-side Firebase SDK (Unauthenticated on server)
+  if (!fetched) {
+    try {
+      const snap = await getDocs(collection(db, colName));
+      results = snap.docs.map((d: any) => {
+        const data = d.data();
+        if (colName === "users") {
+          return { username: d.id, id: d.id, ...data };
+        }
+        return { id: d.id, ...data };
+      });
+      fetched = true;
+      console.log(`[FIREBASE-CLIENT] Successfully fetched ${results.length} docs from ${colName}.`);
+    } catch (err: any) {
+      console.warn(`[FIREBASE-CLIENT] Failed to fetch collection ${colName}:`, err.message);
+      fs.appendFileSync('server-errors.txt', `Firebase error reading colName ${colName}: ${err.message}\n`);
+    }
+  }
+
+  // 3. User Filter and local backup sync
+  if (fetched) {
+    // If we successfully fetched from Firestore, make sure we sync it to our local file cache
+    try {
+      saveLocalCollection(colName, results);
+    } catch (e: any) {
+      console.error(`[LOCAL_DB] Failed to sync ${colName} to local file:`, e.message);
+    }
+  } else {
+    // 4. Fallback to Local JSON Database (Robust Offline-First Mode)
+    try {
+      const localList = getLocalCollection(colName);
+      if (localList && localList.length > 0) {
+        console.log(`[LOCAL-FALLBACK] Loaded ${localList.length} docs from local backup file for ${colName}.`);
+        results = localList;
+      }
+    } catch (fallbackErr: any) {
+      console.error(`[LOCAL-FALLBACK] Failed to read fallback for ${colName}:`, fallbackErr.message);
+    }
+  }
+
+  // Clean and filter user duplicates if colName is "users"
+  if (colName === "users") {
+    const seen = new Set();
+    return results.filter((u: any) => {
+      if (!u) return false;
+      const uname = u.username || u.id;
+      if (!uname || seen.has(uname)) {
+        return false;
+      }
+      seen.add(uname);
+      return true;
+    });
+  }
+
+  return results;
 };
 
 // Removed Supabase client
@@ -1344,7 +1392,7 @@ Text to translate: ${text}`;
   // Request Device Change (by blocked users)
   app.post("/api/users/:username/request-device-change", async (req, res) => {
     const { username } = req.params;
-    const { devId, devName } = req.body;
+    const { devId, devName, devOS, devBrowser, devType, hardwareId } = req.body;
     try {
       let userRef = doc(db, "users", username);
       let userSnap = await getDoc(userRef);
@@ -1356,12 +1404,24 @@ Text to translate: ${text}`;
         return res.status(404).json({ error: "User not found" });
       }
       const userData = userSnap.data() || {};
+      const nowISO = new Date().toISOString();
+      
       userData.pendingDeviceApprovalId = devId;
       userData.pendingDeviceApprovalName = devName;
+      userData.pendingDeviceApprovalOS = devOS || "";
+      userData.pendingDeviceApprovalBrowser = devBrowser || "";
+      userData.pendingDeviceApprovalType = devType || "";
+      userData.pendingDeviceApprovalHardwareId = hardwareId || "";
+      userData.pendingDeviceApprovalAt = nowISO;
       
       await setDoc(userRef, { 
         pendingDeviceApprovalId: devId, 
-        pendingDeviceApprovalName: devName 
+        pendingDeviceApprovalName: devName,
+        pendingDeviceApprovalOS: devOS || "",
+        pendingDeviceApprovalBrowser: devBrowser || "",
+        pendingDeviceApprovalType: devType || "",
+        pendingDeviceApprovalHardwareId: hardwareId || "",
+        pendingDeviceApprovalAt: nowISO
       }, { merge: true });
       saveLocalDoc("users", username, userData);
       

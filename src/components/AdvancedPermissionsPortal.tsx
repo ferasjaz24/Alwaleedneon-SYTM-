@@ -1049,6 +1049,62 @@ export default function AdvancedPermissionsPortal({
                                         >
                                            إلغاء ربط ومسح هذا الجهاز فوراً
                                         </button>
+
+                                        {/* Context-aware pending request for the selected user */}
+                                        {pendingDeviceApprovalId && (
+                                           <div className="mt-4 p-4 rounded-xl border-2 border-amber-400 bg-amber-50/70 space-y-3 text-right">
+                                              <div className="flex justify-between items-center border-b border-amber-200 pb-2">
+                                                 <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-black">طلب استبدال جهاز معلق لهذا الموظف</span>
+                                                 <span className="text-xs font-black text-slate-800">{user.username}</span>
+                                              </div>
+                                              <div className="space-y-1.5 text-xs text-slate-700">
+                                                 <div className="font-mono text-[10px] bg-white p-2 rounded border border-amber-200 break-all select-all">
+                                                    معرف الجهاز الجديد: <span className="font-black text-slate-900">{pendingDeviceApprovalId}</span>
+                                                 </div>
+                                                 {pendingDeviceApprovalName && (
+                                                    <div className="font-black text-[#0072BC] mt-1">📱 اسم الجهاز الجديد: {pendingDeviceApprovalName}</div>
+                                                 )}
+                                                 {(() => {
+                                                    const matchUser = localUsers.find(u => u.username.toUpperCase() === user.username.toUpperCase());
+                                                    if (matchUser) {
+                                                       return (
+                                                          <>
+                                                             {matchUser.pendingDeviceApprovalOS && (
+                                                                <div className="text-slate-600 font-bold">💻 نظام التشغيل: {matchUser.pendingDeviceApprovalOS}</div>
+                                                             )}
+                                                             {matchUser.pendingDeviceApprovalBrowser && (
+                                                                <div className="text-slate-600 font-bold">🌐 المتصفح: {matchUser.pendingDeviceApprovalBrowser}</div>
+                                                             )}
+                                                             {matchUser.pendingDeviceApprovalType && (
+                                                                <div className="text-slate-600 font-bold">📱 نوع الجهاز: {matchUser.pendingDeviceApprovalType}</div>
+                                                             )}
+                                                             {matchUser.pendingDeviceApprovalAt && (
+                                                                <div className="text-[10px] text-slate-400 mt-1 font-semibold">🕒 طلب في: {new Date(matchUser.pendingDeviceApprovalAt).toLocaleString("ar-EG")}</div>
+                                                             )}
+                                                          </>
+                                                       );
+                                                    }
+                                                    return null;
+                                                 })()}
+                                              </div>
+                                              <div className="flex gap-2 pt-1">
+                                                 <button
+                                                    type="button"
+                                                    onClick={() => handleApproveDevice(user.username, pendingDeviceApprovalId, pendingDeviceApprovalName || "جهاز غير معروف")}
+                                                    className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black transition text-center"
+                                                 >
+                                                    قبول وتغيير الجهاز
+                                                 </button>
+                                                 <button
+                                                    type="button"
+                                                    onClick={() => handleRejectDevice(user.username)}
+                                                    className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition text-center"
+                                                 >
+                                                    رفض الطلب
+                                                 </button>
+                                              </div>
+                                           </div>
+                                        )}
                                      </div>
                                   ) : (
                                      <div className="py-4 text-center space-y-2">
