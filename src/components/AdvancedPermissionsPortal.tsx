@@ -564,6 +564,9 @@ export default function AdvancedPermissionsPortal({
   const [allowDeviceMigration, setAllowDeviceMigration] = useState<boolean>(
      !!user.allowDeviceMigration
   );
+  const [openLoginAnywhere, setOpenLoginAnywhere] = useState<boolean>(
+     !!user.openLoginAnywhere
+  );
   const [boundDeviceId, setBoundDeviceId] = useState<string>(
      user.boundDeviceId || ""
   );
@@ -576,6 +579,69 @@ export default function AdvancedPermissionsPortal({
   const [pendingDeviceApprovalName, setPendingDeviceApprovalName] = useState<string>(
      user.pendingDeviceApprovalName || ""
   );
+
+  const [localUsers, setLocalUsers] = useState<any[]>(allUsers || []);
+
+  const handleApproveDevice = async (targetUsername: string, targetDevId: string, targetDevName: string) => {
+    try {
+      const res = await fetch(`/api/users/${targetUsername}/approve-device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ devId: targetDevId, devName: targetDevName })
+      });
+      if (res.ok) {
+         if (targetUsername.toUpperCase() === user.username.toUpperCase()) {
+            setBoundDeviceId(targetDevId);
+            setBoundDeviceName(targetDevName);
+            setPendingDeviceApprovalId("");
+            setPendingDeviceApprovalName("");
+         }
+         // Update localUsers list
+         setLocalUsers(prev => prev.map(u => {
+            if (u.username.toUpperCase() === targetUsername.toUpperCase()) {
+               return { ...u, boundDeviceId: targetDevId, boundDeviceName: targetDevName, pendingDeviceApprovalId: "", pendingDeviceApprovalName: "" };
+            }
+            return u;
+         }));
+         alert("تم قبول وتوثيق الجهاز للمستخدم " + targetUsername + " بنجاح!");
+      } else {
+         const errData = await res.json();
+         alert("فشل قبول وتوثيق الجهاز: " + (errData.error || "خطأ غير معروف"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم.");
+    }
+  };
+
+  const handleRejectDevice = async (targetUsername: string) => {
+    try {
+      const res = await fetch(`/api/users/${targetUsername}/reject-device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+         if (targetUsername.toUpperCase() === user.username.toUpperCase()) {
+            setPendingDeviceApprovalId("");
+            setPendingDeviceApprovalName("");
+         }
+         // Update localUsers list
+         setLocalUsers(prev => prev.map(u => {
+            if (u.username.toUpperCase() === targetUsername.toUpperCase()) {
+               return { ...u, pendingDeviceApprovalId: "", pendingDeviceApprovalName: "" };
+            }
+            return u;
+         }));
+         alert("تم رفض طلب تفعيل الجهاز للمستخدم " + targetUsername + ".");
+      } else {
+         const errData = await res.json();
+         alert("فشل معالجة رفض الطلب: " + (errData.error || "خطأ غير معروف"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم.");
+    }
+  };
   
   const handleToggle = (main: string, sub: string, permId: string, val: boolean) => {
      setAdvPerms((prev: any) => ({
@@ -654,6 +720,7 @@ export default function AdvancedPermissionsPortal({
        moduleAccess: newModuleAccess,
        deviceLockEnabled,
        allowDeviceMigration,
+       openLoginAnywhere,
        boundDeviceId,
        boundDeviceName,
        pendingDeviceApprovalId,
@@ -875,6 +942,22 @@ export default function AdvancedPermissionsPortal({
                                         <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowDeviceMigration ? '-translate-x-5' : 'translate-x-0'}`} />
                                      </button>
                                   </div>
+
+                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                     <div className="flex-1">
+                                        <span className="block text-sm font-black text-[#0072BC]">تعطيل القفل مؤقتاً لهذا المستخدم (دخول مفتوح)</span>
+                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
+                                           عند التفعيل، يمكن لهذا المستخدم الدخول من أي متصفح أو جهاز مختلف بشكل مفتوح دون تفعيل حظر الأجهزة وتجاوز قيود القفل.
+                                        </span>
+                                     </div>
+                                     <button
+                                        type="button"
+                                        onClick={() => setOpenLoginAnywhere(!openLoginAnywhere)}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${openLoginAnywhere ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                     >
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${openLoginAnywhere ? '-translate-x-5' : 'translate-x-0'}`} />
+                                     </button>
+                                  </div>
                                </div>
                             </div>
 
@@ -924,40 +1007,42 @@ export default function AdvancedPermissionsPortal({
 
                                {/* Pending Approvals */}
                                <div className="pt-4 border-t border-slate-100">
-                                  <h5 className="text-xs font-black text-slate-600 mb-3">طلبات ترخيص الأجهزة المعلقة</h5>
-                                  {pendingDeviceApprovalId ? (
-                                     <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3">
-                                        <div>
-                                           <span className="block text-xs font-black text-amber-800">طلب جديد لتوثيق جهاز</span>
-                                           <span className="block text-[10px] text-slate-500 mt-1 font-mono break-all">{pendingDeviceApprovalId}</span>
-                                           {pendingDeviceApprovalName && (
-                                              <span className="block text-[10px] text-slate-500 mt-1 font-semibold">المستعرض: {pendingDeviceApprovalName}</span>
-                                           )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                           <button
-                                              type="button"
-                                              onClick={() => {
-                                                 setBoundDeviceId(pendingDeviceApprovalId);
-                                                 setBoundDeviceName(pendingDeviceApprovalName);
-                                                 setPendingDeviceApprovalId("");
-                                                 setPendingDeviceApprovalName("");
-                                              }}
-                                              className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black transition text-center"
-                                           >
-                                              قبول وتوثيق
-                                           </button>
-                                           <button
-                                              type="button"
-                                              onClick={() => {
-                                                 setPendingDeviceApprovalId("");
-                                                 setPendingDeviceApprovalName("");
-                                              }}
-                                              className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition text-center"
-                                           >
-                                              رفض الطلب
-                                           </button>
-                                        </div>
+                                  <h5 className="text-xs font-black text-slate-600 mb-3 flex items-center gap-1.5">
+                                     <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                     <span>طلبات ترخيص الأجهزة المعلقة (لكل موظفي الشركة)</span>
+                                  </h5>
+                                  {localUsers.filter(u => u.pendingDeviceApprovalId).length > 0 ? (
+                                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                                        {localUsers.filter(u => u.pendingDeviceApprovalId).map(u => (
+                                           <div key={u.username} className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3 text-right">
+                                              <div className="flex justify-between items-center border-b border-amber-200/40 pb-2">
+                                                 <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-black">طلب معلق</span>
+                                                 <span className="text-xs font-black text-slate-800">{u.username}</span>
+                                              </div>
+                                              <div>
+                                                 <span className="block text-[10px] text-slate-500 mt-1 font-mono break-all">{u.pendingDeviceApprovalId}</span>
+                                                 {u.pendingDeviceApprovalName && (
+                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">المتصفح/الجهاز: {u.pendingDeviceApprovalName}</span>
+                                                 )}
+                                              </div>
+                                              <div className="flex gap-2">
+                                                 <button
+                                                    type="button"
+                                                    onClick={() => handleApproveDevice(u.username, u.pendingDeviceApprovalId, u.pendingDeviceApprovalName || "جهاز غير معروف")}
+                                                    className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black transition text-center"
+                                                 >
+                                                    قبول وتوثيق
+                                                 </button>
+                                                 <button
+                                                    type="button"
+                                                    onClick={() => handleRejectDevice(u.username)}
+                                                    className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition text-center"
+                                                 >
+                                                    رفض الطلب
+                                                 </button>
+                                              </div>
+                                           </div>
+                                        ))}
                                      </div>
                                   ) : (
                                      <p className="text-[11px] text-slate-400 italic text-center py-2 font-semibold">لا توجد طلبات ترخيص أجهزة معلقة حالياً.</p>

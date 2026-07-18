@@ -290,6 +290,8 @@ export default function App() {
     devName: string;
     boundDeviceName?: string;
   } | null>(null);
+  const [deviceRequestLoading, setDeviceRequestLoading] = useState(false);
+  const [deviceRequestSuccess, setDeviceRequestSuccess] = useState(false);
 
   // Captcha bot check states
   const [loginCaptchaChallenge, setLoginCaptchaChallenge] = useState(() => ({
@@ -1035,161 +1037,33 @@ export default function App() {
       return;
     }
 
-    const uName = loginUsername.toUpperCase().trim();
-    
+    let devId = localStorage.getItem("alwaleed_device_id");
+    if (!devId) {
+      devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
+      localStorage.setItem("alwaleed_device_id", devId);
+    }
+    const currentDeviceName = getDeviceFriendlyName();
+
     try {
-      // PROACTIVE FIX: Fetch fresh users list from backend to prevent stale local React state on logout
-      let currentUsers = users;
-      let apiErrorOccurred = false;
-      let apiErrorMessage = "";
-      
-      try {
-        const freshUsersRes = await fetch("/api/users");
-        if (freshUsersRes.ok) {
-          const freshData = await freshUsersRes.json();
-          if (Array.isArray(freshData)) {
-            currentUsers = freshData;
-            setUsers(freshData);
-          } else {
-            apiErrorOccurred = true;
-            apiErrorMessage = "بيانات المستخدمين غير صالحة من الخادم.";
-          }
-        } else {
-          apiErrorOccurred = true;
-          try {
-            const errData = await freshUsersRes.json();
-            apiErrorMessage = errData.error || `استجابة خاطئة من الخادم بوضع: ${freshUsersRes.status}`;
-          } catch {
-            apiErrorMessage = `استجابة خاطئة من الخادم بوضع: ${freshUsersRes.status}`;
-          }
-        }
-      } catch (err: any) {
-        console.error("Failed to load fresh users on login:", err);
-        apiErrorOccurred = true;
-        apiErrorMessage = err.message || "فشل الاتصال بالخادم";
-      }
+      // Direct post to secure login endpoint
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginUsername,
+          password: loginPassword,
+          devId,
+          devName: currentDeviceName
+        })
+      });
 
-      if (apiErrorOccurred && currentUsers.length === 0) {
-        setLoginError(
-          lang === "ar"
-            ? `خطأ في خادم النظام (كود 600): ${apiErrorMessage}. يرجى المحاولة لاحقاً أو التواصل مع الدعم الفني.`
-            : `System server error (Error 600): ${apiErrorMessage}. Please try again later or contact support.`
-        );
-        logSystemError({
-          code: "ERR-600-SYS",
-          message: `خطأ اتصال الخادم أثناء تسجيل الدخول: ${apiErrorMessage}`,
-          page: "Login Gateway",
-          action: "handleRegularLogin"
-        });
-        setButtonLoading("login", false);
-        return;
-      }
+      if (response.ok) {
+        const loginData = await response.json();
+        const matched = loginData.user;
 
-      // Validate from loaded system users
-      const matched = currentUsers.find((u) => u.username.toUpperCase() === uName);
-      if (matched) {
-        if (
-          loginPassword &&
-          matched.password &&
-          matched.password !== loginPassword
-        ) {
-          setLoginError(
-            lang === "ar"
-              ? "كلمة المرور غير صحيحة"
-              : "Incorrect passcode entered.",
-          );
-          logSystemError({
-            code: "ERR-401-AUTH",
-            message: `محاولة تسجيل دخول فاشلة بكلمة مرور خاطئة للمستخدم: ${uName}`,
-            page: "Login Gateway",
-            action: "handleRegularLogin"
-          });
-          setButtonLoading("login", false);
-          return;
-        }
+        // Reset device request success state on login success
+        setDeviceRequestSuccess(false);
 
-        // Single Device Security Check
-        let devId = localStorage.getItem("alwaleed_device_id");
-        if (!devId) {
-          devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
-          localStorage.setItem("alwaleed_device_id", devId);
-        }
-
-        const isLockEnabled = matched.deviceLockEnabled !== false; // Active by default for optimal security
-        const currentDeviceName = getDeviceFriendlyName();
-        
-        if (isLockEnabled) {
-          if (!matched.boundDeviceId) {
-            // First login from any device binds this device automatically
-            matched.boundDeviceId = devId;
-            matched.boundDeviceName = currentDeviceName;
-            try {
-              await fetch(`/api/users/${matched.username}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName }),
-              });
-              console.log("Device auto-bound for user on first login:", matched.username, devId);
-            } catch (err) {
-              console.error("Failed to auto-bind device on first login:", err);
-            }
-          } else if (matched.boundDeviceId !== devId) {
-            // Check if user is in device self-migration/setup mode
-            if (matched.allowDeviceMigration) {
-              matched.boundDeviceId = devId;
-              matched.boundDeviceName = currentDeviceName;
-              matched.allowDeviceMigration = false;
-              try {
-                await fetch(`/api/users/${matched.username}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ boundDeviceId: devId, boundDeviceName: currentDeviceName, allowDeviceMigration: false }),
-                });
-                console.log("Device self-migration completed for user:", matched.username, devId);
-              } catch (err) {
-                console.error("Failed to self-migrate device:", err);
-              }
-            } else {
-              // Block login, register pending authorization request
-              try {
-                await fetch(`/api/users/${matched.username}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ 
-                    pendingDeviceApprovalId: devId,
-                    pendingDeviceApprovalName: currentDeviceName
-                  }),
-                });
-                console.log("Logged pending device authorization request for user:", matched.username, devId);
-              } catch (err) {
-                console.error("Failed to post pending device request:", err);
-              }
-
-              // Open custom Device Mismatch block modal
-              setDeviceBlockDetails({
-                username: matched.username,
-                devId: devId,
-                devName: currentDeviceName,
-                boundDeviceName: matched.boundDeviceName || (lang === "ar" ? "جهاز آخر مرتبط سابقاً" : "Another previously linked device")
-              });
-
-              setLoginError(
-                lang === "ar"
-                  ? "عذراً، هذا الجهاز غير موثق للدخول لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى التواصل مع الإدارة أو الدعم الفني لطلب الإذن."
-                  : "Error: This device is not authorized. This account is already linked to another device. Please contact support."
-              );
-              logSystemError({
-                code: "ERR-403-DEVICE",
-                message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${uName} (معرّف الجهاز: ${devId} | الاسم: ${currentDeviceName})`,
-                page: "Login Gateway",
-                action: "handleRegularLogin"
-              });
-              setButtonLoading("login", false);
-              return;
-            }
-          }
-        }
-        
         // Automatic Firebase Authentication integration
         const firebaseEmail = `${matched.username.toLowerCase()}@alwaleed-factory.com`;
         const firebasePassword = `${matched.password || "123456"}_alwaleed_pass`;
@@ -1255,15 +1129,39 @@ export default function App() {
         } else {
           setActiveTab("dashboard");
         }
-      } else {
+      } else if (response.status === 403) {
+        const errorData = await response.json();
+        setDeviceBlockDetails({
+          username: errorData.username,
+          devId: errorData.devId,
+          devName: errorData.devName,
+          boundDeviceName: errorData.boundDeviceName
+        });
         setLoginError(
           lang === "ar"
-            ? "اسم المستخدم المكتوب غير موجود بصندوق النظام"
-            : "Username not registered in the system.",
+            ? "عذراً، هذا الجهاز غير موثق للدخول لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى إرسال طلب استبدال الجهاز للإدارة أو التواصل مع الدعم الفني."
+            : "Error: This device is not authorized. This account is already linked to another device. Please send a device change request or contact support."
         );
         logSystemError({
-          code: "ERR-404-AUTH",
-          message: `محاولة دخول فاشلة باسم مستخدم غير مسجل: ${uName}`,
+          code: "ERR-403-DEVICE",
+          message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${loginUsername} (معرّف الجهاز: ${devId} | الاسم: ${currentDeviceName})`,
+          page: "Login Gateway",
+          action: "handleRegularLogin"
+        });
+      } else {
+        let errorMessage = "اسم المستخدم أو كلمة المرور غير صحيحة.";
+        try {
+          const errData = await response.json();
+          errorMessage = errData.error || errorMessage;
+        } catch {}
+        setLoginError(
+          lang === "ar"
+            ? `خطأ في الدخول: ${errorMessage}`
+            : `Login error: ${errorMessage}`
+        );
+        logSystemError({
+          code: "ERR-401-AUTH",
+          message: `محاولة دخول فاشلة للمستخدم: ${loginUsername} | التفاصيل: ${errorMessage}`,
           page: "Login Gateway",
           action: "handleRegularLogin"
         });
@@ -1272,11 +1170,11 @@ export default function App() {
       console.error(err);
       setLoginError(
         lang === "ar"
-          ? `حدث خطأ غير متوقع في خادم النظام (كود 600): ${err.message || "فشل الاتصال"}`
-          : `An unexpected system server error occurred (Error 600): ${err.message || "Connection failed"}`
+          ? `حدث خطأ في خادم النظام (كود 600): ${err.message || "فشل الاتصال"}`
+          : `System server error (Error 600): ${err.message || "Connection failed"}`
       );
       logSystemError({
-        code: "ERR-500-SYS",
+        code: "ERR-600-SYS",
         message: err.message || "Unknown login error",
         page: "Login",
         action: "handleRegularLogin",
@@ -1284,6 +1182,35 @@ export default function App() {
       });
     } finally {
       setButtonLoading("login", false);
+    }
+  };
+
+  // Send device migration request to administration (Requested by the user)
+  const handleSendDeviceRequest = async () => {
+    if (!deviceBlockDetails) return;
+    setDeviceRequestLoading(true);
+    setDeviceRequestSuccess(false);
+    try {
+      const res = await fetch(`/api/users/${deviceBlockDetails.username}/request-device-change`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          devId: deviceBlockDetails.devId,
+          devName: deviceBlockDetails.devName
+        })
+      });
+      if (res.ok) {
+        setDeviceRequestSuccess(true);
+        showToast(lang === "ar" ? "تم إرسال طلب استبدال الجهاز للإدارة بنجاح!" : "Device replacement request sent successfully!");
+        handleReloadUsers(); // Reload to refresh the pending state in user list
+      } else {
+        showToast(lang === "ar" ? "فشل إرسال طلب استبدال الجهاز." : "Failed to send device request.", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast(lang === "ar" ? "خطأ في خادم النظام" : "Server error", "error");
+    } finally {
+      setDeviceRequestLoading(false);
     }
   };
 
@@ -3310,7 +3237,7 @@ export default function App() {
               onSave={async (username, payload) => {
                 const { 
                   newUsername, password, role, jobTitle, 
-                  deviceLockEnabled, allowDeviceMigration, boundDeviceId,
+                  deviceLockEnabled, allowDeviceMigration, openLoginAnywhere, boundDeviceId, boundDeviceName,
                   pendingDeviceApprovalId, pendingDeviceApprovalName,
                   ...rest 
                 } = payload as any;
@@ -3321,7 +3248,9 @@ export default function App() {
                   ...(jobTitle && { jobTitle }),
                   deviceLockEnabled,
                   allowDeviceMigration,
+                  openLoginAnywhere,
                   boundDeviceId,
+                  boundDeviceName,
                   pendingDeviceApprovalId,
                   pendingDeviceApprovalName,
                   permissions: rest,
@@ -6161,11 +6090,34 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Send Device Change Request Button */}
+              {deviceRequestSuccess ? (
+                <div className="p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-300 text-center font-black text-xs space-y-1">
+                  <div>✓ {lang === "ar" ? "تم إرسال طلب استبدال الجهاز للإدارة بنجاح!" : "Device migration request sent successfully!"}</div>
+                  <div className="text-[11px] font-semibold text-slate-300">
+                    {lang === "ar" ? "يرجى الانتظار لحين موافقة الإدارة على جهازك الجديد لتتمكن من الدخول." : "Please wait for administration approval before trying to log in."}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSendDeviceRequest}
+                  disabled={deviceRequestLoading}
+                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-cyan-500 shadow-lg shadow-cyan-950/20"
+                >
+                  {deviceRequestLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span className="text-sm">📱</span>
+                  )}
+                  {lang === "ar" ? "إرسال طلب تغيير جهاز للإدارة" : "Send Device Change Request to Administration"}
+                </button>
+              )}
+
               {/* Bypass Lock and Link current Device Button */}
               <button
                 onClick={handleBypassDeviceLock}
                 disabled={!!isActionLoading["bypass"]}
-                className="w-full mt-4 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-rose-500 shadow-lg shadow-rose-950/20"
+                className="w-full mt-3 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-rose-500 shadow-lg shadow-rose-950/20"
               >
                 {isActionLoading["bypass"] ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />

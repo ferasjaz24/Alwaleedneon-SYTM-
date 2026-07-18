@@ -1123,10 +1123,243 @@ Text to translate: ${text}`;
       return;
     }
     await setDoc(doc(db, "users", newUser.username), newUser);
+    saveLocalDoc("users", newUser.username, newUser);
     res.json({ success: true, user: newUser });
   });
 
-    app.put("/api/users/:username", async (req, res) => {
+  // Secure Server-Side Login Gateway & Device Control
+  app.post("/api/login", async (req, res) => {
+    const uName = (req.body.username || "").trim();
+    const password = req.body.password;
+    const devId = req.body.devId;
+    const devName = req.body.devName;
+
+    if (!uName || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+
+    try {
+      // Look up user document in Firestore
+      let userDocRef = doc(db, "users", uName);
+      let userSnap = await getDoc(userDocRef);
+      
+      // Try case variants if not found immediately
+      if (!userSnap.exists()) {
+        userDocRef = doc(db, "users", uName.toUpperCase());
+        userSnap = await getDoc(userDocRef);
+      }
+      if (!userSnap.exists()) {
+        userDocRef = doc(db, "users", uName.toLowerCase());
+        userSnap = await getDoc(userDocRef);
+      }
+
+      let userData: any = null;
+      let actualDocId = uName;
+
+      if (userSnap.exists()) {
+        userData = userSnap.data();
+        actualDocId = userSnap.id;
+      } else {
+        // Fallback: search all users case-insensitively in Firestore
+        const snap = await getDocs(collection(db, "users"));
+        const matchedDoc = snap.docs.find(d => (d.id || "").toUpperCase() === uName.toUpperCase() || ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase());
+        if (matchedDoc) {
+          userData = matchedDoc.data();
+          userDocRef = doc(db, "users", matchedDoc.id);
+          actualDocId = matchedDoc.id;
+        }
+      }
+
+      // If Firestore failed or not found, try reading from local backup!
+      if (!userData) {
+        const localList = getLocalCollection("users");
+        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === uName.toUpperCase());
+        if (matchedLocal) {
+          userData = { ...matchedLocal };
+          actualDocId = matchedLocal.username || matchedLocal.id;
+          console.log(`[API_LOGIN] Loaded user ${actualDocId} from local backup database.`);
+        }
+      }
+
+      if (!userData) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      if (userData.password !== password) {
+        return res.status(401).json({ error: "Incorrect passcode entered." });
+      }
+
+      const isLockEnabled = userData.deviceLockEnabled !== false;
+      const openAnywhere = !!userData.openLoginAnywhere;
+
+      if (openAnywhere) {
+        // Bypass device check entirely!
+        console.log(`[API_LOGIN] User ${actualDocId} has openLoginAnywhere enabled. Bypassing device lock.`);
+      } else if (isLockEnabled) {
+        if (!userData.boundDeviceId) {
+          // First login from any device binds this device automatically
+          userData.boundDeviceId = devId;
+          userData.boundDeviceName = devName;
+          
+          await setDoc(userDocRef, { boundDeviceId: devId, boundDeviceName: devName }, { merge: true });
+          saveLocalDoc("users", actualDocId, userData);
+          console.log(`[API_LOGIN] Device auto-bound for user ${actualDocId}: ${devId}`);
+        } else if (userData.boundDeviceId !== devId) {
+          if (userData.allowDeviceMigration) {
+            // Self-migration
+            userData.boundDeviceId = devId;
+            userData.boundDeviceName = devName;
+            userData.allowDeviceMigration = false;
+            
+            await setDoc(userDocRef, { 
+              boundDeviceId: devId, 
+              boundDeviceName: devName, 
+              allowDeviceMigration: false 
+            }, { merge: true });
+            saveLocalDoc("users", actualDocId, userData);
+            console.log(`[API_LOGIN] Device self-migration completed for user ${actualDocId}: ${devId}`);
+          } else {
+            // Block login and record pending authorization request
+            userData.pendingDeviceApprovalId = devId;
+            userData.pendingDeviceApprovalName = devName;
+            
+            await setDoc(userDocRef, { 
+              pendingDeviceApprovalId: devId, 
+              pendingDeviceApprovalName: devName 
+            }, { merge: true });
+            saveLocalDoc("users", actualDocId, userData);
+            console.log(`[API_LOGIN] Pending device request logged for user ${actualDocId}: ${devId}`);
+
+            return res.status(403).json({
+              error: "device_mismatch",
+              username: actualDocId,
+              devId,
+              devName,
+              boundDeviceName: userData.boundDeviceName || "جهاز آخر مرتبط"
+            });
+          }
+        }
+      }
+
+      // Successful login
+      return res.json({
+        success: true,
+        user: {
+          ...userData,
+          username: actualDocId,
+          id: actualDocId
+        }
+      });
+    } catch (err: any) {
+      console.error("[API_LOGIN] Login handler error:", err);
+      return res.status(500).json({ error: "Internal server error during login: " + err.message });
+    }
+  });
+
+  // Request Device Change (by blocked users)
+  app.post("/api/users/:username/request-device-change", async (req, res) => {
+    const { username } = req.params;
+    const { devId, devName } = req.body;
+    try {
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const userData = userSnap.data() || {};
+      userData.pendingDeviceApprovalId = devId;
+      userData.pendingDeviceApprovalName = devName;
+      
+      await setDoc(userRef, { 
+        pendingDeviceApprovalId: devId, 
+        pendingDeviceApprovalName: devName 
+      }, { merge: true });
+      saveLocalDoc("users", username, userData);
+      
+      return res.json({ success: true, message: "Device change request submitted successfully." });
+    } catch (err: any) {
+      console.error("[API_REQUEST_DEVICE_CHANGE] Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Approve pending device
+  app.post("/api/users/:username/approve-device", async (req, res) => {
+    const { username } = req.params;
+    try {
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const userData = userSnap.data() || {};
+      const newId = userData.pendingDeviceApprovalId;
+      const newName = userData.pendingDeviceApprovalName;
+
+      if (!newId) {
+        return res.status(400).json({ error: "No pending device request found." });
+      }
+
+      userData.boundDeviceId = newId;
+      userData.boundDeviceName = newName || "متصفح موثق";
+      userData.pendingDeviceApprovalId = "";
+      userData.pendingDeviceApprovalName = "";
+
+      await setDoc(userRef, { 
+        boundDeviceId: userData.boundDeviceId, 
+        boundDeviceName: userData.boundDeviceName,
+        pendingDeviceApprovalId: "",
+        pendingDeviceApprovalName: ""
+      }, { merge: true });
+      saveLocalDoc("users", username, userData);
+
+      return res.json({ success: true, user: userData });
+    } catch (err: any) {
+      console.error("[API_APPROVE_DEVICE] Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Reject pending device
+  app.post("/api/users/:username/reject-device", async (req, res) => {
+    const { username } = req.params;
+    try {
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const userData = userSnap.data() || {};
+
+      userData.pendingDeviceApprovalId = "";
+      userData.pendingDeviceApprovalName = "";
+
+      await setDoc(userRef, { 
+        pendingDeviceApprovalId: "",
+        pendingDeviceApprovalName: ""
+      }, { merge: true });
+      saveLocalDoc("users", username, userData);
+
+      return res.json({ success: true, user: userData });
+    } catch (err: any) {
+      console.error("[API_REJECT_DEVICE] Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/users/:username", async (req, res) => {
     const oldUsername = req.params.username;
     const data = req.body;
 
@@ -1156,6 +1389,7 @@ Text to translate: ${text}`;
 
         // 1. Create new user doc
         await setDoc(doc(db, "users", newUsername), updatedUserData);
+        saveLocalDoc("users", newUsername, updatedUserData);
         // 2. Delete old user doc
         await deleteDoc(oldDocRef);
 
@@ -1182,8 +1416,6 @@ Text to translate: ${text}`;
                 wasModified = true;
               }
             }
-            // Array fields like assignedTeam could contain username?
-            // "assignedTeam" is sometimes an array of employees, wait is it username? usually employee ids.
 
             if (wasModified) {
                await setDoc(doc(db, col, d.id), updatedDoc);
@@ -1197,8 +1429,14 @@ Text to translate: ${text}`;
         const updateData = { ...data };
         delete updateData.newUsername;
         
-        await setDoc(doc(db, "users", oldUsername), updateData, { merge: true });
-        return res.json({ success: true, user: updateData });
+        const docRef = doc(db, "users", oldUsername);
+        const docSnap = await getDoc(docRef);
+        const existingData = docSnap.exists() ? docSnap.data() : {};
+        const mergedData = { ...existingData, ...updateData, username: oldUsername };
+
+        await setDoc(docRef, updateData, { merge: true });
+        saveLocalDoc("users", oldUsername, mergedData);
+        return res.json({ success: true, user: mergedData });
       }
     } catch (e: any) {
       console.error(e);
