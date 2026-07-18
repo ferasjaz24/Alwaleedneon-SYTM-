@@ -1059,7 +1059,15 @@ export default function App() {
 
       if (response.ok) {
         const loginData = await response.json();
-        const matched = loginData.user;
+        const matched = loginData?.user;
+
+        if (!matched || !matched.username) {
+          throw new Error(
+            lang === "ar"
+              ? "بيانات المستخدم المرتجعة من النظام غير صالحة أو مفقودة."
+              : "User data returned from the server is invalid or missing."
+          );
+        }
 
         // Reset device request success state on login success
         setDeviceRequestSuccess(false);
@@ -1221,7 +1229,7 @@ export default function App() {
     const devId = deviceBlockDetails.devId;
     const currentDeviceName = deviceBlockDetails.devName;
 
-    const matched = users.find((u) => u.username.toUpperCase() === uName.toUpperCase());
+    const matched = users.find((u) => u && u.username && u.username.toUpperCase() === uName.toUpperCase());
     if (!matched) return;
 
     setButtonLoading("bypass", true);
@@ -1361,7 +1369,7 @@ export default function App() {
       }
 
       // Find FERAS user details to check device binding (checking both "FERAS" and "FERAS24" for safety)
-      const matched = currentUsers.find((u) => u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "FERAS24");
+      const matched = currentUsers.find((u) => u && u.username && (u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "FERAS24"));
       
       let devId = localStorage.getItem("alwaleed_device_id");
       if (!devId) {
