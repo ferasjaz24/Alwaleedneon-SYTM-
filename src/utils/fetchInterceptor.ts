@@ -307,6 +307,7 @@ async function handleBackendOnlyRouteFallback(
       const devOS = body.devOS || "";
       const devBrowser = body.devBrowser || "";
       const devType = body.devType || "";
+      const hardwareId = body.hardwareId || "";
 
       if (!uName || !password) {
         return new Response(JSON.stringify({ error: "Username and password are required" }), {
@@ -410,6 +411,9 @@ async function handleBackendOnlyRouteFallback(
         // Bypass device lock!
         console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] User ${actualDocId} has device lock disabled. Bypassing device lock.`);
       } else {
+        const allowMulti = !!userData.allowMultiBrowserOnSameDevice;
+        const matchedHardware = allowMulti && userData.boundHardwareId && userData.boundHardwareId === hardwareId;
+
         if (!userData.boundDeviceId) {
           // First login from any device binds this device automatically!
           userData.boundDeviceId = devId;
@@ -417,6 +421,7 @@ async function handleBackendOnlyRouteFallback(
           userData.boundDeviceOS = devOS;
           userData.boundDeviceBrowser = devBrowser;
           userData.boundDeviceType = devType;
+          userData.boundHardwareId = hardwareId;
           userData.boundDeviceAt = new Date().toISOString();
 
           try {
@@ -426,6 +431,7 @@ async function handleBackendOnlyRouteFallback(
               boundDeviceOS: devOS,
               boundDeviceBrowser: devBrowser,
               boundDeviceType: devType,
+              boundHardwareId: hardwareId,
               boundDeviceAt: userData.boundDeviceAt
             }, { merge: true });
           } catch (e) {
@@ -440,7 +446,7 @@ async function handleBackendOnlyRouteFallback(
             saveFallbackCollection("users", list);
           }
           console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Device auto-bound for user ${actualDocId}: ${devId}`);
-        } else if (userData.boundDeviceId !== devId) {
+        } else if (userData.boundDeviceId !== devId && !matchedHardware) {
           if (userData.allowDeviceMigration) {
             // Self-migration
             userData.boundDeviceId = devId;
@@ -448,6 +454,7 @@ async function handleBackendOnlyRouteFallback(
             userData.boundDeviceOS = devOS;
             userData.boundDeviceBrowser = devBrowser;
             userData.boundDeviceType = devType;
+            userData.boundHardwareId = hardwareId;
             userData.boundDeviceAt = new Date().toISOString();
             userData.allowDeviceMigration = false;
 
@@ -458,6 +465,7 @@ async function handleBackendOnlyRouteFallback(
                 boundDeviceOS: devOS,
                 boundDeviceBrowser: devBrowser,
                 boundDeviceType: devType,
+                boundHardwareId: hardwareId,
                 boundDeviceAt: userData.boundDeviceAt,
                 allowDeviceMigration: false
               }, { merge: true });
@@ -474,14 +482,25 @@ async function handleBackendOnlyRouteFallback(
             }
             console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Device self-migration completed for user ${actualDocId}: ${devId}`);
           } else {
-            // Block login and record pending authorization request
+            // Block login and record pending authorization request with all details
+            const nowISO = new Date().toISOString();
             userData.pendingDeviceApprovalId = devId;
             userData.pendingDeviceApprovalName = devName;
+            userData.pendingDeviceApprovalHardwareId = hardwareId;
+            userData.pendingDeviceApprovalOS = devOS;
+            userData.pendingDeviceApprovalBrowser = devBrowser;
+            userData.pendingDeviceApprovalType = devType;
+            userData.pendingDeviceApprovalAt = nowISO;
 
             try {
               await setDoc(doc(db, "users", actualDocId), {
                 pendingDeviceApprovalId: devId,
-                pendingDeviceApprovalName: devName
+                pendingDeviceApprovalName: devName,
+                pendingDeviceApprovalHardwareId: hardwareId,
+                pendingDeviceApprovalOS: devOS,
+                pendingDeviceApprovalBrowser: devBrowser,
+                pendingDeviceApprovalType: devType,
+                pendingDeviceApprovalAt: nowISO
               }, { merge: true });
             } catch (e) {
               console.error("Failed to save pending device approval in Firestore:", e);

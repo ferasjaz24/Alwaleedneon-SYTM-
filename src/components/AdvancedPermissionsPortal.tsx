@@ -567,6 +567,12 @@ export default function AdvancedPermissionsPortal({
   const [openLoginAnywhere, setOpenLoginAnywhere] = useState<boolean>(
      !!user.openLoginAnywhere
   );
+  const [allowMultiBrowserOnSameDevice, setAllowMultiBrowserOnSameDevice] = useState<boolean>(
+     !!user.allowMultiBrowserOnSameDevice
+  );
+  const [boundHardwareId, setBoundHardwareId] = useState<string>(
+     user.boundHardwareId || ""
+  );
   const [boundDeviceId, setBoundDeviceId] = useState<string>(
      user.boundDeviceId || ""
   );
@@ -590,20 +596,32 @@ export default function AdvancedPermissionsPortal({
         body: JSON.stringify({ devId: targetDevId, devName: targetDevName })
       });
       if (res.ok) {
+         const data = await res.json();
+         const updatedUser = data.user || {};
          if (targetUsername.toUpperCase() === user.username.toUpperCase()) {
-            setBoundDeviceId("");
-            setBoundDeviceName("");
-            setPendingDeviceApprovalId("");
-            setPendingDeviceApprovalName("");
+            setBoundDeviceId(updatedUser.boundDeviceId || "");
+            setBoundDeviceName(updatedUser.boundDeviceName || "");
+            setPendingDeviceApprovalId(updatedUser.pendingDeviceApprovalId || "");
+            setPendingDeviceApprovalName(updatedUser.pendingDeviceApprovalName || "");
          }
          // Update localUsers list
          setLocalUsers(prev => prev.map(u => {
             if (u.username.toUpperCase() === targetUsername.toUpperCase()) {
-               return { ...u, boundDeviceId: "", boundDeviceName: "", pendingDeviceApprovalId: "", pendingDeviceApprovalName: "" };
+               return { 
+                  ...u, 
+                  boundDeviceId: updatedUser.boundDeviceId || "", 
+                  boundDeviceName: updatedUser.boundDeviceName || "", 
+                  boundDeviceOS: updatedUser.boundDeviceOS || "",
+                  boundDeviceBrowser: updatedUser.boundDeviceBrowser || "",
+                  boundDeviceType: updatedUser.boundDeviceType || "",
+                  boundHardwareId: updatedUser.boundHardwareId || "",
+                  pendingDeviceApprovalId: "", 
+                  pendingDeviceApprovalName: "" 
+               };
             }
             return u;
          }));
-         alert("تم قبول طلب استبدال الجهاز للمستخدم " + targetUsername + " بنجاح! بإمكان الموظف الآن الدخول من جهازه الجديد ليتم ربطه تلقائياً.");
+         alert("تم قبول طلب استبدال الجهاز للمستخدم " + targetUsername + " بنجاح! تم استبدال الجهاز بنجاح وتوثيق تفاصيل المتصفح والبيئة الجديدة.");
       } else {
          const errData = await res.json();
          alert("فشل قبول وتوثيق الجهاز: " + (errData.error || "خطأ غير معروف"));
@@ -715,6 +733,8 @@ export default function AdvancedPermissionsPortal({
     }
 
     const payload = {
+       allowMultiBrowserOnSameDevice,
+       boundHardwareId,
        advanced: advPerms,
        scopes: scopes,
        moduleAccess: newModuleAccess,
@@ -913,6 +933,21 @@ export default function AdvancedPermissionsPortal({
                                <div className="space-y-4">
                                   <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                                      <div className="flex-1">
+                                        <span className="block text-sm font-black text-indigo-600 font-sans">السماح بالدخول من متصفحات متعددة على نفس الجهاز</span>
+                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
+                                           عند التفعيل، سيقوم النظام بالتحقق فقط من معرّف الجهاز الفيزيائي للموظف (Hardware ID) ويسمح له باستخدام متصفحات متعددة (مثل Chrome و Safari) دون حظره.
+                                        </span>
+                                     </div>
+                                     <button
+                                        type="button"
+                                        onClick={() => setAllowMultiBrowserOnSameDevice(!allowMultiBrowserOnSameDevice)}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowMultiBrowserOnSameDevice ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                     >
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowMultiBrowserOnSameDevice ? '-translate-x-5' : 'translate-x-0'}`} />
+                                     </button>
+                                  </div>
+                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                     <div className="flex-1">
                                         <span className="block text-sm font-black text-slate-800">تفعيل حظر الدخول المتعدد</span>
                                         <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
                                            عند تفعيل هذا الخيار، سيتم إلزام المستخدم بالدخول من جهاز واحد فقط موثق ومسجل لدى النظام.
@@ -1008,6 +1043,7 @@ export default function AdvancedPermissionsPortal({
                                            onClick={() => {
                                               setBoundDeviceId("");
                                               setBoundDeviceName("");
+                                              setBoundHardwareId("");
                                            }}
                                            className="w-full py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-lg transition"
                                         >
@@ -1042,7 +1078,19 @@ export default function AdvancedPermissionsPortal({
                                               <div>
                                                  <span className="block text-[10px] text-slate-500 mt-1 font-mono break-all">{u.pendingDeviceApprovalId}</span>
                                                  {u.pendingDeviceApprovalName && (
-                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">المتصفح/الجهاز: {u.pendingDeviceApprovalName}</span>
+                                                    <span className="block text-[10px] text-[#0072BC] mt-1 font-black">اسم الجهاز: {u.pendingDeviceApprovalName}</span>
+                                                 )}
+                                                 {u.pendingDeviceApprovalOS && (
+                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">💻 نظام التشغيل: {u.pendingDeviceApprovalOS}</span>
+                                                 )}
+                                                 {u.pendingDeviceApprovalBrowser && (
+                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">🌐 المتصفح: {u.pendingDeviceApprovalBrowser}</span>
+                                                 )}
+                                                 {u.pendingDeviceApprovalType && (
+                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">📱 نوع الجهاز: {u.pendingDeviceApprovalType}</span>
+                                                 )}
+                                                 {u.pendingDeviceApprovalAt && (
+                                                    <span className="block text-[9px] text-slate-400 mt-1 font-semibold">🕒 طلب في: {new Date(u.pendingDeviceApprovalAt).toLocaleString("ar-EG")}</span>
                                                  )}
                                               </div>
                                               <div className="flex gap-2">

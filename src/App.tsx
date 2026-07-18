@@ -6137,43 +6137,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Send Device Change Request Button */}
-              {deviceRequestSuccess ? (
-                <div className="p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-300 text-center font-black text-xs space-y-1">
-                  <div>✓ {lang === "ar" ? "تم إرسال طلب استبدال الجهاز للإدارة بنجاح!" : "Device migration request sent successfully!"}</div>
-                  <div className="text-[11px] font-semibold text-slate-300">
-                    {lang === "ar" ? "يرجى الانتظار لحين موافقة الإدارة على جهازك الجديد لتتمكن من الدخول." : "Please wait for administration approval before trying to log in."}
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={handleSendDeviceRequest}
-                  disabled={deviceRequestLoading}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-cyan-500 shadow-lg shadow-cyan-950/20"
-                >
-                  {deviceRequestLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <span className="text-sm">📱</span>
-                  )}
-                  {lang === "ar" ? "إرسال طلب تغيير جهاز للإدارة" : "Send Device Change Request to Administration"}
-                </button>
-              )}
-
-              {/* Bypass Lock and Link current Device Button */}
-              <button
-                onClick={handleBypassDeviceLock}
-                disabled={!!isActionLoading["bypass"]}
-                className="w-full mt-3 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-rose-500 shadow-lg shadow-rose-950/20"
-              >
-                {isActionLoading["bypass"] ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ShieldCheck className="w-4 h-4" />
-                )}
-                {lang === "ar" ? "تجاوز قفل الجهاز وربط المتصفح الحالي وتسجيل الدخول" : "Bypass Device Lock & Bind Current Browser to Log In"}
-              </button>
-
               {/* Close Button to return to login form */}
               <button
                 onClick={() => setDeviceBlockDetails(null)}

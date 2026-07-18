@@ -1169,6 +1169,7 @@ Text to translate: ${text}`;
     const password = req.body.password;
     const devId = req.body.devId;
     const devName = req.body.devName;
+    const hardwareId = req.body.hardwareId || "";
 
     if (!uName || !password) {
       return res.status(400).json({ error: "Username and password are required" });
@@ -1243,6 +1244,9 @@ Text to translate: ${text}`;
         // Bypass device check entirely!
         console.log(`[API_LOGIN] User ${actualDocId} has device lock disabled. Bypassing device lock.`);
       } else {
+        const allowMulti = !!userData.allowMultiBrowserOnSameDevice;
+        const matchedHardware = allowMulti && userData.boundHardwareId && userData.boundHardwareId === hardwareId;
+
         if (!userData.boundDeviceId) {
           // First login from any device binds this device automatically
           userData.boundDeviceId = devId;
@@ -1250,6 +1254,7 @@ Text to translate: ${text}`;
           userData.boundDeviceOS = req.body.devOS || "";
           userData.boundDeviceBrowser = req.body.devBrowser || "";
           userData.boundDeviceType = req.body.devType || "";
+          userData.boundHardwareId = hardwareId;
           userData.boundDeviceAt = new Date().toISOString();
           
           await setDoc(userDocRef, { 
@@ -1258,11 +1263,12 @@ Text to translate: ${text}`;
             boundDeviceOS: req.body.devOS || "",
             boundDeviceBrowser: req.body.devBrowser || "",
             boundDeviceType: req.body.devType || "",
+            boundHardwareId: hardwareId,
             boundDeviceAt: new Date().toISOString()
           }, { merge: true });
           saveLocalDoc("users", actualDocId, userData);
           console.log(`[API_LOGIN] Device auto-bound for user ${actualDocId}: ${devId}`);
-        } else if (userData.boundDeviceId !== devId) {
+        } else if (userData.boundDeviceId !== devId && !matchedHardware) {
           if (userData.allowDeviceMigration) {
             // Self-migration
             userData.boundDeviceId = devId;
@@ -1270,6 +1276,7 @@ Text to translate: ${text}`;
             userData.boundDeviceOS = req.body.devOS || "";
             userData.boundDeviceBrowser = req.body.devBrowser || "";
             userData.boundDeviceType = req.body.devType || "";
+            userData.boundHardwareId = hardwareId;
             userData.boundDeviceAt = new Date().toISOString();
             userData.allowDeviceMigration = false;
             
@@ -1279,6 +1286,7 @@ Text to translate: ${text}`;
               boundDeviceOS: req.body.devOS || "",
               boundDeviceBrowser: req.body.devBrowser || "",
               boundDeviceType: req.body.devType || "",
+              boundHardwareId: hardwareId,
               boundDeviceAt: new Date().toISOString(),
               allowDeviceMigration: false 
             }, { merge: true });
@@ -1286,12 +1294,23 @@ Text to translate: ${text}`;
             console.log(`[API_LOGIN] Device self-migration completed for user ${actualDocId}: ${devId}`);
           } else {
             // Block login and record pending authorization request
+            const nowISO = new Date().toISOString();
             userData.pendingDeviceApprovalId = devId;
             userData.pendingDeviceApprovalName = devName;
+            userData.pendingDeviceApprovalHardwareId = hardwareId;
+            userData.pendingDeviceApprovalOS = req.body.devOS || "";
+            userData.pendingDeviceApprovalBrowser = req.body.devBrowser || "";
+            userData.pendingDeviceApprovalType = req.body.devType || "";
+            userData.pendingDeviceApprovalAt = nowISO;
             
             await setDoc(userDocRef, { 
               pendingDeviceApprovalId: devId, 
-              pendingDeviceApprovalName: devName 
+              pendingDeviceApprovalName: devName,
+              pendingDeviceApprovalHardwareId: hardwareId,
+              pendingDeviceApprovalOS: req.body.devOS || "",
+              pendingDeviceApprovalBrowser: req.body.devBrowser || "",
+              pendingDeviceApprovalType: req.body.devType || "",
+              pendingDeviceApprovalAt: nowISO
             }, { merge: true });
             saveLocalDoc("users", actualDocId, userData);
             console.log(`[API_LOGIN] Pending device request logged for user ${actualDocId}: ${devId}`);
@@ -1374,24 +1393,37 @@ Text to translate: ${text}`;
         return res.status(400).json({ error: "No pending device request found." });
       }
 
-      userData.boundDeviceId = "";
-      userData.boundDeviceName = "";
-      userData.boundDeviceOS = "";
-      userData.boundDeviceBrowser = "";
-      userData.boundDeviceType = "";
-      userData.boundDeviceAt = "";
+      userData.boundDeviceId = userData.pendingDeviceApprovalId || "";
+      userData.boundDeviceName = userData.pendingDeviceApprovalName || "";
+      userData.boundDeviceOS = userData.pendingDeviceApprovalOS || "";
+      userData.boundDeviceBrowser = userData.pendingDeviceApprovalBrowser || "";
+      userData.boundDeviceType = userData.pendingDeviceApprovalType || "";
+      userData.boundHardwareId = userData.pendingDeviceApprovalHardwareId || "";
+      userData.boundDeviceAt = new Date().toISOString();
+
       userData.pendingDeviceApprovalId = "";
       userData.pendingDeviceApprovalName = "";
+      userData.pendingDeviceApprovalHardwareId = "";
+      userData.pendingDeviceApprovalOS = "";
+      userData.pendingDeviceApprovalBrowser = "";
+      userData.pendingDeviceApprovalType = "";
+      userData.pendingDeviceApprovalAt = "";
 
       await setDoc(userRef, { 
-        boundDeviceId: "", 
-        boundDeviceName: "",
-        boundDeviceOS: "",
-        boundDeviceBrowser: "",
-        boundDeviceType: "",
-        boundDeviceAt: "",
+        boundDeviceId: userData.boundDeviceId, 
+        boundDeviceName: userData.boundDeviceName,
+        boundDeviceOS: userData.boundDeviceOS,
+        boundDeviceBrowser: userData.boundDeviceBrowser,
+        boundDeviceType: userData.boundDeviceType,
+        boundHardwareId: userData.boundHardwareId,
+        boundDeviceAt: userData.boundDeviceAt,
         pendingDeviceApprovalId: "",
-        pendingDeviceApprovalName: ""
+        pendingDeviceApprovalName: "",
+        pendingDeviceApprovalHardwareId: "",
+        pendingDeviceApprovalOS: "",
+        pendingDeviceApprovalBrowser: "",
+        pendingDeviceApprovalType: "",
+        pendingDeviceApprovalAt: ""
       }, { merge: true });
       saveLocalDoc("users", username, userData);
 
@@ -1426,10 +1458,20 @@ Text to translate: ${text}`;
 
       userData.pendingDeviceApprovalId = "";
       userData.pendingDeviceApprovalName = "";
+      userData.pendingDeviceApprovalHardwareId = "";
+      userData.pendingDeviceApprovalOS = "";
+      userData.pendingDeviceApprovalBrowser = "";
+      userData.pendingDeviceApprovalType = "";
+      userData.pendingDeviceApprovalAt = "";
 
       await setDoc(userRef, { 
         pendingDeviceApprovalId: "",
-        pendingDeviceApprovalName: ""
+        pendingDeviceApprovalName: "",
+        pendingDeviceApprovalHardwareId: "",
+        pendingDeviceApprovalOS: "",
+        pendingDeviceApprovalBrowser: "",
+        pendingDeviceApprovalType: "",
+        pendingDeviceApprovalAt: ""
       }, { merge: true });
       saveLocalDoc("users", username, userData);
 
