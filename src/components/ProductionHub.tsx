@@ -113,9 +113,10 @@ export default function ProductionHub({
         <html>
           <head>
           <style>
+            @font-face { font-family: 'EnglishNumbersOnly'; unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); }
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
@@ -137,9 +138,10 @@ export default function ProductionHub({
         <html>
           <head>
           <style>
+            @font-face { font-family: 'EnglishNumbersOnly'; unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); }
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
             <style>
@@ -961,7 +963,7 @@ export default function ProductionHub({
                 </td>
                 <td class="header-meta" style="width: 35%; text-align: left;">
                   <div><b>فلترة الشهر:</b> ${monthName}</div>
-                  <div><b>تاريخ التصدير:</b> ${new Date().toLocaleDateString("ar-SA")}</div>
+                  <div><b>تاريخ التصدير:</b> ${new Date().toLocaleDateString("en-US")}</div>
                   <div><b>مسؤول التصدير:</b> ${user.username}</div>
                 </td>
               </tr>
@@ -1477,9 +1479,10 @@ export default function ProductionHub({
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
           <style>
+            @font-face { font-family: 'EnglishNumbersOnly'; unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); }
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>${title}</title>
           <style>
@@ -1758,9 +1761,10 @@ export default function ProductionHub({
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
           <style>
+            @font-face { font-family: 'EnglishNumbersOnly'; unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); }
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>${title}</title>
           <style>
@@ -3730,7 +3734,7 @@ export default function ProductionHub({
                             | {lang === "ar" ? "التوجيه: " : "Routing: "}{" "}
                             <span className="text-slate-600 font-mono font-bold">
                               {new Date(ord.createdAt).toLocaleDateString(
-                                "ar-SA",
+                                "en-US",
                               )}
                             </span>
                           </p>
@@ -4792,7 +4796,7 @@ export default function ProductionHub({
                         <strong className="text-slate-700">
                           {req.requestDate
                             ? new Date(req.requestDate).toLocaleDateString(
-                                "ar-SA",
+                                "en-US",
                               )
                             : "---"}
                         </strong>

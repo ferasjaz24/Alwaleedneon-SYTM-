@@ -1020,7 +1020,7 @@ export default function HrEmployeeDirectoryTab({
            Number(selectedEmp.allowances.otherAllowances || 0))
         : 0;
       const printHTML = `
-        <div style="font-family: 'GE SS Two', 'Gotham Pro', Arial, sans-serif; max-width: 800px; margin: 0 auto; direction: rtl;">
+        <div style="font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', Arial, sans-serif; max-width: 800px; margin: 0 auto; direction: rtl;">
           <!-- Header -->
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 8px; margin-bottom: 16px;">
             <div style="text-align: right; direction: rtl;">
@@ -1215,7 +1215,7 @@ export default function HrEmployeeDirectoryTab({
         </div>
       `;
       newWindow.document.write(
-        "<html><head><style>@font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; } @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; } * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }</style><title>" +
+        "<html><head><style>@font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; } @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; } * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }</style><title>" +
           (selectedEmp?.arabicName || "Print") +
           "</title>",
       );

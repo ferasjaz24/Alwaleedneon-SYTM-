@@ -540,11 +540,11 @@ export default function FinancialCollections({ lang, user }: FCProps) {
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>تقرير التحصيل الشهري - ${selectedReportEmployee}</title>
           <style>
-            body { font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; padding: 40px; margin: 0; background: #fff; color: #1e293b; }
+            body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; padding: 40px; margin: 0; background: #fff; color: #1e293b; }
             .header-sec { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
             .header-sec h1 { color: #0072BC; font-size: 24px; margin-bottom: 10px; }
             .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }

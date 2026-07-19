@@ -1048,7 +1048,7 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                             {tx.transactionNo}
                           </td>
                           <td className="px-4 py-3 text-slate-500">
-                            {new Date(tx.createdAt).toLocaleString("ar-SA", { hour12: true })}
+                            {new Date(tx.createdAt).toLocaleString("en-US", { hour12: true })}
                           </td>
                           <td className="px-4 py-3">
                             {tx.accountType === "Bank" ? (

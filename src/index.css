@@ -3,8 +3,8 @@
 
 @font-face {
   font-family: "EnglishNumbersOnly";
-  unicode-range: U+0030-0039, U+002E, U+002F, U+002D; /* Digits, dot, slash, hyphen */
-  src: local("Arial"), local("Helvetica"), local("Roboto");
+  unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; /* Digits, dot, slash, hyphen, percent */
+  src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial");
 }
 
 /* Prepared @font-face structures for local fonts */
@@ -27,22 +27,22 @@
 }
 
 @theme {
-  --font-sans: "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-arabic: "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-english: "Gotham Pro", Arial, sans-serif;
+  --font-sans: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
+  --font-arabic: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
+  --font-english: "EnglishNumbersOnly", "Gotham Pro", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --font-arabic: "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-english: "Gotham Pro", Arial, sans-serif;
+  --font-arabic: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
+  --font-english: "EnglishNumbersOnly", "Gotham Pro", Arial, sans-serif;
   --primary-color: #0072BC;
   --accent-color: #00AEEF;
   --bg-dark-accent: #0f172a;
 }
 
 /* Quill Fonts */
-.ql-font-tajawal { font-family: 'GE SS Two', sans-serif; }
+.ql-font-tajawal { font-family: 'EnglishNumbersOnly', 'GE SS Two', sans-serif; }
 .ql-font-arial { font-family: 'Arial', sans-serif; }
 .ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
 .ql-font-cairo { font-family: 'Cairo', sans-serif; }
@@ -70,7 +70,7 @@ body {
 }
 
 [dir="rtl"], [dir="rtl"] * {
-  font-family: "GE SS Two", "Tajawal", Arial, sans-serif !important;
+  font-family: "EnglishNumbersOnly", "GE SS Two", "Tajawal", Arial, sans-serif !important;
 }
 
 [dir="ltr"], [dir="ltr"] * {
@@ -258,7 +258,7 @@ body {
   font-weight: 800 !important;
 }
 
-input[type="date"], input[type="month"], input[type="time"], input[type="datetime-local"], input[type="number"] { font-family: 'Arial', sans-serif !important; direction: ltr !important; text-align: right; } /* Force english numbers */
+input[type="date"], input[type="month"], input[type="time"], input[type="datetime-local"], input[type="number"] { font-family: 'EnglishNumbersOnly', 'Arial', sans-serif !important; direction: ltr !important; text-align: right; } /* Force english numbers */
 
 input[type="date"], input[type="month"], input[type="datetime-local"] {
   lang: en-US;

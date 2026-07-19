@@ -649,7 +649,7 @@ export default function FinanceApprovals({
                           </span>
                         </span>
                         <span className="text-slate-400 font-mono" dir="ltr">
-                          {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+                          {new Date(log.timestamp).toLocaleString(lang === 'ar' ? 'en-US' : 'en-US')}
                         </span>
                       </div>
                     ))}

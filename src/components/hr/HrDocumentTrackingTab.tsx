@@ -888,7 +888,7 @@ export default function HrDocumentTrackingTab({
           <title>${title}</title>
           <style>
             ${sharedPrintStyles}
-            body { font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial, sans-serif; padding: 30px; direction: ${isAr ? 'rtl' : 'ltr'}; text-align: ${isAr ? 'right' : 'left'}; }
+            body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', Tahoma, Arial, sans-serif; padding: 30px; direction: ${isAr ? 'rtl' : 'ltr'}; text-align: ${isAr ? 'right' : 'left'}; }
             h2 { color: #0072BC; text-align: center; margin-bottom: 5px; }
             p.meta { text-align: center; font-size: 12px; color: #666; margin-bottom: 30px; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; }

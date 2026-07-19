@@ -1162,14 +1162,14 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <meta charset="UTF-8">
           <title>${inv.id}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
             body {
-              font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif;
               direction: rtl;
               text-align: right;
               padding: 20px;
@@ -1317,7 +1317,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               width: 100%;
               box-sizing: border-box;
               page-break-inside: avoid;
-              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-title {
               color: #0072BC;
@@ -1327,7 +1327,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               margin-bottom: 10px;
               border-bottom: 1.5px solid #000;
               padding-bottom: 5px;
-              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-content {
               text-align: right;
@@ -1338,7 +1338,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               white-space: pre-wrap;
               word-wrap: break-word;
               font-weight: bold;
-              font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important;
             }
             .terms-content .red,
             .terms-content .important {
@@ -1361,7 +1361,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               font-weight: bold;
               cursor: pointer;
               box-shadow: 0 4px 12px rgba(0, 114, 188, 0.3);
-              font-family: 'GE SS Two', 'Gotham Pro', sans-serif;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;
               display: inline-flex;
               align-items: center;
               gap: 8px;
@@ -1397,7 +1397,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 12px; margin-bottom: 20px; user-select: none; direction: ltr;">
               <!-- معلومات الشركة -->
               <div style="text-align: left; display: flex; flex-direction: column; justify-content: center; width: 40%;">
-                <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
+                <h2 style="font-size: 19px; font-weight: 900; color: #111; margin: 0; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
                   ${companyZatcaNameAr}
                 </h2>
                 <h3 style="font-size: 10px; font-weight: bold; color: #555; margin: 2px 0 0 0; letter-spacing: 0.1em; font-family: sans-serif;">
@@ -1407,7 +1407,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
               
               <!-- الحالة في منتصف رأس الصفحة -->
               <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
-                <span style="font-size: 13px; font-weight: 800; padding: 4px 12px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
+                <span style="font-size: 13px; font-weight: 800; padding: 4px 12px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
                   ${statusText}
                 </span>
               </div>
@@ -1419,7 +1419,7 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             </div>
 
             <!-- ZATCA Compliance Header: Company details parallel to the ZATCA QR Code -->
-            <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 25px; border: 1.5px solid #000; border-radius: 8px; padding: 12px; background-color: #fafafa; font-family: 'GE SS Two', 'Gotham Pro', sans-serif; direction: rtl;">
+            <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 25px; border: 1.5px solid #000; border-radius: 8px; padding: 12px; background-color: #fafafa; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif; direction: rtl;">
               <div style="width: 70%; text-align: right; display: flex; flex-direction: column; justify-content: space-between; font-size: 12px; line-height: 1.6; color: #000;">
                 <div>
                   <h2 style="font-size: 15px; font-weight: 800; color: #0072BC; margin: 0 0 4px 0;">بيانات مصدر الفاتورة (بيانات الشركة الضريبية)</h2>
@@ -1434,17 +1434,17 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
 
               <div style="width: 25%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1.5px dashed #ccc; padding-right: 15px; direction: ltr;">
                 ${qrImgHTML || `<div style="border: 1.5px dashed #ef4444; padding: 10px; text-align: center; font-size: 10px; color: #ef4444; font-weight: bold;" dir="rtl">مسودة غير صادرة<br/>(لا يوجد باركود زكاة)</div>`}
-                <div style="font-size: 9px; color: #444; margin-top: 5px; font-weight: bold; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">هيئة الزكاة والضريبة والجمارك</div>
+                <div style="font-size: 9px; color: #444; margin-top: 5px; font-weight: bold; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">هيئة الزكاة والضريبة والجمارك</div>
               </div>
             </div>
 
             <!-- Title and summary row -->
             <div style="justify-content: space-between; display: flex; align-items: flex-end; margin-bottom: 3mm; direction: rtl;">
               <div style="width: 45%; text-align: right;">
-                 <div style="font-size: 24px; font-weight: 700; color: #000; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">${invoiceTypeName}</div>
+                 <div style="font-size: 24px; font-weight: 700; color: #000; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;">${invoiceTypeName}</div>
                  <div style="font-size: 14px; direction: rtl; font-weight: bold; color: #000; margin-top: 5px;">رقم الفاتورة: ${inv.id}</div>
               </div>
-              <div style="width: 45%; text-align: left; font-size: 13px; font-weight: bold; line-height: 1.5; color: #000; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
+              <div style="width: 45%; text-align: left; font-size: 13px; font-weight: bold; line-height: 1.5; color: #000; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;">
                 <div>تاريخ الفاتورة: ${inv.date}</div>
                 <div>تاريخ الاستحقاق: ${inv.dueDate || "---"}</div>
                 <div>تاريخ التوريد: ${inv.date}</div>
@@ -1582,14 +1582,14 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
             </div>
 
             <!-- Dynamic corporate bank accounts in footer -->
-            <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
+            <div style="margin-top: 40px; border-top: 2px solid #0072BC; padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; color: #111; user-select: none; direction: ltr; min-height: 80px; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;">
               <div style="text-align: left; line-height: 1.6; width: 45%;">
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">T:</span> +966 13 833 4115</p>
                 <p style="margin:0;"><span style="font-weight: bold; color: #0072BC;">Factory:</span> Dallah Industrial District, Dammam 32445, Saudi Arabia.</p>
                 <p style="margin:0;">info@alwaleedneon.com | www.alwaleedneon.com</p>
               </div>
               <div style="text-align: right; line-height: 1.6; width: 50%; display: flex; flex-direction: column; align-items: flex-end;">
-                <div style="font-size: 11px; font-weight: bold; color: #0072BC; margin-bottom: 6px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">الحسابات البنكية المعتمدة للتحويل (Approved Bank Accounts):</div>
+                <div style="font-size: 11px; font-weight: bold; color: #0072BC; margin-bottom: 6px; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">الحسابات البنكية المعتمدة للتحويل (Approved Bank Accounts):</div>
                 <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; align-items: flex-end;">
                   ${(() => {
                     const activeBanks = bankAccounts.filter((b: any) => b.status === "Active" || !b.status);

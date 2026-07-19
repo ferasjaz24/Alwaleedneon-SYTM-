@@ -364,7 +364,7 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
           <title>قائمة المواد المحددة</title>
           <style>
             ${sharedPrintStyles}
-            body { font-family: 'GE SS Two', 'Gotham Pro', Tahoma, Arial; direction: rtl; text-align: right; margin: 0; padding: 0; background: #fff; }
+            body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', Tahoma, Arial; direction: rtl; text-align: right; margin: 0; padding: 0; background: #fff; }
             .print-container { padding: 0; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
             .content-wrapper { flex-grow: 1; }
             .page-title { color: #0072BC; text-align: center; border-bottom: 2px solid #0072BC; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
@@ -1697,7 +1697,7 @@ export default function MaterialsWarehouse({ lang }: { lang: "ar" | "en" }) {
                               {log.user || "---"}
                             </td>
                             <td className="px-4 py-3 font-mono text-slate-400 text-[10px]">
-                              {new Date(log.timestamp).toLocaleString("ar-SA", {
+                              {new Date(log.timestamp).toLocaleString("en-US", {
                                 year: "numeric",
                                 month: "2-digit",
                                 day: "2-digit",

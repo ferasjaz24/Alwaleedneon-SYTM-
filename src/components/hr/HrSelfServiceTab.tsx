@@ -280,13 +280,13 @@ export default function HrSelfServiceTab({ lang, user, employees }: HrSelfServic
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
         <meta charset="utf-8">
         <title>طباعة بيان - ${item.id}</title>
         <style>
           ${sharedPrintStyles}
-          body { padding: 20px; font-family: 'GE SS Two', 'Gotham Pro', sans-serif, system-ui; }
+          body { padding: 20px; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif, system-ui; }
           .document-content { min-height: 50vh; margin-top: 20px; }
           .header-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333;text-align:center;}
           .header-meta { font-size: 12px; color: #666; margin-bottom: 30px; text-align:center;}

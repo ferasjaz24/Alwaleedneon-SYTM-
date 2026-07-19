@@ -787,7 +787,7 @@ function RevenuesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
                         <title>طباعة سند إيراد - ${showDetails.id}</title>
                         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -1887,7 +1887,7 @@ function ExpensesTab({ user, lang, isAdmin }: { user: User, lang: 'ar' | 'en', i
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
                         <title>طباعة سند مصروف - ${showDetails.id}</title>
                         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">

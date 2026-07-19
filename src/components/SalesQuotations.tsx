@@ -618,7 +618,7 @@ body {
                 
                 <!-- الحالة في منتصف رأس الصفحة -->
                 <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
-                  <span style="font-size: 15px; font-weight: 800; padding: 4px 14px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
+                  <span style="font-size: 15px; font-weight: 800; padding: 4px 14px; border: 2px solid ${statusColor}; color: ${statusColor}; border-radius: 6px; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', 'GE SS Two', 'Gotham Pro', sans-serif; background-color: ${statusBg}; white-space: nowrap;">
                     ${statusText}
                   </span>
                 </div>

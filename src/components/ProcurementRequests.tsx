@@ -1306,7 +1306,7 @@ export default function ProcurementRequests({
                   {lang === "ar" ? "بتاريخ: " : "Date: "}
                   {selectedReq.orderCreatedAt
                     ? new Date(selectedReq.orderCreatedAt).toLocaleString(
-                        "ar-SA",
+                        "en-US",
                       )
                     : ""}
                 </span>

@@ -148,7 +148,7 @@ const InlineEditable = ({
                 <span>تعديل المراجع: {mod.modifiedBy}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
               </div>
-              <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+              <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("en-US")}</div>
               <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
                 <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
                 <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>
@@ -202,7 +202,7 @@ const InlineEditable = ({
               <span>تعديل المراجع: {mod.modifiedBy}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             </div>
-            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("en-US")}</div>
             <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
               <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
               <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>
@@ -252,7 +252,7 @@ const ClickableDeduction = ({
               <span>تعديل المراجع: {mod.modifiedBy}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             </div>
-            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("ar-SA")}</div>
+            <div className="text-slate-300 text-[9px] mb-1.5">{new Date(mod.modifiedAt).toLocaleString("en-US")}</div>
             <div className="text-white border-t border-slate-700 pt-1.5 space-y-0.5">
               <div>القيمة السابقة: <span className="font-mono text-rose-300 font-bold">{mod.oldValue}</span></div>
               <div>القيمة الجديدة: <span className="font-mono text-emerald-300 font-bold">{displayVal}</span></div>

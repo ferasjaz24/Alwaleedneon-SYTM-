@@ -360,16 +360,17 @@ export default function SalesRepsTargets({ lang, user }: Props) {
         <html dir="rtl">
         <head>
           <style>
+            @font-face { font-family: 'EnglishNumbersOnly'; unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); }
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>مؤشرات أداء وتشغيل المندوب</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
               @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
               @page { size: A4; margin: 20mm; }
-              body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
+              body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; padding: 0; color: #1e293b; font-size: 12px; margin: 0; box-sizing: border-box; }
               .stat-box { border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 8px; background: #f8fafc; }
               .stat-box-label { color: #64748b; margin-bottom: 2px; font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
               .stat-box-value { font-size: 14px; font-weight: 900; color: #0f172a; white-space: nowrap; }

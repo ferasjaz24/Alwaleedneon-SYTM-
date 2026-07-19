@@ -733,14 +733,14 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
         <meta charset="UTF-8">
         <title>طباعة التقرير</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
           @page { size: A4; margin: 20mm; }
-          body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
+          body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; background: white; margin: 0; padding: 0; color: #1e293b; font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;}
           
           .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 30px; color: #0072BC; border-bottom: 2px dashed #e2e8f0; padding-bottom: 15px;}
           .section-title { font-size: 18px; font-weight: bold; color: #334155; margin-top: 30px; margin-bottom: 15px; background: #f1f5f9; padding: 10px 15px; border-right: 4px solid #0072BC; border-radius: 4px;}

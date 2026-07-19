@@ -541,7 +541,7 @@ export default function DailyPurchaseRequests({ lang, user }: DailyPurchaseReque
     const monthArName = monthNamesAr[parseInt(printMonth) - 1] || "";
 
     const htmlContent = `
-      <div style="direction: rtl; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
+      <div style="direction: rtl; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;">
         <div style="text-align: center; margin-bottom: 24px;">
           <h2 style="font-size: 20px; font-weight: bold; color: #1e3a8a; margin: 0; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; display: inline-block;">
             ملخص وتقرير طلبات الشراء اليومية لشهـر ${monthArName} ${printYear}
@@ -621,7 +621,7 @@ export default function DailyPurchaseRequests({ lang, user }: DailyPurchaseReque
           <style>
             ${sharedPrintStyles}
             body {
-              font-family: 'GE SS Two', 'Gotham Pro', sans-serif;
+              font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;
               padding: 20px;
               direction: rtl;
               -webkit-print-color-adjust: exact;
@@ -1217,7 +1217,7 @@ export default function DailyPurchaseRequests({ lang, user }: DailyPurchaseReque
                       <div key={idx} className="flex flex-col gap-0.5 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0 text-xs">
                         <div className="flex justify-between items-center text-[10px] font-bold">
                           <span className="text-slate-400 font-mono">
-                            {new Date(log.timestamp).toLocaleString(lang === "ar" ? "ar-SA" : "en-US", { hour12: true })}
+                            {new Date(log.timestamp).toLocaleString(lang === "ar" ? "en-US" : "en-US", { hour12: true })}
                           </span>
                           <span className="text-indigo-600">👤 {log.user}</span>
                         </div>

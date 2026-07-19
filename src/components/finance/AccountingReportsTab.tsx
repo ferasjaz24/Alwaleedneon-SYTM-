@@ -1392,7 +1392,7 @@ export default function AccountingReportsTab({ lang }: { lang: "ar" | "en"; user
     if (!printWindow) return;
 
     const reportTitle = lang === "ar" ? activeMeta.item.titleAr : activeMeta.item.titleEn;
-    const todayStr = new Date().toLocaleDateString("ar-SA", {
+    const todayStr = new Date().toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric"

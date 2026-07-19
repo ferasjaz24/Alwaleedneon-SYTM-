@@ -431,7 +431,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>دراسة تسعير مشروع - ${formData.projectName}</title>
           <style>
@@ -563,7 +563,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             {savedStudies.map((study) => (
               <div key={study.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => loadStudy(study)}>
                 <div className="font-bold text-slate-800">{study.projectName || (isAr ? "بدون اسم" : "Unnamed")}</div>
-                <div className="text-xs text-slate-500 mt-1">{new Date(study.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')} - {study.createdBy}</div>
+                <div className="text-xs text-slate-500 mt-1">{new Date(study.createdAt).toLocaleDateString(isAr ? 'en-US' : 'en-US')} - {study.createdBy}</div>
                 <div className="text-sm font-bold text-indigo-600 mt-2">
                   {study.studyResult?.pricing?.userPrice?.toLocaleString(undefined, {maximumFractionDigits:2})} SAR
                 </div>

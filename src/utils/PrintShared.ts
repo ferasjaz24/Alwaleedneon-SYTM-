@@ -1,7 +1,7 @@
 export const sharedPrintHeader = `
   <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0072BC; padding-bottom: 16px; margin-bottom: 32px; user-select: none; direction: ltr;">
     <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
-      <h2 style="font-size: 24px; font-weight: 900; color: #374151; margin: 0; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
+      <h2 style="font-size: 24px; font-weight: 900; color: #374151; margin: 0; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;" dir="rtl">
         شركة فنون الوليد للصناعة
       </h2>
       <h3 style="font-size: 11px; font-weight: bold; color: #6b7280; margin: 4px 0 0 0; letter-spacing: 0.1em; font-family: 'Gotham Pro', sans-serif;">
@@ -28,6 +28,12 @@ export const sharedPrintFooter = `
 `;
 
 export const sharedPrintStyles = `
+  @font-face { 
+    font-family: 'EnglishNumbersOnly'; 
+    unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; 
+    src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial"); 
+  }
+
   @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
     @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
     @media print {
@@ -40,10 +46,10 @@ export const sharedPrintStyles = `
   .ql-align-right { text-align: right; }
   .ql-align-left { text-align: left; }
   .ql-align-justify { text-align: justify; }
-  .ql-font-tajawal { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; }
+  .ql-font-tajawal { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif; }
   .ql-font-arial { font-family: 'Arial', 'Gotham Pro', sans-serif; }
   .ql-font-tahoma { font-family: 'Tahoma', 'Gotham Pro', sans-serif; }
-  .ql-font-cairo { font-family: 'GE SS Two', 'Gotham Pro', 'Gotham Pro', sans-serif; }
+  .ql-font-cairo { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', 'Gotham Pro', sans-serif; }
   .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
   .ql-editor ul { padding-right: 20px; list-style-type: disc; }
   .ql-editor ol { padding-right: 20px; list-style-type: decimal; }

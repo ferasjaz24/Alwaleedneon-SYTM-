@@ -321,12 +321,12 @@ export default function JournalEntries({ lang, user }: JournalEntryProps) {
           <style>
             @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-            * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
+            * { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>قيد يومي - ${entry.id}</title>
           <style>${sharedPrintStyles}</style>
           <style>
-            body { font-family: 'GE SS Two', 'Gotham Pro', sans-serif; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; }
+            body { font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif; background: white; margin: 0; padding: 20px; color: #1e293b; font-size: 14px; }
             .entry-header { display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0072BC; }
             .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
             .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }

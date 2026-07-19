@@ -231,7 +231,7 @@ function PricingRequestsView({ lang, user }: { lang: "ar" | "en"; user: any }) {
         <h2 style="text-align: center; margin-bottom: 5px;">عرض سعر شراء مواد</h2>
         <h4 style="text-align: center; color: #555; margin-top: 0;">المشروع: ${selectedReq.projectName}</h4>
         
-        <div style="margin-top: 15px; margin-bottom: 20px; border: 1.5px solid #000; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 12px; line-height: 1.6; font-family: 'GE SS Two', 'Gotham Pro', sans-serif;">
+        <div style="margin-top: 15px; margin-bottom: 20px; border: 1.5px solid #000; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 12px; line-height: 1.6; font-family: 'EnglishNumbersOnly', 'GE SS Two', 'Gotham Pro', sans-serif;">
           <table style="width: 100%; border: none; margin: 0; font-size: 12px;">
             <tr style="border: none;">
               <td style="border: none; padding: 4px; width: 50%;"><strong>اسم المشروع:</strong> ${selectedReq.projectName || "---"}</td>

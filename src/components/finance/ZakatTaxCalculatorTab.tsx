@@ -619,7 +619,7 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const todayStr = new Date().toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+    const todayStr = new Date().toLocaleDateString(lang === "ar" ? "en-US" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric"
