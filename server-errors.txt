@@ -1,0 +1,1 @@
+Firebase error reading colName customer_invoices: Missing or insufficient permissions.
