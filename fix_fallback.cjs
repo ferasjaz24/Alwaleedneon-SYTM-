@@ -1,12 +1,8 @@
 const fs = require('fs');
-const path = require('path');
+let code = fs.readFileSync('src/utils/fallbackUsers.ts', 'utf8');
 
-const updateStatusFallback = (filePath) => {
-  let content = fs.readFileSync(filePath, 'utf8');
-  content = content.replace(/req\.status === 'PENDING'/g, "(req.status === 'PENDING' || !req.status)");
-  fs.writeFileSync(filePath, content, 'utf8');
-}
-
-updateStatusFallback(path.join(__dirname, 'src/components/hr/HrLeavesTab.tsx'));
-
-console.log('Fixed undefined status fallback');
+// The error was on line 1422 for FERAS24 which had email: ""
+// Just replacing duplicate '    "email": "",' with nothing
+code = code.replace(/,\s*"email": ""/g, "");
+fs.writeFileSync('src/utils/fallbackUsers.ts', code);
+console.log("Fixed duplicate email keys in fallbackUsers");

@@ -2,6 +2,7 @@
 export const fallbackUsers = [
   {
     "username": "AHMAD",
+    "email": "ahmad@alwaleed-factory.com",
     "id": "AHMAD",
     "password": "2424",
     "permissions": {
@@ -445,6 +446,7 @@ export const fallbackUsers = [
   },
   {
     "username": "FERAS24",
+    "email": "feras24@alwaleed-factory.com",
     "id": "FERAS24",
     "deviceLockEnabled": true,
     "pendingDeviceApprovalId": "",
@@ -930,6 +932,7 @@ export const fallbackUsers = [
   },
   {
     "username": "IBRAHIM",
+    "email": "ibrahim@alwaleed-factory.com",
     "id": "IBRAHIM",
     "permissions": {
       "advanced": {
@@ -1131,6 +1134,7 @@ export const fallbackUsers = [
   },
   {
     "username": "MUSA",
+    "email": "musa@alwaleed-factory.com",
     "id": "MUSA",
     "jobTitle": "مسؤول مشتريات ومستودع",
     "role": "Purchasing",
@@ -1287,6 +1291,7 @@ export const fallbackUsers = [
   },
   {
     "username": "SAMA7",
+    "email": "sama7@alwaleed-factory.com",
     "id": "SAMA7",
     "createdAt": "2026-07-09T07:42:08.871Z",
     "jobTitle": "SOP",
@@ -1414,11 +1419,11 @@ export const fallbackUsers = [
       }
     },
     "createdBy": "FERAS",
-    "email": "",
     "name": ""
   },
   {
     "username": "SHARIF",
+    "email": "sharif@alwaleed-factory.com",
     "id": "SHARIF",
     "jobTitle": "مندوب دعاية واعلان",
     "role": "Sales Rep",

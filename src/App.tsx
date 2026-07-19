@@ -1176,12 +1176,30 @@ export default function App() {
     const currentDeviceName = getDeviceFriendlyName();
 
     try {
-      // STEP 1: Authenticate using Firebase Authentication
-      const firebaseEmail = `${loginUsername.toLowerCase().trim()}@alwaleed-factory.com`;
-      const firebasePassword = `${loginPassword}_alwaleed_pass`;
+      // STEP 1 & 2 & 3 & 4: Fetch user's stored email from Firestore via backend
+      const emailRes = await fetch("/api/get-user-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginUsername })
+      });
       
+      if (!emailRes.ok) {
+        let errStr = "اسم المستخدم أو كلمة المرور غير صحيحة.";
+        try {
+          const errData = await emailRes.json();
+          errStr = errData.error || errStr;
+        } catch(e) {}
+        setLoginError(errStr);
+        setButtonLoading("login", false);
+        return;
+      }
+      
+      const emailData = await emailRes.json();
+      const firebaseEmail = emailData.email;
+
+      // STEP 5: Authenticate using Firebase Authentication with the fetched email
       try {
-        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+        await signInWithEmailAndPassword(auth, firebaseEmail, loginPassword);
         console.log("Firebase Auth successful for:", firebaseEmail);
       } catch (authError: any) {
         setLoginError(
@@ -1193,7 +1211,7 @@ export default function App() {
         return; // Stop here if Firebase Auth fails
       }
 
-      // STEP 2 & 3: Call /api/login to load user doc and perform Device Authorization checks
+      // STEP 6: Call /api/login to load user doc and perform Device Authorization checks to load user doc and perform Device Authorization checks
       // Now /api/login ONLY checks device lock, we don't need to pass the password to it.
       const response = await fetch("/api/login", {
         method: "POST",
@@ -1694,7 +1712,7 @@ export default function App() {
         showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
       } else {
         // Pre-register user in Firebase Auth automatically
-        const firebaseEmail = `${payload.username.toLowerCase()}@alwaleed-factory.com`;
+        const firebaseEmail = payload.email || `${payload.username.toLowerCase()}@alwaleed-factory.com`;
         const firebasePassword = `${payload.password || "123456"}_alwaleed_pass`;
         try {
           await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
