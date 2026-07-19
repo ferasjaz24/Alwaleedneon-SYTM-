@@ -9,6 +9,7 @@ import {
   Loader2,
   MinusCircle,
 } from "lucide-react";
+import { GoogleGenAI } from "@google/genai";
 
 interface Message {
   id: string;
@@ -65,32 +66,37 @@ export default function AIAssistant({ lang }: { lang: "ar" | "en" }) {
     setIsLoading(true);
 
     try {
+      // Setup dynamic API key from Vite env
+      const env = (import.meta as any).env || {};
+      const apiKey =
+        env.VITE_GEMINI_API_KEY ||
+        localStorage.getItem("VITE_GEMINI_API_KEY");
+
+      if (!apiKey) {
+        throw new Error(
+          lang === "ar"
+            ? "الرجاء إدخال مفتاح Gemini API في إعدادات الذكاء الاصطناعي."
+            : "Please configure Gemini API Key in Settings.",
+        );
+      }
+
+      // Initialize the official SDK
+      const ai = new GoogleGenAI({ apiKey });
+
       // Build context history for the assistant
       const historyText = messages
         .map((m) => `${m.isAi ? "Assistant" : "User"}: ${m.text}`)
         .join("\n");
       const prompt = `Context:\n${historyText}\n\nUser: ${userText}\n\nAssistant:`;
 
-      // Call the server-side API to generate content securely
-      const res = await fetch("/api/gemini/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          model: "gemini-2.5-flash",
-        }),
+      // Use the model dynamically
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.details || errData.error || "Failed to communicate with AI server");
-      }
-
-      const data = await res.json();
       const aiResponseText =
-        data.text ||
+        response.text ||
         (lang === "ar"
           ? "عفواً، لم أتمكن من معالجة الطلب."
           : "Sorry, I could not process that request.");

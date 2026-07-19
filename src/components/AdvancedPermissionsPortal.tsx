@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { 
   Shield, Users, Briefcase, Settings, Package, Box, LayoutDashboard, Copy, 
-  History, Save, X, Lock, Unlock, AlertTriangle, FileText, CheckCircle, DollarSign,
-  Smartphone, RefreshCw
+  History, Save, X, Lock, Unlock, AlertTriangle, FileText, CheckCircle, DollarSign
 } from 'lucide-react';
 
 // Define the exact sub-sections and their unique permissions mentioned by the user
@@ -525,22 +524,6 @@ export default function AdvancedPermissionsPortal({
   onClose,
   onSave
 }: any) {
-  const [deviceRequests, setDeviceRequests] = useState<any[]>([]);
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const res = await fetch("/api/device-change-requests");
-        if (res.ok) {
-          const data = await res.json();
-          setDeviceRequests(data.requests || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch device requests", err);
-      }
-    };
-    fetchRequests();
-  }, []);
-
   // We store advanced permissions inside `user.permissions.advanced`
   // mapping structure: { [mainKey]: { [subKey]: { [permId]: boolean } } }
   const isTargetFeras = user.username?.toUpperCase() === 'FERAS';
@@ -571,80 +554,7 @@ export default function AdvancedPermissionsPortal({
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const [activeMain, setActiveMain] = useState(Object.keys(PERMISSIONS_SCHEMA)[0]);
-  const [activeSub, setActiveSub] = useState(Object.keys(PERMISSIONS_SCHEMA[activeMain as keyof typeof PERMISSIONS_SCHEMA]?.sub || {})[0] || "");
-
-  // Device security states
-  const [deviceLockEnabled, setDeviceLockEnabled] = useState<boolean>(
-    user.deviceLockEnabled !== false
-  );
-  const [allowDeviceMigration, setAllowDeviceMigration] = useState<boolean>(
-     !!user.allowDeviceMigration
-  );
-  const [openLoginAnywhere, setOpenLoginAnywhere] = useState<boolean>(
-     !!user.openLoginAnywhere
-  );
-  const [allowMultiBrowserOnSameDevice, setAllowMultiBrowserOnSameDevice] = useState<boolean>(
-     !!user.allowMultiBrowserOnSameDevice
-  );
-  const [blockConcurrentLogins, setBlockConcurrentLogins] = useState<boolean>(
-     !!user.blockConcurrentLogins
-  );
-  const [allowAutoMigration, setAllowAutoMigration] = useState<boolean>(
-     !!user.allowAutoMigration
-  );
-  const [boundHardwareId, setBoundHardwareId] = useState<string>(
-     user.boundHardwareId || ""
-  );
-  const [boundDeviceId, setBoundDeviceId] = useState<string>(
-     user.boundDeviceId || ""
-  );
-  const [boundDeviceName, setBoundDeviceName] = useState<string>(
-     user.boundDeviceName || ""
-  );
-  const [pendingDeviceApprovalId, setPendingDeviceApprovalId] = useState<string>(
-     user.pendingDeviceApprovalId || ""
-  );
-  const [pendingDeviceApprovalName, setPendingDeviceApprovalName] = useState<string>(
-     user.pendingDeviceApprovalName || ""
-  );
-
-  const [localUsers, setLocalUsers] = useState<any[]>(allUsers || []);
-
-  const handleApproveDevice = async (requestId: string, targetUsername: string) => {
-    try {
-      const res = await fetch(`/api/device-change-requests/${requestId}/approve`, {
-        method: "POST"
-      });
-      if (res.ok) {
-         setDeviceRequests(prev => prev.filter(req => req.id !== requestId));
-         alert("تم قبول طلب استبدال الجهاز بنجاح! تم استبدال الجهاز بنجاح وتوثيق تفاصيل المتصفح والبيئة الجديدة.");
-      } else {
-         const errData = await res.json();
-         alert("فشل قبول وتوثيق الجهاز: " + (errData.error || "خطأ غير معروف"));
-      }
-    } catch (err) {
-      console.error(err);
-      alert("System error");
-    }
-  };
-
-  const handleRejectDevice = async (requestId: string) => {
-    try {
-      const res = await fetch(`/api/device-change-requests/${requestId}/reject`, {
-        method: "POST"
-      });
-      if (res.ok) {
-         setDeviceRequests(prev => prev.filter(req => req.id !== requestId));
-         alert("تم رفض طلب استبدال الجهاز بنجاح وإزالته.");
-      } else {
-         const errData = await res.json();
-         alert("فشل رفض الجهاز: " + (errData.error || "خطأ غير معروف"));
-      }
-    } catch (err) {
-      console.error(err);
-      alert("System error");
-    }
-  };
+  const [activeSub, setActiveSub] = useState(Object.keys(PERMISSIONS_SCHEMA[activeMain as keyof typeof PERMISSIONS_SCHEMA].sub)[0]);
   
   const handleToggle = (main: string, sub: string, permId: string, val: boolean) => {
      setAdvPerms((prev: any) => ({
@@ -673,7 +583,7 @@ export default function AdvancedPermissionsPortal({
   };
 
   const handleToggleSub = (main: string, sub: string, val: boolean) => {
-     const subPerms = (PERMISSIONS_SCHEMA as any)[main]?.sub?.[sub]?.perms || [];
+     const subPerms = (PERMISSIONS_SCHEMA as any)[main].sub[sub].perms;
      const newSubState: any = {};
      subPerms.forEach((p: any) => newSubState[p.id] = val ? 'all' : false);
      setAdvPerms((prev: any) => ({
@@ -718,20 +628,9 @@ export default function AdvancedPermissionsPortal({
     }
 
     const payload = {
-       allowMultiBrowserOnSameDevice,
-       boundHardwareId,
        advanced: advPerms,
        scopes: scopes,
-       moduleAccess: newModuleAccess,
-       deviceLockEnabled,
-       allowDeviceMigration,
-       openLoginAnywhere,
-       boundDeviceId,
-       boundDeviceName,
-       pendingDeviceApprovalId,
-       pendingDeviceApprovalName,
-       blockConcurrentLogins,
-       allowAutoMigration
+       moduleAccess: newModuleAccess
     };
 
     await onSave(user.username, payload);
@@ -839,20 +738,7 @@ export default function AdvancedPermissionsPortal({
                    </div>
                 </div>
 
-                <h4 className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-wider text-right flex items-center justify-between">
-                   <span>الأقسام الرئيسية</span>
-                   <button 
-                     type="button"
-                     onClick={() => {
-                        setActiveMain('device_security');
-                        setActiveSub('');
-                     }}
-                     className={`flex items-center gap-1.5 px-2 py-1 text-[9px] font-black rounded-lg transition-all ${activeMain === 'device_security' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                   >
-                     <Smartphone className="w-3 h-3" />
-                     أمان الأجهزة
-                   </button>
-                </h4>
+                <h4 className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-wider text-right">الأقسام الرئيسية</h4>
                 {Object.entries(PERMISSIONS_SCHEMA).map(([mKey, mVal]) => (
                    <button 
                      key={mKey}
@@ -869,13 +755,12 @@ export default function AdvancedPermissionsPortal({
              </div>
 
              {/* Dynamic Sub-sections list (Middle column) */}
-             {activeMain !== 'device_security' && (
              <div className="w-full md:w-64 bg-white border-l border-slate-200 shrink-0 flex flex-col p-4 gap-2 overflow-y-auto hidden md:flex">
                 <h4 className="text-[11px] font-black text-slate-400 uppercase mb-4 tracking-wider flex items-center justify-between text-right">
                    الأقسام الفرعية
-                   <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">{Object.keys((PERMISSIONS_SCHEMA as any)[activeMain]?.sub || {}).length}</span>
+                   <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">{Object.keys((PERMISSIONS_SCHEMA as any)[activeMain].sub).length}</span>
                 </h4>
-                {Object.entries((PERMISSIONS_SCHEMA as any)[activeMain]?.sub || {}).map(([sKey, sVal]: [string, any]) => {
+                {Object.entries((PERMISSIONS_SCHEMA as any)[activeMain].sub).map(([sKey, sVal]: [string, any]) => {
                    const hasAnyPerm = Object.values(advPerms[activeMain]?.[sKey] || {}).some(v => v);
                    return (
                      <button 
@@ -889,255 +774,10 @@ export default function AdvancedPermissionsPortal({
                    );
                 })}
              </div>
-             )}
 
              {/* Permissions area */}
              <div className="flex-1 bg-slate-50/50 flex flex-col overflow-hidden">
                 <div className="p-4 md:p-6 flex-1 overflow-y-auto">
-                   {activeMain === 'device_security' ? (
-                      <div className="space-y-6 text-right" dir="rtl" style={{ direction: 'rtl' }}>
-                         {/* Banner */}
-                         <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-700 flex items-center gap-4">
-                            <div className="p-3 bg-indigo-500/15 rounded-xl text-indigo-400">
-                               <Shield className="w-8 h-8" />
-                            </div>
-                            <div>
-                               <h3 className="text-lg font-black">إدارة أمان الأجهزة وتوثيق الدخول</h3>
-                               <p className="text-xs text-slate-400 mt-1 font-semibold">
-                                  قفل تشغيل حساب الموظف على جهاز واحد وحماية ترحيل الجلسات لمنع الاختراق.
-                               </p>
-                            </div>
-                         </div>
-
-                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Column 1: Core Toggles */}
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                               <h4 className="text-sm font-black text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-                                  <Settings className="w-4 h-4 text-indigo-500" />
-                                  تفضيلات الأمان وقفل الأجهزة
-                                </h4>
-
-                               <div className="space-y-4">
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-indigo-600 font-sans">السماح بالدخول من متصفحات متعددة على نفس الجهاز</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، سيقوم النظام بالتحقق فقط من معرّف الجهاز الفيزيائي للموظف (Hardware ID) ويسمح له باستخدام متصفحات متعددة (مثل Chrome و Safari) دون حظره.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setAllowMultiBrowserOnSameDevice(!allowMultiBrowserOnSameDevice)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowMultiBrowserOnSameDevice ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowMultiBrowserOnSameDevice ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800">تفعيل قفل الجهاز الموثق</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند تفعيل هذا الخيار، سيتم إلزام المستخدم بالدخول من جهاز واحد فقط موثق ومسجل لدى النظام.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setDeviceLockEnabled(!deviceLockEnabled)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${deviceLockEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${deviceLockEnabled ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800">تفعيل حظر الدخول المتعدد (منع الجلسات المتزامنة)</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، سيتم حظر تسجيل دخول الموظف إذا كان هناك جلسة نشطة مستخدمة بالفعل على جهاز/متصفح آخر في نفس الوقت لمنع مشاركة الحسابات.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setBlockConcurrentLogins(!blockConcurrentLogins)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${blockConcurrentLogins ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${blockConcurrentLogins ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800 font-sans">السماح بالنقل التلقائي الموثق (لمرة واحدة)</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، يستطيع المستخدم الانتقال لجهازه الجديد تلقائياً لمرة واحدة بمجرد تسجيل الدخول (Setup Mode) وسيتم قفله على الجهاز الجديد وإلغاء القديم فوراً.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setAllowDeviceMigration(!allowDeviceMigration)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowDeviceMigration ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowDeviceMigration ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-slate-800 font-sans">السماح بالنقل التلقائي الموثق للجهاز بشكل مستمر</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، سيتم نقل ترخيص حساب المستخدم وتحديث جهازه الموثق تلقائياً عند الدخول من أي جهاز جديد مع توثيق وتسجيل النقل بالكامل في سجلات التدقيق الأمني.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setAllowAutoMigration(!allowAutoMigration)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${allowAutoMigration ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowAutoMigration ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-
-                                  <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                     <div className="flex-1">
-                                        <span className="block text-sm font-black text-[#0072BC]">تعطيل القفل مؤقتاً لهذا المستخدم (دخول مفتوح)</span>
-                                        <span className="block text-xs text-slate-500 mt-1 font-semibold leading-relaxed">
-                                           عند التفعيل، يمكن لهذا المستخدم الدخول من أي متصفح أو جهاز مختلف بشكل مفتوح دون تفعيل حظر الأجهزة وتجاوز قيود القفل.
-                                        </span>
-                                     </div>
-                                     <button
-                                        type="button"
-                                        onClick={() => setOpenLoginAnywhere(!openLoginAnywhere)}
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${openLoginAnywhere ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${openLoginAnywhere ? '-translate-x-5' : 'translate-x-0'}`} />
-                                     </button>
-                                  </div>
-                               </div>
-                            </div>
-
-                            {/* Column 2: Bound Device Status & Approvals */}
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                               <h4 className="text-sm font-black text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-                                  <Smartphone className="w-4 h-4 text-indigo-500" />
-                                  حالة الجهاز المقترن بالعمل
-                               </h4>
-
-                               <div className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col justify-between gap-4">
-                                  {boundDeviceId ? (
-                                     <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
-                                           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
-                                           جهاز موثق ومقترن بنجاح
-                                        </div>
-                                        <div className="p-3 bg-slate-100 rounded-lg text-slate-700 font-mono text-xs select-all text-center break-all border border-slate-200">
-                                           {boundDeviceId}
-                                        </div>
-                                        {boundDeviceName && (
-                                           <div className="text-[11px] text-[#0072BC] font-black text-center bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100">
-                                              اسم الجهاز: {boundDeviceName}
-                                           </div>
-                                        )}
-                                        {user.boundDeviceOS && (
-                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
-                                              💻 نظام التشغيل: <span className="font-semibold text-slate-800">{user.boundDeviceOS}</span>
-                                           </div>
-                                        )}
-                                        {user.boundDeviceBrowser && (
-                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
-                                              🌐 المتصفح: <span className="font-semibold text-slate-800">{user.boundDeviceBrowser}</span>
-                                           </div>
-                                        )}
-                                        {user.boundDeviceType && (
-                                           <div className="text-[11px] text-slate-600 font-bold text-right bg-slate-100/50 py-1 px-2.5 rounded border border-slate-200">
-                                              📱 نوع الجهاز: <span className="font-semibold text-slate-800">{user.boundDeviceType}</span>
-                                           </div>
-                                        )}
-                                        {user.boundDeviceAt && (
-                                           <div className="text-[10px] text-slate-500 font-bold text-right py-0.5 px-1">
-                                              🕒 تم الاقتران في: {new Date(user.boundDeviceAt).toLocaleString("ar-EG")}
-                                           </div>
-                                        )}
-                                        <button
-                                           type="button"
-                                           onClick={() => {
-                                              setBoundDeviceId("");
-                                              setBoundDeviceName("");
-                                              setBoundHardwareId("");
-                                           }}
-                                           className="w-full py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-lg transition"
-                                        >
-                                           إلغاء ربط ومسح هذا الجهاز فوراً
-                                        </button>
-
-                                        
-                                     </div>
-                                  ) : (
-                                     <div className="py-4 text-center space-y-2">
-                                        <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
-                                        <p className="text-xs font-black text-slate-700">لا يوجد جهاز مرتبط حالياً</p>
-                                        <p className="text-[11px] text-slate-400 font-semibold">
-                                           سيقوم النظام تلقائياً بربط أول جهاز يقوم بالولوج للحساب كجهاز موثق تلقائياً.
-                                        </p>
-                                     </div>
-                                  )}
-                               </div>
-
-                               {/* Pending Approvals */}
-                               <div className="pt-4 border-t border-slate-100">
-                                  <h5 className="text-xs font-black text-slate-600 mb-3 flex items-center gap-1.5">
-                                     <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                                     <span>طلبات ترخيص الأجهزة المعلقة (لكل موظفي الشركة)</span>
-                                  </h5>
-                                  {deviceRequests.length > 0 ? (
-                                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                                        {deviceRequests.map(req => (
-                                           <div key={req.id} className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3 text-right">
-                                              <div className="flex justify-between items-center border-b border-amber-200/40 pb-2">
-                                                 <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-black">طلب معلق</span>
-                                                 <span className="text-xs font-black text-slate-800">{req.username}</span>
-                                              </div>
-                                              <div>
-                                                 <span className="block text-[10px] text-[#0072BC] mt-1 font-black">جهاز جديد: {req.deviceName}</span>
-                                                 <span className="block text-[10px] text-slate-500 mt-1 font-mono break-all">{req.newDeviceId}</span>
-                                                 {req.platform && (
-                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">💻 نظام التشغيل: {req.platform}</span>
-                                                 )}
-                                                 {req.browser && (
-                                                    <span className="block text-[10px] text-slate-600 mt-1 font-bold">🌐 المتصفح: {req.browser}</span>
-                                                 )}
-                                                 {req.createdAt && (
-                                                    <span className="block text-[9px] text-slate-400 mt-1 font-semibold">🕒 طلب في: {new Date(req.createdAt).toLocaleString("ar-EG")}</span>
-                                                 )}
-                                              </div>
-                                              <div className="flex gap-2">
-                                                 <button
-                                                    type="button"
-                                                    onClick={() => handleApproveDevice(req.id, req.username)}
-                                                    className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black transition text-center"
-                                                 >
-                                                    قبول وتوثيق
-                                                 </button>
-                                                 <button
-                                                    type="button"
-                                                    onClick={() => handleRejectDevice(req.id)}
-                                                    className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition text-center"
-                                                 >
-                                                    رفض الطلب
-                                                 </button>
-                                              </div>
-                                           </div>
-                                        ))}
-                                     </div>
-                                  ) : (
-                                     <p className="text-[11px] text-slate-400 italic text-center py-2 font-semibold">لا توجد طلبات ترخيص أجهزة معلقة حالياً.</p>
-                                  )}
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                   ) : (
-                      <>
                     
                     {/* Selectors for mobile only */}
                     <div className="flex md:hidden flex-col gap-2 mb-4 pb-4 border-b border-slate-200">
@@ -1146,7 +786,7 @@ export default function AdvancedPermissionsPortal({
                            value={activeMain}
                            onChange={(e) => {
                               setActiveMain(e.target.value);
-                              setActiveSub(Object.keys((PERMISSIONS_SCHEMA as any)[e.target.value]?.sub || {})[0] || "");
+                              setActiveSub(Object.keys((PERMISSIONS_SCHEMA as any)[e.target.value].sub)[0]);
                            }}
                         >
                             {Object.entries(PERMISSIONS_SCHEMA).map(([mKey, mVal]) => (
@@ -1158,7 +798,7 @@ export default function AdvancedPermissionsPortal({
                            value={activeSub}
                            onChange={(e) => setActiveSub(e.target.value)}
                         >
-                            {Object.entries((PERMISSIONS_SCHEMA as any)[activeMain]?.sub || {}).map(([sKey, sVal]: [string, any]) => (
+                            {Object.entries((PERMISSIONS_SCHEMA as any)[activeMain].sub).map(([sKey, sVal]: [string, any]) => (
                                <option key={sKey} value={sKey}>{sVal.ar}</option>
                             ))}
                         </select>
@@ -1169,7 +809,7 @@ export default function AdvancedPermissionsPortal({
                           <div>
                              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
                                 <Lock className="w-5 h-5 text-slate-400" />
-                                صلاحيات: {((PERMISSIONS_SCHEMA as any)[activeMain]?.sub?.[activeSub] || {}).ar || ""}
+                                صلاحيات: {(PERMISSIONS_SCHEMA as any)[activeMain].sub[activeSub].ar}
                              </h3>
                              <p className="text-xs text-slate-500 mt-1 font-semibold">تخصيص دقيق لصلاحيات المستخدم داخل هذا القسم الفرعي.</p>
                           </div>
@@ -1194,7 +834,7 @@ export default function AdvancedPermissionsPortal({
                     </div>
                        
                        <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(((PERMISSIONS_SCHEMA as any)[activeMain]?.sub?.[activeSub] || {}).perms || []).map((perm: any) => {
+                          {(PERMISSIONS_SCHEMA as any)[activeMain].sub[activeSub].perms.map((perm: any) => {
                              const permVal = advPerms[activeMain]?.[activeSub]?.[perm.id];
                              const isChecked = !!permVal;
                              const currentScope = permVal === 'own' ? 'own' : 'all';
@@ -1241,8 +881,6 @@ export default function AdvancedPermissionsPortal({
                           })}
                        </div>
                     </div>
-                    </>
-                    )}
                 </div>
 
                 {/* Footer summary bar */}

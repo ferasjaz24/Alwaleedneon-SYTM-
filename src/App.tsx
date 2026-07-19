@@ -40,14 +40,9 @@ import {
   Activity,
   Cpu,
   UserCheck,
-  Smartphone,
-  AlertTriangle,
-  ShieldAlert,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
-import { fallbackUsers } from "./utils/fallbackUsers";
 import NotificationsBell from "./components/NotificationsBell";
-import { SmartReCaptcha } from "./components/SmartReCaptcha";
 import HrSubSections from "./components/HrSubSections";
 import SalesHub from "./components/SalesHub";
 import SalesQuotations from "./components/SalesQuotations";
@@ -77,9 +72,6 @@ import MainDashboard from "./components/MainDashboard";
 import { logSystemError, logSystemAudit, setActiveLoggerUser } from "./lib/logger";
 import { rebuildSystemIndex, searchEmployeesIndexed, searchQuotationsIndexed } from "./lib/searchIndex";
 import type { IndexStats } from "./lib/searchIndex";
-
-import { auth } from "./firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 import MonthlyPayrollRuns from "./components/finance/MonthlyPayrollRuns";
 import CashAndBankTab from "./components/finance/CashAndBankTab";
@@ -244,74 +236,6 @@ export const financeSubmenus = [
   }
 ];
 
-function getDeviceOS(): string {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return "جهاز غير معروف / Unknown OS";
-  const ua = navigator.userAgent;
-  if (ua.includes("Windows")) return "جهاز كمبيوتر ويندوز / Windows PC";
-  if (ua.includes("Macintosh") || ua.includes("Mac OS")) return "جهاز ماك / Mac Device";
-  if (ua.includes("iPhone")) return "هاتف آيفون / iPhone";
-  if (ua.includes("iPad")) return "جهاز آيباد / iPad";
-  if (ua.includes("Android")) return "جهاز أندرويد / Android Device";
-  if (ua.includes("Linux")) return "جهاز لينكس / Linux Device";
-  return "جهاز غير معروف / Unknown OS";
-}
-
-function getDeviceBrowser(): string {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return "متصفح غير معروف / Unknown Browser";
-  const ua = navigator.userAgent;
-  if (ua.includes("Chrome") && !ua.includes("Edg") && !ua.includes("OPR")) return "جوجل كروم / Google Chrome";
-  if (ua.includes("Safari") && !ua.includes("Chrome")) return "متصفح سفاري / Safari";
-  if (ua.includes("Firefox")) return "متصفح فايرفوكس / Firefox";
-  if (ua.includes("Edg")) return "متصفح إيدج / Microsoft Edge";
-  if (ua.includes("OPR") || ua.includes("Opera")) return "متصفح أوبرا / Opera";
-  return "متصفح غير معروف / Unknown Browser";
-}
-
-function getDeviceType(): string {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return "جهاز كمبيوتر / Desktop Computer";
-  const ua = navigator.userAgent;
-  if (ua.includes("Mobi") || ua.includes("iPhone") || ua.includes("Android")) return "جهاز محمول / Mobile Phone";
-  if (ua.includes("iPad") || ua.includes("Tablet")) return "جهاز لوحي / Tablet";
-  return "جهاز كمبيوتر / Desktop Computer";
-}
-
-function getDeviceFriendlyName(): string {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return "Unknown Device";
-  }
-  const ua = navigator.userAgent;
-  let os = "جهاز غير معروف / Unknown OS";
-  let browser = "متصفح غير معروف / Unknown Browser";
-
-  if (ua.includes("Windows")) os = "جهاز كمبيوتر ويندوز / Windows PC";
-  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "جهاز ماك / Mac Device";
-  else if (ua.includes("iPhone")) os = "هاتف آيفون / iPhone";
-  else if (ua.includes("iPad")) os = "جهاز آيباد / iPad";
-  else if (ua.includes("Android")) os = "جهاز أندرويد / Android Device";
-  else if (ua.includes("Linux")) os = "جهاز لينكس / Linux Device";
-
-  if (ua.includes("Chrome") && !ua.includes("Edg") && !ua.includes("OPR")) browser = "جوجل كروم / Google Chrome";
-  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "متصفح سفاري / Safari";
-  else if (ua.includes("Firefox")) browser = "متصفح فايرفوكس / Firefox";
-  else if (ua.includes("Edg")) browser = "متصفح إيدج / Microsoft Edge";
-  else if (ua.includes("OPR") || ua.includes("Opera")) browser = "متصفح أوبرا / Opera";
-
-  return `${os} (${browser})`;
-}
-
-function getCrossBrowserFingerprint(): string {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return "HW-STATIC";
-  const parts = [
-    navigator.platform || "",
-    navigator.hardwareConcurrency || "",
-    (navigator as any).deviceMemory || "",
-    screen.width + "x" + screen.height,
-    screen.colorDepth,
-    Intl.DateTimeFormat().resolvedOptions().timeZone || ""
-  ];
-  return "HW-" + parts.join("-").replace(/\s+/g, "");
-}
-
 export default function App() {
   // Locale state
   const [lang, setLang] = useState<"ar" | "en">("ar");
@@ -329,53 +253,6 @@ export default function App() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [deviceBlockDetails, setDeviceBlockDetails] = useState<{
-    username: string;
-    devId: string;
-    devName: string;
-    boundDeviceName?: string;
-    devOS?: string;
-    devBrowser?: string;
-    devType?: string;
-    hardwareId?: string;
-  } | null>(null);
-  const [deviceRequestLoading, setDeviceRequestLoading] = useState(false);
-  const [deviceRequestSuccess, setDeviceRequestSuccess] = useState(false);
-  const [showConcurrentSessionModal, setShowConcurrentSessionModal] = useState(false);
-
-  // Captcha bot check states
-  const [loginCaptchaChallenge, setLoginCaptchaChallenge] = useState(() => ({
-    num1: Math.floor(Math.random() * 9) + 1,
-    num2: Math.floor(Math.random() * 9) + 1
-  }));
-  const [loginCaptchaInput, setLoginCaptchaInput] = useState("");
-
-  const [f24CaptchaChallenge, setF24CaptchaChallenge] = useState(() => ({
-    num1: Math.floor(Math.random() * 9) + 1,
-    num2: Math.floor(Math.random() * 9) + 1
-  }));
-  const [f24CaptchaInput, setF24CaptchaInput] = useState("");
-
-  const [isLoginCaptchaVerified, setIsLoginCaptchaVerified] = useState(false);
-  const [isF24CaptchaVerified, setIsF24CaptchaVerified] = useState(false);
-
-  const handleRefreshStandardCaptcha = () => {
-    setLoginCaptchaChallenge({
-      num1: Math.floor(Math.random() * 9) + 1,
-      num2: Math.floor(Math.random() * 9) + 1
-    });
-    setLoginCaptchaInput("");
-    setIsLoginCaptchaVerified(false);
-  };
-
-  const handleRefreshF24Captcha = () => {
-    setF24CaptchaChallenge({
-      num1: Math.floor(Math.random() * 9) + 1,
-      num2: Math.floor(Math.random() * 9) + 1
-    });
-    setF24CaptchaInput("");
-    setIsF24CaptchaVerified(false);
-  };
 
   // Super Admin backdoor (F24) state
   const [showF24Modal, setShowF24Modal] = useState(false);
@@ -385,18 +262,7 @@ export default function App() {
   const [f24Error, setF24Error] = useState("");
 
   // DB States (synchronized with server API)
-  const [users, setUsers] = useState<User[]>(() => {
-    try {
-      const cached = localStorage.getItem("alwaleed_cached_users");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {}
-    return fallbackUsers as any[];
-  });
+  const [users, setUsers] = useState<User[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loginLogs, setLoginLogs] = useState<any[]>([]);
@@ -715,48 +581,6 @@ export default function App() {
     htmlEl.setAttribute("lang", lang);
   }, [lang]);
 
-  // Concurrency and Session Heartbeat Loop
-  useEffect(() => {
-    if (!user || !user.username) return;
-
-    const token = sessionStorage.getItem("alwaleed_session_token");
-    if (!token) return;
-
-    const sendHeartbeat = async () => {
-      try {
-        const res = await fetch("/api/heartbeat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: user.username, sessionToken: token }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.terminated) {
-            // Log out user due to concurrent login session takeover
-            setUser(null);
-            sessionStorage.removeItem("alwaleed_session_token");
-            showToast(
-              lang === "ar"
-                ? "تنبيه أمني: تم تسجيل خروجك من هذا المتصفح لوجود جلسة نشطة مستخدمة على جهاز أو متصفح آخر."
-                : "Security Notice: You have been logged out from this browser because your account is active on another device/browser.",
-              "error"
-            );
-          }
-        }
-      } catch (err) {
-        console.error("Failed to send heartbeat:", err);
-      }
-    };
-
-    // Run heartbeat immediately
-    sendHeartbeat();
-
-    // Set up heartbeat every 20 seconds
-    const interval = setInterval(sendHeartbeat, 20000);
-
-    return () => clearInterval(interval);
-  }, [user, lang]);
-
   // Apply Accessibility Settings
   useEffect(() => {
     const htmlEl = document.documentElement;
@@ -823,88 +647,19 @@ export default function App() {
         let loadedEmployees: Employee[] = [];
         let loadedQuotations: Quotation[] = [];
 
-        if (uRes.ok) {
-          try {
-            const text = await uRes.text();
-            if (text.trim().startsWith("<")) {
-              throw new Error("Received HTML content (likely a platform cookie redirect).");
-            }
-            const parsed = JSON.parse(text);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setUsers(parsed);
-              localStorage.setItem("alwaleed_cached_users", JSON.stringify(parsed));
-            }
-          } catch (jsonErr) {
-            console.warn("Failed to parse API users, falling back to cached/fallback users:", jsonErr);
-          }
-        }
+        if (uRes.ok) setUsers(await uRes.json());
         if (eRes.ok) {
-          try {
-            const text = await eRes.text();
-            if (text.trim().startsWith("<")) {
-              throw new Error("Received HTML content for employees.");
-            }
-            const parsed = JSON.parse(text);
-            loadedEmployees = parsed || [];
-            loadedEmployees = loadedEmployees.filter(Boolean);
-            setEmployees(loadedEmployees);
-            localStorage.setItem("alwaleed_cached_employees", JSON.stringify(loadedEmployees));
-          } catch (err) {
-            console.warn("Using cached employees:", err);
-            const cached = localStorage.getItem("alwaleed_cached_employees");
-            if (cached) {
-              try {
-                loadedEmployees = JSON.parse(cached);
-                setEmployees(loadedEmployees);
-              } catch {}
-            }
-          }
+          loadedEmployees = (await eRes.json()) || [];
+          loadedEmployees = loadedEmployees.filter(Boolean);
+          setEmployees(loadedEmployees);
         }
         if (qRes.ok) {
-          try {
-            const text = await qRes.text();
-            if (text.trim().startsWith("<")) {
-              throw new Error("Received HTML content for quotations.");
-            }
-            const parsed = JSON.parse(text);
-            loadedQuotations = parsed || [];
-            setQuotations(loadedQuotations);
-            localStorage.setItem("alwaleed_cached_quotations", JSON.stringify(loadedQuotations));
-          } catch (err) {
-            console.warn("Using cached quotations:", err);
-            const cached = localStorage.getItem("alwaleed_cached_quotations");
-            if (cached) {
-              try {
-                loadedQuotations = JSON.parse(cached);
-                setQuotations(loadedQuotations);
-              } catch {}
-            }
-          }
+          loadedQuotations = await qRes.json();
+          setQuotations(loadedQuotations);
         }
-        if (lLogsRes && lLogsRes.ok) {
-          try {
-            const text = await lLogsRes.text();
-            if (!text.trim().startsWith("<")) {
-              setLoginLogs(JSON.parse(text));
-            }
-          } catch {}
-        }
-        if (errLogsRes && errLogsRes.ok) {
-          try {
-            const text = await errLogsRes.text();
-            if (!text.trim().startsWith("<")) {
-              setErrorLogs(JSON.parse(text));
-            }
-          } catch {}
-        }
-        if (audLogsRes && audLogsRes.ok) {
-          try {
-            const text = await audLogsRes.text();
-            if (!text.trim().startsWith("<")) {
-              setAuditLogs(JSON.parse(text));
-            }
-          } catch {}
-        }
+        if (lLogsRes && lLogsRes.ok) setLoginLogs(await lLogsRes.json());
+        if (errLogsRes && errLogsRes.ok) setErrorLogs(await errLogsRes.json());
+        if (audLogsRes && audLogsRes.ok) setAuditLogs(await audLogsRes.json());
 
         // Initial search indexing of system datasets
         const initialStats = rebuildSystemIndex(loadedEmployees, loadedQuotations);
@@ -1016,13 +771,6 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // Fetch login diagnostics when superadmin tab is active
-  useEffect(() => {
-    if (activeTab === ("super_admin" as any)) {
-      fetchLoginDiagnostics();
-    }
-  }, [activeTab]);
-
   // Smoothly scroll to the top whenever active tab or any sub-tab changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1044,44 +792,12 @@ export default function App() {
   ]);
 
   // Update list functions
-  const [loginDiagnostics, setLoginDiagnostics] = useState<string[]>([]);
-  const [isDiagLoading, setIsDiagLoading] = useState(false);
-
-  const fetchLoginDiagnostics = async () => {
-    setIsDiagLoading(true);
-    try {
-      const response = await fetch("/api/login-diagnostics");
-      if (response.ok) {
-        const data = await response.json();
-        setLoginDiagnostics(data.logs || []);
-      }
-    } catch (err) {
-      console.error("Failed to load login diagnostics:", err);
-    } finally {
-      setIsDiagLoading(false);
-    }
-  };
-
-  const clearLoginDiagnostics = async () => {
-    if (!window.confirm(lang === "ar" ? "هل أنت متأكد من مسح سجل التشخيص؟" : "Are you sure you want to clear diagnostic logs?")) return;
-    try {
-      const response = await fetch("/api/login-diagnostics/clear", { method: "POST" });
-      if (response.ok) {
-        setLoginDiagnostics([]);
-      }
-    } catch (err) {
-      console.error("Failed to clear login diagnostics:", err);
-    }
-  };
-
   const handleReloadLoginLogs = async () => {
     try {
       const res = await fetch("/api/login-logs");
       if (res.ok) {
         setLoginLogs(await res.json());
       }
-      // Also automatically fetch diagnostics log
-      fetchLoginDiagnostics();
     } catch (e) {
       console.error("Failed to load login logs:", e);
     }
@@ -1153,109 +869,45 @@ export default function App() {
   };
 
   // Standard login trigger
-  const handleRegularLogin = async (e: React.FormEvent, force: boolean = false) => {
+  const handleRegularLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
     setButtonLoading("login", true);
-
-    if (!isLoginCaptchaVerified) {
-      setLoginError(
-        lang === "ar"
-          ? "الرجاء تأكيد اختبار الأمان (أنا لست برنامج روبوت) أولاً."
-          : "Please verify that you are not a robot first."
-      );
-      setButtonLoading("login", false);
-      return;
-    }
-
-    let devId = localStorage.getItem("alwaleed_device_id");
-    if (!devId) {
-      devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
-      localStorage.setItem("alwaleed_device_id", devId);
-    }
-    const currentDeviceName = getDeviceFriendlyName();
-
+    const uName = loginUsername.toUpperCase().trim();
+    
     try {
-      // STEP 1 & 2 & 3 & 4: Fetch user's stored email from Firestore via backend
-      const emailRes = await fetch("/api/get-user-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: loginUsername })
-      });
-      
-      if (!emailRes.ok) {
-        let errStr = "اسم المستخدم أو كلمة المرور غير صحيحة.";
-        try {
-          const errData = await emailRes.json();
-          errStr = errData.error || errStr;
-        } catch(e) {}
-        setLoginError(errStr);
-        setButtonLoading("login", false);
-        return;
-      }
-      
-      const emailData = await emailRes.json();
-      const firebaseEmail = emailData.email;
-
-      // STEP 5: Authenticate using Firebase Authentication with the fetched email
-      try {
-        await signInWithEmailAndPassword(auth, firebaseEmail, loginPassword);
-        console.log("Firebase Auth successful for:", firebaseEmail);
-      } catch (authError: any) {
-        setLoginError(
-          lang === "ar"
-            ? "اسم المستخدم أو كلمة المرور غير صحيحة."
-            : "Incorrect username or password."
-        );
-        setButtonLoading("login", false);
-        return; // Stop here if Firebase Auth fails
-      }
-
-      // STEP 6: Call /api/login to load user doc and perform Device Authorization checks to load user doc and perform Device Authorization checks
-      // Now /api/login ONLY checks device lock, we don't need to pass the password to it.
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: loginUsername,
-          devId,
-          devName: currentDeviceName,
-          devOS: getDeviceOS(),
-          devBrowser: getDeviceBrowser(),
-          devType: getDeviceType(),
-          hardwareId: getCrossBrowserFingerprint(),
-          forceLogin: force
-        })
-      });
-
-      if (response.ok) {
-        const loginData = await response.json();
-        const matched = loginData?.user;
-
-        if (!matched || !matched.username) {
-          throw new Error(
+      // Validate from loaded system users
+      const matched = users.find((u) => u.username.toUpperCase() === uName);
+      if (matched) {
+        if (
+          loginPassword &&
+          matched.password &&
+          matched.password !== loginPassword
+        ) {
+          setLoginError(
             lang === "ar"
-              ? "بيانات المستخدم المرتجعة من النظام غير صالحة أو مفقودة."
-              : "User data returned from the server is invalid or missing."
+              ? "كلمة المرور غير صحيحة"
+              : "Incorrect passcode entered.",
           );
+          logSystemError({
+            code: "ERR-401-AUTH",
+            message: `محاولة تسجيل دخول فاشلة بكلمة مرور خاطئة للمستخدم: ${uName}`,
+            page: "Login Gateway",
+            action: "handleRegularLogin"
+          });
+          setButtonLoading("login", false);
+          return;
         }
-
-        // Reset device request success state on login success
-        setDeviceRequestSuccess(false);
-
-        if (loginData?.sessionToken) {
-          sessionStorage.setItem("alwaleed_session_token", loginData.sessionToken);
-        }
+        
         setUser(matched);
-        setSystemRefreshKey((prev) => prev + 1);
         logLoginEvent(matched.username);
         logSystemAudit({
           user: matched.username,
           action: "دخول",
           department: "General",
-          description: "تسجيل دخول ناجح إلى النظام (مع الموثق التلقائي Firebase)"
+          description: "تسجيل دخول ناجح إلى النظام"
         });
-        showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! تم توثيق اتصالك بقاعدة البيانات." : "Successfully logged in! Verified direct database connection.");
+        showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! مرحباً بك في النظام." : "Successfully logged in! Welcome back.");
 
         // Auto assign tabs based on roles/permissions
         const isTopLevel = 
@@ -1286,65 +938,23 @@ export default function App() {
         } else {
           setActiveTab("dashboard");
         }
-      } else if (response.status === 409) {
-        setShowConcurrentSessionModal(true);
-        setButtonLoading("login", false);
-        return;
-      } else if (response.status === 403) {
-        let errorData: any = {};
-        try {
-          errorData = await response.json();
-        } catch (e) {
-          console.error("Failed to parse 403 response as JSON:", e);
-        }
-        setDeviceBlockDetails({
-          username: errorData.username || loginUsername,
-          devId: errorData.devId || devId,
-          devName: errorData.devName || currentDeviceName,
-          boundDeviceName: errorData.boundDeviceName || "جهاز آخر مرتبط",
-          devOS: getDeviceOS(),
-          devBrowser: getDeviceBrowser(),
-          devType: getDeviceType(),
-          hardwareId: getCrossBrowserFingerprint()
-        });
-        setLoginError(
-          lang === "ar"
-            ? "عذراً، هذا الجهاز غير موثق للدخول لأن الحساب مرتبط بجهاز آخر بالفعل. يرجى إرسال طلب استبدال الجهاز للإدارة أو التواصل مع الدعم الفني."
-            : "Error: This device is not authorized. This account is already linked to another device. Please send a device change request or contact support."
-        );
-        logSystemError({
-          code: "ERR-403-DEVICE",
-          message: `محاولة دخول مرفوضة من جهاز غير موثق للمستخدم: ${loginUsername} (معرّف الجهاز: ${devId} | الاسم: ${currentDeviceName})`,
-          page: "Login Gateway",
-          action: "handleRegularLogin"
-        });
       } else {
-        let errorMessage = "اسم المستخدم أو كلمة المرور غير صحيحة.";
-        try {
-          const errData = await response.json();
-          errorMessage = errData.error || errorMessage;
-        } catch {}
         setLoginError(
           lang === "ar"
-            ? `خطأ في الدخول: ${errorMessage}`
-            : `Login error: ${errorMessage}`
+            ? "اسم المستخدم المكتوب غير موجود بصندوق النظام"
+            : "Username not registered in the system.",
         );
         logSystemError({
-          code: "ERR-401-AUTH",
-          message: `محاولة دخول فاشلة للمستخدم: ${loginUsername} | التفاصيل: ${errorMessage}`,
+          code: "ERR-404-AUTH",
+          message: `محاولة دخول فاشلة باسم مستخدم غير مسجل: ${uName}`,
           page: "Login Gateway",
           action: "handleRegularLogin"
         });
       }
     } catch (err: any) {
       console.error(err);
-      setLoginError(
-        lang === "ar"
-          ? `حدث خطأ في خادم النظام (كود 600): ${err.message || "فشل الاتصال"}`
-          : `System server error (Error 600): ${err.message || "Connection failed"}`
-      );
       logSystemError({
-        code: "ERR-600-SYS",
+        code: "ERR-500-SYS",
         message: err.message || "Unknown login error",
         page: "Login",
         action: "handleRegularLogin",
@@ -1355,204 +965,27 @@ export default function App() {
     }
   };
 
-  // Send device migration request to administration (Requested by the user)
-  const handleSendDeviceRequest = async () => {
-    if (!deviceBlockDetails) return;
-    setDeviceRequestLoading(true);
-    setDeviceRequestSuccess(false);
-    try {
-      const res = await fetch(`/api/users/${deviceBlockDetails.username}/request-device-change`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          devId: deviceBlockDetails.devId,
-          devName: deviceBlockDetails.devName,
-          devOS: deviceBlockDetails.devOS || "",
-          devBrowser: deviceBlockDetails.devBrowser || "",
-          devType: deviceBlockDetails.devType || "",
-          hardwareId: deviceBlockDetails.hardwareId || ""
-        })
-      });
-      if (res.ok) {
-        setDeviceRequestSuccess(true);
-        showToast(lang === "ar" ? "تم إرسال طلب استبدال الجهاز للإدارة بنجاح!" : "Device replacement request sent successfully!");
-        handleReloadUsers(); // Reload to refresh the pending state in user list
-      } else {
-        showToast(lang === "ar" ? "فشل إرسال طلب استبدال الجهاز." : "Failed to send device request.", "error");
-      }
-    } catch (err: any) {
-      console.error(err);
-      showToast(lang === "ar" ? "خطأ في خادم النظام" : "Server error", "error");
-    } finally {
-      setDeviceRequestLoading(false);
-    }
-  };
-
-  // Bypass device lock and re-bind device dynamically (Requested by the user)
-  const handleBypassDeviceLock = async () => {
-    if (!deviceBlockDetails) return;
-    const uName = deviceBlockDetails.username;
-    const devId = deviceBlockDetails.devId;
-    const currentDeviceName = deviceBlockDetails.devName;
-
-    const matched = users.find((u) => u && u.username && u.username.toUpperCase() === uName.toUpperCase());
-    if (!matched) return;
-
-    setButtonLoading("bypass", true);
-
-    try {
-      // 1. Force update the user's boundDevice details in memory
-      matched.boundDeviceId = devId;
-      matched.boundDeviceName = currentDeviceName;
-      matched.allowDeviceMigration = false;
-
-      // 2. Persist this update to the backend database (Firestore/Local fallback) so it is bound from now on!
-      try {
-        await fetch(`/api/users/${matched.username}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            boundDeviceId: devId, 
-            boundDeviceName: currentDeviceName, 
-            allowDeviceMigration: false,
-            pendingDeviceApprovalId: "",
-            pendingDeviceApprovalName: ""
-          }),
-        });
-        console.log("Device lock bypassed and successfully bound to new device:", uName, devId);
-      } catch (err) {
-        console.error("Failed to persist bypassed device bind to server:", err);
-      }
-
-      // 4. Set active logged-in user
-      setUser(matched);
-      setSystemRefreshKey((prev) => prev + 1);
-      logLoginEvent(matched.username);
-      logSystemAudit({
-        user: matched.username,
-        action: "دخول (تجاوز)",
-        department: "General",
-        description: `تسجيل دخول ناجح بتجاوز قفل الجهاز وربط المتصفح الحالي: ${currentDeviceName}`
-      });
-      showToast(lang === "ar" ? "تم تجاوز قفل الجهاز وتوثيق المتصفح الجديد بنجاح!" : "Device lock bypassed and current browser bound successfully!");
-
-      // Auto assign tabs based on roles/permissions
-      const isTopLevel = 
-        hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
-        matched.username?.toUpperCase() === "FERAS" ||
-        matched.username?.toUpperCase() === "فراس" ||
-        matched.username?.toUpperCase() === "ADMIN" ||
-        matched.role === "الادارة العليا" ||
-        matched.role === "الإدارة العليا" ||
-        matched.role === "top_management" ||
-        matched.role === "Super Admin" ||
-        matched.role === "Admin";
-
-      if (isTopLevel) {
-        setActiveTab("dashboard");
-      } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
-        setActiveTab("production");
-        setActiveProductionSubTab("prod_dashboard");
-      } else if (canAccessModule(matched, 'procurement')) {
-        setActiveTab("warehouse");
-        setActiveWarehouseSubTab("warehouse_dashboard");
-      } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
-        setActiveTab("sales");
-        setActiveSalesSubTab("sales_dashboard");
-      } else if (canAccessModule(matched, 'hr')) {
-        setActiveTab("hr");
-        setActiveHrSubTab("dashboard");
-      } else {
-        setActiveTab("dashboard");
-      }
-
-      // Clear states
-      setDeviceBlockDetails(null);
-      setLoginError("");
-    } catch (bypassErr: any) {
-      console.error("Bypass device lock error:", bypassErr);
-      showToast(lang === "ar" ? "فشل تجاوز القفل تلقائياً." : "Failed to bypass device lock.", "error");
-    } finally {
-      setButtonLoading("bypass", false);
-    }
-  };
-
   // F24 Backdoor login validation
-  const handleF24Login = async (e: React.FormEvent) => {
+  const handleF24Login = (e: React.FormEvent) => {
     e.preventDefault();
     setF24Error("");
     setButtonLoading("f24Login", true);
-
-    if (!isF24CaptchaVerified) {
-      setF24Error(
-        lang === "ar"
-          ? "الرجاء تأكيد اختبار الأمان (أنا لست برنامج روبوت) أولاً."
-          : "Please verify that you are not a robot first."
-      );
-      setButtonLoading("f24Login", false);
-      return;
-    }
-
     if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
-      // PROACTIVE FIX: Fetch fresh users list from backend to prevent stale local React state on logout
-      let currentUsers = users;
-      try {
-        const freshUsersRes = await fetch("/api/users");
-        if (freshUsersRes.ok) {
-          const freshData = await freshUsersRes.json();
-          if (Array.isArray(freshData) && freshData.length > 0) {
-            currentUsers = freshData;
-            setUsers(freshData);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load fresh users for F24 check:", err);
-      }
-
-      // Find FERAS user details to check device binding (checking "FERAS" or "F24" for safety)
-      const matched = currentUsers.find((u) => u && u.username && (u.username.toUpperCase() === "FERAS" || u.username.toUpperCase() === "F24"));
-      
-      let devId = localStorage.getItem("alwaleed_device_id");
-      if (!devId) {
-        devId = "DEV-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
-        localStorage.setItem("alwaleed_device_id", devId);
-      }
-
-      // Feras/F24 bypass: Developer has absolute entry bypass from any device/browser anytime.
-      console.log("[F24] Super Admin / Developer bypass: skipping all device fingerprint checks.");
-
       const superAdmin: User = {
         username: "FERAS",
         role: "Super Admin",
         jobTitle: "Owner / GM",
         dateCreated: "2026-01-01",
       };
-
-      // Automatic Firebase Authentication integration for F24
-      const firebaseEmail = "feras@alwaleed-factory.com";
-      const firebasePassword = `${f24Pass}_alwaleed_pass`;
-      try {
-        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-        console.log("Firebase Auth automatic login successful for F24");
-      } catch (authError: any) {
-        try {
-          await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-          console.log("Firebase Auth automatic registration and login successful for F24");
-        } catch (createError: any) {
-          console.warn("Failed to automatically register Firebase Auth F24 user:", createError);
-        }
-      }
-
       setUser(superAdmin);
-      setSystemRefreshKey((prev) => prev + 1);
       logLoginEvent("FERAS");
       logSystemAudit({
         user: "FERAS",
         action: "دخول",
         department: "General",
-        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor) (مع الموثق التلقائي Firebase)"
+        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor)"
       });
-      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق وتوثيق اتصالك بقاعدة البيانات!" : "F24 Super Admin Authorized and database connection verified!");
+      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
       setShowF24Modal(false);
       setActiveTab("dashboard");
     } else {
@@ -1711,16 +1144,6 @@ export default function App() {
         });
         showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
       } else {
-        // Pre-register user in Firebase Auth automatically
-        const firebaseEmail = payload.email || `${payload.username.toLowerCase()}@alwaleed-factory.com`;
-        const firebasePassword = `${payload.password || "123456"}_alwaleed_pass`;
-        try {
-          await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-          console.log("Firebase Auth automatic pre-registration successful for:", firebaseEmail);
-        } catch (createError: any) {
-          console.warn("Firebase Auth automatic pre-registration failed/already exists:", createError);
-        }
-
         setUserCreationSuccess(
           lang === "ar"
             ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user?.role || finalRole}`
@@ -1730,9 +1153,9 @@ export default function App() {
           user: user?.username || "FERAS",
           action: "أضاف",
           department: "HR",
-          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role} (مع التسجيل التلقائي في Firebase)`
+          description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role}`
         });
-        showToast(lang === "ar" ? "تم إنشاء الحساب وتوثيقه تلقائياً في Firebase!" : "Account registered and synced with Firebase successfully!");
+        showToast(lang === "ar" ? "تم إنشاء الحساب بنجاح وتأكيده على السيرفر" : "Account registered successfully!");
         setNewAdminUser({
           username: "",
           password: "",
@@ -2547,15 +1970,6 @@ export default function App() {
                 />
               </div>
 
-              {/* Smart reCAPTCHA Checkbox */}
-              <div className="py-2">
-                <SmartReCaptcha
-                  id="login-recaptcha"
-                  lang={lang}
-                  onVerify={(verified) => setIsLoginCaptchaVerified(verified)}
-                />
-              </div>
-
               {loginError && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl font-bold">
                   {loginError}
@@ -2620,15 +2034,6 @@ export default function App() {
                       placeholder="••••••••••••••••"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#0072BC]"
                       required
-                    />
-                  </div>
-
-                  {/* Smart reCAPTCHA Checkbox */}
-                  <div className="py-1">
-                    <SmartReCaptcha
-                      id="f24-recaptcha"
-                      lang={lang}
-                      onVerify={(verified) => setIsF24CaptchaVerified(verified)}
                     />
                   </div>
 
@@ -3320,29 +2725,13 @@ export default function App() {
               lang={lang}
               onClose={() => setSelectedUserForPermissions(null)}
               onSave={async (username, payload) => {
-                const { 
-                  newUsername, password, role, jobTitle, 
-                  deviceLockEnabled, allowDeviceMigration, openLoginAnywhere, boundDeviceId, boundDeviceName,
-                  pendingDeviceApprovalId, pendingDeviceApprovalName,
-                  allowMultiBrowserOnSameDevice, boundHardwareId, blockConcurrentLogins, allowAutoMigration,
-                  ...rest 
-                } = payload as any;
+                const { newUsername, password, role, jobTitle, ...rest } =
+                  payload as any;
                 await handleUpdateUser(username, {
                   ...(newUsername && { newUsername }),
                   ...(password && { password }),
                   ...(role && { role }),
                   ...(jobTitle && { jobTitle }),
-                  deviceLockEnabled,
-                  allowDeviceMigration,
-                  openLoginAnywhere,
-                  boundDeviceId,
-                  boundDeviceName,
-                  pendingDeviceApprovalId,
-                  pendingDeviceApprovalName,
-                  allowMultiBrowserOnSameDevice,
-                  boundHardwareId,
-                  blockConcurrentLogins,
-                  allowAutoMigration,
                   permissions: rest,
                 });
               }}
@@ -3921,72 +3310,6 @@ export default function App() {
                           </>
                         );
                       })()}
-                    </div>
-                  </div>
-
-                  {/* Real-time Login Diagnostics & Connection Tracing Card */}
-                  <div className="lg:col-span-3 glass-panel rounded-3xl p-6 bg-slate-950 text-slate-100 shadow-xl border border-slate-800 flex flex-col gap-4">
-                    <div className="flex justify-between items-center flex-wrap gap-2">
-                      <div>
-                        <h3 className="font-bold text-lg text-white flex items-center gap-2">
-                          <Terminal className="w-5 h-5 text-sky-400" />
-                          <span>{lang === "ar" ? "🔍 لوحة تشخيص وحماية تسجيل الدخول الفورية" : "🔍 Instant Login Diagnostics & Trace Panel"}</span>
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {lang === "ar"
-                            ? "أداة أمان متطورة لتشخيص الأخطاء في الوقت الفعلي وفحص جودة اتصال محاولات الدخول من الهواتف والأجهزة الخارجية بقاعدة بيانات Firestore."
-                            : "Advanced diagnostics tool for real-time connection debugging of external/mobile devices to the cloud database."}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {loginDiagnostics.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={clearLoginDiagnostics}
-                            className="px-3 py-1.5 bg-rose-950/50 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs rounded-xl font-bold transition"
-                          >
-                            {lang === "ar" ? "مسح السجل" : "Clear Diagnostic"}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={fetchLoginDiagnostics}
-                          disabled={isDiagLoading}
-                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs rounded-xl font-bold transition flex items-center gap-1.5"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${isDiagLoading ? "animate-spin text-sky-400" : ""}`} />
-                          <span>{lang === "ar" ? "تحديث التشخيص" : "Refresh Trace"}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-80 leading-relaxed space-y-1.5">
-                      {loginDiagnostics.length === 0 ? (
-                        <div className="text-center text-slate-500 py-6">
-                          {lang === "ar" 
-                            ? "اضغط على تحديث لجلب السجلات، أو قم بمحاولة تسجيل دخول من جهاز آخر ليظهر تشخيصها هنا." 
-                            : "Click Refresh to load logs, or attempt a login from another device to capture active connection traces."}
-                        </div>
-                      ) : (
-                        loginDiagnostics.map((logLine, idx) => {
-                          let colorClass = "text-slate-300";
-                          if (/error|failed|not found/i.test(logLine)) {
-                            colorClass = "text-rose-400 font-bold bg-rose-950/20 px-1 rounded";
-                          } else if (/successfully|success|matches|authenticated/i.test(logLine)) {
-                            colorClass = "text-emerald-400 font-bold bg-emerald-950/20 px-1 rounded";
-                          } else if (/initiated|attempt/i.test(logLine)) {
-                            colorClass = "text-sky-300 font-semibold";
-                          } else if (/Querying Firestore|Firestore found/i.test(logLine)) {
-                            colorClass = "text-yellow-200";
-                          }
-
-                          return (
-                            <div key={idx} className={`border-b border-slate-800/40 pb-1 ${colorClass}`}>
-                              {logLine}
-                            </div>
-                          );
-                        })
-                      )}
                     </div>
                   </div>
 
@@ -6162,199 +5485,6 @@ export default function App() {
       </footer>
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: sharedPrintFooter }} />
       {user && <AIAssistant lang={lang} />}
-
-      {/* DEVICE BLOCKED SECURITY ALERT MODAL */}
-      {deviceBlockDetails && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border-2 border-rose-500/50 rounded-3xl p-6 md:p-8 text-white relative shadow-2xl overflow-hidden text-right">
-            
-            {/* Glowing warning element */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-red-600 to-rose-500"></div>
-            
-            {/* Header section with AlertTriangle & Shield */}
-            <div className="flex items-center justify-center gap-3 mb-6 flex-row-reverse">
-              <div className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl">
-                <AlertTriangle className="w-8 h-8 animate-bounce" />
-              </div>
-              <div className="text-right">
-                <h3 className="text-xl font-black text-white tracking-wide">
-                  {lang === "ar" ? "تنبيه أمني: حظر وصول جهاز" : "Security Alert: Device Access Blocked"}
-                </h3>
-                <p className="text-xs text-rose-400 font-bold tracking-widest uppercase mt-0.5">
-                  {lang === "ar" ? "قفل الجهاز الثنائي مفعل نشط" : "Active Two-Factor Device Binding lock"}
-                </p>
-              </div>
-            </div>
-
-            {/* Main Explanatory Statement requested by the user */}
-            <div className="space-y-4">
-              <p className="text-sm font-bold text-slate-200 leading-relaxed bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                {lang === "ar" ? (
-                  <>
-                    <span className="text-rose-400 text-lg block mb-2 font-black">عذراً، لا يمكنك تسجيل الدخول من هذا الجهاز!</span>
-                    هذا الحساب مرتبط بجهاز آخر معتمد مسبقاً لدى النظام. لأسباب أمنية مشددة تمنع سياسة الشركة الدخول المتعدد أو تغيير الأجهزة دون إذن كتابي مسبق من الإدارة الفنية.
-                  </>
-                ) : (
-                  <>
-                    <span className="text-rose-400 text-lg block mb-2 font-black">No, you cannot log in from this device!</span>
-                    This account is bound to another authorized device in the system. For security reasons, multi-device logins and unauthorized device migrations are strictly prohibited without manual administrator clearance.
-                  </>
-                )}
-              </p>
-
-              {/* Technical Details Grid */}
-              <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 font-mono text-xs">
-                <div className="flex justify-between border-b border-slate-800/80 pb-2 flex-row-reverse">
-                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "المستخدم المستهدف:" : "Target User:"}</span>
-                  <span className="text-cyan-400 font-bold text-left">{deviceBlockDetails.username}</span>
-                </div>
-                <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2">
-                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "جهازك الحالي:" : "Your Current Device:"}</span>
-                  <span className="text-white bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[11px] font-sans">
-                    {deviceBlockDetails.devName}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2">
-                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "المعرّف الرقمي لجهازك:" : "Your Device Identifier:"}</span>
-                  <span className="text-slate-300 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[10px] select-all">
-                    {deviceBlockDetails.devId}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-slate-400 font-sans font-bold text-right">{lang === "ar" ? "الجهاز المسجل حالياً:" : "Currently Registered Device:"}</span>
-                  <span className="text-amber-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 break-all text-center text-[11px] font-sans">
-                    {deviceBlockDetails.boundDeviceName}
-                  </span>
-                </div>
-              </div>
-
-              {/* Send Device Change Request Button */}
-              {deviceRequestSuccess ? (
-                <div className="p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-300 text-center font-black text-xs space-y-1">
-                  <div>✓ {lang === "ar" ? "تم إرسال طلب استبدال الجهاز للإدارة بنجاح!" : "Device migration request sent successfully!"}</div>
-                  <div className="text-[11px] font-semibold text-slate-300">
-                    {lang === "ar" ? "يرجى الانتظار لحين موافقة الإدارة على جهازك الجديد لتتمكن من الدخول." : "Please wait for administration approval before trying to log in."}
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={handleSendDeviceRequest}
-                  disabled={deviceRequestLoading}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 active:scale-[0.98] disabled:opacity-50 transition text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-cyan-500 shadow-lg shadow-cyan-950/20"
-                >
-                  {deviceRequestLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <span className="text-sm">📱</span>
-                  )}
-                  {lang === "ar" ? "إرسال طلب تغيير جهاز للإدارة" : "Send Device Change Request to Administration"}
-                </button>
-              )}
-
-              {/* Support & Action steps */}
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-slate-300 space-y-2">
-                <h4 className="text-xs font-black text-amber-400 flex items-center justify-center gap-1.5 flex-row-reverse">
-                  <Shield className="w-4 h-4" />
-                  <span>{lang === "ar" ? "طلب تفعيل الجهاز وتصريح الدخول" : "Device Activation Request"}</span>
-                </h4>
-                <p className="text-[11px] leading-relaxed text-slate-300 font-semibold text-center">
-                  {lang === "ar" ? (
-                    "عذراً، لا يمكنك تغيير جهازك دون إذن مسبق. يرجى تزويد قسم الإدارة أو الدعم الفني بالمعرّف الرقمي الظاهر أعلاه ليقوم المسؤول بتحديث الجهاز المسموح به من لوحة إدارة النظام."
-                  ) : (
-                    "No, you cannot change your login device without permission. Please provide your administration or support with the device identifier displayed above to permit this new device."
-                  )}
-                </p>
-                <div className="pt-2 flex flex-wrap justify-center gap-4 text-[11px] text-amber-300 font-mono">
-                  <span>✉️ ferasbusiness24@gmail.com</span>
-                </div>
-              </div>
-
-              {/* Close Button to return to login form */}
-              <button
-                onClick={() => setDeviceBlockDetails(null)}
-                className="w-full mt-3 py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-slate-300 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-800"
-              >
-                ✕ {lang === "ar" ? "العودة لصفحة تسجيل الدخول" : "Return to Login Screen"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CONCURRENT SESSION TAKEOVER ALERT MODAL */}
-      {showConcurrentSessionModal && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 md:p-8 text-white relative shadow-2xl overflow-hidden text-right">
-            
-            {/* Glowing warning element */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-600 to-amber-500"></div>
-            
-            {/* Header section with AlertTriangle & Shield */}
-            <div className="flex items-center justify-center gap-3 mb-6 flex-row-reverse">
-              <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl">
-                <ShieldAlert className="w-8 h-8 animate-pulse" />
-              </div>
-              <div className="text-right">
-                <h3 className="text-xl font-black text-white tracking-wide">
-                  {lang === "ar" ? "تنبيه أمني: يوجد جلسة نشطة مفتوحة" : "Security Alert: Active Session Running"}
-                </h3>
-                <p className="text-xs text-amber-400 font-bold tracking-widest uppercase mt-0.5">
-                  {lang === "ar" ? "سياسة منع الدخول المتعدد مفعلة" : "Active Concurrency Block Policy Enabled"}
-                </p>
-              </div>
-            </div>
-
-            {/* Main Explanatory Statement requested by the user */}
-            <div className="space-y-4">
-              <p className="text-sm font-bold text-slate-200 leading-relaxed bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                {lang === "ar" ? (
-                  <>
-                    <span className="text-amber-400 text-lg block mb-2 font-black">حسابك مسجل دخول به حالياً في مكان آخر!</span>
-                    لأغراض أمنية ولمنع مشاركة الحسابات، يمنع النظام تسجيل الدخول المتزامن من عدة أجهزة أو متصفحات مختلفة في نفس الوقت.
-                  </>
-                ) : (
-                  <>
-                    <span className="text-amber-400 text-lg block mb-2 font-black">Account is currently in use elsewhere!</span>
-                    To prevent unauthorized account sharing and maintain security, the system restricts concurrent logins across multiple devices or browsers.
-                  </>
-                )}
-              </p>
-
-              <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-300 space-y-1 text-center text-xs">
-                <div>⚠️ {lang === "ar" ? "ماذا تريد أن تفعل؟" : "What would you like to do?"}</div>
-                <div className="text-slate-400">
-                  {lang === "ar" 
-                    ? "يمكنك إلغاء الجلسة السابقة (تسجيل خروج الجهاز الآخر تلقائياً) ومتابعة الدخول من هنا فوراً." 
-                    : "You can terminate the other active session (automatically logging out the other device) and log in from here immediately."}
-                </div>
-              </div>
-
-              {/* Force Takeover Button */}
-              <button
-                onClick={(e) => {
-                  setShowConcurrentSessionModal(false);
-                  handleRegularLogin(e, true);
-                }}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] transition text-white font-black rounded-xl text-sm flex items-center justify-center gap-2 border border-amber-500 shadow-lg shadow-amber-950/20 text-center"
-              >
-                <span>🔑</span>
-                <span>{lang === "ar" ? "إلغاء الجلسة السابقة ومتابعة الدخول" : "Terminate Other Session & Log In"}</span>
-              </button>
-
-              {/* Cancel Button */}
-              <button
-                onClick={() => {
-                  setShowConcurrentSessionModal(false);
-                }}
-                className="w-full py-3 bg-slate-850 hover:bg-slate-800 active:scale-[0.98] transition text-slate-300 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-800 text-center"
-              >
-                <span>✕</span>
-                <span>{lang === "ar" ? "إلغاء والعودة" : "Cancel & Return"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Floating Toast notification stack */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none select-none">

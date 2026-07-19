@@ -45,12 +45,6 @@ export interface User {
   password?: string;
   empId?: string;
   permissions?: UserPermissions;
-  boundDeviceId?: string;
-  boundDeviceName?: string;
-  deviceLockEnabled?: boolean;
-  allowDeviceMigration?: boolean;
-  pendingDeviceApprovalId?: string;
-  pendingDeviceApprovalName?: string;
 }
 
 export interface CustodyRecord {
