@@ -1176,13 +1176,30 @@ export default function App() {
     const currentDeviceName = getDeviceFriendlyName();
 
     try {
-      // Direct post to secure login endpoint
+      // STEP 1: Authenticate using Firebase Authentication
+      const firebaseEmail = `${loginUsername.toLowerCase().trim()}@alwaleed-factory.com`;
+      const firebasePassword = `${loginPassword}_alwaleed_pass`;
+      
+      try {
+        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
+        console.log("Firebase Auth successful for:", firebaseEmail);
+      } catch (authError: any) {
+        setLoginError(
+          lang === "ar"
+            ? "اسم المستخدم أو كلمة المرور غير صحيحة."
+            : "Incorrect username or password."
+        );
+        setButtonLoading("login", false);
+        return; // Stop here if Firebase Auth fails
+      }
+
+      // STEP 2 & 3: Call /api/login to load user doc and perform Device Authorization checks
+      // Now /api/login ONLY checks device lock, we don't need to pass the password to it.
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: loginUsername,
-          password: loginPassword,
           devId,
           devName: currentDeviceName,
           devOS: getDeviceOS(),
@@ -1207,31 +1224,6 @@ export default function App() {
 
         // Reset device request success state on login success
         setDeviceRequestSuccess(false);
-
-        // Automatic Firebase Authentication integration
-        const firebaseEmail = `${matched.username.toLowerCase()}@alwaleed-factory.com`;
-        const firebasePassword = `${matched.password || "123456"}_alwaleed_pass`;
-        
-        try {
-          await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-          console.log("Firebase Auth automatic login successful for:", firebaseEmail);
-        } catch (authError: any) {
-          if (
-            authError.code === "auth/user-not-found" ||
-            authError.code === "auth/invalid-credential" ||
-            authError.code === "auth/wrong-password" ||
-            authError.code === "auth/invalid-email"
-          ) {
-            try {
-              await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-              console.log("Firebase Auth automatic registration and login successful for:", firebaseEmail);
-            } catch (createError: any) {
-              console.warn("Failed to automatically register Firebase Auth user:", createError);
-            }
-          } else {
-            console.warn("Firebase Auth automatic login failed, proceeding with system session:", authError);
-          }
-        }
 
         if (loginData?.sessionToken) {
           sessionStorage.setItem("alwaleed_session_token", loginData.sessionToken);
@@ -1412,31 +1404,6 @@ export default function App() {
         console.log("Device lock bypassed and successfully bound to new device:", uName, devId);
       } catch (err) {
         console.error("Failed to persist bypassed device bind to server:", err);
-      }
-
-      // 3. Automatic Firebase Authentication integration
-      const firebaseEmail = `${matched.username.toLowerCase()}@alwaleed-factory.com`;
-      const firebasePassword = `${matched.password || "123456"}_alwaleed_pass`;
-      
-      try {
-        await signInWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-        console.log("Firebase Auth automatic login (bypass) successful for:", firebaseEmail);
-      } catch (authError: any) {
-        if (
-          authError.code === "auth/user-not-found" ||
-          authError.code === "auth/invalid-credential" ||
-          authError.code === "auth/wrong-password" ||
-          authError.code === "auth/invalid-email"
-        ) {
-          try {
-            await createUserWithEmailAndPassword(auth, firebaseEmail, firebasePassword);
-            console.log("Firebase Auth automatic registration (bypass) successful for:", firebaseEmail);
-          } catch (createError: any) {
-            console.warn("Failed to automatically register Firebase Auth user on bypass:", createError);
-          }
-        } else {
-          console.warn("Firebase Auth automatic login on bypass failed, proceeding with system session:", authError);
-        }
       }
 
       // 4. Set active logged-in user

@@ -1395,33 +1395,13 @@ Text to translate: ${text}`;
         }
       }
 
-      // 2. If user not found, show "بيانات الدخول غير صحيحة"
+      // 2. If user not found, return "User account is not configured."
       if (!userData) {
-        logLoginDebug(`Authentication failed: User completely not found in Firestore or local backup database.`);
-        return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
+        logLoginDebug(`User document completely not found in Firestore or local backup database.`);
+        return res.status(404).json({ error: "حساب المستخدم غير مهيأ." }); // "User account is not configured."
       }
 
-      logLoginDebug(`Validating passcode. Expected: "${userData.password}". Provided: "${password}".`);
-
-      // 3. Check password
-      if (userData.password !== password) {
-        // Self-healing check: check if the local JSON backup has the correct passcode for this user
-        logLoginDebug(`Passcode mismatch. Initiating self-healing passcode check against local backup users.json...`);
-        const localList = getLocalCollection("users");
-        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
-        if (matchedLocal && matchedLocal.password === password) {
-          logLoginDebug(`Passcode matches local backup! Self-healing passcode sync for user ${actualDocId} into Firestore...`);
-          userData.password = password;
-          // Sync password from local backup to Firestore!
-          await setDoc(userDocRef, { password: password }, { merge: true });
-          saveLocalDoc("users", actualDocId, userData);
-        } else {
-          logLoginDebug(`Passcode check failed. Correct passcode was not matched.`);
-          return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
-        }
-      }
-
-      logLoginDebug(`Passcode successfully authenticated! Proceeding to device lock checks.`);
+      logLoginDebug(`Firebase Authentication already verified identity. Proceeding to device lock checks.`);
 
       // 4. Check account status / Lock checks
       const isLockEnabled = userData.deviceLockEnabled !== false;
@@ -1691,24 +1671,22 @@ Text to translate: ${text}`;
       const userData = userSnap.data() || {};
       const nowISO = new Date().toISOString();
       
-      userData.pendingDeviceApprovalId = devId;
-      userData.pendingDeviceApprovalName = devName;
-      userData.pendingDeviceApprovalOS = devOS || "";
-      userData.pendingDeviceApprovalBrowser = devBrowser || "";
-      userData.pendingDeviceApprovalType = devType || "";
-      userData.pendingDeviceApprovalHardwareId = hardwareId || "";
-      userData.pendingDeviceApprovalAt = nowISO;
-      
-      await setDoc(userRef, { 
-        pendingDeviceApprovalId: devId, 
-        pendingDeviceApprovalName: devName,
-        pendingDeviceApprovalOS: devOS || "",
-        pendingDeviceApprovalBrowser: devBrowser || "",
-        pendingDeviceApprovalType: devType || "",
-        pendingDeviceApprovalHardwareId: hardwareId || "",
-        pendingDeviceApprovalAt: nowISO
-      }, { merge: true });
-      saveLocalDoc("users", username, userData);
+      const requestId = `REQ-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const requestData = {
+        id: requestId,
+        uid: userData.uid || userData.username || username,
+        employeeId: userData.empId || "",
+        username: userData.username || username,
+        oldDeviceId: userData.boundDeviceId || "",
+        newDeviceId: devId,
+        browser: devBrowser || "",
+        platform: devOS || "",
+        deviceName: devName || "",
+        createdAt: nowISO,
+        status: "pending"
+      };
+
+      await setDoc(doc(db, "device_change_requests", requestId), requestData);
       
       return res.json({ success: true, message: "Device change request submitted successfully." });
     } catch (err: any) {
@@ -1717,10 +1695,30 @@ Text to translate: ${text}`;
     }
   });
 
-  // Approve pending device
-  app.post("/api/users/:username/approve-device", async (req, res) => {
-    const { username } = req.params;
+  // Get pending device requests
+  app.get("/api/device-change-requests", async (req, res) => {
     try {
+      const snap = await getDocs(collection(db, "device_change_requests"));
+      const requests = snap.docs.map(doc => doc.data());
+      return res.json({ success: true, requests });
+    } catch (err: any) {
+      console.error("[API_DEVICE_REQUESTS] Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Approve pending device
+  app.post("/api/device-change-requests/:id/approve", async (req, res) => {
+    const { id } = req.params;
+    try {
+      const requestRef = doc(db, "device_change_requests", id);
+      const requestSnap = await getDoc(requestRef);
+      if (!requestSnap.exists()) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      const requestData = requestSnap.data() || {};
+      const username = requestData.username;
+
       let userRef = doc(db, "users", username);
       let userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
@@ -1730,56 +1728,28 @@ Text to translate: ${text}`;
       if (!userSnap.exists()) {
         return res.status(404).json({ error: "User not found" });
       }
+      
       const userData = userSnap.data() || {};
-      const newId = userData.pendingDeviceApprovalId;
-      const newName = userData.pendingDeviceApprovalName;
 
-      if (!newId) {
-        return res.status(400).json({ error: "No pending device request found." });
-      }
-
-      userData.boundDeviceId = userData.pendingDeviceApprovalId || "";
-      userData.boundDeviceName = userData.pendingDeviceApprovalName || "";
-      userData.boundDeviceOS = userData.pendingDeviceApprovalOS || "";
-      userData.boundDeviceBrowser = userData.pendingDeviceApprovalBrowser || "";
-      userData.boundDeviceType = userData.pendingDeviceApprovalType || "";
-      userData.boundHardwareId = userData.pendingDeviceApprovalHardwareId || "";
+      userData.boundDeviceId = requestData.newDeviceId || "";
+      userData.boundDeviceName = requestData.deviceName || "";
+      userData.boundDeviceOS = requestData.platform || "";
+      userData.boundDeviceBrowser = requestData.browser || "";
       userData.boundDeviceAt = new Date().toISOString();
-
-      userData.pendingDeviceApprovalId = "";
-      userData.pendingDeviceApprovalName = "";
-      userData.pendingDeviceApprovalHardwareId = "";
-      userData.pendingDeviceApprovalOS = "";
-      userData.pendingDeviceApprovalBrowser = "";
-      userData.pendingDeviceApprovalType = "";
-      userData.pendingDeviceApprovalAt = "";
 
       await setDoc(userRef, { 
         boundDeviceId: userData.boundDeviceId, 
         boundDeviceName: userData.boundDeviceName,
         boundDeviceOS: userData.boundDeviceOS,
         boundDeviceBrowser: userData.boundDeviceBrowser,
-        boundDeviceType: userData.boundDeviceType,
-        boundHardwareId: userData.boundHardwareId,
-        boundDeviceAt: userData.boundDeviceAt,
-        pendingDeviceApprovalId: "",
-        pendingDeviceApprovalName: "",
-        pendingDeviceApprovalHardwareId: "",
-        pendingDeviceApprovalOS: "",
-        pendingDeviceApprovalBrowser: "",
-        pendingDeviceApprovalType: "",
-        pendingDeviceApprovalAt: ""
+        boundDeviceAt: userData.boundDeviceAt
       }, { merge: true });
       saveLocalDoc("users", username, userData);
 
-      return res.json({ 
-        success: true, 
-        user: {
-          ...userData,
-          username: username,
-          id: username
-        } 
-      });
+      // Delete the request
+      await deleteDoc(requestRef);
+      
+      return res.json({ success: true, message: "Device approved successfully" });
     } catch (err: any) {
       console.error("[API_APPROVE_DEVICE] Error:", err);
       return res.status(500).json({ error: err.message });
@@ -1787,52 +1757,18 @@ Text to translate: ${text}`;
   });
 
   // Reject pending device
-  app.post("/api/users/:username/reject-device", async (req, res) => {
-    const { username } = req.params;
+  app.post("/api/device-change-requests/:id/reject", async (req, res) => {
+    const { id } = req.params;
     try {
-      let userRef = doc(db, "users", username);
-      let userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        userRef = doc(db, "users", username.toUpperCase());
-        userSnap = await getDoc(userRef);
-      }
-      if (!userSnap.exists()) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      const userData = userSnap.data() || {};
-
-      userData.pendingDeviceApprovalId = "";
-      userData.pendingDeviceApprovalName = "";
-      userData.pendingDeviceApprovalHardwareId = "";
-      userData.pendingDeviceApprovalOS = "";
-      userData.pendingDeviceApprovalBrowser = "";
-      userData.pendingDeviceApprovalType = "";
-      userData.pendingDeviceApprovalAt = "";
-
-      await setDoc(userRef, { 
-        pendingDeviceApprovalId: "",
-        pendingDeviceApprovalName: "",
-        pendingDeviceApprovalHardwareId: "",
-        pendingDeviceApprovalOS: "",
-        pendingDeviceApprovalBrowser: "",
-        pendingDeviceApprovalType: "",
-        pendingDeviceApprovalAt: ""
-      }, { merge: true });
-      saveLocalDoc("users", username, userData);
-
-      return res.json({ 
-        success: true, 
-        user: {
-          ...userData,
-          username: username,
-          id: username
-        } 
-      });
+      const requestRef = doc(db, "device_change_requests", id);
+      await deleteDoc(requestRef);
+      return res.json({ success: true, message: "Device request rejected and removed" });
     } catch (err: any) {
       console.error("[API_REJECT_DEVICE] Error:", err);
       return res.status(500).json({ error: err.message });
     }
   });
+
 
   app.put("/api/users/:username", async (req, res) => {
     const oldUsername = req.params.username;
