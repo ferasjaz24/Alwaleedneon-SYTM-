@@ -1,10 +1,12 @@
 {
-  "projectId": "alwaleed-erp",
-  "appId": "1:309243438196:web:43431b03717b342d2d9d21",
-  "apiKey": "AIzaSyCIazj-LFrKX0xago2Vb0-fYkdh4yCzC7o",
-  "authDomain": "alwaleed-erp.firebaseapp.com",
-  "firestoreDatabaseId": "(default)",
-  "storageBucket": "alwaleed-erp.firebasestorage.app",
-  "messagingSenderId": "309243438196",
-  "measurementId": "G-JBWRYWXLRN"
+  "projectId": "planning-with-ai-a8c0e",
+  "appId": "1:156336728913:web:6de96fdcc97600d3acc170",
+  "apiKey": "AIzaSyDvEBP9c23DgNQ2H29fOqyuyJx9-AeaHbY",
+  "authDomain": "planning-with-ai-a8c0e.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-alwaleedneonerps-32e23e22-c6f8-4615-9f3e-6a2f098ca601",
+  "storageBucket": "planning-with-ai-a8c0e.firebasestorage.app",
+  "messagingSenderId": "156336728913",
+  "measurementId": "",
+  "oAuthClientId": "156336728913-2q5u2jqe9kq1n9quidjnlis2a2eer79o.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

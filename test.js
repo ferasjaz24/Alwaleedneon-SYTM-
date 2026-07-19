@@ -1,2 +1,1 @@
-const toEngDigits = (str) => str.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-console.log(toEngDigits('١٢/٠٣/٢٠٢٤'));
+console.log("hello")

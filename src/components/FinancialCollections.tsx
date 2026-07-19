@@ -375,7 +375,11 @@ export default function FinancialCollections({ lang, user }: FCProps) {
   const handleDeletePlan = async (plan: CollectionPlan) => {
     const username = user?.username?.toLowerCase() || '';
     const roleName = user?.role?.toLowerCase() || '';
-    const isHighLevelAdmin = username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner');
+    
+    // Check the new advanced permission from the portal
+    const hasAdminDeletePermission = hasAdvancedPermission(user, 'sales', 'collection', 'delete_confirmed_collection');
+
+    const isHighLevelAdmin = username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner') || hasAdminDeletePermission;
 
     const deleteScope = getAccessLevel(user, 'sales', 'deleteAccess');
     const canDelete = isOwnerOrAdmin || deleteScope === 'all' || (deleteScope === 'own' && plan.createdBy?.toLowerCase() === user.username?.toLowerCase()) || isHighLevelAdmin;

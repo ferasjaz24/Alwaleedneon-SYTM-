@@ -80,39 +80,79 @@ export default function AccountingDashboard({ lang, user }: AccountingDashboardP
       : `${val.toLocaleString("en-US")} SAR`;
   };
 
-  const fetchCollection = async (colName: string) => {
-    try {
-      const res = await fetch(`/api/dynamic/${colName}`);
-      if (res.ok) {
-        return await res.json();
-      }
-      throw new Error(`Failed to fetch ${colName}: ${res.statusText}`);
-    } catch (e) {
-      handleFirestoreError(e, OperationType.LIST, colName);
-      return [];
-    }
-  };
-
   const loadData = async () => {
     setLoading(true);
     try {
-      const [jvs, custInvs, suppInvs, exps, banks, boxes, runs] = await Promise.all([
-        fetchCollection("journal_entries"),
-        fetchCollection("customer_invoices"),
-        fetchCollection("supplier_invoices"),
-        fetchCollection("expenses"),
-        fetchCollection("bank_accounts"),
-        fetchCollection("cash_boxes"),
-        fetchCollection("payroll_runs"),
-      ]);
+      // 1. Journal Entries
+      let jvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "journal_entries"));
+        jvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "journal_entries");
+      }
 
-      setJournalEntries(jvs || []);
-      setCustomerInvoices(custInvs || []);
-      setSupplierInvoicesList(suppInvs || []);
-      setExpenses(exps || []);
-      setBankAccounts(banks || []);
-      setCashBoxes(boxes || []);
-      setPayrollRuns(runs || []);
+      // 2. Customer Invoices
+      let custInvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "customer_invoices"));
+        custInvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "customer_invoices");
+      }
+
+      // 3. Supplier Invoices
+      let suppInvs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "supplier_invoices"));
+        suppInvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "supplier_invoices");
+      }
+
+      // 4. Expenses
+      let exps: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "expenses"));
+        exps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "expenses");
+      }
+
+      // 5. Bank Accounts
+      let banks: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "bank_accounts"));
+        banks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "bank_accounts");
+      }
+
+      // 6. Cash Boxes
+      let boxes: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "cash_boxes"));
+        boxes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "cash_boxes");
+      }
+
+      // 7. Payroll Runs
+      let runs: any[] = [];
+      try {
+        const snap = await getDocs(collection(db, "payroll_runs"));
+        runs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, "payroll_runs");
+      }
+
+      setJournalEntries(jvs);
+      setCustomerInvoices(custInvs);
+      setSupplierInvoicesList(suppInvs);
+      setExpenses(exps);
+      setBankAccounts(banks);
+      setCashBoxes(boxes);
+      setPayrollRuns(runs);
     } catch (err) {
       console.error("Dashboard calculation preload failed: ", err);
     } finally {

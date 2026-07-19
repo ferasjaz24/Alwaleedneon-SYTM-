@@ -273,6 +273,462 @@ function cleanJSONText(text: string): string {
   return clean;
 }
 
+function getFallbackCollection(colName: string): any[] {
+  try {
+    const data = localStorage.getItem(`fb_fallback_${colName}`);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveFallbackCollection(colName: string, list: any[]) {
+  try {
+    localStorage.setItem(`fb_fallback_${colName}`, JSON.stringify(list));
+  } catch (e) {
+    console.warn("Local storage fallback save error:", e);
+  }
+}
+
+async function handleBackendOnlyRouteFallback(
+  pathname: string,
+  method: string,
+  init?: any
+): Promise<Response> {
+  console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Handling ${method} ${pathname} locally/directly on client-side Firestore.`);
+  try {
+    // 1. /api/login
+    if (pathname.includes("/api/login")) {
+      const body = JSON.parse((init?.body as string) || "{}");
+      const uName = (body.username || "").trim();
+      const password = body.password;
+      const devId = body.devId;
+      const devName = body.devName;
+      const devOS = body.devOS || "";
+      const devBrowser = body.devBrowser || "";
+      const devType = body.devType || "";
+      const hardwareId = body.hardwareId || "";
+
+      if (!uName || !password) {
+        return new Response(JSON.stringify({ error: "Username and password are required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Try to fetch user from Firestore
+      let userData: any = null;
+      let actualDocId = uName;
+
+      try {
+        const userDocRef = doc(db, "users", uName);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          userData = userSnap.data();
+          actualDocId = userSnap.id;
+        } else {
+          // Try upper and lower case variants
+          const userDocRefUpper = doc(db, "users", uName.toUpperCase());
+          const userSnapUpper = await getDoc(userDocRefUpper);
+          if (userSnapUpper.exists()) {
+            userData = userSnapUpper.data();
+            actualDocId = userSnapUpper.id;
+          } else {
+            const userDocRefLower = doc(db, "users", uName.toLowerCase());
+            const userSnapLower = await getDoc(userDocRefLower);
+            if (userSnapLower.exists()) {
+              userData = userSnapLower.data();
+              actualDocId = userSnapLower.id;
+            }
+          }
+        }
+
+        // If still not found, search all users case-insensitively in Firestore
+        if (!userData) {
+          const snap = await getDocs(collection(db, "users"));
+          const matchedDoc = snap.docs.find(d => 
+            (d.id || "").toUpperCase() === uName.toUpperCase() || 
+            ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase()
+          );
+          if (matchedDoc) {
+            userData = matchedDoc.data();
+            actualDocId = matchedDoc.id;
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Firestore user read failed, trying local storage backup:", dbErr);
+      }
+
+      // Fallback: search all users case-insensitively in local storage backup
+      if (!userData) {
+        const localList = getFallbackCollection("users");
+        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === uName.toUpperCase());
+        if (matchedLocal) {
+          userData = { ...matchedLocal };
+          actualDocId = matchedLocal.username || matchedLocal.id;
+          console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Loaded user ${actualDocId} from local backup database.`);
+        }
+      }
+
+      if (!userData) {
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (userData.password !== password) {
+        // Self-healing check: check if local JSON backup has correct password
+        const localList = getFallbackCollection("users");
+        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+        if (matchedLocal && matchedLocal.password === password) {
+          console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Self-healing passcode sync for user ${actualDocId} matching local backup.`);
+          userData.password = password;
+          try {
+            await setDoc(doc(db, "users", actualDocId), { password: password }, { merge: true });
+          } catch (e) {
+            console.error("Failed to sync self-healed password to Firestore:", e);
+          }
+          // Sync to local
+          const list = getFallbackCollection("users");
+          const idx = list.findIndex(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+          if (idx > -1) {
+            list[idx].password = password;
+            saveFallbackCollection("users", list);
+          }
+        } else {
+          return new Response(JSON.stringify({ error: "Incorrect passcode entered." }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      const isLockEnabled = userData.deviceLockEnabled !== false;
+      const openAnywhere = !!userData.openLoginAnywhere;
+
+      if (openAnywhere || !isLockEnabled) {
+        // Bypass device lock!
+        console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] User ${actualDocId} has device lock disabled. Bypassing device lock.`);
+      } else {
+        const allowMulti = !!userData.allowMultiBrowserOnSameDevice;
+        const matchedHardware = allowMulti && userData.boundHardwareId && userData.boundHardwareId === hardwareId;
+
+        if (!userData.boundDeviceId) {
+          // First login from any device binds this device automatically!
+          userData.boundDeviceId = devId;
+          userData.boundDeviceName = devName;
+          userData.boundDeviceOS = devOS;
+          userData.boundDeviceBrowser = devBrowser;
+          userData.boundDeviceType = devType;
+          userData.boundHardwareId = hardwareId;
+          userData.boundDeviceAt = new Date().toISOString();
+
+          try {
+            await setDoc(doc(db, "users", actualDocId), {
+              boundDeviceId: devId,
+              boundDeviceName: devName,
+              boundDeviceOS: devOS,
+              boundDeviceBrowser: devBrowser,
+              boundDeviceType: devType,
+              boundHardwareId: hardwareId,
+              boundDeviceAt: userData.boundDeviceAt
+            }, { merge: true });
+          } catch (e) {
+            console.error("Failed to save auto-bound device in Firestore:", e);
+          }
+
+          // Sync to local
+          const list = getFallbackCollection("users");
+          const idx = list.findIndex(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+          if (idx > -1) {
+            list[idx] = { ...list[idx], ...userData };
+            saveFallbackCollection("users", list);
+          }
+          console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Device auto-bound for user ${actualDocId}: ${devId}`);
+        } else if (userData.boundDeviceId !== devId && !matchedHardware) {
+          if (userData.allowDeviceMigration) {
+            // Self-migration
+            userData.boundDeviceId = devId;
+            userData.boundDeviceName = devName;
+            userData.boundDeviceOS = devOS;
+            userData.boundDeviceBrowser = devBrowser;
+            userData.boundDeviceType = devType;
+            userData.boundHardwareId = hardwareId;
+            userData.boundDeviceAt = new Date().toISOString();
+            userData.allowDeviceMigration = false;
+
+            try {
+              await setDoc(doc(db, "users", actualDocId), {
+                boundDeviceId: devId,
+                boundDeviceName: devName,
+                boundDeviceOS: devOS,
+                boundDeviceBrowser: devBrowser,
+                boundDeviceType: devType,
+                boundHardwareId: hardwareId,
+                boundDeviceAt: userData.boundDeviceAt,
+                allowDeviceMigration: false
+              }, { merge: true });
+            } catch (e) {
+              console.error("Failed to save migrated device in Firestore:", e);
+            }
+
+            // Sync to local
+            const list = getFallbackCollection("users");
+            const idx = list.findIndex(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+            if (idx > -1) {
+              list[idx] = { ...list[idx], ...userData };
+              saveFallbackCollection("users", list);
+            }
+            console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Device self-migration completed for user ${actualDocId}: ${devId}`);
+          } else {
+            // Block login and record pending authorization request with all details
+            const nowISO = new Date().toISOString();
+            userData.pendingDeviceApprovalId = devId;
+            userData.pendingDeviceApprovalName = devName;
+            userData.pendingDeviceApprovalHardwareId = hardwareId;
+            userData.pendingDeviceApprovalOS = devOS;
+            userData.pendingDeviceApprovalBrowser = devBrowser;
+            userData.pendingDeviceApprovalType = devType;
+            userData.pendingDeviceApprovalAt = nowISO;
+
+            try {
+              await setDoc(doc(db, "users", actualDocId), {
+                pendingDeviceApprovalId: devId,
+                pendingDeviceApprovalName: devName,
+                pendingDeviceApprovalHardwareId: hardwareId,
+                pendingDeviceApprovalOS: devOS,
+                pendingDeviceApprovalBrowser: devBrowser,
+                pendingDeviceApprovalType: devType,
+                pendingDeviceApprovalAt: nowISO
+              }, { merge: true });
+            } catch (e) {
+              console.error("Failed to save pending device approval in Firestore:", e);
+            }
+
+            // Sync to local
+            const list = getFallbackCollection("users");
+            const idx = list.findIndex(u => (u.username || u.id || "").toUpperCase() === actualDocId.toUpperCase());
+            if (idx > -1) {
+              list[idx] = { ...list[idx], ...userData };
+              saveFallbackCollection("users", list);
+            }
+            console.log(`[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Pending device request logged for user ${actualDocId}: ${devId}`);
+
+            return new Response(JSON.stringify({
+              error: "device_mismatch",
+              username: actualDocId,
+              devId,
+              devName,
+              boundDeviceName: userData.boundDeviceName || "جهاز آخر مرتبط"
+            }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        }
+      }
+
+      // Successful login
+      return new Response(JSON.stringify({
+        success: true,
+        user: {
+          ...userData,
+          username: actualDocId,
+          id: actualDocId
+        }
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 2. /api/users/:username/request-device-change
+    if (pathname.includes("/request-device-change")) {
+      const segments = pathname.split("/");
+      const idx = segments.indexOf("users");
+      const username = segments[idx + 1] || "";
+      const body = JSON.parse((init?.body as string) || "{}");
+      const { devId, devName } = body;
+
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const userData = userSnap.data() || {};
+      userData.pendingDeviceApprovalId = devId;
+      userData.pendingDeviceApprovalName = devName;
+
+      await setDoc(userRef, {
+        pendingDeviceApprovalId: devId,
+        pendingDeviceApprovalName: devName
+      }, { merge: true });
+
+      // Update local cache
+      const list = getFallbackCollection("users");
+      const index = list.findIndex(u => (u.username || u.id || "").toUpperCase() === username.toUpperCase());
+      if (index > -1) {
+        list[index] = { ...list[index], ...userData };
+        saveFallbackCollection("users", list);
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Device change request submitted successfully." }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 3. /api/users/:username/approve-device
+    if (pathname.includes("/approve-device")) {
+      const segments = pathname.split("/");
+      const idx = segments.indexOf("users");
+      const username = segments[idx + 1] || "";
+
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const userData = userSnap.data() || {};
+      const newId = userData.pendingDeviceApprovalId;
+
+      if (!newId) {
+        return new Response(JSON.stringify({ error: "No pending device request found." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      userData.boundDeviceId = "";
+      userData.boundDeviceName = "";
+      userData.boundDeviceOS = "";
+      userData.boundDeviceBrowser = "";
+      userData.boundDeviceType = "";
+      userData.boundDeviceAt = "";
+      userData.pendingDeviceApprovalId = "";
+      userData.pendingDeviceApprovalName = "";
+
+      await setDoc(userRef, {
+        boundDeviceId: "",
+        boundDeviceName: "",
+        boundDeviceOS: "",
+        boundDeviceBrowser: "",
+        boundDeviceType: "",
+        boundDeviceAt: "",
+        pendingDeviceApprovalId: "",
+        pendingDeviceApprovalName: ""
+      }, { merge: true });
+
+      // Update local cache
+      const list = getFallbackCollection("users");
+      const index = list.findIndex(u => (u.username || u.id || "").toUpperCase() === username.toUpperCase());
+      if (index > -1) {
+        list[index] = { ...list[index], ...userData };
+        saveFallbackCollection("users", list);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        user: {
+          ...userData,
+          username: username,
+          id: username
+        }
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 4. /api/users/:username/reject-device
+    if (pathname.includes("/reject-device")) {
+      const segments = pathname.split("/");
+      const idx = segments.indexOf("users");
+      const username = segments[idx + 1] || "";
+
+      let userRef = doc(db, "users", username);
+      let userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        userRef = doc(db, "users", username.toUpperCase());
+        userSnap = await getDoc(userRef);
+      }
+      if (!userSnap.exists()) {
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const userData = userSnap.data() || {};
+      userData.pendingDeviceApprovalId = "";
+      userData.pendingDeviceApprovalName = "";
+
+      await setDoc(userRef, {
+        pendingDeviceApprovalId: "",
+        pendingDeviceApprovalName: ""
+      }, { merge: true });
+
+      // Update local cache
+      const list = getFallbackCollection("users");
+      const index = list.findIndex(u => (u.username || u.id || "").toUpperCase() === username.toUpperCase());
+      if (index > -1) {
+        list[index] = { ...list[index], ...userData };
+        saveFallbackCollection("users", list);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        user: {
+          ...userData,
+          username: username,
+          id: username
+        }
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 5. /api/translate
+    if (pathname.includes("/api/translate")) {
+      const body = JSON.parse((init?.body as string) || "{}");
+      return new Response(JSON.stringify({ translation: body.text || "" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Default error for unhandled route
+    return new Response(JSON.stringify({ error: "Endpoint fallback not supported" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err: any) {
+    console.error("[CLIENT-FIREBASE-INTERCEPT-FALLBACK] Critical error in client-side fallback:", err);
+    return new Response(JSON.stringify({ error: err.message || "Internal fallback error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
 // Global fetch interceptor
 const originalFetch = window.fetch;
 
@@ -301,7 +757,49 @@ const customFetch = async function (
     return originalFetch.apply(this, [input, init]);
   }
 
+  // Backend-only routes that should NEVER be intercepted by direct client-side Firebase
+  const isBackendOnlyRoute = 
+    pathname.includes("/api/login") ||
+    pathname.includes("/api/verify-device") ||
+    pathname.includes("/api/translate") ||
+    (pathname.includes("/api/users/") && (
+      pathname.includes("/approve-device") || 
+      pathname.includes("/reject-device") || 
+      pathname.includes("/request-device-change")
+    ));
+
   const method = init?.method?.toUpperCase() || "GET";
+
+  if (isBackendOnlyRoute) {
+    console.log("[CLIENT-FIREBASE-INTERCEPT] Backend-only route. Attempting backend fetch:", pathname);
+    try {
+      const response = await originalFetch.apply(this, [input, init]);
+      const contentType = response.headers.get("content-type") || "";
+      if (response.ok && contentType.includes("json")) {
+        return response;
+      }
+      
+      // If the backend returns HTML (starts with '<' or contains 'html') or a 404/500, it means we are in static hosting (Vercel) or server is down!
+      if (!contentType.includes("json") || response.status === 404 || response.status >= 500) {
+        console.warn("[CLIENT-FIREBASE-INTERCEPT] Backend returned non-JSON/error response. Using client-side Firebase fallback.", response.status, contentType);
+        return await handleBackendOnlyRouteFallback(pathname, method, init);
+      }
+      return response;
+    } catch (fetchErr) {
+      console.warn("[CLIENT-FIREBASE-INTERCEPT] Backend fetch failed. Using client-side Firebase fallback.", fetchErr);
+      return await handleBackendOnlyRouteFallback(pathname, method, init);
+    }
+  }
+
+  // If the browser user is not authenticated yet, bypass the interceptor and let the Express server handle it.
+  // The Express server is authenticated as a system-server on the backend, so it can securely access the DB.
+  const isSettingsOrStatus = pathname.includes("/api/settings/gemini") || pathname.includes("/api/db-status");
+  const isGeminiRoute = pathname.includes("/api/gemini/");
+  if (!isSettingsOrStatus && !isGeminiRoute && auth && !auth.currentUser) {
+    console.log("[CLIENT-FIREBASE-INTERCEPT] User not authenticated on client-side. Routing request to Express server:", pathname);
+    return originalFetch.apply(this, [input, init]);
+  }
+
   console.log(`[CLIENT-FIREBASE-INTERCEPT] ${method} ${pathname}`);
 
   // 1. AI Settings Gemini Keys (Vercel-friendly localStorage persistence)
