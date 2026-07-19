@@ -113,8 +113,8 @@ export default function ProductionHub({
         <html>
           <head>
           <style>
-            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
-            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+            @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
@@ -137,8 +137,8 @@ export default function ProductionHub({
         <html>
           <head>
           <style>
-            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
-            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+            @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
             <title>طباعة ملف التصميم - ${file.name}</title>
@@ -1477,8 +1477,8 @@ export default function ProductionHub({
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
           <style>
-            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
-            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+            @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>${title}</title>
@@ -1758,8 +1758,8 @@ export default function ProductionHub({
       <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
         <head>
           <style>
-            @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
-            @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+            @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+            @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             * { font-family: 'GE SS Two', 'Gotham Pro', sans-serif !important; }
           </style>
           <title>${title}</title>

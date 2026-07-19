@@ -28,8 +28,8 @@ export const sharedPrintFooter = `
 `;
 
 export const sharedPrintStyles = `
-  @import url('https://fonts.cdnfonts.com/css/ge-ss-two');
-    @import url('https://fonts.cdnfonts.com/css/gotham-pro');
+  @font-face { font-family: 'GE SS Two'; src: url('/fonts/GE-SS-Two.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+    @font-face { font-family: 'Gotham Pro'; src: url('/fonts/Gotham-Pro.ttf') format('truetype'); font-weight: normal; font-style: normal; }
     @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { margin: 20mm; size: A4; }
