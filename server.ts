@@ -1453,152 +1453,41 @@ function normalizeUsername(str: string): string {
         console.log(`[API_LOGIN] Self-healed missing Hardware ID for user ${actualDocId}`);
       }
 
-      if (true || isDeveloper || openAnywhere || !isLockEnabled) { // BYPASSED DEVICE LOCK FOR EVERYONE
-        // Bypass device check entirely!
-        console.log(`[API_LOGIN] User ${actualDocId} bypassed device checks. (isDeveloper: ${isDeveloper}, openAnywhere: ${openAnywhere}, isLockEnabled: ${isLockEnabled})`);
-      } else {
-        const allowMulti = !!userData.allowMultiBrowserOnSameDevice;
-        const matchedHardware = allowMulti && userData.boundHardwareId && userData.boundHardwareId === hardwareId;
-        const allowAutoMigrate = !!userData.allowAutoMigration;
-
-        if (!userData.boundDeviceId) {
-          // First login from any device binds this device automatically
-          userData.boundDeviceId = devId;
-          userData.boundDeviceName = devName;
-          userData.boundDeviceOS = req.body.devOS || "";
-          userData.boundDeviceBrowser = req.body.devBrowser || "";
-          userData.boundDeviceType = req.body.devType || "";
-          userData.boundHardwareId = hardwareId;
-          userData.boundDeviceAt = new Date().toISOString();
-          
-          await setDoc(userDocRef, { 
-            boundDeviceId: devId, 
-            boundDeviceName: devName,
-            boundDeviceOS: req.body.devOS || "",
-            boundDeviceBrowser: req.body.devBrowser || "",
-            boundDeviceType: req.body.devType || "",
-            boundHardwareId: hardwareId,
-            boundDeviceAt: new Date().toISOString()
-          }, { merge: true });
-          saveLocalDoc("users", actualDocId, userData);
-          console.log(`[API_LOGIN] Device auto-bound for user ${actualDocId}: ${devId}`);
-        } else if (userData.boundDeviceId !== devId && !matchedHardware) {
-          if (userData.allowDeviceMigration || allowAutoMigrate) {
-            // Documented migration (either one-time or continuous auto-migration)
-            const prevDeviceName = userData.boundDeviceName || "جهاز غير معروف";
-            const prevDeviceId = userData.boundDeviceId || "غير معروف";
-
-            userData.boundDeviceId = devId;
-            userData.boundDeviceName = devName;
-            userData.boundDeviceOS = req.body.devOS || "";
-            userData.boundDeviceBrowser = req.body.devBrowser || "";
-            userData.boundDeviceType = req.body.devType || "";
-            userData.boundHardwareId = hardwareId;
-            userData.boundDeviceAt = new Date().toISOString();
-            
-            const updateFields: any = { 
-              boundDeviceId: devId, 
-              boundDeviceName: devName, 
-              boundDeviceOS: req.body.devOS || "",
-              boundDeviceBrowser: req.body.devBrowser || "",
-              boundDeviceType: req.body.devType || "",
-              boundHardwareId: hardwareId,
-              boundDeviceAt: new Date().toISOString()
-            };
-
-            if (userData.allowDeviceMigration) {
-              userData.allowDeviceMigration = false;
-              updateFields.allowDeviceMigration = false;
-            }
-
-            await setDoc(userDocRef, updateFields, { merge: true });
-            saveLocalDoc("users", actualDocId, userData);
-            console.log(`[API_LOGIN] Device migration completed for user ${actualDocId}: ${devId}`);
-
-            // Create a fully documented system audit log for this automatic transfer
-            try {
-              const now = new Date();
-              const dateStr = now.toLocaleDateString('en-CA');
-              const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
-              const logId = `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-              const logData = {
-                id: logId,
-                user: actualDocId,
-                action: "نقل جهاز تلقائي موثق",
-                department: "الأمن والحماية",
-                description: `تم نقل ترخيص الحساب المقيد تلقائياً للجهاز الجديد (${devName}) بنجاح وتوثيق العملية في سجل الأمان.`,
-                date: dateStr,
-                time: timeStr,
-                timestamp: Date.now(),
-                originalValue: `جهاز سابق: ${prevDeviceName} (${prevDeviceId})`,
-                newValue: `جهاز جديد: ${devName} (${devId})`
-              };
-              await setDoc(doc(db, "system_audit_logs", logId), logData);
-            } catch (auditErr) {
-              console.error("[API_LOGIN] Failed to write audit log for device transfer:", auditErr);
-            }
-          } else {
-            // Block login and record pending authorization request
-            const nowISO = new Date().toISOString();
-            userData.pendingDeviceApprovalId = devId;
-            userData.pendingDeviceApprovalName = devName;
-            userData.pendingDeviceApprovalHardwareId = hardwareId;
-            userData.pendingDeviceApprovalOS = req.body.devOS || "";
-            userData.pendingDeviceApprovalBrowser = req.body.devBrowser || "";
-            userData.pendingDeviceApprovalType = req.body.devType || "";
-            userData.pendingDeviceApprovalAt = nowISO;
-            
-            await setDoc(userDocRef, { 
-              pendingDeviceApprovalId: devId, 
-              pendingDeviceApprovalName: devName,
-              pendingDeviceApprovalHardwareId: hardwareId,
-              pendingDeviceApprovalOS: req.body.devOS || "",
-              pendingDeviceApprovalBrowser: req.body.devBrowser || "",
-              pendingDeviceApprovalType: req.body.devType || "",
-              pendingDeviceApprovalAt: nowISO
-            }, { merge: true });
-            saveLocalDoc("users", actualDocId, userData);
-            console.log(`[API_LOGIN] Pending device request logged for user ${actualDocId}: ${devId}`);
-
-            return res.status(403).json({
-              error: "device_mismatch",
-              username: actualDocId,
-              devId,
-              devName,
-              boundDeviceName: userData.boundDeviceName || "جهاز آخر مرتبط"
-            });
-          }
-        }
-      }
+      
+      // DEVICE LOCK AND BINDING HAVE BEEN COMPLETELY REMOVED BY USER REQUEST
+      // The system no longer blocks any device or requires approval.
+      
+      // Auto-update the device info just for logging/tracking purposes, but never block.
+      userData.boundDeviceId = devId;
+      userData.boundDeviceName = devName;
+      userData.boundDeviceOS = req.body.devOS || "";
+      userData.boundDeviceBrowser = req.body.devBrowser || "";
+      userData.boundDeviceType = req.body.devType || "";
+      userData.boundHardwareId = hardwareId;
+      userData.boundDeviceAt = new Date().toISOString();
+      
+      await setDoc(userDocRef, { 
+         boundDeviceId: devId, 
+         boundDeviceName: devName,
+         boundDeviceOS: req.body.devOS || "",
+         boundDeviceBrowser: req.body.devBrowser || "",
+         boundDeviceType: req.body.devType || "",
+         boundHardwareId: hardwareId,
+         boundDeviceAt: new Date().toISOString()
+      }, { merge: true });
+      saveLocalDoc("users", actualDocId, userData);
 
       // Check for concurrent session if concurrent block is enabled
       const sessionToken = "SESS-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
-      if (false && !isDeveloper && userData.blockConcurrentLogins === true) { // BYPASSED CONCURRENT LOGINS
-        const isForce = req.body.forceLogin === true;
-        if (userData.activeSessionToken && userData.lastActiveAt && !isForce) {
-          const lastActiveTime = new Date(userData.lastActiveAt).getTime();
-          const elapsed = Date.now() - lastActiveTime;
-          // If the last activity was less than 40 seconds ago and it's from a different browser/device, block it!
-          if (elapsed < 40000 && userData.boundDeviceId !== devId) {
-            console.log(`[API_LOGIN] Blocked concurrent active login for user ${actualDocId}. Last active ${elapsed}ms ago.`);
-            return res.status(409).json({
-              error: "concurrent_session_active",
-              message: "يوجد جلسة نشطة مفتوحة حالياً لهذا الحساب على جهاز أو متصفح آخر. يمكنك إلغاء الجلسة السابقة ومتابعة الدخول من هنا.",
-              lastActiveAt: userData.lastActiveAt
-            });
-          }
-        }
-
-        // Generate and assign active session token
-        userData.activeSessionToken = sessionToken;
-        userData.lastActiveAt = new Date().toISOString();
-        await setDoc(userDocRef, { 
-          activeSessionToken: sessionToken, 
-          lastActiveAt: userData.lastActiveAt 
-        }, { merge: true });
-        saveLocalDoc("users", actualDocId, userData);
-        console.log(`[API_LOGIN] Generated concurrent-block session token for user ${actualDocId}`);
-      }
+      
+      // CONCURRENT LOGINS BLOCK COMPLETELY REMOVED BY USER REQUEST
+      userData.activeSessionToken = sessionToken;
+      userData.lastActiveAt = new Date().toISOString();
+      await setDoc(userDocRef, { 
+         activeSessionToken: sessionToken, 
+         lastActiveAt: userData.lastActiveAt 
+       }, { merge: true });
+      saveLocalDoc("users", actualDocId, userData);
 
       // Successful login
       return res.json({
