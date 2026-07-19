@@ -1308,8 +1308,24 @@ Text to translate: ${text}`;
   });
 
   // Secure Server-Side Login Gateway & Device Control
+
+
+
+function normalizeUsername(str: string): string {
+  if (!str) return "";
+  return str.trim().toLowerCase()
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '') // Remove zero-width and bidi characters
+    .replace(/[أإآا]/g, 'ا')
+    .replace(/[ةه]/g, 'ه')
+    .replace(/[يى]/g, 'ي')
+    .replace(/[٠-٩]/g, d => '0123456789'[d.charCodeAt(0) - 0x0660]) // Convert Arabic-Indic numerals to 0-9
+    .replace(/\s+/g, ' ');
+}
+
   app.post("/api/login", async (req, res) => {
-    const uName = (req.body.username || "").trim();
+    const rawUName = (req.body.username || "").trim();
+    const uName = rawUName;
+    const normUName = normalizeUsername(uName);
     const password = req.body.password;
     const devId = req.body.devId;
     const devName = req.body.devName || "جهاز غير معروف";
@@ -1364,10 +1380,11 @@ Text to translate: ${text}`;
         logLoginDebug(`User not found via case-variants Doc ID. Falling back to case-insensitive scan of all users in Firestore...`);
         try {
           const snap = await getDocs(collection(db, "users"));
-          const matchedDoc = snap.docs.find(d => 
-            (d.id || "").toUpperCase() === uName.toUpperCase() || 
-            ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase()
-          );
+          const matchedDoc = snap.docs.find(d => {
+            const idNorm = normalizeUsername(d.id || "");
+            const nameNorm = normalizeUsername(d.data()?.username || "");
+            return idNorm === normUName || nameNorm === normUName || (d.id || "").toUpperCase() === uName.toUpperCase() || ((d.data() && d.data().username) || "").toUpperCase() === uName.toUpperCase();
+          });
           if (matchedDoc) {
             userData = matchedDoc.data();
             userDocRef = doc(db, "users", matchedDoc.id);
@@ -1385,7 +1402,10 @@ Text to translate: ${text}`;
       if (!userData) {
         logLoginDebug(`User not retrieved from Firestore. Falling back to local backup users.json...`);
         const localList = getLocalCollection("users");
-        const matchedLocal = localList.find(u => (u.username || u.id || "").toUpperCase() === uName.toUpperCase());
+        const matchedLocal = localList.find(u => {
+          const uNorm = normalizeUsername(u.username || u.id || "");
+          return uNorm === normUName || (u.username || u.id || "").toUpperCase() === uName.toUpperCase();
+        });
         if (matchedLocal) {
           userData = { ...matchedLocal };
           actualDocId = matchedLocal.username || matchedLocal.id;
@@ -1433,7 +1453,7 @@ Text to translate: ${text}`;
         console.log(`[API_LOGIN] Self-healed missing Hardware ID for user ${actualDocId}`);
       }
 
-      if (isDeveloper || openAnywhere || !isLockEnabled) {
+      if (true || isDeveloper || openAnywhere || !isLockEnabled) { // BYPASSED DEVICE LOCK FOR EVERYONE
         // Bypass device check entirely!
         console.log(`[API_LOGIN] User ${actualDocId} bypassed device checks. (isDeveloper: ${isDeveloper}, openAnywhere: ${openAnywhere}, isLockEnabled: ${isLockEnabled})`);
       } else {
@@ -1553,7 +1573,7 @@ Text to translate: ${text}`;
 
       // Check for concurrent session if concurrent block is enabled
       const sessionToken = "SESS-" + Math.random().toString(36).substring(2, 15) + "-" + Date.now().toString(36);
-      if (!isDeveloper && userData.blockConcurrentLogins === true) {
+      if (false && !isDeveloper && userData.blockConcurrentLogins === true) { // BYPASSED CONCURRENT LOGINS
         const isForce = req.body.forceLogin === true;
         if (userData.activeSessionToken && userData.lastActiveAt && !isForce) {
           const lastActiveTime = new Date(userData.lastActiveAt).getTime();
