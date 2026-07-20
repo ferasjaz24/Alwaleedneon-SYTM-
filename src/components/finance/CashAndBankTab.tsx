@@ -78,6 +78,49 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
   const [showBankModal, setShowBankModal] = useState(false);
   const [showBoxModal, setShowBoxModal] = useState(false);
   const [showTxModal, setShowTxModal] = useState(false);
+
+  // --- SUB-TAB SELECTION FOR BANK/CASH AND CALCULATOR ---
+  const [activeSubTab, setActiveSubTab] = useState<"accounts" | "calculator">("accounts");
+
+  // --- CALCULATOR STATE RESOURCES ---
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [vacations, setVacations] = useState<any[]>([]);
+  const [payrolls, setPayrolls] = useState<any[]>([]);
+
+  // --- CALCULATOR VISIBILITY STATES & INPUTS ---
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [calcEmployeeId, setCalcEmployeeId] = useState("");
+  const [calcStartDate, setCalcStartDate] = useState("");
+  const [calcEndDate, setCalcEndDate] = useState("");
+  const [calcPayrollMonth, setCalcPayrollMonth] = useState("");
+
+  // --- BASE EMPLOYEE DATA FOR RUNTIME CALCULATION ---
+  const [customLastVacationEndDate, setCustomLastVacationEndDate] = useState<string>("");
+  const [calcBasicSalary, setCalcBasicSalary] = useState<number>(0);
+  const [calcAllowance, setCalcAllowance] = useState<number>(0);
+  const [calcOvertimeHours, setCalcOvertimeHours] = useState<number>(0);
+  const [calcOvertimeRate, setCalcOvertimeRate] = useState<number>(0);
+  const [calcOtherAllowances, setCalcOtherAllowances] = useState<number>(0);
+  const [calcGosiPercent, setCalcGosiPercent] = useState<number>(0);
+  const [calcOtherDeductions, setCalcOtherDeductions] = useState<number>(0);
+
+  // --- DYNAMIC ALLOWANCES / DEDUCTIONS LISTS ---
+  const [calcCustomAllowances, setCalcCustomAllowances] = useState<{ name: string; amount: number }[]>([]);
+  const [calcCustomDeductions, setCalcCustomDeductions] = useState<{ name: string; amount: number }[]>([]);
+
+  // --- SINGLE-ENTRY ADJUSTMENT CONTROLS ---
+  const [showCalcAddAllowance, setShowCalcAddAllowance] = useState(false);
+  const [calcAllowanceName, setCalcAllowanceName] = useState("");
+  const [calcCustomAllowanceName, setCalcCustomAllowanceName] = useState("");
+  const [calcAllowanceAmount, setCalcAllowanceAmount] = useState<string>("");
+
+  const [showCalcAddDeduction, setShowCalcAddDeduction] = useState(false);
+  const [calcDeductionName, setCalcDeductionName] = useState("");
+  const [calcCustomDeductionName, setCalcCustomDeductionName] = useState("");
+  const [calcDeductionAmount, setCalcDeductionAmount] = useState<string>("");
+
+  // --- TERMINATION REASON ---
+  const [calcTerminationReason, setCalcTerminationReason] = useState<"resignation" | "expiry_or_company_termination">("expiry_or_company_termination");
   
   // Form edit states
   const [editingBank, setEditingBank] = useState<BankAccount | null>(null);
@@ -200,6 +243,34 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
   useEffect(() => {
     loadData();
   }, [lang]);
+
+  // --- FETCH RESOURCES FOR THE END OF SERVICE CALCULATOR ---
+  useEffect(() => {
+    const fetchCalcResources = async () => {
+      try {
+        const empRes = await fetch("/api/employees");
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployees(empData || []);
+        }
+
+        const leaveRes = await fetch("/api/leaves");
+        if (leaveRes.ok) {
+          const leaveData = await leaveRes.json();
+          setVacations(leaveData || []);
+        }
+
+        const payrollRes = await fetch("/api/payroll_runs");
+        if (payrollRes.ok) {
+          const payrollData = await payrollRes.json();
+          setPayrolls(payrollData || []);
+        }
+      } catch (err) {
+        console.error("Error loading calculator resources:", err);
+      }
+    };
+    fetchCalcResources();
+  }, []);
 
   // Save/Update Bank Account
   const handleSaveBank = async (e: React.FormEvent) => {
@@ -506,6 +577,235 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
     setShowBoxModal(true);
   };
 
+  // --- SYNCHRONIZE PAYROLL MONTH TO START DATE ---
+  useEffect(() => {
+    if (calcStartDate) {
+      setCalcPayrollMonth(calcStartDate.substring(0, 7));
+    } else {
+      setCalcPayrollMonth("");
+    }
+  }, [calcStartDate]);
+
+  // --- AUTO-RETRIEVE OFFSETS AND INITIAL VALUES WHEN EMPLOYEE SELECTED ---
+  useEffect(() => {
+    if (calcEmployeeId) {
+      const emp = employees.find(e => e.id === calcEmployeeId);
+      if (emp) {
+        // 1. Trace previous vacations to establish correct accrual date
+        const empVacations = vacations
+          .filter(v => (v.employeeId === emp.id || v.empId === emp.id) && (v.status?.toLowerCase() === "approved" || v.status === "APPROVED"))
+          .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
+        
+        const lastVacation = empVacations[0];
+        const autoEnd = lastVacation ? lastVacation.endDate : (emp.hiring_date || emp.dateOfJoining || "");
+        setCustomLastVacationEndDate(autoEnd);
+
+        // 2. Map fixed contract terms
+        const basic = typeof emp.basicSalary === "number" ? emp.basicSalary : parseFloat(emp.basicSalary || "0");
+        const allow = emp.allowances 
+          ? ((Number(emp.allowances.housing) || 0) + (Number(emp.allowances.transport) || 0) + (Number(emp.allowances.food) || 0)) 
+          : parseFloat(emp.allowance || "0");
+        const otRate = parseFloat(emp.overtime || "0");
+        const isSaudi = emp.nationality === "سعودي" || emp.nationality?.toLowerCase().includes("saudi");
+        const gosi = isSaudi ? 9.75 : 0; // Saudi social insurance deduction
+
+        setCalcBasicSalary(basic);
+        setCalcAllowance(allow);
+        setCalcOvertimeHours(0);
+        setCalcOvertimeRate(otRate || 1.5); // standard overtime multiplier
+        setCalcOtherAllowances(0);
+        setCalcGosiPercent(gosi);
+        setCalcOtherDeductions(0);
+        setCalcCustomAllowances([]);
+        setCalcCustomDeductions([]);
+      }
+    } else {
+      // Reset states
+      setCustomLastVacationEndDate("");
+      setCalcBasicSalary(0);
+      setCalcAllowance(0);
+      setCalcOvertimeHours(0);
+      setCalcOvertimeRate(0);
+      setCalcOtherAllowances(0);
+      setCalcGosiPercent(0);
+      setCalcOtherDeductions(0);
+      setCalcCustomAllowances([]);
+      setCalcCustomDeductions([]);
+    }
+  }, [calcEmployeeId, employees, vacations]);
+
+  // --- RUNTIME CALCULATION ENGINE ---
+  const calcResults = React.useMemo(() => {
+    if (!calcEmployeeId) return null;
+    const emp = employees.find(e => e.id === calcEmployeeId);
+    if (!emp) return null;
+
+    const basicSalary = calcBasicSalary;
+    const allowance = calcAllowance;
+    const hiringDate = emp.hiring_date || emp.dateOfJoining || "";
+    const lastVacationEndDate = customLastVacationEndDate;
+
+    let daysWorked = 0;
+    let entitledDaysPerYear = 0;
+    let daysBetweenLastVacationAndStart = 0;
+    let totalEntitledVacationDays = 0;
+    let employeeDailyWage = basicSalary / 30;
+    let vacationDueAmount = 0;
+    let netSalary = 0;
+    let isPayrollApproved = false;
+    let totalDueAmount = 0;
+
+    // EOS Award Calculation variables
+    let eosAwardAmount = 0;
+    let yearsOfService = 0;
+    let remainingMonthsOfService = 0;
+    let remainingDaysOfService = 0;
+
+    if (calcStartDate) {
+      // 1. Calculate length of service up to the vacation start date
+      if (hiringDate) {
+        const start = new Date(calcStartDate);
+        const hiring = new Date(hiringDate);
+        daysWorked = (start.getTime() - hiring.getTime()) / (1000 * 60 * 60 * 24);
+        
+        // Saudi Labor Law: 21 Days standard, 30 Days if service exceeds 5 years (1825 Days)
+        entitledDaysPerYear = daysWorked < 1825 ? 21 : 30;
+      }
+
+      // 2. Accrual based on elapsed calendar days from the previous vacation end date
+      if (lastVacationEndDate) {
+        const start = new Date(calcStartDate);
+        const lastEnd = new Date(lastVacationEndDate);
+        daysBetweenLastVacationAndStart = Math.max(0, (start.getTime() - lastEnd.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Accrued Entitled Days = (entitledDaysPerYear / 365) * elapsedDays
+        const entitlementFactor = entitledDaysPerYear / 365;
+        totalEntitledVacationDays = entitlementFactor * daysBetweenLastVacationAndStart;
+      }
+
+      // 3. Multiplier: Accrued days * current basic wage
+      vacationDueAmount = totalEntitledVacationDays * employeeDailyWage;
+
+      // 4. Resolve Active Month Net Salary
+      const selectedMonthStr = calcPayrollMonth || calcStartDate.substring(0, 7); // YYYY-MM
+      const parts = selectedMonthStr.split("-");
+      if (parts.length === 2) {
+        const selYear = Number(parts[0]);
+        const selMonth = Number(parts[1]);
+        const approvedPayroll = payrolls.find(p => p.year === selYear && p.month === selMonth && (p.status?.toLowerCase() === "approved" || p.status === "APPROVED"));
+        
+        if (approvedPayroll) {
+          const empPayroll = approvedPayroll.employees?.find((e: any) => e.id === emp.id || e.employeeId === emp.id);
+          if (empPayroll) {
+            netSalary = empPayroll.netSalary || 0;
+            isPayrollApproved = true;
+          }
+        }
+      }
+
+      // If active payroll is pending, construct the salary calculation using manual offsets
+      if (!isPayrollApproved) {
+        const totalSalary = basicSalary + allowance;
+        const overtimeAmount = calcOvertimeHours * calcOvertimeRate;
+        const gosiDeductionAmount = (totalSalary * calcGosiPercent) / 100;
+        
+        const customAllowancesSum = calcCustomAllowances.reduce((sum, a) => sum + a.amount, 0);
+        const customDeductionsSum = calcCustomDeductions.reduce((sum, d) => sum + d.amount, 0);
+
+        // Formula: (Contract Salary + Overtime + Offsets) - (Social Deductions + General Deductions)
+        netSalary = totalSalary + 
+                    overtimeAmount + 
+                    calcOtherAllowances + 
+                    customAllowancesSum - 
+                    gosiDeductionAmount - 
+                    calcOtherDeductions - 
+                    customDeductionsSum;
+      }
+
+      // 5. EOS Award Calculation
+      if (hiringDate) {
+        const start = new Date(calcStartDate);
+        const hiring = new Date(hiringDate);
+        const totalDays = (start.getTime() - hiring.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (totalDays > 0) {
+          yearsOfService = Math.floor(totalDays / 365);
+          const remainingDays = totalDays % 365;
+          remainingMonthsOfService = Math.floor(remainingDays / 30.4375);
+          remainingDaysOfService = Math.floor(remainingDays % 30.4375);
+
+          const decimalYears = totalDays / 365;
+          let fullAward = 0;
+          const salaryBase = basicSalary + allowance; // Saudi Law considers full salary (basic + standard allowances)
+
+          if (decimalYears <= 5) {
+            fullAward = (salaryBase / 2) * decimalYears;
+          } else {
+            fullAward = (salaryBase / 2) * 5 + salaryBase * (decimalYears - 5);
+          }
+
+          if (calcTerminationReason === "resignation") {
+            if (decimalYears < 2) {
+              eosAwardAmount = 0;
+            } else if (decimalYears >= 2 && decimalYears <= 5) {
+              eosAwardAmount = fullAward * (1 / 3);
+            } else if (decimalYears > 5 && decimalYears <= 10) {
+              eosAwardAmount = fullAward * (2 / 3);
+            } else {
+              eosAwardAmount = fullAward;
+            }
+          } else {
+            eosAwardAmount = fullAward;
+          }
+        }
+      }
+
+      // 6. Grand Dues Total
+      totalDueAmount = vacationDueAmount + netSalary + eosAwardAmount;
+    }
+
+    return {
+      emp,
+      hiringDate,
+      lastVacationEndDate,
+      daysWorked,
+      entitledDaysPerYear,
+      daysBetweenLastVacationAndStart,
+      totalEntitledVacationDays,
+      basicSalary,
+      allowance,
+      employeeDailyWage,
+      vacationDueAmount,
+      netSalary,
+      isPayrollApproved,
+      eosAwardAmount,
+      yearsOfService,
+      remainingMonthsOfService,
+      remainingDaysOfService,
+      totalDueAmount,
+      gosiPercent: calcGosiPercent
+    };
+  }, [
+    calcEmployeeId, 
+    calcStartDate, 
+    calcEndDate, 
+    employees, 
+    vacations, 
+    payrolls, 
+    customLastVacationEndDate, 
+    calcBasicSalary, 
+    calcAllowance, 
+    calcOvertimeHours, 
+    calcOvertimeRate, 
+    calcOtherAllowances, 
+    calcGosiPercent, 
+    calcOtherDeductions,
+    calcPayrollMonth,
+    calcCustomAllowances,
+    calcCustomDeductions,
+    calcTerminationReason
+  ]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -562,156 +862,628 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Bank Accounts Section */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-              <span>🏦</span> الحسابات البنكية المعتمدة
-            </h2>
-            <span className="text-xs bg-sky-50 text-sky-800 py-1 px-2.5 rounded-full font-bold">
-              {banks.length} حسابات نشطة
-            </span>
+      {/* Accounts & Cash Balances Section */}
+      {activeSubTab === "accounts" ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Bank Accounts Section */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                <span>🏦</span> الحسابات البنكية المعتمدة
+              </h2>
+              <span className="text-xs bg-sky-50 text-sky-800 py-1 px-2.5 rounded-full font-bold">
+                {banks.length} حسابات نشطة
+              </span>
+            </div>
+
+            {banks.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-sm">
+                لا توجد حسابات بنكية مسجلة حالياً. اضغط "حساب بنكي جديد" للبدء.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {banks.map((bank) => (
+                  <div
+                    key={bank.id}
+                    className="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 transition-all space-y-4 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-extrabold text-slate-800 text-base">{bank.bankName}</h3>
+                        <p className="text-xs text-slate-500 font-medium">{bank.accountName}</p>
+                      </div>
+                      <span
+                        className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                          bank.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {bank.status === "Active" ? "نشط" : "غير نشط"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600">
+                      <div>
+                        <p className="text-slate-400">رقم الحساب:</p>
+                        <p className="font-mono mt-0.5">{bank.accountNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">IBAN:</p>
+                        <p className="font-mono mt-0.5">{bank.iban || "N/A"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end pt-3 border-t border-slate-200/50">
+                      <div>
+                        <span className="text-xs text-slate-400">الرصيد الحالي المعتمد:</span>
+                        <p className="text-xl font-extrabold text-[#0072BC] tracking-tight mt-0.5">
+                          {(bank.currentBalance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-xs text-slate-500 font-bold">SAR</span>
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openBankForm(bank)}
+                          className="p-2 text-slate-500 hover:text-[#0072BC] bg-white hover:bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all"
+                          title="تعديل الحساب"
+                        >
+                          📝 تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBank(bank)}
+                          className="p-2 text-rose-500 hover:text-white hover:bg-rose-600 bg-white border border-rose-100 rounded-xl text-xs font-bold transition-all"
+                          title="حذف الحساب"
+                        >
+                          🗑️ حذف
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {banks.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-sm">
-              لا توجد حسابات بنكية مسجلة حالياً. اضغط "حساب بنكي جديد" للبدء.
+          {/* Cash Boxes Section */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                <span>💰</span> الصناديق والخزن النقدية
+              </h2>
+              <span className="text-xs bg-slate-100 text-slate-700 py-1 px-2.5 rounded-full font-bold">
+                {boxes.length} خزن معتمدة
+              </span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {banks.map((bank) => (
-                <div
-                  key={bank.id}
-                  className="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 transition-all space-y-4 shadow-sm"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-extrabold text-slate-800 text-base">{bank.bankName}</h3>
-                      <p className="text-xs text-slate-500 font-medium">{bank.accountName}</p>
-                    </div>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        bank.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-                      }`}
-                    >
-                      {bank.status === "Active" ? "نشط" : "غير نشط"}
-                    </span>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600">
-                    <div>
-                      <p className="text-slate-400">رقم الحساب:</p>
-                      <p className="font-mono mt-0.5">{bank.accountNumber}</p>
+            {boxes.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-sm">
+                لا توجد خزن أو صناديق نقدية مسجلة حالياً. اضغط "صندوق نقدي جديد" للبدء.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {boxes.map((box) => (
+                  <div
+                    key={box.id}
+                    className="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 transition-all space-y-4 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-extrabold text-slate-800 text-base">{box.cashBoxName}</h3>
+                        <p className="text-xs text-slate-500 font-medium">أمين الصندوق المسؤول: {box.responsiblePerson || "N/A"}</p>
+                      </div>
+                      <span
+                        className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                          box.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {box.status === "Active" ? "نشط" : "غير نشط"}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-slate-400">IBAN:</p>
-                      <p className="font-mono mt-0.5">{bank.iban || "N/A"}</p>
-                    </div>
-                  </div>
 
-                  <div className="flex justify-between items-end pt-3 border-t border-slate-200/50">
-                    <div>
-                      <span className="text-xs text-slate-400">الرصيد الحالي المعتمد:</span>
-                      <p className="text-xl font-extrabold text-[#0072BC] tracking-tight mt-0.5">
-                        {(bank.currentBalance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-xs text-slate-500 font-bold">SAR</span>
+                    {box.notes && (
+                      <p className="text-xs text-slate-400 line-clamp-1 italic font-medium">
+                        ملاحظات: {box.notes}
                       </p>
+                    )}
+
+                    <div className="flex justify-between items-end pt-3 border-t border-slate-200/50">
+                      <div>
+                        <span className="text-xs text-slate-400">الرصيد النقدي المتوفر:</span>
+                        <p className="text-xl font-extrabold text-slate-700 tracking-tight mt-0.5">
+                          {(box.currentBalance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-xs text-slate-500 font-bold">SAR</span>
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openBoxForm(box)}
+                          className="p-2 text-slate-500 hover:text-[#0072BC] bg-white hover:bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all"
+                          title="تعديل الصندوق"
+                        >
+                          📝 تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBox(box)}
+                          className="p-2 text-rose-500 hover:text-white hover:bg-rose-600 bg-white border border-rose-100 rounded-xl text-xs font-bold transition-all"
+                          title="حذف الصندوق"
+                        >
+                          🗑️ حذف
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openBankForm(bank)}
-                        className="p-2 text-slate-500 hover:text-[#0072BC] bg-white hover:bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all"
-                        title="تعديل الحساب"
-                      >
-                        📝 تعديل
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBank(bank)}
-                        className="p-2 text-rose-500 hover:text-white hover:bg-rose-600 bg-white border border-rose-100 rounded-xl text-xs font-bold transition-all"
-                        title="حذف الحساب"
-                      >
-                        🗑️ حذف
-                      </button>
-                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-xl space-y-8 text-right animate-fade-in">
+          {/* Header */}
+          <div className="border-b border-slate-100 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                <span>🧮</span> {lang === "ar" ? "حاسبة مستحقات نهاية الخدمة ومسير الإجازات" : "End of Service & Vacation Accrual Calculator"}
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                {lang === "ar" 
+                  ? "حساب مستحقات نهاية الخدمة والرواتب النشطة ورصيد الإجازات التراكمي طبقاً لنظام العمل السعودي."
+                  : "Calculate EOS award, active salary, and vacation balances according to the Saudi Labor Law."}
+              </p>
+            </div>
+            <div className="bg-sky-50 text-sky-800 font-bold px-3 py-1.5 rounded-xl text-xs border border-sky-100">
+              ⚖️ {lang === "ar" ? "متوافق مع المادة 84 والمادة 85 من نظام العمل" : "Compliant with Article 84 & 85 of Saudi Labor Law"}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Input Form Column (Takes 2/3 of space on desktop) */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* Employee & Dates Card */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                <h3 className="font-bold text-slate-700 text-sm flex items-center gap-1.5 border-b pb-2">
+                  <span>👤</span> {lang === "ar" ? "البيانات الأساسية وتواريخ الخدمة" : "Basic Information & Service Dates"}
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Select Employee */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "اختر الموظف *" : "Select Employee *"}
+                    </label>
+                    <select
+                      value={calcEmployeeId}
+                      onChange={(e) => setCalcEmployeeId(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-[#0072BC]"
+                    >
+                      <option value="">{lang === "ar" ? "-- اختر موظف من القائمة --" : "-- Select Employee --"}</option>
+                      {employees.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {lang === "ar" ? `${emp.arabicName || emp.englishName} (رقم: ${emp.id})` : `${emp.englishName || emp.arabicName} (ID: ${emp.id})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Termination Reason */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "سبب نهاية الخدمة" : "Reason for Termination"}
+                    </label>
+                    <select
+                      value={calcTerminationReason}
+                      onChange={(e) => setCalcTerminationReason(e.target.value as any)}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-[#0072BC]"
+                    >
+                      <option value="expiry_or_company_termination">
+                        {lang === "ar" ? "انتهاء عقد / إنهاء من طرف الشركة (مستحقات كاملة)" : "Contract Expiry / Company Termination (Full EOS)"}
+                      </option>
+                      <option value="resignation">
+                        {lang === "ar" ? "استقالة الموظف (مستحقات متدرجة)" : "Resignation (Graduated EOS)"}
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Start Date of Vacation/Settle */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "تاريخ تسوية نهاية الخدمة / بداية الإجازة *" : "Settlement / Leave Start Date *"}
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={calcStartDate}
+                      onChange={(e) => setCalcStartDate(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-[#0072BC] text-center"
+                    />
+                  </div>
+
+                  {/* Last Vacation End Date */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "تاريخ نهاية آخر إجازة مستلمة (أو تاريخ التعيين)" : "Last Vacation End Date (or Join Date)"}
+                    </label>
+                    <input
+                      type="date"
+                      value={customLastVacationEndDate}
+                      onChange={(e) => setCustomLastVacationEndDate(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-[#0072BC] text-center"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
 
-        {/* Cash Boxes Section */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-              <span>💰</span> الصناديق والخزن النقدية
-            </h2>
-            <span className="text-xs bg-slate-100 text-slate-700 py-1 px-2.5 rounded-full font-bold">
-              {boxes.length} خزن معتمدة
-            </span>
-          </div>
+              {/* Financial Terms Card */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                <h3 className="font-bold text-slate-700 text-sm flex items-center gap-1.5 border-b pb-2">
+                  <span>💵</span> {lang === "ar" ? "بنود الراتب الأساسية والتعاقدية" : "Contractual Salary Terms"}
+                </h3>
 
-          {boxes.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-sm">
-              لا توجد خزن أو صناديق نقدية مسجلة حالياً. اضغط "صندوق نقدي جديد" للبدء.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {boxes.map((box) => (
-                <div
-                  key={box.id}
-                  className="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 transition-all space-y-4 shadow-sm"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-extrabold text-slate-800 text-base">{box.cashBoxName}</h3>
-                      <p className="text-xs text-slate-500 font-medium">أمين الصندوق المسؤول: {box.responsiblePerson || "N/A"}</p>
-                    </div>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        box.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-                      }`}
-                    >
-                      {box.status === "Active" ? "نشط" : "غير نشط"}
-                    </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Basic Salary */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "الراتب الأساسي (SAR)" : "Basic Salary (SAR)"}
+                    </label>
+                    <input
+                      type="number"
+                      value={calcBasicSalary || ""}
+                      onChange={(e) => setCalcBasicSalary(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                    />
                   </div>
 
-                  {box.notes && (
-                    <p className="text-xs text-slate-400 line-clamp-1 italic font-medium">
-                      ملاحظات: {box.notes}
-                    </p>
+                  {/* Regular Allowances */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "بدلات السكن والنقل الثابتة (SAR)" : "Fixed Allowances (SAR)"}
+                    </label>
+                    <input
+                      type="number"
+                      value={calcAllowance || ""}
+                      onChange={(e) => setCalcAllowance(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                    />
+                  </div>
+
+                  {/* GOSI Deduction Percentage */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      {lang === "ar" ? "نسبة استقطاع التأمينات GOSI (%)" : "GOSI Social Insurance Deduction (%)"}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={calcGosiPercent}
+                      onChange={(e) => setCalcGosiPercent(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Manual Active Payroll Offsets Card */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h3 className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                    <span>⚙️</span> {lang === "ar" ? "تسوية راتب الشهر الجاري يدوياً" : "Current Month Active Salary Adjustments"}
+                  </h3>
+                  {calcResults && calcResults.isPayrollApproved && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 py-0.5 px-2 rounded-full font-bold">
+                      ✓ {lang === "ar" ? "رُبط بمسير رواتب معتمد" : "Linked to Approved Payroll"}
+                    </span>
                   )}
+                </div>
 
-                  <div className="flex justify-between items-end pt-3 border-t border-slate-200/50">
-                    <div>
-                      <span className="text-xs text-slate-400">الرصيد النقدي المتوفر:</span>
-                      <p className="text-xl font-extrabold text-slate-700 tracking-tight mt-0.5">
-                        {(box.currentBalance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-xs text-slate-500 font-bold">SAR</span>
-                      </p>
+                {calcResults && calcResults.isPayrollApproved ? (
+                  <p className="text-xs text-slate-500 italic">
+                    {lang === "ar" 
+                      ? `تم سحب الراتب الصافي تلقائياً من المسير المعتمد لشهر ${calcPayrollMonth} بقيمة ${calcResults.netSalary.toLocaleString()} ريال.`
+                      : `Net salary resolved automatically from the approved payroll of ${calcPayrollMonth} as ${calcResults.netSalary.toLocaleString()} SAR.`}
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-[11px] text-amber-700 font-bold">
+                      ⚠️ {lang === "ar" 
+                        ? "لا يوجد مسير رواتب معتمد للشهر المحدد. يتم الآن حساب الراتب النشط تلقائياً بناءً على البدلات والخصومات الإضافية المدخلة بالأسفل:"
+                        : "No approved payroll run found for this period. Active salary is computed using manual inputs below:"}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {/* Overtime Hours */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">
+                          {lang === "ar" ? "ساعات العمل الإضافية" : "Overtime Hours"}
+                        </label>
+                        <input
+                          type="number"
+                          value={calcOvertimeHours || ""}
+                          onChange={(e) => setCalcOvertimeHours(Number(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Overtime Rate */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">
+                          {lang === "ar" ? "سعر الساعة الإضافية" : "Overtime Hourly Rate"}
+                        </label>
+                        <input
+                          type="number"
+                          value={calcOvertimeRate || ""}
+                          onChange={(e) => setCalcOvertimeRate(Number(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                          placeholder="1.5"
+                        />
+                      </div>
+
+                      {/* General Other Allowances */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">
+                          {lang === "ar" ? "مكافآت أو بدلات أخرى" : "Other Allowances / Bonuses"}
+                        </label>
+                        <input
+                          type="number"
+                          value={calcOtherAllowances || ""}
+                          onChange={(e) => setCalcOtherAllowances(Number(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* General Other Deductions */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">
+                          {lang === "ar" ? "جزاءات أو خصومات" : "Deductions / Penalties"}
+                        </label>
+                        <input
+                          type="number"
+                          value={calcOtherDeductions || ""}
+                          onChange={(e) => setCalcOtherDeductions(Number(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-center"
+                          placeholder="0"
+                        />
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openBoxForm(box)}
-                        className="p-2 text-slate-500 hover:text-[#0072BC] bg-white hover:bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all"
-                        title="تعديل الصندوق"
-                      >
-                        📝 تعديل
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBox(box)}
-                        className="p-2 text-rose-500 hover:text-white hover:bg-rose-600 bg-white border border-rose-100 rounded-xl text-xs font-bold transition-all"
-                        title="حذف الصندوق"
-                      >
-                        🗑️ حذف
-                      </button>
+
+                    {/* Custom Adjustments Lists */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-200/50">
+                      {/* Custom Allowances list */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-slate-700 text-xs">➕ {lang === "ar" ? "إضافة بدلات مخصصة فريدة" : "Unique Custom Allowances"}</h4>
+                          <button
+                            type="button"
+                            onClick={() => setShowCalcAddAllowance(!showCalcAddAllowance)}
+                            className="text-xs text-[#0072BC] font-extrabold hover:underline"
+                          >
+                            {showCalcAddAllowance ? (lang === "ar" ? "إغلاق" : "Close") : (lang === "ar" ? "إضافة +" : "Add +")}
+                          </button>
+                        </div>
+
+                        {showCalcAddAllowance && (
+                          <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                            <input
+                              type="text"
+                              value={calcCustomAllowanceName}
+                              onChange={(e) => setCalcCustomAllowanceName(e.target.value)}
+                              placeholder={lang === "ar" ? "اسم البند (مثال: بدل سكن إضافي)" : "Allowance item name"}
+                              className="w-full border border-slate-200 rounded-lg p-2 text-xs"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="number"
+                                value={calcAllowanceAmount}
+                                onChange={(e) => setCalcAllowanceAmount(e.target.value)}
+                                placeholder={lang === "ar" ? "المبلغ (SAR)" : "Amount (SAR)"}
+                                className="w-2/3 border border-slate-200 rounded-lg p-2 text-xs font-mono"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (calcCustomAllowanceName && calcAllowanceAmount) {
+                                    setCalcCustomAllowances(prev => [
+                                      ...prev, 
+                                      { name: calcCustomAllowanceName, amount: parseFloat(calcAllowanceAmount) }
+                                    ]);
+                                    setCalcCustomAllowanceName("");
+                                    setCalcAllowanceAmount("");
+                                    setShowCalcAddAllowance(false);
+                                  }
+                                }}
+                                className="w-1/3 bg-[#0072BC] hover:bg-[#005185] text-white text-xs font-bold rounded-lg p-2"
+                              >
+                                {lang === "ar" ? "تأكيد" : "Add"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {calcCustomAllowances.length > 0 && (
+                          <div className="bg-white rounded-xl border border-slate-100 p-2 space-y-1 text-xs">
+                            {calcCustomAllowances.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center p-1.5 hover:bg-slate-50 rounded">
+                                <span className="font-bold text-slate-700">{item.name}</span>
+                                <div className="flex items-center gap-2 font-mono font-bold">
+                                  <span className="text-emerald-700">+{item.amount.toLocaleString()} SAR</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCalcCustomAllowances(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-rose-500 hover:text-rose-700 text-[10px]"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Custom Deductions list */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-slate-700 text-xs">➖ {lang === "ar" ? "إضافة خصومات مخصصة فريدة" : "Unique Custom Deductions"}</h4>
+                          <button
+                            type="button"
+                            onClick={() => setShowCalcAddDeduction(!showCalcAddDeduction)}
+                            className="text-xs text-[#0072BC] font-extrabold hover:underline"
+                          >
+                            {showCalcAddDeduction ? (lang === "ar" ? "إغلاق" : "Close") : (lang === "ar" ? "إضافة +" : "Add +")}
+                          </button>
+                        </div>
+
+                        {showCalcAddDeduction && (
+                          <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                            <input
+                              type="text"
+                              value={calcCustomDeductionName}
+                              onChange={(e) => setCalcCustomDeductionName(e.target.value)}
+                              placeholder={lang === "ar" ? "اسم البند (مثال: سلفة نقدية)" : "Deduction item name"}
+                              className="w-full border border-slate-200 rounded-lg p-2 text-xs"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="number"
+                                value={calcDeductionAmount}
+                                onChange={(e) => setCalcDeductionAmount(e.target.value)}
+                                placeholder={lang === "ar" ? "المبلغ (SAR)" : "Amount (SAR)"}
+                                className="w-2/3 border border-slate-200 rounded-lg p-2 text-xs font-mono"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (calcCustomDeductionName && calcDeductionAmount) {
+                                    setCalcCustomDeductions(prev => [
+                                      ...prev, 
+                                      { name: calcCustomDeductionName, amount: parseFloat(calcDeductionAmount) }
+                                    ]);
+                                    setCalcCustomDeductionName("");
+                                    setCalcDeductionAmount("");
+                                    setShowCalcAddDeduction(false);
+                                  }
+                                }}
+                                className="w-1/3 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-lg p-2"
+                              >
+                                {lang === "ar" ? "تأكيد" : "Add"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {calcCustomDeductions.length > 0 && (
+                          <div className="bg-white rounded-xl border border-slate-100 p-2 space-y-1 text-xs">
+                            {calcCustomDeductions.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center p-1.5 hover:bg-slate-50 rounded">
+                                <span className="font-bold text-slate-700">{item.name}</span>
+                                <div className="flex items-center gap-2 font-mono font-bold">
+                                  <span className="text-rose-700">-{item.amount.toLocaleString()} SAR</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCalcCustomDeductions(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-rose-500 hover:text-rose-700 text-[10px]"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-          )}
+
+            {/* Results Sidebar Column (Takes 1/3 of space on desktop) */}
+            <div className="space-y-6">
+              {!calcResults ? (
+                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 border-dashed text-center flex flex-col justify-center items-center h-full min-h-[300px]">
+                  <span className="text-4xl mb-3">📋</span>
+                  <h3 className="font-extrabold text-slate-600 text-sm">{lang === "ar" ? "في انتظار اختيار الموظف" : "Awaiting Employee Selection"}</h3>
+                  <p className="text-xs text-slate-400 mt-2 max-w-[220px]">
+                    {lang === "ar" 
+                      ? "الرجاء اختيار الموظف من القائمة وتحديد تاريخ التسوية لعرض تفاصيل تصفية الراتب ومستحقات نهاية الخدمة."
+                      : "Please choose an employee and set dates to run the calculations."}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-6 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Header of results */}
+                    <div className="border-b border-white/10 pb-4 text-center">
+                      <span className="text-emerald-400 text-xs font-extrabold block uppercase tracking-wider mb-1">
+                        ✨ {lang === "ar" ? "تفاصيل تصفية المستحقات" : "Settlement Summary Details"}
+                      </span>
+                      <h3 className="text-base font-extrabold text-white">
+                        {lang === "ar" ? calcResults.emp.arabicName : calcResults.emp.englishName}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-mono mt-1 font-bold">
+                        {lang === "ar" ? `المسمى: ${calcResults.emp.jobTitle}` : `Job: ${calcResults.emp.jobTitle}`}
+                      </p>
+                    </div>
+
+                    <div className="py-4 space-y-4 text-xs">
+                      {/* Service length info */}
+                      <div className="bg-white/5 p-3 rounded-2xl border border-white/5 space-y-1">
+                        <span className="text-slate-400 text-[10px] block">{lang === "ar" ? "مدة الخدمة الإجمالية" : "Total Service Duration"}</span>
+                        <p className="text-white font-extrabold text-xs">
+                          {lang === "ar" 
+                            ? `${calcResults.yearsOfService} سنة و ${calcResults.remainingMonthsOfService} شهر و ${calcResults.remainingDaysOfService} يوم`
+                            : `${calcResults.yearsOfService} years, ${calcResults.remainingMonthsOfService} months, and ${calcResults.remainingDaysOfService} days`}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {lang === "ar" ? `(المجموع: ${Math.floor(calcResults.daysWorked)} يوم)` : `(Total: ${Math.floor(calcResults.daysWorked)} days)`}
+                        </p>
+                      </div>
+
+                      {/* Itemised dues */}
+                      <div className="space-y-2.5 pt-2 border-t border-white/10">
+                        {/* 1. Active Net Salary */}
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>{lang === "ar" ? "صافي راتب الشهر النشط" : "Current Month Net Salary"}</span>
+                          <span className="font-mono font-bold text-white">{calcResults.netSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR</span>
+                        </div>
+
+                        {/* 2. Accrued vacation days */}
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>
+                            {lang === "ar" ? `مستحقات الإجازة (${calcResults.totalEntitledVacationDays.toFixed(1)} يوم)` : `Vacation Accrual (${calcResults.totalEntitledVacationDays.toFixed(1)} days)`}
+                          </span>
+                          <span className="font-mono font-bold text-white">{calcResults.vacationDueAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR</span>
+                        </div>
+
+                        {/* 3. End of service award */}
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>{lang === "ar" ? "مكافأة نهاية الخدمة (EOS)" : "End of Service Award (EOS)"}</span>
+                          <span className="font-mono font-bold text-white">{calcResults.eosAwardAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grand total dues panel */}
+                  <div className="border-t border-white/10 pt-4 mt-4 text-center space-y-1">
+                    <span className="text-slate-400 text-[10px] block font-bold uppercase tracking-widest">{lang === "ar" ? "صافي إجمالي المستحقات" : "Net Grand Total Dues"}</span>
+                    <p className="text-3xl font-mono font-black text-emerald-400">
+                      {calcResults.totalDueAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </p>
+                    <span className="text-slate-400 text-xs font-extrabold block">ريال سعودي (SAR)</span>
+
+                    {/* Disclaimer */}
+                    <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+                      {lang === "ar" 
+                        ? "ملاحظة: هذه الحسابات استرشادية مبنية على نظام العمل السعودي ومسيرات الرواتب المعتمدة في النظام."
+                        : "Disclaimer: This is an estimated settlement calculation compliant with Saudi labor standards."}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Bank Account Modal */}
       {showBankModal && (

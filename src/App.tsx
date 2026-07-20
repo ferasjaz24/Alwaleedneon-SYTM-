@@ -75,6 +75,7 @@ import type { IndexStats } from "./lib/searchIndex";
 
 import MonthlyPayrollRuns from "./components/finance/MonthlyPayrollRuns";
 import CashAndBankTab from "./components/finance/CashAndBankTab";
+import EosLeaveCalculatorTab from "./components/finance/EosLeaveCalculatorTab";
 import CustomerInvoicesTab from "./components/finance/CustomerInvoicesTab";
 import SupplierInvoicesTab from "./components/finance/SupplierInvoicesTab";
 import ExpensesTab from "./components/finance/ExpensesTab";
@@ -218,6 +219,11 @@ export const financeSubmenus = [
     id: "accounting_cash_bank",
     ar: "🏦 الصندوق والبنك",
     en: "🏦 Cash & Bank"
+  },
+  {
+    id: "accounting_eos_leave",
+    ar: "🧮 حاسبة نهاية الخدمة والإجازات",
+    en: "🧮 EOS & Leave Calculator"
   },
   {
     id: "accounting_zakat_tax",
@@ -5366,6 +5372,12 @@ export default function App() {
             {activeTab === "finance" && activeFinanceSubTab === "accounting_cash_bank" && (
               <div id="content-tab-finance-cash-bank" className="space-y-6">
                 <CashAndBankTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_eos_leave" && (
+              <div id="content-tab-finance-eos-leave" className="space-y-6">
+                <EosLeaveCalculatorTab lang={lang} user={user!} employees={employees} />
               </div>
             )}
 
