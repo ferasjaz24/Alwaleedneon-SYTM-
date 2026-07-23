@@ -10,7 +10,7 @@ export function hasPermission(
   // Feras / Super Admin override
   const username = user.username?.toLowerCase() || '';
   const roleName = user.role?.toLowerCase() || '';
-  if (username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
+  if (username === 'feras' || username === 'ferasadmin' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
     if (action === 'viewAccess' || action === 'editAccess' || action === 'deleteAccess') return 'all' as any;
     return true;
   }
@@ -39,7 +39,7 @@ export function getAccessLevel(
   // Super Admin overrides
   const username = user.username?.toLowerCase() || '';
   const roleName = user.role?.toLowerCase() || '';
-  if (username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
+  if (username === 'feras' || username === 'ferasadmin' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
     return 'all';
   }
 
@@ -72,7 +72,7 @@ export function hasAdvancedPermission(
   const roleName = user.role?.toLowerCase() || '';
   
   // Hardcoded Super Admin / Owners always return true
-  if (username === 'FERAS' || username === 'ADMIN' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner')) {
+  if (username === 'FERAS' || username === 'FERASADMIN' || username === 'ADMIN' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner')) {
      return true;
   }
   
@@ -140,7 +140,7 @@ export function getAdvancedPermissionScope(
   const username = user.username?.toUpperCase() || '';
   const roleName = user.role?.toLowerCase() || '';
   
-  if (username === 'FERAS' || username === 'ADMIN' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner')) {
+  if (username === 'FERAS' || username === 'FERASADMIN' || username === 'ADMIN' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management' || roleName.includes('owner')) {
      return 'all';
   }
 
@@ -181,7 +181,7 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
   // Super Admin overrides
   const username = user.username?.toLowerCase() || '';
   const roleName = user.role?.toLowerCase() || '';
-  if (username === 'feras' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
+  if (username === 'feras' || username === 'ferasadmin' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management') {
     return true;
   }
 

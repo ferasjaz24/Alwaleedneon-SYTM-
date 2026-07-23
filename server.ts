@@ -8,7 +8,7 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
-import { Employee, User, Quotation, ClearanceProfile } from "./src/types";
+import type { Employee, User, Quotation, ClearanceProfile } from "./src/types.ts";
 import { db } from "./src/lib/firebase.js";
 import {
   collection,
@@ -691,8 +691,52 @@ Text to translate: ${text}`;
       res.status(400).json({ error: "Username is required." });
       return;
     }
-    await setDoc(doc(db, "users", newUser.username), newUser);
+    const docId = newUser.email || newUser.username;
+    await setDoc(doc(db, "users", docId), newUser);
     res.json({ success: true, user: newUser });
+  });
+
+  app.post("/api/users/:username/migrate-to-email", async (req, res) => {
+    const { username } = req.params;
+    try {
+      const usersSnap = await getDocs(collection(db, "users"));
+      let userData: any = null;
+      let oldDocId: string | null = null;
+      
+      for (const d of usersSnap.docs) {
+        const data = d.data();
+        if (data.username === username || d.id === username) {
+           userData = data;
+           oldDocId = d.id;
+           break;
+        }
+      }
+
+      if (!userData || !oldDocId) {
+         return res.status(404).json({ error: "User not found in database." });
+      }
+
+      if (!userData.email) {
+         return res.status(400).json({ error: "لا يوجد إيميل لهذا الحساب (No email found for this user)." });
+      }
+
+      const newDocId = userData.email;
+
+      if (oldDocId === newDocId) {
+         return res.json({ success: true, message: "Document ID is already the email." });
+      }
+
+      // Create new doc with email as ID
+      await setDoc(doc(db, "users", newDocId), userData);
+      
+      // Delete old doc
+      await deleteDoc(doc(db, "users", oldDocId));
+
+      res.json({ success: true, message: "Successfully migrated to email Document ID." });
+    } catch (e: any) {
+      console.error("Migration error:", e);
+      res.status(500).json({ error: e.message || "Failed to migrate user" });
+    }
   });
 
     app.put("/api/users/:username", async (req, res) => {

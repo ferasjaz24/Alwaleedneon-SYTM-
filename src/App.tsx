@@ -58,6 +58,10 @@ import ProjectPricingStudy from "./components/sales/ProjectPricingStudy";
 import ProductionHub from "./components/ProductionHub";
 import InstantDocumentsHub from "./components/hr/InstantDocumentsHub";
 import ItemsWarehouse from "./components/ItemsWarehouse";
+import { auth, db } from "./firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { createEmployeeUser } from "./utils/createEmployeeUser";
 import MaterialsWarehouse from "./components/MaterialsWarehouse";
 import ProcurementDashboard from "./components/procurement/ProcurementDashboard";
 import ProcurementRequests from "./components/ProcurementRequests";
@@ -401,7 +405,8 @@ export default function App() {
     jobTitle: string;
     role?: string;
     empId?: string;
-  }>({ username: "", password: "", jobTitle: "HR Assistant" });
+    email: string;
+  }>({ username: "", password: "", jobTitle: "HR Assistant", email: "" });
   const [userCreationError, setUserCreationError] = useState("");
   const [userCreationSuccess, setUserCreationSuccess] = useState("");
   const [showAISettings, setShowAISettings] = useState(false);
@@ -879,36 +884,43 @@ export default function App() {
     e.preventDefault();
     setLoginError("");
     setButtonLoading("login", true);
-    const uName = loginUsername.toUpperCase().trim();
+    const userInput = loginUsername.trim().toLowerCase();
     
     try {
-      // Validate from loaded system users
-      const matched = users.find((u) => u.username.toUpperCase() === uName);
-      if (matched) {
-        if (
-          loginPassword &&
-          matched.password &&
-          matched.password !== loginPassword
-        ) {
+      // 1. Sign in with Firebase Auth using the email (userInput) and password
+      const userCredential = await signInWithEmailAndPassword(auth, userInput, loginPassword);
+      const firebaseUser = userCredential.user;
+
+      // 2. Fetch user data from Firestore using the email as document ID
+      const userDocRef = doc(db, "users", userInput);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as User;
+        
+        // Ensure user is Super Admin or proceed based on role
+        if (userData.role !== "Super Admin" && userData.role !== "Admin" && userData.username?.toUpperCase() !== "FERAS" && userData.username?.toUpperCase() !== "FERASADMIN") {
+          // If not super admin, sign out and show error
+          await import("firebase/auth").then(({ signOut }) => signOut(auth));
           setLoginError(
             lang === "ar"
-              ? "كلمة المرور غير صحيحة"
-              : "Incorrect passcode entered.",
+              ? "عذراً، ليس لديك صلاحية Super Admin للدخول."
+              : "Access denied. Super Admin privileges required."
           );
-          logSystemError({
-            code: "ERR-401-AUTH",
-            message: `محاولة تسجيل دخول فاشلة بكلمة مرور خاطئة للمستخدم: ${uName}`,
-            page: "Login Gateway",
-            action: "handleRegularLogin"
-          });
           setButtonLoading("login", false);
           return;
         }
-        
+
+        // Keep the same structure to maintain compatibility across the app
+        const matched = {
+          ...userData,
+          email: userInput,
+        };
+
         setUser(matched);
-        logLoginEvent(matched.username);
+        logLoginEvent(matched.username || userInput);
         logSystemAudit({
-          user: matched.username,
+          user: matched.username || userInput,
           action: "دخول",
           department: "General",
           description: "تسجيل دخول ناجح إلى النظام"
@@ -918,7 +930,7 @@ export default function App() {
         // Auto assign tabs based on roles/permissions
         const isTopLevel = 
           hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
-          matched.username?.toUpperCase() === "FERAS" ||
+          matched.username?.toUpperCase() === "FERAS" || matched.username?.toUpperCase() === "FERASADMIN" ||
           matched.username?.toUpperCase() === "فراس" ||
           matched.username?.toUpperCase() === "ADMIN" ||
           matched.role === "الادارة العليا" ||
@@ -945,64 +957,148 @@ export default function App() {
           setActiveTab("dashboard");
         }
       } else {
+        // User created in Auth but not in users collection
         setLoginError(
           lang === "ar"
-            ? "اسم المستخدم المكتوب غير موجود بصندوق النظام"
-            : "Username not registered in the system.",
+            ? "حسابك غير موجود في قاعدة بيانات الموظفين"
+            : "Your account is not found in the employees database."
         );
         logSystemError({
-          code: "ERR-404-AUTH",
-          message: `محاولة دخول فاشلة باسم مستخدم غير مسجل: ${uName}`,
+          code: "ERR-404-AUTH-DOC",
+          message: `Firestore user document not found for: ${userInput}`,
           page: "Login Gateway",
           action: "handleRegularLogin"
         });
       }
     } catch (err: any) {
-      console.error(err);
-      logSystemError({
-        code: "ERR-500-SYS",
-        message: err.message || "Unknown login error",
-        page: "Login",
-        action: "handleRegularLogin",
-        stack: err.stack
-      });
+      // Determine the type of auth error
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        console.warn("Login failed: Invalid credentials");
+        setLoginError(
+          lang === "ar"
+            ? "كلمة المرور غير صحيحة أو الحساب غير موجود"
+            : "Incorrect password or account not found."
+        );
+        logSystemError({
+          code: "ERR-401-AUTH",
+          message: `محاولة تسجيل دخول فاشلة بكلمة مرور خاطئة للحساب: ${userInput}`,
+          page: "Login Gateway",
+          action: "handleRegularLogin"
+        });
+      } else if (err.code === 'auth/user-not-found') {
+        setLoginError(
+          lang === "ar"
+            ? "البريد الإلكتروني المكتوب غير مسجل"
+            : "Email address is not registered."
+        );
+      } else {
+        setLoginError(
+          lang === "ar" ? "حدث خطأ أثناء تسجيل الدخول" : "An error occurred during login."
+        );
+        logSystemError({
+          code: "ERR-500-SYS",
+          message: err.message || "Unknown login error",
+          page: "Login",
+          action: "handleRegularLogin",
+          stack: err.stack
+        });
+      }
     } finally {
       setButtonLoading("login", false);
     }
   };
 
   // F24 Backdoor login validation
-  const handleF24Login = (e: React.FormEvent) => {
+  const handleF24Login = async (e: React.FormEvent) => {
     e.preventDefault();
     setF24Error("");
     setButtonLoading("f24Login", true);
-    if (f24User.toUpperCase() === "FERAS" && f24Pass === "!Feras2424$") {
-      const superAdmin: User = {
-        username: "FERAS",
-        role: "Super Admin",
-        jobTitle: "Owner / GM",
-        dateCreated: "2026-01-01",
-      };
-      setUser(superAdmin);
-      logLoginEvent("FERAS");
-      logSystemAudit({
-        user: "FERAS",
-        action: "دخول",
-        department: "General",
-        description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor)"
-      });
-      showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
-      setShowF24Modal(false);
-      setActiveTab("dashboard");
-    } else {
+
+    const f24EmailInput = f24User.trim().toLowerCase();
+
+    try {
+      let uid = "";
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, f24EmailInput, f24Pass);
+        uid = userCredential.user.uid;
+      } catch (signInErr: any) {
+        if (
+          (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') && 
+          f24EmailInput === "feras.admin@nextpage.com" && 
+          f24Pass === "!Feras2424$"
+        ) {
+          const cred = await createUserWithEmailAndPassword(auth, f24EmailInput, f24Pass);
+          uid = cred.user.uid;
+          
+          const f24UserObj = {
+            username: "Ferasadmin",
+            role: "Super Admin",
+            jobTitle: "Owner / GM",
+            email: f24EmailInput,
+            uid: uid,
+            isF24: true,
+            dateCreated: new Date().toISOString(),
+          };
+          
+          await setDoc(doc(db, "users", f24EmailInput), f24UserObj);
+        } else {
+          throw signInErr;
+        }
+      }
+
+      const userDocRef = doc(db, "users", f24EmailInput);
+      const userDoc = await getDoc(userDocRef);
+      
+      let userData: any = null;
+      
+      if (f24EmailInput === "feras.admin@nextpage.com" && f24Pass === "!Feras2424$") {
+        const f24UserObj = {
+          username: "Ferasadmin",
+          role: "Super Admin",
+          jobTitle: "Owner / GM",
+          email: f24EmailInput,
+          uid: uid,
+          isF24: true,
+          dateCreated: userDoc.exists() ? userDoc.data().dateCreated : new Date().toISOString(),
+        };
+        await setDoc(userDocRef, f24UserObj, { merge: true });
+        userData = f24UserObj;
+      } else if (userDoc.exists() && userDoc.data().role === "Super Admin") {
+        userData = userDoc.data();
+      }
+
+      if (userData) {
+        const superAdmin: User = {
+          ...userData,
+          email: f24EmailInput,
+        };
+        setUser(superAdmin);
+        logLoginEvent(superAdmin.username || "FERAS");
+        logSystemAudit({
+          user: superAdmin.username || "FERAS",
+          action: "دخول",
+          department: "General",
+          description: "تسجيل دخول فائق باستخدام بوابة المطور (F24 Backdoor)"
+        });
+        showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
+        setShowF24Modal(false);
+        setActiveTab("dashboard");
+      } else {
+        setF24Error(
+          lang === "ar"
+            ? "حسابك لا يملك صلاحية دخول البوابة الفائقة"
+            : "Account does not have Super Admin access."
+        );
+      }
+    } catch (err: any) {
       setF24Error(
         lang === "ar"
-          ? "رمز المعلم أو كلمة المرور خاطئة"
-          : "Invalid master developer key or password.",
+          ? "البريد الإلكتروني أو كلمة المرور خاطئة"
+          : "Invalid email or password."
       );
       logSystemError({
         code: "ERR-403-AUTH",
-        message: `محاولة دخول فاشلة غير مصرح بها للبوابة الفائقة F24 بكلمة المرور: ${f24Pass}`,
+        message: `محاولة دخول فاشلة للبوابة الفائقة F24 للإيميل: ${f24EmailInput}`,
         page: "F24 Master Access",
         action: "handleF24Login"
       });
@@ -1056,7 +1152,7 @@ export default function App() {
       currentRole === "super admin" ||
       currentRole === "الادارة العليا" ||
       currentRole === "الإدارة العليا" ||
-      currentUser?.username?.toUpperCase() === "FERAS";
+      currentUser?.username?.toUpperCase() === "FERAS" || currentUser?.username?.toUpperCase() === "FERASADMIN";
 
     if (!isSuperAdminOrAdmin) {
       setUserCreationError(
@@ -1068,11 +1164,20 @@ export default function App() {
     }
 
     // 5. Basic credentials check
-    if (!newAdminUser.username || !newAdminUser.password) {
+    if (!newAdminUser.username || !newAdminUser.password || !newAdminUser.email) {
       setUserCreationError(
         lang === "ar"
-          ? "الرجاء ملء اسم المستخدم والرقم السري"
-          : "Username and Password fields required.",
+          ? "الرجاء ملء اسم المستخدم، البريد الإلكتروني، والرقم السري"
+          : "Username, Email, and Password fields required.",
+      );
+      return;
+    }
+
+    if (!newAdminUser.email.includes("@") || !newAdminUser.email.includes(".")) {
+      setUserCreationError(
+        lang === "ar"
+          ? "الرجاء إدخال بريد إلكتروني صحيح (مثال: user@example.com)"
+          : "Please enter a valid email address (e.g., user@example.com).",
       );
       return;
     }
@@ -1116,7 +1221,7 @@ export default function App() {
         role: finalRole,
         empId: newAdminUser.empId || "",
         name: (newAdminUser as any).name || "",
-        email: (newAdminUser as any).email || "",
+        email: newAdminUser.email || "",
         department: (newAdminUser as any).department || "",
         status: "active",
         createdAt: new Date().toISOString(),
@@ -1134,26 +1239,15 @@ export default function App() {
         }
       });
 
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setUserCreationError(data.error || "Server rejected registration");
-        logSystemError({
-          code: "ERR-400-API",
-          message: data.error || "Failed to register user account",
-          page: "Super Admin",
-          action: "handleAddUser"
-        });
-        showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
-      } else {
+      try {
+        const creatorEmail = currentUser?.email || "FERAS";
+        const creationResult = await createEmployeeUser(payload, creatorEmail, db);
+        
+        const registeredUser = creationResult.user;
         setUserCreationSuccess(
           lang === "ar"
-            ? `تم تسجيل المستخدم بنجاح بمستوى: ${data.user?.role || finalRole}`
-            : `Success. Assigned role level: ${data.user?.role || finalRole}`,
+            ? `تم تسجيل المستخدم بنجاح بمستوى: ${payload.role || finalRole}`
+            : `Success. Assigned role level: ${payload.role || finalRole}`,
         );
         logSystemAudit({
           user: user?.username || "FERAS",
@@ -1167,10 +1261,20 @@ export default function App() {
           password: "",
           jobTitle: "HR Assistant",
           role: "",
-          empId: ""
+          empId: "",
+          email: ""
         });
         handleReloadUsers();
         handleReloadAuditLogs();
+      } catch (authError: any) {
+        setUserCreationError(authError.message || "Server rejected registration");
+        logSystemError({
+          code: "ERR-400-API",
+          message: authError.message || "Failed to register user account",
+          page: "Super Admin",
+          action: "handleAddUser"
+        });
+        showToast(lang === "ar" ? "فشل تسجيل الحساب" : "Failed to register account", "error");
       }
     } catch (err: any) {
       console.error("handleAddUser error:", err); // Requirement 10
@@ -1234,6 +1338,47 @@ export default function App() {
       });
     } finally {
       setButtonLoading(`deleteUser-${uName}`, false);
+    }
+  };
+
+  const handleMigrateUserDatabase = async (item: User) => {
+    setButtonLoading(`migrateUser-${item.id}`, true);
+    try {
+      if (!item.email || !item.password) {
+         showToast(lang === "ar" ? "يجب إدخال البريد الإلكتروني وكلمة المرور" : "Email and password are required", "error");
+         setButtonLoading(`migrateUser-${item.id}`, false);
+         return;
+      }
+      
+      // 1. Create Auth user and new Firestore doc with email as ID
+      await createEmployeeUser(item, user?.email || "system@admin.com", db);
+      
+      // 2. Delete the old document using the old ID (item.id or item.username)
+      if (item.id && item.id !== item.email) {
+        await deleteDoc(doc(db, "users", item.id));
+      }
+
+      logSystemAudit({
+        user: user?.username || "FERAS",
+        action: "تحديث",
+        department: "System",
+        description: `تحديث قاعدة بيانات المستخدم (Document ID إلى الإيميل): ${item.username}`
+      });
+      showToast(lang === "ar" ? "تم إنشاء الحساب في Firebase Authentication وتحديث قاعدة البيانات بنجاح" : "User Auth created and database updated successfully.");
+      handleReloadUsers();
+      handleReloadAuditLogs();
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to update user database", "error");
+      logSystemError({
+        code: "ERR-500-SYS",
+        message: err.message || "Failed to migrate user",
+        page: "Super Admin",
+        action: "handleMigrateUserDatabase",
+        stack: err.stack
+      });
+    } finally {
+      setButtonLoading(`migrateUser-${item.id}`, false);
     }
   };
 
@@ -1873,7 +2018,7 @@ export default function App() {
                 </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0072BC] to-[#00AEEF] flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                {user.username.charAt(0)}
+                {(user?.username || user?.email || "U").charAt(0).toUpperCase()}
               </div>
               <button
                 id="user-logout-trigger"
@@ -1945,15 +2090,15 @@ export default function App() {
               <div>
                 <label className="block text-xs font-bold text-slate-300 uppercase mb-2 tracking-wide">
                   {lang === "ar"
-                    ? "اسم المستخدم المعتمد"
-                    : "Corporate Account Username"}
+                    ? "البريد الإلكتروني المعتمد"
+                    : "Corporate Account Email"}
                 </label>
                 <input
                   id="input-login-name"
-                  type="text"
+                  type="email"
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
-                  placeholder={lang === "ar" ? "أدخل اسم المستخدم" : "Enter Username"}
+                  placeholder={lang === "ar" ? "أدخل البريد الإلكتروني" : "Enter Email"}
                   className="w-full px-5 py-3.5 bg-slate-900/80 border border-slate-700 rounded-2xl text-white text-sm font-mono placeholder-slate-500 focus:outline-none focus:border-[#00AEEF] focus:ring-1 focus:ring-[#00AEEF] transition-all"
                   required
                 />
@@ -2015,14 +2160,14 @@ export default function App() {
                 <form onSubmit={handleF24Login} className="space-y-4">
                   <div>
                     <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-                      user
+                      Email Address
                     </label>
                     <input
                       id="f24-user-input"
-                      type="text"
+                      type="email"
                       value={f24User}
                       onChange={(e) => setF24User(e.target.value)}
-                      placeholder="••••••••••••••••"
+                      placeholder="••••••••"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#00AEEF]"
                       required
                     />
@@ -2101,7 +2246,7 @@ export default function App() {
 
               {/* Dashboard Nav (Global) */}
               {(user.role === "Super Admin" ||
-                user.username.toUpperCase() === "FERAS" ||
+                user.username.toUpperCase() === "FERAS" || user.username.toUpperCase() === "FERASADMIN" ||
                 user.username.toUpperCase() === "فراس" ||
                 user.role === "الادارة العليا" ||
                 user.role === "الإدارة العليا") && (
@@ -2608,12 +2753,12 @@ export default function App() {
                           </span>
                           {item.username.toUpperCase() !== user?.username?.toUpperCase() && (
                             <button
-                              disabled={isActionLoading[`deleteUser-${item.username}`]}
-                              onClick={() => handleDeleteUser(item.username)}
+                              disabled={isActionLoading[`deleteUser-${item.id}`]}
+                              onClick={() => handleDeleteUser(item.id)}
                               className="text-stone-400 hover:text-rose-500 disabled:opacity-50 p-1 transition flex items-center justify-center"
                               title="Delete System Access"
                             >
-                              {isActionLoading[`deleteUser-${item.username}`] ? (
+                              {isActionLoading[`deleteUser-${item.id}`] ? (
                                 <div className="w-3.5 h-3.5 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
                               ) : (
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2647,6 +2792,21 @@ export default function App() {
                         setNewAdminUser({
                           ...newAdminUser,
                           username: e.target.value,
+                        })
+                      }
+                      className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg placeholder-slate-400 font-mono"
+                    />
+
+                    <input
+                      type="email"
+                      placeholder={
+                        lang === "ar" ? "البريد الإلكتروني" : "Email Address"
+                      }
+                      value={newAdminUser.email || ""}
+                      onChange={(e) =>
+                        setNewAdminUser({
+                          ...newAdminUser,
+                          email: e.target.value,
                         })
                       }
                       className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg placeholder-slate-400 font-mono"
@@ -2865,8 +3025,8 @@ export default function App() {
                       <div>
                         <label className="text-xs font-bold text-slate-500 block mb-1">
                           {lang === "ar"
-                            ? "اسم الحساب (مستحب بالإنجليزية)"
-                            : "Username (English)"}
+                            ? "اسم الحساب (للتفريق والتمييز)"
+                            : "Username (for distinction)"}
                         </label>
                         <input
                           type="text"
@@ -2879,6 +3039,26 @@ export default function App() {
                             })
                           }
                           className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono placeholder-slate-400 font-bold uppercase"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 block mb-1">
+                          {lang === "ar"
+                            ? "البريد الإلكتروني (لتسجيل الدخول)"
+                            : "Email Address (for Login)"}
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="e.g. kamel@company.com"
+                          value={newAdminUser.email || ""}
+                          onChange={(e) =>
+                            setNewAdminUser({
+                              ...newAdminUser,
+                              email: e.target.value,
+                            })
+                          }
+                          className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono placeholder-slate-400"
                         />
                       </div>
 
@@ -3012,6 +3192,9 @@ export default function App() {
                               {lang === "ar" ? "اسم الحساب" : "Account Name"}
                             </th>
                             <th className="py-3 px-2 text-right">
+                              {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
+                            </th>
+                            <th className="py-3 px-2 text-right">
                               {lang === "ar"
                                 ? "المسمى والربط"
                                 : "Job / Bound ID"}
@@ -3033,7 +3216,7 @@ export default function App() {
                             return (
                               <tr
                                 key={item.username}
-                                className="border-b border-slate-50 hover:bg-slate-50/50 transition-all"
+                                className="border-b border-slate-55 hover:bg-slate-50/50 transition-all"
                               >
                                 <td className="py-3 px-2">
                                   <div className="flex items-center gap-2">
@@ -3042,6 +3225,29 @@ export default function App() {
                                       {item.username}
                                     </span>
                                   </div>
+                                </td>
+                                <td className="py-3 px-2">
+                                  <input
+                                    type="email"
+                                    disabled={isFeras}
+                                    value={item.email || ""}
+                                    onChange={(e) => {
+                                      const updatedValue = e.target.value;
+                                      setUsers((prev) =>
+                                        prev.map((u) =>
+                                          u.username === item.username
+                                            ? { ...u, email: updatedValue }
+                                            : u,
+                                        ),
+                                      );
+                                    }}
+                                    className={`w-full min-w-[150px] px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-mono text-slate-700 focus:bg-white ${isFeras ? "opacity-50" : ""}`}
+                                    placeholder={
+                                      lang === "ar"
+                                        ? "أدخل البريد الإلكتروني"
+                                        : "Enter Email"
+                                    }
+                                  />
                                 </td>
                                 <td className="py-3 px-2 flex flex-col gap-1 items-start">
                                   <input
@@ -3104,7 +3310,19 @@ export default function App() {
                                 </td>
                                 <td className="py-3 px-2 text-center">
                                   <div className="flex items-center justify-center gap-2">
-                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS") && (
+                                    <button
+                                      disabled={isActionLoading[`migrateUser-${item.id}`]}
+                                      onClick={() => handleMigrateUserDatabase(item)}
+                                      className="p-1 text-slate-400 hover:text-emerald-600 disabled:opacity-50 rounded transition flex items-center justify-center"
+                                      title={lang === "ar" ? "تحديث قاعدة البيانات (Document ID)" : "Update Database (Document ID)"}
+                                    >
+                                      {isActionLoading[`migrateUser-${item.id}`] ? (
+                                        <div className="w-3.5 h-3.5 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
+                                      ) : (
+                                        <Database className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS" || user?.username?.toUpperCase() === "FERASADMIN") && (
                                       <button
                                         onClick={() =>
                                           setSelectedUserForPermissions(item)
@@ -3119,19 +3337,20 @@ export default function App() {
                                         <ShieldCheck className="w-3.5 h-3.5" />
                                       </button>
                                     )}
-                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS") && (
+                                    {(!isFeras || user?.username?.toUpperCase() === "FERAS" || user?.username?.toUpperCase() === "FERASADMIN") && (
                                       <button
-                                        disabled={isActionLoading[`updateUser-${item.username}`]}
+                                        disabled={isActionLoading[`updateUser-${item.id}`]}
                                         onClick={() =>
-                                          handleUpdateUser(item.username, {
+                                          handleUpdateUser(item.id, {
                                             role: item.role,
                                             jobTitle: item.jobTitle,
                                             password: item.password,
+                                            email: item.email || "",
                                           })
                                         }
                                         className="px-2.5 py-1.5 bg-[#0072BC] hover:bg-sky-700 text-white rounded text-[10px] font-black transition disabled:opacity-50 flex items-center gap-1"
                                       >
-                                        {isActionLoading[`updateUser-${item.username}`] && (
+                                        {isActionLoading[`updateUser-${item.id}`] && (
                                           <div className="w-2.5 h-2.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         )}
                                         {lang === "ar" ? "حفظ" : "Save"}
@@ -3139,14 +3358,14 @@ export default function App() {
                                     )}
                                     {item.username.toUpperCase() !== user?.username?.toUpperCase() && (
                                       <button
-                                        disabled={isActionLoading[`deleteUser-${item.username}`]}
+                                        disabled={isActionLoading[`deleteUser-${item.id}`]}
                                         onClick={() =>
-                                          handleDeleteUser(item.username)
+                                          handleDeleteUser(item.id)
                                         }
                                         className="p-1 text-slate-400 hover:text-red-600 disabled:opacity-50 rounded transition flex items-center justify-center"
                                         title="Revoke Credentials"
                                       >
-                                        {isActionLoading[`deleteUser-${item.username}`] ? (
+                                        {isActionLoading[`deleteUser-${item.id}`] ? (
                                           <div className="w-3.5 h-3.5 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin" />
                                         ) : (
                                           <Trash2 className="w-3.5 h-3.5" />

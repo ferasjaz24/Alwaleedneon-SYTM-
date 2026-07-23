@@ -52,13 +52,36 @@ export default function NotificationsBell({ user, lang }: NotificationsBellProps
     const advanced = user.permissions?.advanced?.notifications?.general;
     if (!advanced) return false;
 
-    if (advanced.includes('view_all')) return true;
-    if (type === 'hr' && advanced.includes('view_hr')) return true;
-    if (type === 'sales' && advanced.includes('view_sales')) return true;
-    if (type === 'finance' && advanced.includes('view_finance')) return true;
-    if (type === 'production' && advanced.includes('view_production')) return true;
-    if (type === 'purchasing' && advanced.includes('view_purchasing')) return true;
-    if (type === 'system' && advanced.includes('view_public')) return true;
+    if (hasAdvancedPermission(user, 'notifications', 'general', 'view_all')) return true;
+    if (type === 'hr' && hasAdvancedPermission(user, 'notifications', 'general', 'view_hr')) return true;
+    if (type === 'sales' && hasAdvancedPermission(user, 'notifications', 'general', 'view_sales')) return true;
+    if (type === 'finance' && hasAdvancedPermission(user, 'notifications', 'general', 'view_finance')) return true;
+    if (type === 'production' && hasAdvancedPermission(user, 'notifications', 'general', 'view_production')) return true;
+    if (type === 'purchasing' && hasAdvancedPermission(user, 'notifications', 'general', 'view_purchasing')) return true;
+    if (type === 'system' && hasAdvancedPermission(user, 'notifications', 'general', 'view_public')) return true;
+
+    // Direct object fallback check
+    if (typeof advanced === 'object') {
+      const adv = advanced as any;
+      if (adv.view_all === 'all' || adv.view_all === true) return true;
+      if (type === 'hr' && (adv.view_hr === 'all' || adv.view_hr === true)) return true;
+      if (type === 'sales' && (adv.view_sales === 'all' || adv.view_sales === true)) return true;
+      if (type === 'finance' && (adv.view_finance === 'all' || adv.view_finance === true)) return true;
+      if (type === 'production' && (adv.view_production === 'all' || adv.view_production === true)) return true;
+      if (type === 'purchasing' && (adv.view_purchasing === 'all' || adv.view_purchasing === true)) return true;
+      if (type === 'system' && (adv.view_public === 'all' || adv.view_public === true)) return true;
+    }
+
+    // Direct array fallback check
+    if (Array.isArray(advanced)) {
+      if (advanced.includes('view_all')) return true;
+      if (type === 'hr' && advanced.includes('view_hr')) return true;
+      if (type === 'sales' && advanced.includes('view_sales')) return true;
+      if (type === 'finance' && advanced.includes('view_finance')) return true;
+      if (type === 'production' && advanced.includes('view_production')) return true;
+      if (type === 'purchasing' && advanced.includes('view_purchasing')) return true;
+      if (type === 'system' && advanced.includes('view_public')) return true;
+    }
 
     return false;
   };

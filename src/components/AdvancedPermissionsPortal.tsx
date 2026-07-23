@@ -633,7 +633,7 @@ export default function AdvancedPermissionsPortal({
        moduleAccess: newModuleAccess
     };
 
-    await onSave(user.username, payload);
+    await onSave(user.id || user.username, payload);
     setSavedSuccess(true);
     setTimeout(() => {
         setIsSaving(false);
@@ -729,7 +729,7 @@ export default function AdvancedPermissionsPortal({
                 <div className="pb-4 mb-4 border-b border-slate-700">
                    <div className="flex items-center gap-3 bg-slate-900 p-3 rounded-2xl border border-slate-700/50">
                       <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-inner">
-                         {user.username.charAt(0).toUpperCase()}
+                         {(user?.username || user?.email || "U").charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 truncate text-right">
                          <h3 className="text-sm font-black text-white truncate">{user.username}</h3>

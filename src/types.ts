@@ -39,6 +39,7 @@ export interface User {
   id?: string;
   uid?: string;
   username: string;
+  email?: string;
   role: string;
   jobTitle: string;
   dateCreated: string;
