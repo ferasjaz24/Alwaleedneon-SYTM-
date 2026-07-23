@@ -270,6 +270,7 @@ export default function App() {
 
   // Auth state
   const [user, setUser] = useState<User | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -934,6 +935,7 @@ export default function App() {
 
         // 5. Store the full user document (User Document) in State to drive UI permissions
         setUser(matched);
+        setShowWelcomeModal(true);
         logLoginEvent(matched.username || userInput);
         logSystemAudit({
           user: matched.username || userInput,
@@ -6087,6 +6089,42 @@ export default function App() {
       </footer>
       <div className="hidden print:block" dangerouslySetInnerHTML={{ __html: sharedPrintFooter }} />
       {user && <AIAssistant lang={lang} />}
+
+      {/* Welcome Popup Modal */}
+      {showWelcomeModal && user && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 lg:p-8 text-center space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 left-0 h-2 bg-gradient-to-r from-[#0072BC] via-indigo-500 to-[#0a2540]"></div>
+            
+            <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto text-blue-600 shadow-inner">
+              <span className="text-3xl">👋</span>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-[#0a2540]">
+                {lang === "ar"
+                  ? `مرحباً بك يا ${user.username || "المستخدم"}!`
+                  : `Welcome, ${user.username || "User"}!`}
+              </h3>
+              <p className="text-sm font-bold text-[#0072BC]">
+                {lang === "ar" ? "حياك الله في نظام شركة فنون الوليد" : "Welcome to Fonoun Alwaleed System"}
+              </p>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed pt-1">
+                {lang === "ar"
+                  ? "تم تسجيل دخولك بنجاح، وربط كافة الصلاحيات المعتمدة لحسابك. نتمنى لك يوماً مثمراً!"
+                  : "You have logged in successfully with all authorized permissions active. Wish you a productive day!"}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowWelcomeModal(false)}
+              className="w-full py-3 px-6 bg-[#0072BC] hover:bg-[#0a2540] text-white font-bold text-sm rounded-2xl shadow-lg transition-all transform active:scale-95"
+            >
+              {lang === "ar" ? "متابعة إلى النظام 🚀" : "Continue to System 🚀"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Toast notification stack */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none select-none">

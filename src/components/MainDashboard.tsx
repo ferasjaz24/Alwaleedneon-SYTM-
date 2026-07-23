@@ -539,17 +539,7 @@ export default function MainDashboard({
  );
  }
 
- const isTopManagement =
- hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_main') ||
- (user &&
- (user.username?.toUpperCase() === "FERAS" ||
- user.username?.toUpperCase() === "فراس" ||
- user.username?.toUpperCase() === "ADMIN" ||
- user.role === "الادارة العليا" ||
- user.role === "الإدارة العليا" ||
- user.role === "top_management" ||
- user.role === "Super Admin" ||
- user.role === "Admin"));
+ const isTopManagement = hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_main');
 
  if (!isTopManagement) {
  return (
@@ -634,7 +624,7 @@ export default function MainDashboard({
  </div>
 
  {/* 2. TOP ALERTS BAR */}
- {topAlerts.length > 0 && (
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_alerts') && topAlerts.length > 0 && (
  <div className="flex flex-wrap gap-3">
  {topAlerts.slice(0, 6).map((al, idx) => (
  <div
@@ -650,6 +640,7 @@ export default function MainDashboard({
 
  {/* 3. TOP EXECUTIVE KPIs */}
  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_quotations")}
  title={lang === "ar" ? "إجمالي المبيعات" : "Total Sales"}
@@ -666,6 +657,8 @@ export default function MainDashboard({
  badgeText={`${conversionRate}%`}
  badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_collections")}
  title={lang === "ar" ? "التحصيل النقدي الفعلي" : "Actual Collected"}
@@ -678,6 +671,8 @@ export default function MainDashboard({
  badgeText={`${totalSalesValue ? Math.round((totalCollected / totalSalesValue) * 100) : 0}%`}
  badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_collections")}
  title={lang === "ar" ? "المتأخرات" : "Overdue"}
@@ -690,6 +685,8 @@ export default function MainDashboard({
  badgeText={String(latePayments.length)}
  badgeColor="text-rose-700 bg-rose-50 border-rose-100"
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_production') && (
  <KpiCard
  onClick={() => onNavigate("production", "prod_active_projects")}
  title={lang === "ar" ? "مشاريع قيد الإنتاج" : "In Production"}
@@ -701,6 +698,8 @@ export default function MainDashboard({
  badgeText={`${prodItems.length ? Math.round((completedProd.length / prodItems.length) * 100) : 0}%`}
  badgeColor="text-indigo-700 bg-indigo-50 border-indigo-100"
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_hr') && (
  <KpiCard
  onClick={() => onNavigate("hr", "hr_employees")}
  title={lang === "ar" ? "إجمالي الموظفين" : "Total Employees"}
@@ -710,6 +709,8 @@ export default function MainDashboard({
  iconBg="bg-slate-100"
  subtitle={lang === "ar" ? "موظفين على رأس العمل" : "Active workforce"}
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
  <KpiCard
  onClick={() => onNavigate("warehouse", "materials_warehouse")}
  title={lang === "ar" ? "قيمة المخروات والمخزون" : "Inventory Value"}
@@ -722,6 +723,8 @@ export default function MainDashboard({
  lang === "ar" ? "إجمالي الأصول بالمستودع" : "Total warehouse assets"
  }
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
  <KpiCard
  onClick={() => onNavigate("warehouse", "procurement_requests")}
  title={lang === "ar" ? "طلبات مواد معلقة" : "Pending Mat"}
@@ -735,6 +738,8 @@ export default function MainDashboard({
  badgeText={String(fromProdReqs.length)}
  badgeColor="text-fuchsia-700 bg-fuchsia-50 border-fuchsia-100"
  />
+ )}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_alerts') && (
  <KpiCard
  title={lang === "ar" ? "تنبيهات النظام" : "Alerts"}
  value={topAlerts.length}
@@ -745,11 +750,13 @@ export default function MainDashboard({
  badgeText={lang === "ar" ? "مساعدة" : "Help"}
  badgeColor="text-amber-700 bg-amber-50 border-amber-100"
  />
+ )}
  </div>
 
  {/* 4. OPERATIONAL AREAS */}
 
  {/* A. SALES & COLLECTIONS */}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -981,8 +988,10 @@ export default function MainDashboard({
  />
  </div>
  </section>
+ )}
 
  {/* B. PRODUCTION CONTROL */}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_production') && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1176,8 +1185,10 @@ export default function MainDashboard({
  />
  </div>
  </section>
+ )}
 
  {/* C. WAREHOUSE & PROCUREMENT */}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1306,8 +1317,10 @@ export default function MainDashboard({
  </div>
  </div>
  </section>
+ )}
 
  {/* D. HUMAN RESOURCES */}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_hr') && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1464,6 +1477,7 @@ export default function MainDashboard({
  </div>
  </div>
  </section>
+ )}
 
  {/* 5. QUICK ACTIONS */}
  {hasAdvancedPermission(user, 'dashboard', 'quick_shortcuts', 'view_main_shortcuts') && (
@@ -1533,6 +1547,7 @@ export default function MainDashboard({
  )}
 
  {/* 6. HISTORY */}
+ {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_logs') && (
  <section className="bg-white rounded-[28px] border border-slate-200 shadow-sm overflow-hidden">
  <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between">
  <div>
@@ -1640,6 +1655,7 @@ export default function MainDashboard({
  </div>
  )}
  </section>
+ )}
  </div>
  );
 }
