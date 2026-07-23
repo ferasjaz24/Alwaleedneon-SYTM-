@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState } from 'react';
 import { Layers, Plus, Edit2, Share2, AlertOctagon, Users, ShieldAlert } from 'lucide-react';
 import { Employee } from '../../types';
@@ -248,7 +249,7 @@ export default function HrOrgStructureTab({ lang, employees }: HrOrgStructureTab
 
             <div>
               <span className="text-[10px] text-slate-400 block">{lang === 'ar' ? 'الميزانية السنوية للقسم' : 'Annual Authorized Budget'}</span>
-              <p className="font-black text-[#0072BC] font-mono">SAR {activeNode.annualBudget.toLocaleString('en-US')}</p>
+              <p className="font-black text-[#0072BC] font-mono"><SaudiRiyal /> {activeNode.annualBudget.toLocaleString('en-US')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">

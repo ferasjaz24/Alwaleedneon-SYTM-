@@ -46,6 +46,7 @@ export interface User {
   password?: string;
   empId?: string;
   permissions?: UserPermissions;
+  inactive?: boolean;
 }
 
 export interface CustodyRecord {

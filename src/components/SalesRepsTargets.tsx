@@ -1,3 +1,4 @@
+import SaudiRiyal from "./SaudiRiyal";
 import React, { useState, useEffect } from 'react';
 import { User, Quotation, Employee } from '../types';
 import { Trash2, Search, PlusCircle, Printer, Target, TrendingUp, DollarSign, Activity, Users, CheckCircle, Clock, Sparkles } from 'lucide-react';
@@ -386,10 +387,10 @@ export default function SalesRepsTargets({ lang, user }: Props) {
           
           <h2 class="section-title">مؤشرات المبيعات والعمولات</h2>
           <div class="grid grid-cols-4 gap-2 mb-4">
-            <div class="stat-box"><div class="stat-box-label">الهدف المالي</div><div class="stat-box-value">${targetAmount.toLocaleString('en-US')} ريال</div></div>
-            <div class="stat-box"><div class="stat-box-label">المحصل المعتمد</div><div class="stat-box-value text-indigo-700">${approvedQuotesValue.toLocaleString('en-US')} ريال</div></div>
+            <div class="stat-box"><div class="stat-box-label">الهدف المالي</div><div class="stat-box-value">${targetAmount.toLocaleString('en-US')} <SaudiRiyal /></div></div>
+            <div class="stat-box"><div class="stat-box-label">المحصل المعتمد</div><div class="stat-box-value text-indigo-700">${approvedQuotesValue.toLocaleString('en-US')} <SaudiRiyal /></div></div>
             <div class="stat-box"><div class="stat-box-label">تحقيق الهدف</div><div class="stat-box-value ${targetAchievementRate >= 100 ? 'text-emerald-600' : 'text-blue-600'}">${targetAchievementRate}% مقفل</div></div>
-            <div class="stat-box"><div class="stat-box-label">عمولة إضافية</div><div class="stat-box-value text-orange-600">${commissionValue.toLocaleString('en-US')} ريال</div></div>
+            <div class="stat-box"><div class="stat-box-label">عمولة إضافية</div><div class="stat-box-value text-orange-600">${commissionValue.toLocaleString('en-US')} <SaudiRiyal /></div></div>
           </div>
 
           <h2 class="section-title">مؤشرات تشغيلية وتقييم العروض</h2>

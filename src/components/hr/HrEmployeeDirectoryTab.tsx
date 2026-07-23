@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useRef, useEffect } from "react";
 import {
   Users,
@@ -1136,11 +1137,11 @@ export default function HrEmployeeDirectoryTab({
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">الراتب الأساسي:</span>
-               <strong>${selectedEmp.basicSalary || "-"} SAR</strong>
+               <strong>${selectedEmp.basicSalary || "-"} <SaudiRiyal /></strong>
             </div>
             <div style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 6px;">
                <span style="color: #6b7280; width: 130px; display: inline-block;">إجمالي البدلات:</span>
-               <strong>${totalAllowances} SAR</strong>
+               <strong>${totalAllowances} <SaudiRiyal /></strong>
             </div>
           </div>
           <!-- Section: Custody Assets -->

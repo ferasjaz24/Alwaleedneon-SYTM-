@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import { collection, doc, getDocs, setDoc, query, where } from "firebase/firestore";
@@ -1120,8 +1121,9 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Basic Salary */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">
-                      {lang === "ar" ? "الراتب الأساسي (SAR)" : "Basic Salary (SAR)"}
+                    <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
+                      <span>{lang === "ar" ? "الراتب الأساسي" : "Basic Salary"}</span>
+                      <SaudiRiyal />
                     </label>
                     <input
                       type="number"
@@ -1133,8 +1135,9 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
 
                   {/* Regular Allowances */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">
-                      {lang === "ar" ? "بدلات السكن والنقل الثابتة (SAR)" : "Fixed Allowances (SAR)"}
+                    <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
+                      <span>{lang === "ar" ? "بدلات السكن والنقل الثابتة" : "Fixed Allowances"}</span>
+                      <SaudiRiyal />
                     </label>
                     <input
                       type="number"
@@ -1176,8 +1179,8 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                 {calcResults && calcResults.isPayrollApproved ? (
                   <p className="text-xs text-slate-500 italic">
                     {lang === "ar" 
-                      ? `تم سحب الراتب الصافي تلقائياً من المسير المعتمد لشهر ${calcPayrollMonth} بقيمة ${calcResults.netSalary.toLocaleString()} ريال.`
-                      : `Net salary resolved automatically from the approved payroll of ${calcPayrollMonth} as ${calcResults.netSalary.toLocaleString()} SAR.`}
+                      ? `تم سحب الراتب الصافي تلقائياً من المسير المعتمد لشهر ${calcPayrollMonth} بقيمة ${calcResults.netSalary.toLocaleString()} <SaudiRiyal />.`
+                      : `Net salary resolved automatically from the approved payroll of ${calcPayrollMonth} as ${calcResults.netSalary.toLocaleString()} <SaudiRiyal />.`}
                   </p>
                 ) : (
                   <div className="space-y-4">
@@ -1274,7 +1277,7 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                                 type="number"
                                 value={calcAllowanceAmount}
                                 onChange={(e) => setCalcAllowanceAmount(e.target.value)}
-                                placeholder={lang === "ar" ? "المبلغ (SAR)" : "Amount (SAR)"}
+                                placeholder={lang === "ar" ? "المبلغ (ر.س)" : "Amount (SAR)"}
                                 className="w-2/3 border border-slate-200 rounded-lg p-2 text-xs font-mono"
                               />
                               <button
@@ -1304,7 +1307,7 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                               <div key={idx} className="flex justify-between items-center p-1.5 hover:bg-slate-50 rounded">
                                 <span className="font-bold text-slate-700">{item.name}</span>
                                 <div className="flex items-center gap-2 font-mono font-bold">
-                                  <span className="text-emerald-700">+{item.amount.toLocaleString()} SAR</span>
+                                  <span className="text-emerald-700">+{item.amount.toLocaleString()} <SaudiRiyal /></span>
                                   <button
                                     type="button"
                                     onClick={() => setCalcCustomAllowances(prev => prev.filter((_, i) => i !== idx))}
@@ -1346,7 +1349,7 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                                 type="number"
                                 value={calcDeductionAmount}
                                 onChange={(e) => setCalcDeductionAmount(e.target.value)}
-                                placeholder={lang === "ar" ? "المبلغ (SAR)" : "Amount (SAR)"}
+                                placeholder={lang === "ar" ? "المبلغ (ر.س)" : "Amount (SAR)"}
                                 className="w-2/3 border border-slate-200 rounded-lg p-2 text-xs font-mono"
                               />
                               <button
@@ -1376,7 +1379,7 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                               <div key={idx} className="flex justify-between items-center p-1.5 hover:bg-slate-50 rounded">
                                 <span className="font-bold text-slate-700">{item.name}</span>
                                 <div className="flex items-center gap-2 font-mono font-bold">
-                                  <span className="text-rose-700">-{item.amount.toLocaleString()} SAR</span>
+                                  <span className="text-rose-700">-{item.amount.toLocaleString()} <SaudiRiyal /></span>
                                   <button
                                     type="button"
                                     onClick={() => setCalcCustomDeductions(prev => prev.filter((_, i) => i !== idx))}
@@ -1469,7 +1472,10 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                     <p className="text-3xl font-mono font-black text-emerald-400">
                       {calcResults.totalDueAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
-                    <span className="text-slate-400 text-xs font-extrabold block">ريال سعودي (SAR)</span>
+                    <span className="text-slate-400 text-xs font-extrabold flex items-center justify-center gap-1">
+                      <span>ريال سعودي</span>
+                      <SaudiRiyal />
+                    </span>
 
                     {/* Disclaimer */}
                     <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
@@ -1586,7 +1592,11 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">الرصيد الافتتاحي (SAR) *</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <span>الرصيد الافتتاحي</span>
+                    <SaudiRiyal />
+                    <span>*</span>
+                  </label>
                   <input
                     type="number"
                     required
@@ -1707,7 +1717,11 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">الرصيد الافتتاحي (SAR) *</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <span>الرصيد الافتتاحي</span>
+                    <SaudiRiyal />
+                    <span>*</span>
+                  </label>
                   <input
                     type="number"
                     required
@@ -1806,7 +1820,12 @@ export default function CashAndBankTab({ lang, user }: { lang: "ar" | "en"; user
                         <th className="px-4 py-3.5">تاريخ الحركة</th>
                         <th className="px-4 py-3.5">الحساب المالي</th>
                         <th className="px-4 py-3.5">الاتجاه</th>
-                        <th className="px-4 py-3.5">القيمة (SAR)</th>
+                        <th className="px-4 py-3.5">
+                          <div className="flex items-center gap-1">
+                            <span>القيمة</span>
+                            <SaudiRiyal />
+                          </div>
+                        </th>
                         <th className="px-4 py-3.5">الرصيد السابق</th>
                         <th className="px-4 py-3.5">الرصيد الجديد</th>
                         <th className="px-4 py-3.5">البيان والتفاصيل</th>

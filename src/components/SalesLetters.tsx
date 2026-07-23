@@ -1,3 +1,4 @@
+import SaudiRiyal from "./SaudiRiyal";
 import React, { useState, useEffect } from 'react';
 import { FileText, Printer, Save, PenTool, Search, Settings as SettingsIcon, Plus, Trash2, Edit as EditIcon, HelpCircle, X, Check } from 'lucide-react';
 import { User } from '../types';
@@ -1416,7 +1417,7 @@ Al Waleed Fine Arts Industry Co.`;
                   >
                     <option value="">-- بدون تحديد دفعة متصلة --</option>
                     {currentPlan.phases?.map((ph: any) => (
-                      <option key={ph.id} value={ph.id}>{ph.stageName} - {ph.amount} ريال ({ph.status})</option>
+                      <option key={ph.id} value={ph.id}>{ph.stageName} - {ph.amount} <SaudiRiyal /> ({ph.status})</option>
                     ))}
                   </select>
                 )}

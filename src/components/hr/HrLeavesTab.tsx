@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -1200,7 +1201,7 @@ export default function HrLeavesTab({
                       {req.durationDays} {lang === "ar" ? "يوم" : "days"}
                     </td>
                     <td className="py-3 px-2 text-center font-bold text-emerald-600">
-                      {req.totalEntitlements ? `${Number(req.totalEntitlements).toLocaleString('en-US')} SAR` : "-"}
+                      {req.totalEntitlements ? `${Number(req.totalEntitlements).toLocaleString('en-US')} <SaudiRiyal />` : "-"}
                     </td>
                     <td className="py-3 px-2 text-center text-[10px]">
                       {(req.routeFrom || req.routeTo) && (

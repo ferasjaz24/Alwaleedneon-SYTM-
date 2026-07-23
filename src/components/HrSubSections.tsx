@@ -1,3 +1,4 @@
+import SaudiRiyal from "./SaudiRiyal";
 import React, { useState } from 'react';
 import { 
   Users, FileText, TrendingUp, DollarSign, Search, PlusCircle, CheckCircle2, 
@@ -874,44 +875,44 @@ export default function HrSubSections({
                 <thead>
                   <tr>
                     <th style="background: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; text-align: right;">البند المالي (المستحقات)</th>
-                    <th style="background: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; text-align: left;">المبلغ (SAR)</th>
+                    <th style="background: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; text-align: left;">المبلغ (<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" />)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">الراتب الأساسي</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-weight: bold;">SAR ${(emp.basicSalary || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-weight: bold;"><img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(emp.basicSalary || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">بدل السكن (25%)</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${(h || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;"><img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(h || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">بدل الانتقال والترحيل</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;">SAR ${(t || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace;"><img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; verticalAlign: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(t || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">العمل الإضافي والساعات المعتمدة</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${(extra || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; verticalAlign: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(extra || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #e2e8f0;">المكافآت التشجيعية والإنتاجية</td>
-                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+SAR ${(b || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; color: #16a34a;">+<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; verticalAlign: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(b || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr style="background: #fff1f2;">
                     <td style="padding: 10px; border: 1px solid #fecdd3; color: #be123c;">الخصومات والجزاءات الإدارية</td>
-                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${(ded || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; verticalAlign: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(ded || 0).toLocaleString('en-US')}</td>
                   </tr>
                   <tr style="background: #fff1f2;">
                     <td style="padding: 10px; border: 1px solid #fecdd3; color: #be123c;">أقساط السلف والتسويات المستقطعة</td>
-                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-SAR ${(loan || 0).toLocaleString('en-US')}</td>
+                    <td style="padding: 10px; border: 1px solid #fecdd3; font-family: monospace; color: #be123c;">-<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; verticalAlign: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(loan || 0).toLocaleString('en-US')}</td>
                   </tr>
                 </tbody>
               </table>
 
               <div style="border: 2px dashed #0072BC; font-size: 18px; font-weight: bold; padding: 15px; text-align: center; margin-top: 25px; background: #f0f9ff; text-align: right; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #0072BC;">صافي الراتب المستحق والصرف البنكي:</span>
-                <span style="font-family: monospace; font-size: 22px; color: #0072BC;">SAR ${(net || 0).toLocaleString('en-US')}</span>
+                <span style="font-family: monospace; font-size: 22px; color: #0072BC;"><img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(net || 0).toLocaleString('en-US')}</span>
               </div>
 
               <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
@@ -977,7 +978,7 @@ export default function HrSubSections({
                   name: emp.arabicName,
                   category_ar: 'كشف الراتب الشهري المعتمد 💵',
                   category_en: 'Official Certified E-Payslip 💵',
-                  details: `عزيزي الموظف الموقر، تم إصدار كشف مسير راتب وورد ستاير WPS الخاص بك لشهر يونيو 2026 بنجاح.\n\nالراتب الأساسي: SAR ${(emp.basicSalary || 0).toLocaleString('en-US')}\nبدل السكن: SAR ${(h || 0).toLocaleString('en-US')}\nبدل النقل: SAR ${(t || 0).toLocaleString('en-US')}\nإضافي ومكافآت الساعات: SAR ${((extra || 0) + (b || 0)).toLocaleString('en-US')}\nمستقطع السلف والخصومات: SAR ${((ded || 0) + (loan || 0)).toLocaleString('en-US')}\nصافي الراتب المستحق صرفه بنكياً: SAR ${(net || 0).toLocaleString('en-US')}\n\nالحالة: معتمد ومنفّذ ✓`,
+                  details: `عزيزي الموظف الموقر، تم إصدار كشف مسير راتب وورد ستاير WPS الخاص بك لشهر يونيو 2026 بنجاح.\n\nالراتب الأساسي: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(emp.basicSalary || 0).toLocaleString('en-US')}\nبدل السكن: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(h || 0).toLocaleString('en-US')}\nبدل النقل: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(t || 0).toLocaleString('en-US')}\nإضافي ومكافآت الساعات: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${((extra || 0) + (b || 0)).toLocaleString('en-US')}\nمستقطع السلف والخصومات: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${((ded || 0) + (loan || 0)).toLocaleString('en-US')}\nصافي الراتب المستحق صرفه بنكياً: <img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" /> ${(net || 0).toLocaleString('en-US')}\n\nالحالة: معتمد ومنفّذ ✓`,
                   status: 'RESOLVED',
                   hrNotes: `أهلاً بك، تم إرسال كشف الراتب الرسمي وإيداعه بمسير ووردستار البنكي لشهر يونيو 2026 بنجاح. رمز تفويض النقد البنكي الوطني: BK-WPS-2026-AR`
                 })
@@ -1002,19 +1003,19 @@ export default function HrSubSections({
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">مجموع الرواتب الأساسية</span>
-                  <p className="text-xl font-mono font-black text-indigo-950">SAR {(totalBasics || 0).toLocaleString('en-US')}</p>
+                  <p className="text-xl font-mono font-black text-indigo-950"><SaudiRiyal /> {(totalBasics || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-slate-400 block">لكافة موظفي الشركة المسجلين</span>
                 </div>
 
                 <div className="bg-gradient-to-br from-sky-50 to-white p-4 rounded-2xl border border-sky-100 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">مجموع البدلات (سكن ونقل)</span>
-                  <p className="text-xl font-mono font-black text-slate-900">SAR {(totalAllowances || 0).toLocaleString('en-US')}</p>
+                  <p className="text-xl font-mono font-black text-slate-900"><SaudiRiyal /> {(totalAllowances || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-slate-400 block">السكن 25% والتنقل المتغير للجميع</span>
                 </div>
 
                 <div className="bg-gradient-to-br from-[#0072BC]/5 to-white p-4 rounded-2xl border border-[#0072BC]/20 text-right space-y-1">
                   <span className="text-[10px] text-slate-500 font-bold block">إجمالي الرواتب شاملة البدلات</span>
-                  <p className="text-xl font-mono font-black text-[#0072BC]">SAR {(grandTotalSalaries || 0).toLocaleString('en-US')}</p>
+                  <p className="text-xl font-mono font-black text-[#0072BC]"><SaudiRiyal /> {(grandTotalSalaries || 0).toLocaleString('en-US')}</p>
                   <span className="text-[9px] text-[#0072BC] font-semibold block">مغطي بمسير WPS البنكي 💸</span>
                 </div>
 
@@ -1096,9 +1097,19 @@ export default function HrSubSections({
                       <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase font-mono text-slate-400">
                         <th className="p-2 text-right">الاسم الموظف</th>
                         <th className="p-2 text-right">المسمى والدرجة</th>
-                        <th className="p-2 text-right">الأساسي (SAR)</th>
+                        <th className="p-2 text-right">
+                          <div className="flex items-center gap-1">
+                            <span>الأساسي</span>
+                            <SaudiRiyal />
+                          </div>
+                        </th>
                         <th className="p-2 text-right">سكن (25%)</th>
-                        <th className="p-2 text-right">نقل (SAR)</th>
+                        <th className="p-2 text-right">
+                          <div className="flex items-center gap-1">
+                            <span>نقل</span>
+                            <SaudiRiyal />
+                          </div>
+                        </th>
                         <th className="p-2 text-right" style={{ width: '80px' }}>إضافي</th>
                         <th className="p-2 text-right" style={{ width: '80px' }}>مكافأة</th>
                         <th className="p-2 text-right" style={{ width: '80px' }}>خصومات</th>
@@ -1241,44 +1252,49 @@ export default function HrSubSections({
                           <thead>
                             <tr className="bg-slate-150 border-b">
                               <th className="p-2 text-right text-[10px] text-slate-500 bg-slate-100/80">البند المالي المصدّق</th>
-                              <th className="p-2 text-left text-[10px] text-slate-500 bg-slate-100/80">المستحق (SAR)</th>
+                              <th className="p-2 text-left text-[10px] text-slate-500 bg-slate-100/80">
+                                <div className="flex items-center gap-1 justify-end">
+                                  <span>المستحق</span>
+                                  <SaudiRiyal />
+                                </div>
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white">
                             <tr className="border-b">
                               <td className="p-2">الرتب الأساسي المفصل</td>
-                              <td className="p-2 text-left font-mono font-bold">SAR {(emp.basicSalary || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono font-bold"><SaudiRiyal /> {(emp.basicSalary || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2">بدل السكن القانوني (25% من الأساسي)</td>
-                              <td className="p-2 text-left font-mono text-slate-500">SAR {(h || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono text-slate-500"><SaudiRiyal /> {(h || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2">بدل النقل وتغطية السفر والموقع</td>
-                              <td className="p-2 text-left font-mono text-slate-500">SAR {(t || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono text-slate-500"><SaudiRiyal /> {(t || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2 text-emerald-600">القيمة والإنتاجية الإضافية للشهر</td>
-                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {(extra || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+<SaudiRiyal /> {(extra || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b">
                               <td className="p-2 text-emerald-600">المكافآت والبدلات الميدانية الخاصة</td>
-                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+SAR {(b || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono text-emerald-600 font-bold">+<SaudiRiyal /> {(b || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b text-rose-600 bg-rose-50/30">
                               <td className="p-2">الخصومات والجزاءات المستقطعة</td>
-                              <td className="p-2 text-left font-mono">-SAR {(ded || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono">-<SaudiRiyal /> {(ded || 0).toLocaleString('en-US')}</td>
                             </tr>
                             <tr className="border-b text-rose-600 bg-rose-50/50">
                               <td className="p-2">مستنزلات أقساط السلف (ERP)</td>
-                              <td className="p-2 text-left font-mono font-black">-SAR {(loan || 0).toLocaleString('en-US')}</td>
+                              <td className="p-2 text-left font-mono font-black">-<SaudiRiyal /> {(loan || 0).toLocaleString('en-US')}</td>
                             </tr>
                           </tbody>
                         </table>
 
                         <div className="p-3 bg-[#0072BC]/10 border border-all border-[#0072BC]/20 rounded-xl flex justify-between items-center font-bold text-xs">
                           <span className="text-[#0072BC]">إجمالي صافي الراتب المستلم للبنك:</span>
-                          <span className="text-[#0072BC] font-mono text-sm">SAR {(net || 0).toLocaleString('en-US')}</span>
+                          <span className="text-[#0072BC] font-mono text-sm"><SaudiRiyal /> {(net || 0).toLocaleString('en-US')}</span>
                         </div>
                       </div>
 
@@ -1326,7 +1342,10 @@ export default function HrSubSections({
               <div className="space-y-4 text-xs">
                 <p className="font-extrabold text-slate-700">{lang === 'ar' ? 'محاكي السلفة والأقساط' : 'Loan Amortization Tool'}</p>
                 <div>
-                  <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'قيمة السلفة المطلوب سحبها' : 'Loan Capital Requested (SAR)'}</label>
+                  <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                    <span>{lang === 'ar' ? 'قيمة السلفة المطلوب سحبها' : 'Loan Capital Requested'}</span>
+                    <SaudiRiyal />
+                  </label>
                   <input type="number" lang="en" value={loanAmount} onChange={(e) => setLoanAmount(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
                 <div>
@@ -1338,10 +1357,10 @@ export default function HrSubSections({
               <div className="p-4 bg-white border border-slate-150 rounded-2xl flex flex-col justify-between text-xs text-slate-700">
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 font-bold block">{lang === 'ar' ? 'المستحق المالي المقتطع كل مسير رواتب' : 'Deduction Per Monthly Paycheck'}</span>
-                  <p className="text-3xl font-black text-[#0072BC] font-mono mt-1">SAR {(loanAmount / (loanMonths || 1)).toFixed(2)}</p>
+                  <p className="text-3xl font-black text-[#0072BC] font-mono mt-1"><SaudiRiyal /> {(loanAmount / (loanMonths || 1)).toFixed(2)}</p>
                 </div>
                 <div className="space-y-1 text-[11px] text-slate-500 pt-3 border-t border-slate-100 mt-2">
-                  <p>🔹 {lang === 'ar' ? 'إجمالي السلفة: ' : 'Total Cash Out: '} <strong className="font-mono">SAR {loanAmount}</strong></p>
+                  <p>🔹 {lang === 'ar' ? 'إجمالي السلفة: ' : 'Total Cash Out: '} <strong className="font-mono"><SaudiRiyal /> {loanAmount}</strong></p>
                   <p>🔹 {lang === 'ar' ? 'الأقساط المتبقية: ' : 'Total payments: '} <strong className="font-mono">{loanMonths} installments</strong></p>
                   <p className="text-[10px] text-cyan-600 font-bold">✓ {lang === 'ar' ? 'متوافق مع الهيئة العليا للعمل والعمال' : '0% Interest, Compliant with Labor Regulations'}</p>
                 </div>
@@ -1599,7 +1618,10 @@ export default function HrSubSections({
               <div className="space-y-4 text-xs">
                 <p className="font-extrabold text-slate-705">{lang === 'ar' ? 'مدخلات احتساب السفر المستحق' : 'Saudi Labor Code EOS Inputs'}</p>
                 <div>
-                  <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الراتب الفعلي المسجل (أساسي + سكن)' : 'Actual Salary Base (SAR)'}</label>
+                  <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                    <span>{lang === 'ar' ? 'الراتب الفعلي المسجل (أساسي + سكن)' : 'Actual Salary Base'}</span>
+                    <SaudiRiyal />
+                  </label>
                   <input type="number" lang="en" value={eosSalary} onChange={(e) => setEosSalary(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
                 </div>
                 <div>
@@ -1701,7 +1723,7 @@ export default function HrSubSections({
                   <p>To Whom It May Concern,</p>
                   <p> This is to certify that <strong>{selectedLetterEmp.englishName}</strong> (Iqama ID: <strong>{selectedLetterEmp.iqamaId}</strong>) has been with Al-Waleed company as <strong>{selectedLetterEmp.jobTitle}</strong> in {selectedLetterEmp.department} department.</p>
                   {selectedLetterType === 'salary_cert' && (
-                    <p> The employee earns a base pay of <strong>SAR {selectedLetterEmp.basicSalary}</strong> plus housing allowance. This certificate is issued on request.</p>
+                    <p> The employee earns a base pay of <strong><SaudiRiyal /> {selectedLetterEmp.basicSalary}</strong> plus housing allowance. This certificate is issued on request.</p>
                   )}
                   <p className="text-right border-t pt-4">Human Resources Department Director / مدير الموارد البشرية</p>
                 </div>

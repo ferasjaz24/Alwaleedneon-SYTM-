@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useEffect } from "react";
 import { db, auth } from "../../firebase";
 import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
@@ -566,8 +567,8 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
         setVatDeclarations(prev => ({ ...prev, [targetId]: updatedVat }));
         showToast(
           lang === "ar"
-            ? `تم اعتماد دفع الضريبة بقيمة ${Math.abs(amount).toLocaleString("en-US")} ريال وتحديث الرصيد!`
-            : `VAT payment of ${Math.abs(amount).toLocaleString("en-US")} SAR recorded successfully!`,
+            ? `تم اعتماد دفع الضريبة بقيمة ${Math.abs(amount).toLocaleString("en-US")} <SaudiRiyal /> وتحديث الرصيد!`
+            : `VAT payment of ${Math.abs(amount).toLocaleString("en-US")} <SaudiRiyal /> recorded successfully!`,
           "success"
         );
       } else {
@@ -597,8 +598,8 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
         setZakatPayments(prev => ({ ...prev, [targetId]: updatedZakat }));
         showToast(
           lang === "ar"
-            ? `تم اعتماد دفع الزكاة بقيمة ${zakatDueAmount.toLocaleString("en-US")} ريال وتعديل الرصيد!`
-            : `Zakat payment of ${zakatDueAmount.toLocaleString("en-US")} SAR recorded successfully!`,
+            ? `تم اعتماد دفع الزكاة بقيمة ${zakatDueAmount.toLocaleString("en-US")} <SaudiRiyal /> وتعديل الرصيد!`
+            : `Zakat payment of ${zakatDueAmount.toLocaleString("en-US")} <SaudiRiyal /> recorded successfully!`,
           "success"
         );
       }
@@ -671,12 +672,12 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
             <div style="border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; background-color: #f0f9ff; border-right: 4px solid #0072BC;">
               <span style="font-size: 9px; font-weight: bold; color: #0369a1; display: block;">ضريبة المخرجات (المبيعات)</span>
               <span style="font-size: 14px; font-weight: 900; color: #0f172a; font-family: monospace; display: block; margin-top: 4px;">${totalSalesVat.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span style="font-size: 9px; font-family: sans-serif;">ريال</span></span>
-              <span style="font-size: 8px; color: #64748b; display: block; margin-top: 2px;">مجموع المبيعات الخاضعة: ${totalSalesAmount.toLocaleString("en-US")} ريال</span>
+              <span style="font-size: 8px; color: #64748b; display: block; margin-top: 2px;">مجموع المبيعات الخاضعة: ${totalSalesAmount.toLocaleString("en-US")} <SaudiRiyal /></span>
             </div>
             <div style="border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; background-color: #fffbeb; border-right: 4px solid #d97706;">
               <span style="font-size: 9px; font-weight: bold; color: #b45309; display: block;">ضريبة المدخلات (المشتريات)</span>
               <span style="font-size: 14px; font-weight: 900; color: #0f172a; font-family: monospace; display: block; margin-top: 4px;">${totalPurchasesVat.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span style="font-size: 9px; font-family: sans-serif;">ريال</span></span>
-              <span style="font-size: 8px; color: #64748b; display: block; margin-top: 2px;">مجموع التكاليف الخاضعة: ${totalPurchasesAmount.toLocaleString("en-US")} ريال</span>
+              <span style="font-size: 8px; color: #64748b; display: block; margin-top: 2px;">مجموع التكاليف الخاضعة: ${totalPurchasesAmount.toLocaleString("en-US")} <SaudiRiyal /></span>
             </div>
             <div style="border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; background-color: ${netVatAmount >= 0 ? "#fff5f5" : "#f0fdf4"}; border-right: 4px solid ${netVatAmount >= 0 ? "#ef4444" : "#22c55e"};">
               <span style="font-size: 9px; font-weight: bold; color: ${netVatAmount >= 0 ? "#991b1b" : "#166534"}; display: block;">
@@ -850,7 +851,7 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
             <thead>
               <tr style="background-color: #f1f5f9; text-align: right; font-weight: bold;">
                 <th style="padding: 6px 10px; border: 1px solid #e2e8f0; width: 60%;">البند الزكوي / Zakat Line Parameter</th>
-                <th style="padding: 6px 10px; border: 1px solid #e2e8f0; text-align: left; width: 40%;">المبلغ بالريال السعودي / Amount (SAR)</th>
+                <th style="padding: 6px 10px; border: 1px solid #e2e8f0; text-align: left; width: 40%;">المبلغ بالريال السعودي / Amount (<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" />)</th>
               </tr>
             </thead>
             <tbody>
@@ -1541,7 +1542,12 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-100">
                           <th className="p-3 text-xs font-black text-slate-700">{lang === "ar" ? "بند الحساب" : "Calculation Line Item"}</th>
-                          <th className="p-3 text-xs font-black text-slate-700 text-right">{lang === "ar" ? "القيمة بالريال" : "Amount (SAR)"}</th>
+                          <th className="p-3 text-xs font-black text-slate-700 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <span>{lang === "ar" ? "القيمة بالريال" : "Amount"}</span>
+                              <SaudiRiyal />
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -1812,7 +1818,7 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
                           <span className="font-bold text-slate-700 block">{b.bankName}</span>
                           <span className="text-[10px] text-slate-400">{b.accountName}</span>
                         </div>
-                        <span className="font-mono font-black text-slate-900">{b.currentBalance.toLocaleString("en-US")} SAR</span>
+                        <span className="font-mono font-black text-slate-900">{b.currentBalance.toLocaleString("en-US")} <SaudiRiyal /></span>
                       </div>
                     ))}
                   </div>
@@ -1834,7 +1840,7 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
                         <div>
                           <span className="font-bold text-slate-700 block">{c.cashBoxName}</span>
                         </div>
-                        <span className="font-mono font-black text-slate-900">{c.currentBalance.toLocaleString("en-US")} SAR</span>
+                        <span className="font-mono font-black text-slate-900">{c.currentBalance.toLocaleString("en-US")} <SaudiRiyal /></span>
                       </div>
                     ))}
                   </div>
@@ -1844,7 +1850,7 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
               {/* Totals Summary */}
               <div className="bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between">
                 <span className="text-[11px] font-bold">{lang === "ar" ? "إجمالي السيولة النقدية القابلة للزكاة:" : "Combined Liquid Capital:"}</span>
-                <span className="font-mono font-black text-base text-emerald-400">{workingCapital.toLocaleString("en-US")} SAR</span>
+                <span className="font-mono font-black text-base text-emerald-400">{workingCapital.toLocaleString("en-US")} <SaudiRiyal /></span>
               </div>
             </div>
 
@@ -1945,12 +1951,12 @@ export default function ZakatTaxCalculatorTab({ lang, user }: { lang: "ar" | "en
                   {paymentForm.paidFromType === "Bank"
                     ? bankAccounts.map((b) => (
                         <option key={b.id} value={b.id}>
-                          {b.bankName} - {b.accountName} ({b.currentBalance.toLocaleString("en-US")} SAR)
+                          {b.bankName} - {b.accountName} ({b.currentBalance.toLocaleString("en-US")} <SaudiRiyal />)
                         </option>
                       ))
                     : cashBoxes.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.cashBoxName} ({c.currentBalance.toLocaleString("en-US")} SAR)
+                          {c.cashBoxName} ({c.currentBalance.toLocaleString("en-US")} <SaudiRiyal />)
                         </option>
                       ))}
                 </select>

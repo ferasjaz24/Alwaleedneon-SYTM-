@@ -60,8 +60,8 @@ export default function FirasAssistantTab({ lang, user }: FirasAssistantTabProps
       id: "welcome",
       role: "assistant",
       content: lang === "ar" 
-        ? "مرحباً! أنا **المحاسب المالي الذكي**، مستشارك المالي الذكي ومحاسبك القانوني وخبير الأنظمة المالية بأكثر من 60 عاماً من الخبرة المترسخة.\n\nيسعدني جداً تقديم الدعم لك في كل ما يتعلق بـ:\n- فهم وتطبيق قوانين العمل السعودية (نهاية الخدمة، الإجازات، البدلات).\n- إرشادات إعداد الحسابات الختامية والقيود المزدوجة.\n- الالتزام الضريبي ونظام هيئة الزكاة والضريبة والجمارك (ZATCA).\n- تحليل التكاليف وهوامش الربح للمشاريع.\n\n*يرجى العلم بأنني مختص حصرياً بالمسائل المالية والضريبية والمحاسبية.* كيف يمكنني مساعدتك اليوم؟"
-        : "Hello! I am your **Smart Financial Accountant**, Certified Public Accountant, and financial systems expert with over 60 years of extensive experience.\n\nI'm delighted to assist you with:\n- Understanding and applying Saudi labor laws (EOS payouts, vacations, allowances).\n- Accounting entries, double-entry bookkeeping, and ledger auditing.\n- Zakat, Tax, and Customs Authority (ZATCA) electronic invoicing compliance.\n- Cost analyses, project profit margins, and budgeting.\n\n*Please note that my expertise is strictly restricted to financial, accounting, and taxation matters.* How can I assist you today?",
+        ? "مرحباً! أنا **المحاسب المالي الذكي**، مستشارك الخبير المتخصص في المحاسبة المالية، وكافة الأمور المالية والقانونية والضرائب، مع خبرة واسعة وعميقة تمتد لسنوات طويلة في جميع المعاملات المحاسبية والاستشارات الضريبية.\n\nيسعدني جداً تقديم الدعم لك والإجابة على أي استفسارات أو أسئلة، وبالأخص في المجالات التالية:\n- فهم وتطبيق قوانين العمل السعودية (نهاية الخدمة، الإجازات، البدلات).\n- إرشادات إعداد الحسابات الختامية والقيود المزدوجة.\n- الالتزام الضريبي ونظام هيئة الزكاة والضريبة والجمارك (ZATCA).\n- تحليل التكاليف وهوامش الربح للمشاريع.\n\n*بصفتي خبيراً متخصصاً، يسرني الإجابة على جميع تساؤلاتك ومساعدتك على أكمل وجه.*"
+        : "Hello! I am your **Smart Financial Accountant**, specializing in financial accounting and related matters, with extensive experience in all financial and legal affairs, taxes, and corporate audits.\n\nI'm delighted to assist you and answer any questions you have, with deep expertise particularly in:\n- Understanding and applying Saudi labor laws (EOS payouts, vacations, allowances).\n- Accounting entries, double-entry bookkeeping, and ledger auditing.\n- Zakat, Tax, and Customs Authority (ZATCA) electronic invoicing compliance.\n- Cost analyses, project profit margins, and budgeting.\n\n*As an expert specialist, I am ready to answer any questions and guide you seamlessly.*",
       timestamp: new Date().toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' })
     };
     setMessages([welcomeMsg]);
@@ -249,8 +249,8 @@ export default function FirasAssistantTab({ lang, user }: FirasAssistantTabProps
       id: "welcome",
       role: "assistant",
       content: lang === "ar" 
-        ? "مرحباً! أنا **المحاسب المالي الذكي**، مستشارك المالي الذكي ومحاسبك القانوني وخبير الأنظمة المالية بأكثر من 60 عاماً من الخبرة المترسخة.\n\nيسعدني جداً تقديم الدعم لك في كل ما يتعلق بـ:\n- فهم وتطبيق قوانين العمل السعودية (نهاية الخدمة، الإجازات، البدلات).\n- إرشادات إعداد الحسابات الختامية والقيود المزدوجة.\n- الالتزام الضريبي ونظام هيئة الزكاة والضريبة والجمارك (ZATCA).\n- تحليل التكاليف وهوامش الربح للمشاريع.\n\n*يرجى العلم بأنني مختص حصرياً بالمسائل المالية والضريبية والمحاسبية.* كيف يمكنني مساعدتك اليوم؟"
-        : "Hello! I am your **Smart Financial Accountant**, Certified Public Accountant, and financial systems expert with over 60 years of extensive experience.\n\nI'm delighted to assist you with:\n- Understanding and applying Saudi labor laws (EOS payouts, vacations, allowances).\n- Accounting entries, double-entry bookkeeping, and ledger auditing.\n- Zakat, Tax, and Customs Authority (ZATCA) electronic invoicing compliance.\n- Cost analyses, project profit margins, and budgeting.\n\n*Please note that my expertise is strictly restricted to financial, accounting, and taxation matters.* How can I assist you today?",
+        ? "مرحباً! أنا **المحاسب المالي الذكي**، مستشارك الخبير المتخصص في المحاسبة المالية، وكافة الأمور المالية والقانونية والضرائب، مع خبرة واسعة وعميقة تمتد لسنوات طويلة في جميع المعاملات المحاسبية والاستشارات الضريبية.\n\nيسعدني جداً تقديم الدعم لك والإجابة على أي استفسارات أو أسئلة، وبالأخص في المجالات التالية:\n- فهم وتطبيق قوانين العمل السعودية (نهاية الخدمة، الإجازات، البدلات).\n- إرشادات إعداد الحسابات الختامية والقيود المزدوجة.\n- الالتزام الضريبي ونظام هيئة الزكاة والضريبة والجمارك (ZATCA).\n- تحليل التكاليف وهوامش الربح للمشاريع.\n\n*بصفتي خبيراً متخصصاً، يسرني الإجابة على جميع تساؤلاتك ومساعدتك على أكمل وجه.*"
+        : "Hello! I am your **Smart Financial Accountant**, specializing in financial accounting and related matters, with extensive experience in all financial and legal affairs, taxes, and corporate audits.\n\nI'm delighted to assist you and answer any questions you have, with deep expertise particularly in:\n- Understanding and applying Saudi labor laws (EOS payouts, vacations, allowances).\n- Accounting entries, double-entry bookkeeping, and ledger auditing.\n- Zakat, Tax, and Customs Authority (ZATCA) electronic invoicing compliance.\n- Cost analyses, project profit margins, and budgeting.\n\n*As an expert specialist, I am ready to answer any questions and guide you seamlessly.*",
       timestamp: new Date().toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' })
     };
     setMessages([welcomeMsg]);
@@ -472,8 +472,8 @@ export default function FirasAssistantTab({ lang, user }: FirasAssistantTabProps
               disabled={isLoading}
               placeholder={
                 lang === "ar" 
-                  ? "اسأل المحاسب المالي الذكي عن مكافآت نهاية الخدمة، القيود المحاسبية، الالتزام الضريبي..." 
-                  : "Ask the Smart Financial Accountant about EOS calculations, accounting journal entries, ZATCA tax rules..."
+                  ? "اسأل المحاسب المالي الذكي أي سؤال (متخصص في المحاسبة المالية، الضرائب، الأمور القانونية)..." 
+                  : "Ask the Smart Financial Accountant anything (specialized in financial accounting, taxes, legal affairs)..."
               }
               className="flex-1 px-4 py-3 bg-slate-50 hover:bg-slate-100/75 focus:bg-white text-sm text-slate-800 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all disabled:opacity-50"
             />
@@ -487,8 +487,8 @@ export default function FirasAssistantTab({ lang, user }: FirasAssistantTabProps
           </form>
           <p className="text-[10px] text-slate-400 mt-2 text-center select-none">
             {lang === "ar" 
-              ? "المحاسب المالي الذكي هو مساعد مالي مدعوم بالذكاء الاصطناعي. يرجى دائماً مراجعة المستندات والبيانات الحسابية والاعتماد على توثيق هيئة الزكاة والضريبة."
-              : "The Smart Financial Accountant is an AI-powered financial assistant. Please double check reports, double-entries, and refer to official ZATCA documentation."}
+              ? "المحاسب المالي الذكي هو مستشارك الذكي المعتمد المتخصص في جميع المسائل المحاسبية والمالية والقانونية والضرائب."
+              : "The Smart Financial Accountant is your certified AI specialist in all accounting, financial, legal, and taxation matters."}
           </p>
         </div>
       </div>

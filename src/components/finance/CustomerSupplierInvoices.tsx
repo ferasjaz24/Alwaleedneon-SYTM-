@@ -6,6 +6,7 @@ import {
   AlertTriangle, Check, ArrowLeft, Download, Info, Shield, ListCollapse,
   ChevronDown, Settings
 } from "lucide-react";
+import SaudiRiyal from "../SaudiRiyal";
 import { User } from "../../types";
 import { hasAdvancedPermission } from "../../lib/permissions";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../../utils/PrintShared";
@@ -3283,7 +3284,12 @@ export default function CustomerSupplierInvoices({ user, lang }: CustomerSupplie
                         <td className="p-2 border-r border-slate-150">{previewInvoice.date}</td>
                         <td className="p-2 border-r border-slate-150">{previewInvoice.dueDate || "---"}</td>
                         <td className="p-2 border-r border-slate-150">{previewInvoice.date}</td>
-                        <td className="p-2 font-bold text-indigo-700">ريال سعودي (SAR)</td>
+                        <td className="p-2 font-bold text-indigo-700">
+                          <div className="flex items-center gap-1">
+                            <span>ريال سعودي</span>
+                            <SaudiRiyal />
+                          </div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>

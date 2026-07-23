@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useMemo } from "react";
 import { User } from "../../types";
 import { hasAdvancedPermission } from "../../lib/permissions";
@@ -295,11 +296,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
 
     if (diffDays > 0 && selectedEmployees.length > 0) {
       const avgSalary = selectedEmployees.reduce((sum, e) => sum + (e.salary || 0), 0) / selectedEmployees.length;
-      expertAdvice.push({ text: `متوسط رواتب العمالة المخصصة (${avgSalary.toFixed(0)} ريال). نسبة تكلفة الرواتب من إجمالي التكلفة تبلغ ${((labCost / totalCost) * 100).toFixed(1)}%. إذا تجاوزت هذه النسبة 35% يجب مراجعة تسعير العمالة أو إعادة هندسة المهام.`, type: labCost / totalCost > 0.35 ? 'negative' : 'positive' });
+      expertAdvice.push({ text: `متوسط رواتب العمالة المخصصة (${avgSalary.toFixed(0)} <SaudiRiyal />). نسبة تكلفة الرواتب من إجمالي التكلفة تبلغ ${((labCost / totalCost) * 100).toFixed(1)}%. إذا تجاوزت هذه النسبة 35% يجب مراجعة تسعير العمالة أو إعادة هندسة المهام.`, type: labCost / totalCost > 0.35 ? 'negative' : 'positive' });
     }
 
     if (diffDays < 10 && totalCost > 50000) {
-      expertAdvice.push({ text: `مدة المشروع قصيرة جداً (${diffDays} أيام) مقارنة بحجم التكلفة (${totalCost.toFixed(0)} ريال). نسبة الخطأ ترتفع في المشاريع المستعجلة، أنصح بزيادة هامش المخاطرة بـ 10% أو التفاوض على تمديد المدة.`, type: 'negative' });
+      expertAdvice.push({ text: `مدة المشروع قصيرة جداً (${diffDays} أيام) مقارنة بحجم التكلفة (${totalCost.toFixed(0)} <SaudiRiyal />). نسبة الخطأ ترتفع في المشاريع المستعجلة، أنصح بزيادة هامش المخاطرة بـ 10% أو التفاوض على تمديد المدة.`, type: 'negative' });
     }
 
     expertAdvice.push({ text: `نصيحة ذهبية: احرص على توقيع العميل على جميع التصاميم واختيار المواد والعينات (Mockups) بشكل خطي ورسمي قبل البدء بالتصنيع، لأن تكلفة إعادة العمل (Rework) في هذا المجال تدمر هامش الربح بالكامل.`, type: 'neutral' });
@@ -323,11 +324,11 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
 أنت خبير محترف وشرس في تسعير وإدارة مشاريع الدعاية والإعلان والمقاولات بخبرة 45 سنة.
 قم بتقييم هذا المشروع بصرامة وبدون مجاملة (تقييم لا يرحم):
 اسم المشروع: ${formData.projectName}
-التكلفة الإجمالية: ${totalCost} ريال
-السعر المقدم للعميل: ${userP} ريال
+التكلفة الإجمالية: ${totalCost} <SaudiRiyal />
+السعر المقدم للعميل: ${userP} <SaudiRiyal />
 هامش الربح الفعلي المتوقع: ${actualMargin.toFixed(1)}%
 المدة المحددة للمشروع: ${diffDays} يوم
-تفصيل التكاليف: مواد (${matCost})، تشغيل شهري (${monthlyOpCost})، عمالة والتزام رواتب (${labCost} ريال يتضمن ${selectedEmployees.reduce((sum, emp) => {
+تفصيل التكاليف: مواد (${matCost})، تشغيل شهري (${monthlyOpCost})، عمالة والتزام رواتب (${labCost} <SaudiRiyal /> يتضمن ${selectedEmployees.reduce((sum, emp) => {
   const dailyRate = (emp.salary || 0) / 30;
   const hourlyRate = dailyRate / 8;
   
@@ -455,14 +456,14 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
           <div class="summary-box">
             <p><strong>الوصف:</strong> ${formData.description || 'لا يوجد'}</p>
             <p><strong>المدة:</strong> ${diffDays} يوم (من ${formData.startDate} إلى ${formData.endDate})</p>
-            <p><strong>التكلفة الإجمالية:</strong> ${studyResult.costs.total.toFixed(2)} SAR</p>
-            <p><strong>السعر المقترح للمشروع:</strong> ${studyResult.pricing.userPrice.toFixed(2)} SAR</p>
-            <p><strong>الربح المتوقع:</strong> ${studyResult.pricing.actualProfit.toFixed(2)} SAR (${studyResult.pricing.actualMargin.toFixed(1)}%)</p>
+            <p><strong>التكلفة الإجمالية:</strong> ${studyResult.costs.total.toFixed(2)} <SaudiRiyal /></p>
+            <p><strong>السعر المقترح للمشروع:</strong> ${studyResult.pricing.userPrice.toFixed(2)} <SaudiRiyal /></p>
+            <p><strong>الربح المتوقع:</strong> ${studyResult.pricing.actualProfit.toFixed(2)} <SaudiRiyal /> (${studyResult.pricing.actualMargin.toFixed(1)}%)</p>
           </div>
 
           <h2>تفصيل التكاليف</h2>
           <table>
-            <tr><th>النوع</th><th>المبلغ (SAR)</th></tr>
+            <tr><th>النوع</th><th>المبلغ (<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" />)</th></tr>
             <tr><td>تكلفة المواد الخام</td><td>${studyResult.costs.material.toFixed(2)}</td></tr>
             <tr><td>التكلفة التشغيلية (للشهر ${studyResult.costs.monthlyOperational.toFixed(2)})</td><td>${studyResult.costs.operational.toFixed(2)}</td></tr>
             <tr><td>تكلفة العمالة</td><td>${studyResult.costs.labor.toFixed(2)}</td></tr>
@@ -564,8 +565,9 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
               <div key={study.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => loadStudy(study)}>
                 <div className="font-bold text-slate-800">{study.projectName || (isAr ? "بدون اسم" : "Unnamed")}</div>
                 <div className="text-xs text-slate-500 mt-1">{new Date(study.createdAt).toLocaleDateString(isAr ? 'en-US' : 'en-US')} - {study.createdBy}</div>
-                <div className="text-sm font-bold text-indigo-600 mt-2">
-                  {study.studyResult?.pricing?.userPrice?.toLocaleString(undefined, {maximumFractionDigits:2})} SAR
+                <div className="text-sm font-bold text-indigo-600 mt-2 flex items-center gap-1">
+                  <span>{study.studyResult?.pricing?.userPrice?.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+                  <SaudiRiyal />
                 </div>
               </div>
             ))}
@@ -1041,8 +1043,8 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-sm font-black text-slate-800 border-b pb-3">{isAr ? "ملخص التكلفة" : "Cost Summary"}</h4>
               <div className="space-y-3 text-sm font-bold">
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة المواد" : "Material"}</span><span className="text-slate-800">{studyResult.costs.material.toLocaleString('en-US')} SAR</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "التكاليف التشغيلية" : "Operational"}</span><span className="text-slate-800">{studyResult.costs.operational.toLocaleString('en-US')} SAR</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة المواد" : "Material"}</span><span className="text-slate-800">{studyResult.costs.material.toLocaleString('en-US')} <SaudiRiyal /></span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "التكاليف التشغيلية" : "Operational"}</span><span className="text-slate-800">{studyResult.costs.operational.toLocaleString('en-US')} <SaudiRiyal /></span></div>
                 {canViewLaborCost && <div className="flex justify-between"><span className="text-slate-500">{isAr ? "تكلفة العمالة" : "Labor"}</span><span className="text-slate-800">{studyResult.costs.labor.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>}
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "المخاطر الإضافية" : "Risks"}</span><span className="text-slate-800">{studyResult.costs.risk.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between border-t pt-2 text-lg font-black text-indigo-600"><span className="text-slate-800">{isAr ? "الإجمالي" : "Total"}</span><span>{studyResult.costs.total.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
@@ -1053,7 +1055,7 @@ export default function ProjectPricingStudy({ lang, user, employees }: ProjectPr
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-sm font-black text-slate-800 border-b pb-3">{isAr ? "ملخص التسعير" : "Pricing Summary"}</h4>
               <div className="space-y-3 text-sm font-bold">
-                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر الحالي (للمستخدم)" : "User Price"}</span><span className="text-slate-800">{studyResult.pricing.userPrice.toLocaleString('en-US')} SAR</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر الحالي (للمستخدم)" : "User Price"}</span><span className="text-slate-800">{studyResult.pricing.userPrice.toLocaleString('en-US')} <SaudiRiyal /></span></div>
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "السعر المقترح" : "Suggested Price"}</span><span className="text-slate-800">{studyResult.pricing.targetPrice.toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between border-t pt-2 mt-2"><span className="text-slate-500">{isAr ? "الفرق" : "Difference"}</span><span className={studyResult.pricing.userPrice < studyResult.pricing.targetPrice ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>{(studyResult.pricing.userPrice - studyResult.pricing.targetPrice).toLocaleString(undefined, {maximumFractionDigits:2})} SAR</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">{isAr ? "نسبة الخطأ" : "Error Margin"}</span><span className={Math.abs(studyResult.pricing.errorMargin) > 10 ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>{studyResult.pricing.errorMargin.toFixed(2)}%</span></div>

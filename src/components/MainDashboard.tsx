@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import SaudiRiyal from "./SaudiRiyal";
 import {
  TrendingUp,
  Users,

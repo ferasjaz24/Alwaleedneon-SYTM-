@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState } from 'react';
 import { 
   DollarSign, Landmark, Receipt, Users, Search, Eye, 
@@ -148,11 +149,11 @@ export default function HrPayrollTab({
     if (dedFormType === 'تأخير') {
       const amt = Number(((dailyRate * 0.25) * calcDays).toFixed(2));
       setDedFormAmount(amt);
-      setDedFormReason(`تأخير ومواظبة لعدد (${calcDays}) وحدات زائدة عن المسموح - خُصم ربع اليومية (بواقع ${(dailyRate * 0.25).toFixed(2)} ريال للوحدة) من إجمالي الأجر البالغ ${totalSalary} ريال.`);
+      setDedFormReason(`تأخير ومواظبة لعدد (${calcDays}) وحدات زائدة عن المسموح - خُصم ربع اليومية (بواقع ${(dailyRate * 0.25).toFixed(2)} <SaudiRiyal /> للوحدة) من إجمالي الأجر البالغ ${totalSalary} <SaudiRiyal />.`);
     } else if (dedFormType === 'غياب') {
       const amt = Number(((dailyRate * 2) * calcDays).toFixed(2));
       setDedFormAmount(amt);
-      setDedFormReason(`خصم غياب لعدد (${calcDays}) أيام بدون إذن رسمي - بمضاعفة اليومية (خصم مزدوج بواقع ${(dailyRate * 2).toFixed(2)} ريال لليوم) من إجمالي الأجر البالغ ${totalSalary} ريال.`);
+      setDedFormReason(`خصم غياب لعدد (${calcDays}) أيام بدون إذن رسمي - بمضاعفة اليومية (خصم مزدوج بواقع ${(dailyRate * 2).toFixed(2)} <SaudiRiyal /> لليوم) من إجمالي الأجر البالغ ${totalSalary} <SaudiRiyal />.`);
     } else if (dedFormType === 'سلفة') {
       setDedFormAmount(advAmount);
       setDedFormReason(`سلفة مالية طارئة ممنوحة للموظف بقيمة (${advAmount}) ريال. نظام الوفاء: (${advRepayment}). تاريخ السلفة: (${advDate}). تاريخ السداد النهائي: (${advFinalRepayDate}). سبب ومنفعة الطلب: (${advReason || 'طلب شخصي'}).`);
@@ -409,10 +410,10 @@ export default function HrPayrollTab({
         <tr>
           <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace;">${emp.id}</td>
           <td style="border: 1px solid #ddd; padding: 10px; font-weight: bold;">${emp.arabicName}</td>
-          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace;">${data.basic.toLocaleString('en-US')} ريال</td>
-          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: green;">+${data.allowances.toLocaleString('en-US')} ريال</td>
-          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: red;">-${data.deductions.toLocaleString('en-US')} ريال</td>
-          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; font-weight: bold; background: #f9f9f9;">${net.toLocaleString('en-US')} ريال</td>
+          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace;">${data.basic.toLocaleString('en-US')} <SaudiRiyal /></td>
+          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: green;">+${data.allowances.toLocaleString('en-US')} <SaudiRiyal /></td>
+          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; color: red;">-${data.deductions.toLocaleString('en-US')} <SaudiRiyal /></td>
+          <td style="border: 1px solid #ddd; padding: 10px; font-family: monospace; font-weight: bold; background: #f9f9f9;">${net.toLocaleString('en-US')} <SaudiRiyal /></td>
           <td style="border: 1px solid #ddd; padding: 10px; font-weight: bold; color: #0072BC;">${data.status}</td>
         </tr>
       `;
@@ -471,8 +472,8 @@ export default function HrPayrollTab({
 
             <div class="sum-card">
               <strong>📝 إحصاء الصرف الإجمالي للمسير الحالي المعتمد:</strong>
-              <p>إجمالي المدفوعات الأساسية: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.basic || 0), 0).toLocaleString('en-US')} ريال</p>
-              <p>إجمالي الاستقطاعات والجزاءات: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.deductions || 0), 0).toLocaleString('en-US')} ريال</p>
+              <p>إجمالي المدفوعات الأساسية: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.basic || 0), 0).toLocaleString('en-US')} <SaudiRiyal /></p>
+              <p>إجمالي الاستقطاعات والجزاءات: ${employees.reduce((s, e) => s + (inlineWages[e.id]?.deductions || 0), 0).toLocaleString('en-US')} <SaudiRiyal /></p>
               <p>صوافي الأجور المعدة للحوالات (WPS): <strong>${employees.reduce((s, e) => {
                 const row = inlineWages[e.id] || { basic: 0, allowances: 0, deductions: 0 };
                 return s + (row.basic + row.allowances - row.deductions);
@@ -627,8 +628,8 @@ export default function HrPayrollTab({
         : `Electronic official Payslip compiled and issued by HR-Finance department for the current month.`,
       status: 'RESOLVED',
       hrNotes: lang === 'ar' 
-        ? `الراتب الأساسي: ${editBasic} ريال | بدل سكن: ${editHousing} ريال | بدل نقل: ${editTransport} ريال\nإضافي: ${editOvertime} ريال | مكافآت: ${editBonuses} ريال\nخصومات: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} ريال | سلف مستقطعة: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} ريال\n---------------------------\n💰 صافي الراتب المستحق: ${netSalaryCalculated} ريال سعودي\nتم الإرسال والاعتماد بواسطة: رئيس الموارد البشرية.`
-        : `Basic Salary: ${editBasic} SAR | Housing: ${editHousing} SAR | Transport: ${editTransport} SAR\nOvertime: ${editOvertime} SAR | Bonuses: ${editBonuses} SAR\nDeductions: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} SAR | Loans: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} SAR\n---------------------------\n💰 Net Disbursed Wages: ${netSalaryCalculated} SAR\nApproved & certified by: Head of HR Administration.`
+        ? `الراتب الأساسي: ${editBasic} <SaudiRiyal /> | بدل سكن: ${editHousing} <SaudiRiyal /> | بدل نقل: ${editTransport} <SaudiRiyal />\nإضافي: ${editOvertime} <SaudiRiyal /> | مكافآت: ${editBonuses} <SaudiRiyal />\nخصومات: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} <SaudiRiyal /> | سلف مستقطعة: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} <SaudiRiyal />\n---------------------------\n💰 صافي الراتب المستحق: ${netSalaryCalculated} <SaudiRiyal /> سعودي\nتم الإرسال والاعتماد بواسطة: رئيس الموارد البشرية.`
+        : `Basic Salary: ${editBasic} <SaudiRiyal /> | Housing: ${editHousing} <SaudiRiyal /> | Transport: ${editTransport} <SaudiRiyal />\nOvertime: ${editOvertime} <SaudiRiyal /> | Bonuses: ${editBonuses} <SaudiRiyal />\nDeductions: -${editDeductions + getEmployeeDeductionsTotal(selectedEmp.id)} <SaudiRiyal /> | Loans: -${editLoans + getEmployeeLoansTotal(selectedEmp.id)} <SaudiRiyal />\n---------------------------\n💰 Net Disbursed Wages: ${netSalaryCalculated} <SaudiRiyal />\nApproved & certified by: Head of HR Administration.`
     };
 
     try {
@@ -726,13 +727,13 @@ export default function HrPayrollTab({
               </thead>
               <tbody>
                 <tr>
-                  <td>${editBasic} ريال</td>
-                  <td>${editHousing} ريال</td>
-                  <td>${editTransport} ريال</td>
-                  <td>${editOvertime} ريال</td>
-                  <td>${editBonuses} ريال</td>
-                  <td style="color:#b91c1c;">${editDeductions} ريال</td>
-                  <td style="color:#b91c1c;">${editLoans} ريال</td>
+                  <td>${editBasic} <SaudiRiyal /></td>
+                  <td>${editHousing} <SaudiRiyal /></td>
+                  <td>${editTransport} <SaudiRiyal /></td>
+                  <td>${editOvertime} <SaudiRiyal /></td>
+                  <td>${editBonuses} <SaudiRiyal /></td>
+                  <td style="color:#b91c1c;">${editDeductions} <SaudiRiyal /></td>
+                  <td style="color:#b91c1c;">${editLoans} <SaudiRiyal /></td>
                 </tr>
               </tbody>
             </table>
@@ -808,8 +809,8 @@ export default function HrPayrollTab({
       if (totalProjectedDeductions > halfSalary) {
         isDeductionBlocked = true;
         deductionWarningMessage = lang === 'ar'
-          ? `المجموع الحالي لخصومات هذا الموظف خلال الشهر هو (${otherConfirmedDeductions.toLocaleString('en-US')} ريال). وبإضافة قيمة هذا الخصم (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} ريال)، يصبح إجمالي الخصم المقرّر له خلال الشهر (${totalProjectedDeductions.toLocaleString('en-US')} ريال)، وهو ما يتجاوز نصف الراتب الإجمالي البالغ (${totalSalary.toLocaleString('en-US')} ريال، والحد الأقصى المسموح به هو ${halfSalary.toLocaleString('en-US')} ريال).`
-          : `The current sum of this employee's deductions during this month is (${otherConfirmedDeductions.toLocaleString('en-US')} SAR). Adding this deduction (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} SAR), the target total becomes (${totalProjectedDeductions.toLocaleString('en-US')} SAR), which exceeds 50% of the total monthly salary package (${totalSalary.toLocaleString('en-US')} SAR, limit: ${halfSalary.toLocaleString('en-US')} SAR).`;
+          ? `المجموع الحالي لخصومات هذا الموظف خلال الشهر هو (${otherConfirmedDeductions.toLocaleString('en-US')} <SaudiRiyal />). وبإضافة قيمة هذا الخصم (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} <SaudiRiyal />)، يصبح إجمالي الخصم المقرّر له خلال الشهر (${totalProjectedDeductions.toLocaleString('en-US')} <SaudiRiyal />)، وهو ما يتجاوز نصف الراتب الإجمالي البالغ (${totalSalary.toLocaleString('en-US')} <SaudiRiyal />، والحد الأقصى المسموح به هو ${halfSalary.toLocaleString('en-US')} <SaudiRiyal />).`
+          : `The current sum of this employee's deductions during this month is (${otherConfirmedDeductions.toLocaleString('en-US')} <SaudiRiyal />). Adding this deduction (${(Number(dedFormAmount) || 0).toLocaleString('en-US')} <SaudiRiyal />), the target total becomes (${totalProjectedDeductions.toLocaleString('en-US')} <SaudiRiyal />), which exceeds 50% of the total monthly salary package (${totalSalary.toLocaleString('en-US')} <SaudiRiyal />, limit: ${halfSalary.toLocaleString('en-US')} <SaudiRiyal />).`;
       }
     }
   }
@@ -911,7 +912,7 @@ export default function HrPayrollTab({
             <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-between group">
               <div className="text-right space-y-1">
                 <span className="text-[11px] text-slate-400 font-extrabold block">{lang === 'ar' ? 'إجمالي الرواتب الأساسية لموظفي الشركة' : 'Total Base Salaries'}</span>
-                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalBaseSalaries.toLocaleString('en-US')} <span className="text-[10px] text-slate-400">ريال</span></p>
+                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalBaseSalaries.toLocaleString('en-US')} <SaudiRiyal /></p>
                 <span className="text-[9px] text-blue-600 block flex items-center gap-0.5">💸 {lang === 'ar' ? 'قبل البدلات والاستقطاعات والمكافآت' : 'wages without adjustments'}</span>
               </div>
               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition">
@@ -923,7 +924,7 @@ export default function HrPayrollTab({
             <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-between group">
               <div className="text-right space-y-1">
                 <span className="text-[11px] text-slate-400 font-extrabold block">{lang === 'ar' ? 'مجموع البدلات لموظفي الشركة' : 'Total Allowances & Overtime'}</span>
-                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalAllowances.toLocaleString('en-US')} <span className="text-[10px] text-slate-400">ريال</span></p>
+                <p className="text-xl font-mono font-black text-slate-800 leading-none">{totalAllowances.toLocaleString('en-US')} <SaudiRiyal /></p>
                 <span className="text-[9px] text-amber-600 block flex items-center gap-0.5">🏠 {lang === 'ar' ? 'يشمل سكن، نقل، إضافي، وحوافز' : 'housing, travel, incentives'}</span>
               </div>
               <div className="p-3 bg-amber-50 text-amber-600 rounded-xl group-hover:scale-110 transition">
@@ -935,7 +936,7 @@ export default function HrPayrollTab({
             <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-5 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-between group">
               <div className="text-right space-y-1">
                 <span className="text-[11px] text-slate-500 font-extrabold block">{lang === 'ar' ? 'إجمالي الرواتب والمسير شامل البدلات والخصم' : 'WPS Net Monthly Payroll'}</span>
-                <p className="text-xl font-mono font-black text-emerald-800 leading-none">{netPayrollSum.toLocaleString('en-US')} <span className="text-[10px] text-emerald-600">ريال</span></p>
+                <p className="text-xl font-mono font-black text-emerald-800 leading-none">{netPayrollSum.toLocaleString('en-US')} <SaudiRiyal /></p>
                 <span className="text-[9px] text-emerald-600 block flex items-center gap-0.5">✓ {lang === 'ar' ? 'المجموع المستحق للصرف الفعلي الحالي' : 'Wages sum including adjustments'}</span>
               </div>
               <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl group-hover:scale-110 transition">
@@ -951,7 +952,7 @@ export default function HrPayrollTab({
                   {deductionsList
                     .filter(d => d.date && d.date.startsWith(selectedMonth) && (d.status === 'confirmed' || d.status === 'notified'))
                     .reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
-                    .toLocaleString('en-US')} <span className="text-[10px] text-red-400">ريال</span>
+                    .toLocaleString('en-US')} <SaudiRiyal />
                 </p>
                 <span className="text-[9px] text-red-500 block flex items-center gap-0.5">📉 {lang === 'ar' ? `مخصومة مباشرة من رواتب وبنود الشهر` : 'Direct payroll deduction impact'}</span>
               </div>
@@ -1116,7 +1117,7 @@ export default function HrPayrollTab({
                     <div className="space-y-1.5 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                       <label className="text-[10px] font-black text-emerald-800 block">💰 {lang === 'ar' ? 'صافي الراتب' : 'Computed Net Salary'}</label>
                       <div className="w-full bg-white border border-emerald-300 rounded-xl px-3 py-1.5 text-xs font-mono font-black text-emerald-850 text-center shadow-inner">
-                        {computedNet.toLocaleString('en-US')} ريال
+                        {computedNet.toLocaleString('en-US')} <SaudiRiyal />
                       </div>
                     </div>
                   </div>
@@ -1243,9 +1244,9 @@ export default function HrPayrollTab({
                       <td className="py-3 px-3">
                         <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">{emp.jobTitle}</span>
                       </td>
-                      <td className="py-3 px-3 font-mono font-bold text-slate-700">{basic.toLocaleString('en-US')} ريال</td>
-                      <td className="py-3 px-3 font-mono text-amber-700">+{allowSum.toLocaleString('en-US')} ريال</td>
-                      <td className="py-3 px-3 font-mono font-black text-emerald-700">{netSalary.toLocaleString('en-US')} ريال</td>
+                      <td className="py-3 px-3 font-mono font-bold text-slate-700">{basic.toLocaleString('en-US')} <SaudiRiyal /></td>
+                      <td className="py-3 px-3 font-mono text-amber-700">+{allowSum.toLocaleString('en-US')} <SaudiRiyal /></td>
+                      <td className="py-3 px-3 font-mono font-black text-emerald-700">{netSalary.toLocaleString('en-US')} <SaudiRiyal /></td>
                       <td className="py-3 px-3 text-center">
                         <button
                           onClick={() => handleOpenEmpSalary(emp)}
@@ -1359,7 +1360,11 @@ export default function HrPayrollTab({
                     
                     {/* Basic */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'الراتب الأساسي (ريال) *' : 'Base Basic Salary *'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'الراتب الأساسي' : 'Base Basic Salary'}</span>
+                        <SaudiRiyal />
+                        <span>*</span>
+                      </label>
                       <input 
                         type="number"
                         value={editBasic}
@@ -1370,7 +1375,11 @@ export default function HrPayrollTab({
 
                     {/* Housing */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'بدل سكن شهري (ريال) *' : 'Housing Allowance *'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'بدل سكن شهري' : 'Housing Allowance'}</span>
+                        <SaudiRiyal />
+                        <span>*</span>
+                      </label>
                       <input 
                         type="number"
                         value={editHousing}
@@ -1381,7 +1390,11 @@ export default function HrPayrollTab({
 
                     {/* Transport */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'بدل نقل شهري (ريال) *' : 'Transport Allowance *'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'بدل نقل شهري' : 'Transport Allowance'}</span>
+                        <SaudiRiyal />
+                        <span>*</span>
+                      </label>
                       <input 
                         type="number"
                         value={editTransport}
@@ -1392,7 +1405,10 @@ export default function HrPayrollTab({
 
                     {/* Overtime */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'إضافي ساعات العمل (ريال)' : 'Overtime Extra SAR'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'إضافي ساعات العمل' : 'Overtime Extra'}</span>
+                        <SaudiRiyal />
+                      </label>
                       <input 
                         type="number"
                         value={editOvertime}
@@ -1403,7 +1419,10 @@ export default function HrPayrollTab({
 
                     {/* Bonuses */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'مكافآت وحوافز أداء (ريال)' : 'Bonuses / Rewards Outstanding'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'مكافآت وحوافز أداء' : 'Bonuses / Rewards Outstanding'}</span>
+                        <SaudiRiyal />
+                      </label>
                       <input 
                         type="number"
                         value={editBonuses}
@@ -1414,7 +1433,10 @@ export default function HrPayrollTab({
 
                     {/* Deductions */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'خصومات وتأخيرات وغيابات (ريال)' : 'Deductions Overlord'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'خصومات وتأخيرات وغيابات' : 'Deductions Overlord'}</span>
+                        <SaudiRiyal />
+                      </label>
                       <input 
                         type="number"
                         value={editDeductions}
@@ -1425,7 +1447,10 @@ export default function HrPayrollTab({
 
                     {/* Loans */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'سلف مالية مستقطعة (ريال)' : 'Advances Loans outstanding'}</label>
+                      <label className="block text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <span>{lang === 'ar' ? 'سلف مالية مستقطعة' : 'Advances Loans outstanding'}</span>
+                        <SaudiRiyal />
+                      </label>
                       <input 
                         type="number"
                         value={editLoans}
@@ -1438,7 +1463,7 @@ export default function HrPayrollTab({
                     <div className="space-y-1 text-right flex flex-col justify-end">
                       <span className="block text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'صافي الراتب المستحق (بعد الحساب)' : 'Net Wages Calculated'}</span>
                       <p className="text-lg font-black text-emerald-700 font-mono leading-none pt-2">
-                        {(editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)).toLocaleString('en-US')} ريال
+                        {(editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)).toLocaleString('en-US')} <SaudiRiyal />
                       </p>
                     </div>
 
@@ -1514,7 +1539,7 @@ export default function HrPayrollTab({
                         <div className="bg-emerald-50 p-1.5 rounded border border-emerald-100 text-emerald-800">
                           <span className="text-emerald-700 text-[9px] block font-black">صافي الراتب المستحق</span>
                           <span className="text-emerald-900 font-mono text-[12px] font-extrabold">
-                            {editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)} ريال
+                            {editBasic + editHousing + editTransport + editOvertime + editBonuses - editDeductions - editLoans - getEmployeeDeductionsTotal(selectedEmp.id) - getEmployeeLoansTotal(selectedEmp.id)} <SaudiRiyal />
                           </span>
                         </div>
                       </div>
@@ -1681,7 +1706,7 @@ export default function HrPayrollTab({
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap font-mono text-red-600 font-extrabold">
-                        {Number(item.amount).toLocaleString('en-US')} ريال
+                        {Number(item.amount).toLocaleString('en-US')} <SaudiRiyal />
                       </td>
                       <td className="p-4 text-slate-500 max-w-sm font-medium">
                         {item.reason}
@@ -1850,19 +1875,19 @@ export default function HrPayrollTab({
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-slate-700">
                             <div className="bg-white p-2.5 rounded-xl border border-slate-100">
                               <span className="text-slate-400 block text-[9px] font-bold">الراتب الأساسي:</span>
-                              <p className="font-mono font-black text-slate-800 mt-0.5">{basic.toLocaleString('en-US')} ريال</p>
+                              <p className="font-mono font-black text-slate-800 mt-0.5">{basic.toLocaleString('en-US')} <SaudiRiyal /></p>
                             </div>
                             <div className="bg-white p-2.5 rounded-xl border border-slate-100">
                               <span className="text-slate-400 block text-[9px] font-bold">بدلات ومكافآت:</span>
-                              <p className="font-mono font-black text-emerald-600 mt-0.5">{(h + t + p + f + o + b).toLocaleString('en-US')} ريال</p>
+                              <p className="font-mono font-black text-emerald-600 mt-0.5">{(h + t + p + f + o + b).toLocaleString('en-US')} <SaudiRiyal /></p>
                             </div>
                             <div className="bg-white p-2.5 rounded-xl border border-slate-100 bg-sky-50/50">
                               <span className="text-slate-400 block text-[9px] font-bold text-sky-800">إجمالي الأجر المعتمد:</span>
-                              <p className="font-mono font-black text-slate-800 mt-0.5">{totalSalary.toLocaleString('en-US')} ريال</p>
+                              <p className="font-mono font-black text-slate-800 mt-0.5">{totalSalary.toLocaleString('en-US')} <SaudiRiyal /></p>
                             </div>
                             <div className="bg-white p-2.5 rounded-xl border border-slate-100 bg-rose-50/30">
                               <span className="text-slate-400 block text-[9px] font-bold text-red-700">قيمة يومية الأجر (1/30):</span>
-                              <p className="font-mono font-black text-red-600 mt-0.5">{dailyRate.toFixed(2)} ريال</p>
+                              <p className="font-mono font-black text-red-600 mt-0.5">{dailyRate.toFixed(2)} <SaudiRiyal /></p>
                             </div>
                           </div>
                         </div>
@@ -1925,11 +1950,11 @@ export default function HrPayrollTab({
                           <p className="text-[10px] text-slate-500 font-extrabold leading-relaxed">
                             💡 الحساب التلقائي للجزاء: (ربع اليومية من إجمالي الأجر) ← 
                             <span className="text-red-600 font-mono font-black mx-1">
-                              {(( (employees.find(e => e.id === dedFormEmpId)?.basicSalary || 0) / 30 ) * 0.25).toFixed(2)} ريال 
+                              {(( (employees.find(e => e.id === dedFormEmpId)?.basicSalary || 0) / 30 ) * 0.25).toFixed(2)} <SaudiRiyal /> 
                             </span> 
                             عن اليوم، ليصبح الإجمالي المستقطع: 
                             <span className="text-red-700 font-mono font-black mx-1">
-                              {dedFormAmount} ريال.
+                              {dedFormAmount} <SaudiRiyal />.
                             </span>
                           </p>
                         </div>
@@ -1952,11 +1977,11 @@ export default function HrPayrollTab({
                           <p className="text-[10px] text-slate-500 font-extrabold leading-relaxed">
                             💡 الحساب التلقائي للجزاء: (خصم يومين دبل عالي من الإجمالي) ← 
                             <span className="text-red-600 font-mono font-black mx-1">
-                              {(( (employees.find(e => e.id === dedFormEmpId)?.basicSalary || 0) / 30 ) * 2).toFixed(2)} ريال 
+                              {(( (employees.find(e => e.id === dedFormEmpId)?.basicSalary || 0) / 30 ) * 2).toFixed(2)} <SaudiRiyal /> 
                             </span> 
                             عن اليوم غياب واحد، ليصبح ضربة الجزاء المستقطعة: 
                             <span className="text-red-700 font-mono font-black mx-1">
-                              {dedFormAmount} ريال.
+                              {dedFormAmount} <SaudiRiyal />.
                             </span>
                           </p>
                         </div>
@@ -1967,7 +1992,11 @@ export default function HrPayrollTab({
                           <h6 className="text-xs font-black text-[#0072BC]">💰 خيارات وضوابط السداد والتقسيط للسلفة:</h6>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="space-y-1">
-                              <label className="block text-[10px] font-bold text-slate-500">1. مبلغ السلفة المالية المطلوبة (ريال):</label>
+                              <label className="block text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                <span>1. مبلغ السلفة المالية المطلوبة</span>
+                                <SaudiRiyal />
+                                <span>:</span>
+                              </label>
                               <input 
                                 type="number"
                                 value={advAmount}
@@ -2051,7 +2080,11 @@ export default function HrPayrollTab({
                             )}
 
                             <div className={`space-y-1 ${violCategory !== 'أخرى' ? 'md:col-span-2' : ''}`}>
-                              <label className="block text-[10px] font-bold text-slate-500">مبلغ الاستقطاع المالي للجزاء كاش (ريال):</label>
+                              <label className="block text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                <span>مبلغ الاستقطاع المالي للجزاء كاش</span>
+                                <SaudiRiyal />
+                                <span>:</span>
+                              </label>
                               <input 
                                 type="number"
                                 value={dedFormAmount}
@@ -2114,7 +2147,11 @@ export default function HrPayrollTab({
                             </div>
 
                             <div className="space-y-1 md:col-span-2">
-                              <label className="block text-[10px] font-bold text-slate-500">التكلفة والخصم المستقطع الفعلي للتعويض (ريال):</label>
+                              <label className="block text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                <span>التكلفة والخصم المستقطع الفعلي للتعويض</span>
+                                <SaudiRiyal />
+                                <span>:</span>
+                              </label>
                               <input 
                                 type="number"
                                 value={damagePrice}
@@ -2155,7 +2192,11 @@ export default function HrPayrollTab({
 
                             {adminApplyDeduction && (
                               <div className="space-y-1 text-right">
-                                <label className="block text-[10px] font-bold text-slate-500">القيمة المستقطعة يدوياً للخصم الإداري (ريال):</label>
+                                <label className="block text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                  <span>القيمة المستقطعة يدوياً للخصم الإداري</span>
+                                  <SaudiRiyal />
+                                  <span>:</span>
+                                </label>
                                 <input 
                                   type="number"
                                   value={dedFormAmount}
@@ -2182,7 +2223,11 @@ export default function HrPayrollTab({
 
                       {dedFormType === 'أخرى' && (
                         <div className="space-y-2">
-                          <label className="block text-xs font-black text-slate-700">💵 القيمة المالية للخصم يدوياً (ريال):</label>
+                          <label className="block text-xs font-black text-slate-700 flex items-center gap-1">
+                            <span>💵 القيمة المالية للخصم يدوياً</span>
+                            <SaudiRiyal />
+                            <span>:</span>
+                          </label>
                           <input 
                             type="number"
                             value={dedFormAmount}
@@ -2394,9 +2439,24 @@ export default function HrPayrollTab({
                   <tr className="bg-slate-50 text-slate-500 font-extrabold uppercase border-b border-fold">
                     <th className="p-4 whitespace-nowrap">الكود الموحد</th>
                     <th className="p-4 whitespace-nowrap">اسم الموظف</th>
-                    <th className="p-4 whitespace-nowrap">الراتب الأساسي (ريال)</th>
-                    <th className="p-4 whitespace-nowrap">مجموع البدلات الفعالة (+ريال)</th>
-                    <th className="p-4 whitespace-nowrap">مجموع الخصومات والعهد (-ريال)</th>
+                    <th className="p-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1 justify-end">
+                        <span>الراتب الأساسي</span>
+                        <SaudiRiyal />
+                      </div>
+                    </th>
+                    <th className="p-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1 justify-end">
+                        <span>مجموع البدلات الفعالة</span>
+                        <SaudiRiyal />
+                      </div>
+                    </th>
+                    <th className="p-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1 justify-end">
+                        <span>مجموع الخصومات والعهد</span>
+                        <SaudiRiyal />
+                      </div>
+                    </th>
                     <th className="p-4 whitespace-nowrap">صافي الأجر المحتسب</th>
                     <th className="p-4 whitespace-nowrap">تراكم حركة الخصومات الحية</th>
                     <th className="p-4 whitespace-nowrap">حالة التعديل</th>
@@ -2464,7 +2524,7 @@ export default function HrPayrollTab({
 
                         {/* Net Salary computed */}
                         <td className="p-4 whitespace-nowrap text-slate-900 font-extrabold font-mono">
-                          {net.toLocaleString('en-US')} ريال
+                          {net.toLocaleString('en-US')} <SaudiRiyal />
                         </td>
 
                         {/* Track dynamic deductions link */}

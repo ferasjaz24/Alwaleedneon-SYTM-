@@ -1,3 +1,4 @@
+import SaudiRiyal from "./SaudiRiyal";
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileBarChart, Printer, Search, Calendar, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -623,7 +624,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
 
           <div class="section-title">أكثر 3 عملاء بناءً على الطلبات المعتمدة (قيمة التحصيلات)</div>
           <ul class="clean-list">
-             ${comprehensiveStats.top3ByValue.map(c => `<li>${c.name} - ${(c.value || 0).toLocaleString('en-US')} ريال</li>`).join('')}
+             ${comprehensiveStats.top3ByValue.map(c => `<li>${c.name} - ${(c.value || 0).toLocaleString('en-US')} <SaudiRiyal /></li>`).join('')}
              ${comprehensiveStats.top3ByValue.length === 0 ? '<li>لا يوجد تحصيلات</li>' : ''}
           </ul>
         `;
@@ -641,9 +642,9 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
 
           <div class="section-title">الإحصائيات المالية والبيعية</div>
           <table class="data-table">
-             <tr><th>عدد عروض الأسعار</th><td>${quotesCount} عرض</td><th>إجمالي قيمة العروض</th><td>${totalQuotesValue.toLocaleString('en-US')} ريال</td></tr>
-             <tr><th>إجمالي المعتمد</th><td>${totalApprovedValue.toLocaleString('en-US')} ريال</td><th>إجمالي المدفوع</th><td>${totalPaid.toLocaleString('en-US')} ريال</td></tr>
-             <tr><th>إجمالي المتبقي</th><td>${totalRemaining.toLocaleString('en-US')} ريال</td><th>آخر تعامل</th><td>${lastInteractionDate ? lastInteractionDate.toLocaleDateString('en-GB') : 'لا يوجد تعاملات'}</td></tr>
+             <tr><th>عدد عروض الأسعار</th><td>${quotesCount} عرض</td><th>إجمالي قيمة العروض</th><td>${totalQuotesValue.toLocaleString('en-US')} <SaudiRiyal /></td></tr>
+             <tr><th>إجمالي المعتمد</th><td>${totalApprovedValue.toLocaleString('en-US')} <SaudiRiyal /></td><th>إجمالي المدفوع</th><td>${totalPaid.toLocaleString('en-US')} <SaudiRiyal /></td></tr>
+             <tr><th>إجمالي المتبقي</th><td>${totalRemaining.toLocaleString('en-US')} <SaudiRiyal /></td><th>آخر تعامل</th><td>${lastInteractionDate ? lastInteractionDate.toLocaleDateString('en-GB') : 'لا يوجد تعاملات'}</td></tr>
           </table>
 
           <div class="section-title">أكثر المناديب تعاملاً وأعدوا له عروضًا</div>
@@ -658,10 +659,10 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
         contentHtml = `
           <div class="print-title">التقرير الشامل للتحصيل</div>
           <div class="grid-layout">
-             <div class="stat-box"><strong>إجمالي قيمة المعتمد:</strong> ${collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} ريال</div>
-             <div class="stat-box"><strong>المحصل:</strong> ${collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} ريال</div>
-             <div class="stat-box"><strong>المتبقي:</strong> ${collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} ريال</div>
-             <div class="stat-box"><strong>المتأخر:</strong> ${collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} ريال</div>
+             <div class="stat-box"><strong>إجمالي قيمة المعتمد:</strong> ${collectionsComprehensiveStats.totalProjectsValue.toLocaleString('en-US')} <SaudiRiyal /></div>
+             <div class="stat-box"><strong>المحصل:</strong> ${collectionsComprehensiveStats.totalCollected.toLocaleString('en-US')} <SaudiRiyal /></div>
+             <div class="stat-box"><strong>المتبقي:</strong> ${collectionsComprehensiveStats.totalRemaining.toLocaleString('en-US')} <SaudiRiyal /></div>
+             <div class="stat-box"><strong>المتأخر:</strong> ${collectionsComprehensiveStats.totalDelayed.toLocaleString('en-US')} <SaudiRiyal /></div>
           </div>
 
           <div class="grid-layout">
@@ -673,13 +674,13 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           
           <div class="section-title">أعلى 5 مديونيات</div>
           <ul class="clean-list">
-             ${collectionsComprehensiveStats.top5Debtors.map(c => `<li>${c.name} - ${c.remaining.toLocaleString('en-US')} ريال</li>`).join('')}
+             ${collectionsComprehensiveStats.top5Debtors.map(c => `<li>${c.name} - ${c.remaining.toLocaleString('en-US')} <SaudiRiyal /></li>`).join('')}
              ${collectionsComprehensiveStats.top5Debtors.length === 0 ? '<li>لا يوجد مديونيات</li>' : ''}
           </ul>
 
           <div class="section-title">آخر دفعات مسجلة</div>
           <ul class="clean-list">
-             ${collectionsComprehensiveStats.topLatestPayments.map(p => `<li>${p.clientName} - +${(p.amount || 0).toLocaleString('en-US')} ريال - ${new Date(p.date).toLocaleDateString('en-GB')}</li>`).join('')}
+             ${collectionsComprehensiveStats.topLatestPayments.map(p => `<li>${p.clientName} - +${(p.amount || 0).toLocaleString('en-US')} <SaudiRiyal /> - ${new Date(p.date).toLocaleDateString('en-GB')}</li>`).join('')}
              ${collectionsComprehensiveStats.topLatestPayments.length === 0 ? '<li>لا يوجد دفعات مسجلة</li>' : ''}
           </ul>
         `;
@@ -690,8 +691,8 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
           ${specificClientCollections.map(plan => `
             <div class="section-title">المشروع: ${plan.projectName} - حالة الدفع: ${plan.paymentStatusDesc} (${plan.collectionPercentage.toFixed(1)}%)</div>
             <table class="data-table">
-               <tr><th>قيمة المشروع</th><td>${(plan.totalAmount || 0).toLocaleString('en-US')} ريال</td><th>المدفوع</th><td>${(plan.totalCollected || 0).toLocaleString('en-US')} ريال</td></tr>
-               <tr><th>المتبقي</th><td>${(plan.remaining || 0).toLocaleString('en-US')} ريال</td><th>تاريخ آخر دفعة</th><td>${plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td></tr>
+               <tr><th>قيمة المشروع</th><td>${(plan.totalAmount || 0).toLocaleString('en-US')} <SaudiRiyal /></td><th>المدفوع</th><td>${(plan.totalCollected || 0).toLocaleString('en-US')} <SaudiRiyal /></td></tr>
+               <tr><th>المتبقي</th><td>${(plan.remaining || 0).toLocaleString('en-US')} <SaudiRiyal /></td><th>تاريخ آخر دفعة</th><td>${plan.lastPaymentDate ? new Date(plan.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td></tr>
             </table>
           `).join('')}
           ${specificClientCollections.length === 0 ? '<p>لا يوجد مشاريع مسجلة.</p>' : ''}
@@ -700,7 +701,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
          contentHtml = `
           <div class="print-title">تقرير الدفعات المتأخرة</div>
           <div class="grid-layout">
-             <div class="stat-box"><strong>إجمالي الدفعات المتأخرة المستحقة:</strong> ${overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} ريال</div>
+             <div class="stat-box"><strong>إجمالي الدفعات المتأخرة المستحقة:</strong> ${overduePayments.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-US')} <SaudiRiyal /></div>
              <div class="stat-box"><strong>عدد الدفعات المتأخرة:</strong> ${overduePayments.length}</div>
           </div>
           <table class="data-table" style="margin-top: 20px;">
@@ -712,7 +713,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                  <tr>
                    <td><strong>${p.projectName}</strong><br><small style="color:#64748b;">${p.clientName}</small></td>
                    <td>${p.repName}</td>
-                   <td style="color:#dc2626; font-weight:bold;">${(p.amount || 0).toLocaleString('en-US')} ريال</td>
+                   <td style="color:#dc2626; font-weight:bold;">${(p.amount || 0).toLocaleString('en-US')} <SaudiRiyal /></td>
                    <td>${new Date(p.dueDate).toLocaleDateString('en-GB')}</td>
                    <td><span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:12px;">${p.daysOverdue} يوم</span></td>
                  </tr>
@@ -1070,7 +1071,7 @@ export default function SalesReports({ lang, user }: { lang: 'ar' | 'en'; user: 
                              {comprehensiveStats.top3ByValue.map((c, idx) => (
                                <div key={idx} className="flex justify-between border-b border-dashed border-slate-200 pb-2 last:border-0 last:pb-0">
                                  <span className="text-slate-600 font-medium">{c.name}</span>
-                                 <span className="font-bold text-blue-600">{(c.value || 0).toLocaleString('en-US')} ريال</span>
+                                 <span className="font-bold text-blue-600">{(c.value || 0).toLocaleString('en-US')} <SaudiRiyal /></span>
                                </div>
                              ))}
                            </div>

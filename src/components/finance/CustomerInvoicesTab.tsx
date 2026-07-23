@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useEffect, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, doc, getDocs, setDoc, getDoc } from "firebase/firestore";
@@ -1013,7 +1014,7 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
           action: "توليد قيد الاستحقاق التلقائي للفاتورة",
           module: "Journal Entries",
           recordId: jvId,
-          notes: `تم إنشاء واعتماد قيد الفاتورة رقم ${invoiceForm.invoiceNo} بقيمة ${grandTotal} SAR`,
+          notes: `تم إنشاء واعتماد قيد الفاتورة رقم ${invoiceForm.invoiceNo} بقيمة ${grandTotal} <SaudiRiyal />`,
           createdAt: nowStr,
         });
       }
@@ -1323,7 +1324,12 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
                   <th className="px-6 py-4">{lang === "ar" ? "العميل" : "Customer"}</th>
                   <th className="px-6 py-4">{lang === "ar" ? "التاريخ" : "Date"}</th>
                   <th className="px-6 py-4">{lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}</th>
-                  <th className="px-6 py-4 text-left">{lang === "ar" ? "قيمة الفاتورة (SAR)" : "Invoice Amount (SAR)"}</th>
+                  <th className="px-6 py-4 text-left">
+                    <div className="flex items-center justify-end gap-1">
+                      <span>{lang === "ar" ? "قيمة الفاتورة" : "Invoice Amount"}</span>
+                      <SaudiRiyal />
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-left">{lang === "ar" ? "المدفوع" : "Paid"}</th>
                   <th className="px-6 py-4 text-left">{lang === "ar" ? "المتبقي" : "Remaining"}</th>
                   <th className="px-6 py-4 text-center">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</th>
@@ -1815,7 +1821,10 @@ export default function CustomerInvoicesTab({ lang, user }: { lang: "ar" | "en";
               {/* Summary and Discount */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">الخصم الإجمالي الإضافي للفاتورة (SAR)</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <span>الخصم الإجمالي الإضافي للفاتورة</span>
+                    <SaudiRiyal />
+                  </label>
                   <input
                     type="number"
                     value={invoiceForm.totalDiscount}

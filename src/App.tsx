@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import SaudiRiyal from "./components/SaudiRiyal";
 import React, { useState, useEffect } from "react";
 import { hasPermission, canAccessModule, getAccessLevel, hasAdvancedPermission, canShowSubmenu } from './lib/permissions';
 import {
@@ -41,6 +42,8 @@ import {
   Activity,
   Cpu,
   UserCheck,
+  AlertTriangle,
+  UserX,
 } from "lucide-react";
 import { Employee, User, Quotation, RecruitmentTemplate } from "./types";
 import NotificationsBell from "./components/NotificationsBell";
@@ -280,6 +283,9 @@ export default function App() {
 
   // DB States (synchronized with server API)
   const [users, setUsers] = useState<User[]>([]);
+  const [deleteModalUser, setDeleteModalUser] = useState<User | null>(null);
+  const [deleteModalCountdown, setDeleteModalCountdown] = useState<number>(2);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loginLogs, setLoginLogs] = useState<any[]>([]);
@@ -598,6 +604,19 @@ export default function App() {
     htmlEl.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
     htmlEl.setAttribute("lang", lang);
   }, [lang]);
+
+  // Countdown timer effect for secure user deletion confirmation
+  useEffect(() => {
+    let timer: any;
+    if (isDeleteModalVisible && deleteModalCountdown > 0) {
+      timer = setInterval(() => {
+        setDeleteModalCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isDeleteModalVisible, deleteModalCountdown]);
 
   // Apply Accessibility Settings
   useEffect(() => {
@@ -1268,6 +1287,91 @@ export default function App() {
     }
   };
 
+  // Triggers the multi-path deletion modal with a 2-second countdown
+  const triggerDeleteUserFlow = (item: User) => {
+    // Prevent deleting the currently logged-in account
+    if (item.username.toUpperCase() === user?.username?.toUpperCase()) {
+      showToast(
+        lang === "ar"
+          ? "لا يمكنك حذف أو تعطيل حسابك النشط الذي تستخدمه حالياً!"
+          : "You cannot delete or deactivate your own active session account!",
+        "error"
+      );
+      return;
+    }
+    setDeleteModalUser(item);
+    setDeleteModalCountdown(2);
+    setIsDeleteModalVisible(true);
+  };
+
+  // Deactivates/soft-deletes user inside system (retaining in database)
+  const handleSoftDeleteUser = async (uIdOrUsername: string) => {
+    setIsDeleteModalVisible(false);
+    setButtonLoading(`deleteUser-${uIdOrUsername}`, true);
+    try {
+      const res = await fetch(`/api/users/${uIdOrUsername}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inactive: true }),
+      });
+      if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "FERAS",
+          action: "تعطيل",
+          department: "HR",
+          description: `تم إخفاء/تعطيل حساب مستخدم النظام (حذف مؤقت): ${uIdOrUsername}`
+        });
+        showToast(lang === "ar" ? "تم إخفاء الحساب وتعطيله من النظام بنجاح" : "User account soft-deleted/deactivated inside system.");
+        handleReloadUsers();
+        handleReloadAuditLogs();
+      } else {
+        showToast(lang === "ar" ? "فشل تعطيل الحساب" : "Failed to soft-delete user", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Error during soft delete", "error");
+    } finally {
+      setButtonLoading(`deleteUser-${uIdOrUsername}`, false);
+      setDeleteModalUser(null);
+    }
+  };
+
+  // Restores/reactivates a previously soft-deleted user
+  const handleRestoreUser = async (uIdOrUsername: string) => {
+    setButtonLoading(`restoreUser-${uIdOrUsername}`, true);
+    try {
+      const res = await fetch(`/api/users/${uIdOrUsername}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inactive: false }),
+      });
+      if (res.ok) {
+        logSystemAudit({
+          user: user?.username || "FERAS",
+          action: "استرجاع",
+          department: "HR",
+          description: `تم استرجاع وإعادة تفعيل حساب مستخدم النظام: ${uIdOrUsername}`
+        });
+        showToast(lang === "ar" ? "تم استرجاع الحساب وإعادة تفعيله بنجاح" : "User account successfully restored and reactivated.");
+        handleReloadUsers();
+        handleReloadAuditLogs();
+      } else {
+        showToast(lang === "ar" ? "فشل استرجاع الحساب" : "Failed to restore user", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Error during restore", "error");
+    } finally {
+      setButtonLoading(`restoreUser-${uIdOrUsername}`, false);
+    }
+  };
+
+  // Handles closing the modal and triggering the hard delete
+  const handleHardDeleteUser = async (uIdOrUsername: string) => {
+    setIsDeleteModalVisible(false);
+    await handleDeleteUser(uIdOrUsername);
+  };
+
   // Super Admin deletes user
   const handleDeleteUser = async (uName: string) => {
     // Prevent deleting the currently logged-in account to avoid self-lockout
@@ -1315,6 +1419,7 @@ export default function App() {
       });
     } finally {
       setButtonLoading(`deleteUser-${uName}`, false);
+      setDeleteModalUser(null);
     }
   };
 
@@ -1702,14 +1807,14 @@ export default function App() {
         if (totalSalaryExpense + potentialIncrease > monthlyHRBudget) {
           setBudgetCheckInfo(
             lang === "ar"
-              ? `⚠️ تنبيه الميزانية المالية: تجاوز سقف الصرف للأجور الحالي (${totalSalaryExpense} SAR) مع قيمة الوظيفة المقترحة (لحد أقصى ${payload.salaryMax} SAR)`
-              : `⚠️ Financial Budget Warning: Total company compensation (${totalSalaryExpense} SAR) + new hire (${payload.salaryMax} SAR) exceeds corporate salary limit of ${monthlyHRBudget} SAR.`,
+              ? `⚠️ تنبيه الميزانية المالية: تجاوز سقف الصرف للأجور الحالي (${totalSalaryExpense} <SaudiRiyal />) مع قيمة الوظيفة المقترحة (لحد أقصى ${payload.salaryMax} <SaudiRiyal />)`
+              : `⚠️ Financial Budget Warning: Total company compensation (${totalSalaryExpense} <SaudiRiyal />) + new hire (${payload.salaryMax} <SaudiRiyal />) exceeds corporate salary limit of ${monthlyHRBudget} <SaudiRiyal />.`,
           );
         } else {
           setBudgetCheckInfo(
             lang === "ar"
-              ? `✅ الميزانية مناسبة: إجمالي أجور الشركة سيبقى تحت السقف المعتمد (${totalSalaryExpense + potentialIncrease} / ${monthlyHRBudget} ريال سعودي)`
-              : `✅ Budget approved: Total corporate expenses remain healthy at (${totalSalaryExpense + potentialIncrease} / ${monthlyHRBudget} SAR).`,
+              ? `✅ الميزانية مناسبة: إجمالي أجور الشركة سيبقى تحت السقف المعتمد (${totalSalaryExpense + potentialIncrease} / ${monthlyHRBudget} <SaudiRiyal /> سعودي)`
+              : `✅ Budget approved: Total corporate expenses remain healthy at (${totalSalaryExpense + potentialIncrease} / ${monthlyHRBudget} <SaudiRiyal />).`,
           );
         }
       }
@@ -2713,7 +2818,7 @@ export default function App() {
                   </h4>
 
                   <div className="max-h-36 overflow-y-auto space-y-2 pr-1">
-                    {users.map((item) => (
+                    {users.filter((item) => !item.inactive).map((item) => (
                       <div
                         key={item.username}
                         className="flex items-center justify-between p-2 rounded-xl bg-slate-50/80 border border-slate-200/50"
@@ -2733,7 +2838,7 @@ export default function App() {
                           {item.username.toUpperCase() !== user?.username?.toUpperCase() && (
                             <button
                               disabled={isActionLoading[`deleteUser-${item.id}`]}
-                              onClick={() => handleDeleteUser(item.id)}
+                              onClick={() => triggerDeleteUserFlow(item)}
                               className="text-stone-400 hover:text-rose-500 disabled:opacity-50 p-1 transition flex items-center justify-center"
                               title="Delete System Access"
                             >
@@ -2915,6 +3020,84 @@ export default function App() {
               lang={lang}
               onClose={() => setShowAISettings(false)}
             />
+          )}
+          
+          {/* Secure delete user confirmation modal with a 2-second countdown */}
+          {isDeleteModalVisible && deleteModalUser && (
+            <div id="delete-user-confirmation-modal" className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 flex flex-col gap-5 text-center animate-in fade-in zoom-in-95 duration-150">
+                <div className="mx-auto w-16 h-16 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 animate-bounce">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">
+                    {lang === "ar" ? "تأكيد إجراء الحساب الأمني" : "Revocation Security Lockout"}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-2">
+                    {lang === "ar" 
+                      ? `هل أنت متأكد أنك تريد إلغاء صلاحية أو حذف حساب المستخدم: ${deleteModalUser.username}؟` 
+                      : `Are you sure you want to revoke or delete credentials for account: ${deleteModalUser.username}?`}
+                  </p>
+                </div>
+
+                {deleteModalCountdown > 0 ? (
+                  <div className="py-2.5 px-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-xs font-bold flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                    <span>
+                      {lang === "ar" 
+                        ? `الرجاء الانتظار لقراءة خيارات الحساب الأمنية (${deleteModalCountdown} ثانية)...` 
+                        : `Review security deletion paths (${deleteModalCountdown}s remaining)...`}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="py-2.5 px-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-800 text-xs font-bold">
+                    🛡️ {lang === "ar" ? "تم التحقق من الطلب. يرجى اختيار أحد الخيارات التالية بدقة:" : "Request verified. Please select the precise deletion path:"}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 mt-2">
+                  {/* Button 1: Cancel */}
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalVisible(false);
+                      setDeleteModalUser(null);
+                    }}
+                    className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all"
+                  >
+                    {lang === "ar" ? "❌ إلغاء والتراجع" : "❌ Cancel & Keep User"}
+                  </button>
+
+                  {/* Button 3: Soft Delete (Only system) */}
+                  <button
+                    disabled={deleteModalCountdown > 0}
+                    onClick={() => handleSoftDeleteUser(deleteModalUser.id || deleteModalUser.username)}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-2xl shadow-lg shadow-amber-500/15 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <UserX className="w-4 h-4" />
+                    <span>
+                      {lang === "ar" 
+                        ? "حذف المستخدم داخل النظام فقط (تعطيل الحفظ)" 
+                        : "Soft Delete (Deactivate system access but preserve in DB)"}
+                    </span>
+                  </button>
+
+                  {/* Button 2: Hard Delete (System and Database) */}
+                  <button
+                    disabled={deleteModalCountdown > 0}
+                    onClick={() => handleHardDeleteUser(deleteModalUser.id || deleteModalUser.username)}
+                    className="w-full py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-2xl shadow-lg shadow-rose-600/15 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>
+                      {lang === "ar" 
+                        ? "تأكيد الحذف النهائي من كامل النظام وقاعدة البيانات" 
+                        : "Hard Delete (Wipe credentials from system & DB permanently)"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
           {/* MAIN MODULE CONTENT GATEWAY */}
           <main
@@ -3239,7 +3422,7 @@ export default function App() {
                         </p>
                       </div>
                       <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs rounded-full font-bold border border-amber-200">
-                        {users.length}{" "}
+                        {users.filter((item) => !item.inactive).length}{" "}
                         {lang === "ar" ? "حسابات نشطة" : "Active Keys"}
                       </span>
                     </div>
@@ -3271,7 +3454,7 @@ export default function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {users.map((item) => {
+                          {users.filter((item) => !item.inactive).map((item) => {
                             const isFeras = item.username === "FERAS";
                             return (
                               <tr
@@ -3420,7 +3603,7 @@ export default function App() {
                                       <button
                                         disabled={isActionLoading[`deleteUser-${item.id}`]}
                                         onClick={() =>
-                                          handleDeleteUser(item.id)
+                                          triggerDeleteUserFlow(item)
                                         }
                                         className="p-1 text-slate-400 hover:text-red-600 disabled:opacity-50 rounded transition flex items-center justify-center"
                                         title="Revoke Credentials"
@@ -3439,6 +3622,117 @@ export default function App() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+
+                  {/* Inactive Registered Accounts / Old Users */}
+                  <div className="lg:col-span-3 glass-panel rounded-3xl p-6 bg-slate-50 border-2 border-slate-200/60 shadow-md flex flex-col gap-4">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-700 flex items-center gap-2">
+                          <span>📦 {lang === "ar" ? "المستودع الأمني للمستخدمين القدامى (المعطلين)" : "Archived / Inactive Users Vault"}</span>
+                        </h3>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          {lang === "ar"
+                            ? "حسابات غير نشطة معطلة من النظام مؤقتاً ومحفوظة في قاعدة البيانات. يمكنك استرجاع الحساب أو حذفه نهائياً."
+                            : "Deactivated accounts stored in DB. You can fully restore them or hard-delete permanently."}
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded-full font-bold border border-slate-300">
+                        {users.filter(item => item.inactive).length}{" "}
+                        {lang === "ar" ? "حسابات غير نشطة" : "Inactive Keys"}
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      {users.filter(item => item.inactive).length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs font-semibold">
+                          {lang === "ar" ? "لا توجد حسابات معطلة أو مستخدمين قدامى حالياً." : "No deactivated users in the archive vault."}
+                        </div>
+                      ) : (
+                        <table className="w-full text-right text-xs">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-400">
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "اسم الحساب" : "Account Name"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "المسمى والربط" : "Job / Bound ID"}
+                              </th>
+                              <th className="py-3 px-2 text-right">
+                                {lang === "ar" ? "صلاحية الوصول" : "Role Access"}
+                              </th>
+                              <th className="py-3 px-2 text-center">
+                                {lang === "ar" ? "الخيارات والتحكم" : "Actions"}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {users.filter(item => item.inactive).map((item) => (
+                              <tr
+                                key={item.username}
+                                className="border-b border-slate-200 hover:bg-slate-100/50 transition-all"
+                              >
+                                <td className="py-3 px-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-slate-600 text-xs">
+                                      {item.username}
+                                    </span>
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[9px] rounded font-mono">
+                                      {lang === "ar" ? "معطل" : "Deactivated"}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-2 font-mono text-slate-500">
+                                  {item.email || "—"}
+                                </td>
+                                <td className="py-3 px-2 text-slate-500">
+                                  {item.jobTitle || "—"}
+                                </td>
+                                <td className="py-3 px-2">
+                                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
+                                    {item.role}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-2">
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      disabled={isActionLoading[`restoreUser-${item.id}`]}
+                                      onClick={() => handleRestoreUser(item.id)}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition flex items-center gap-1 shadow"
+                                      title={lang === "ar" ? "استرجاع الحساب" : "Restore User"}
+                                    >
+                                      {isActionLoading[`restoreUser-${item.id}`] ? (
+                                        <div className="w-2.5 h-2.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      ) : (
+                                        <RefreshCw className="w-2.5 h-2.5" />
+                                      )}
+                                      <span>{lang === "ar" ? "استرجاع الحساب" : "Restore"}</span>
+                                    </button>
+
+                                    <button
+                                      disabled={isActionLoading[`deleteUser-${item.id}`]}
+                                      onClick={() => triggerDeleteUserFlow(item)}
+                                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold transition flex items-center gap-1 shadow"
+                                      title={lang === "ar" ? "حذف نهائي" : "Hard Delete"}
+                                    >
+                                      {isActionLoading[`deleteUser-${item.id}`] ? (
+                                        <div className="w-2.5 h-2.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-2.5 h-2.5" />
+                                      )}
+                                      <span>{lang === "ar" ? "حذف نهائي" : "Delete Perm"}</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
                     </div>
                   </div>
 
@@ -4288,10 +4582,13 @@ export default function App() {
                                   />
                                 </div>
                                 <div>
-                                  <label className="block mb-1 font-bold text-slate-500">
-                                    {lang === "ar"
-                                      ? "الأجر والراتب الأساسي (ريال سعودي)"
-                                      : "Basic Monthly Salary (SAR)"}
+                                  <label className="block mb-1 font-bold text-slate-500 flex items-center gap-1">
+                                    <span>
+                                      {lang === "ar"
+                                        ? "الأجر والراتب الأساسي"
+                                        : "Basic Monthly Salary"}
+                                    </span>
+                                    <SaudiRiyal />
                                   </label>
                                   <input
                                     type="number"
@@ -4319,10 +4616,13 @@ export default function App() {
 
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                  <label className="block mb-1 font-bold text-slate-300">
-                                    {lang === "ar"
-                                      ? "بدل سكن تأميني شهري"
-                                      : "Housing Allowance (SAR)"}
+                                  <label className="block mb-1 font-bold text-slate-300 flex items-center gap-1">
+                                    <span>
+                                      {lang === "ar"
+                                        ? "بدل سكن تأميني شهري"
+                                        : "Housing Allowance"}
+                                    </span>
+                                    <SaudiRiyal />
                                   </label>
                                   <input
                                     type="number"
@@ -4352,10 +4652,13 @@ export default function App() {
                                   />
                                 </div>
                                 <div>
-                                  <label className="block mb-1 font-bold text-slate-300">
-                                    {lang === "ar"
-                                      ? "بدل سفر وانتقال"
-                                      : "Transport Allowance (SAR)"}
+                                  <label className="block mb-1 font-bold text-slate-300 flex items-center gap-1">
+                                    <span>
+                                      {lang === "ar"
+                                        ? "بدل سفر وانتقال"
+                                        : "Transport Allowance"}
+                                    </span>
+                                    <SaudiRiyal />
                                   </label>
                                   <input
                                     type="number"
@@ -5215,7 +5518,7 @@ export default function App() {
                                       {/* Financial break downs */}
                                       <td className="py-2 font-mono p-1">
                                         <p className="font-extrabold text-[#0072BC]">
-                                          SAR {(totalSalary || 0).toLocaleString('en-US')}
+                                          <SaudiRiyal /> {(totalSalary || 0).toLocaleString('en-US')}
                                         </p>
                                         <p className="text-[8px] text-slate-400">
                                           Basic: {emp.basicSalary || 0} | Allaw:{" "}
@@ -5408,14 +5711,16 @@ export default function App() {
                         </div>
 
                         <div>
-                          <p className="text-[10px] uppercase font-bold text-[#0072BC]">
-                            {lang === "ar"
-                              ? "سلّم الأجور المتوّقع (بالريال السعودي)"
-                              : "Optimal Monthy Salary Ladder (SAR)"}
+                          <p className="text-[10px] uppercase font-bold text-[#0072BC] flex items-center gap-1">
+                            <span>
+                              {lang === "ar"
+                                ? "سلّم الأجور المتوّقع (بالريال السعودي)"
+                                : "Optimal Monthly Salary Ladder"}
+                            </span>
+                            <SaudiRiyal />
                           </p>
                           <p className="text-lg font-black font-mono text-emerald-600 mt-1">
-                            SAR {(aiResult?.salaryMin || 0).toLocaleString('en-US')} - SAR{" "}
-                            {(aiResult?.salaryMax || 0).toLocaleString('en-US')}
+                            <SaudiRiyal /> {(aiResult?.salaryMin || 0).toLocaleString('en-US')} - {(aiResult?.salaryMax || 0).toLocaleString('en-US')}
                           </p>
                           <p className="text-[11px] text-slate-400">
                             {lang === "ar"

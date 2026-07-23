@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -1431,7 +1432,7 @@ export default function AccountingReportsTab({ lang }: { lang: "ar" | "en"; user
         <table style="width: 300px; border: 1px solid #cbd5e1; border-collapse: collapse;">
           <tbody>
             <tr>
-              <td style="padding: 6px; font-weight: bold; background-color: #f8fafc;">إجمالي الصافي (ريال):</td>
+              <td style="padding: 6px; font-weight: bold; background-color: #f8fafc;">إجمالي الصافي (<img src="https://www.sama.gov.sa/ar-sa/Currency/Documents/Saudi_Riyal_Symbol-1.png" style="height: 14px; width: auto; display: inline-block; vertical-align: middle; margin: 0 4px;" referrerPolicy="no-referrer" />):</td>
               <td style="padding: 6px; text-align: left; font-family: monospace; font-weight: bold;">${totalExclTax.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
             </tr>
             ${totalTax > 0 ? `
@@ -1690,7 +1691,7 @@ export default function AccountingReportsTab({ lang }: { lang: "ar" | "en"; user
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey={xKey} tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(value) => [`${Number(value).toLocaleString("en-US")} ريال`, ""]} contentStyle={{ borderRadius: "12px", border: "1px solid #f1f5f9", fontSize: 10 }} />
+              <Tooltip formatter={(value) => [`${Number(value).toLocaleString("en-US")} <SaudiRiyal />`, ""]} contentStyle={{ borderRadius: "12px", border: "1px solid #f1f5f9", fontSize: 10 }} />
               <Bar dataKey={dataKey} fill={barColor} radius={[6, 6, 0, 0]} barSize={36}>
                 {chartData.map((entry, idx) => (
                   <Cell key={`cell-${idx}`} fillOpacity={0.85} />

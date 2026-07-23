@@ -1,3 +1,4 @@
+import SaudiRiyal from "../SaudiRiyal";
 import React, { useState } from 'react';
 import { Briefcase, Key, Shield, Percent, AlertCircle, Plus } from 'lucide-react';
 
@@ -181,7 +182,7 @@ export default function HrJobManagementTab({ lang }: HrJobManagementTabProps) {
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block">{lang === 'ar' ? 'النطاق الحاكم للراتب المعتمد' : 'Authorized Base Pay Range'}</span>
                 <p className="text-xs font-black text-[#0072BC] font-mono">
-                  SAR {role.basicMin.toLocaleString('en-US')} - {role.basicMax.toLocaleString('en-US')}
+                  <SaudiRiyal /> {role.basicMin.toLocaleString('en-US')} - {role.basicMax.toLocaleString('en-US')}
                 </p>
               </div>
             </div>
@@ -191,7 +192,7 @@ export default function HrJobManagementTab({ lang }: HrJobManagementTabProps) {
               <div className="space-y-1 bg-white p-3 rounded-xl border border-slate-100">
                 <span className="text-[9px] text-slate-400 font-bold block">🚒 {lang === 'ar' ? 'بدل ميداني ومخاطر التصنيع' : 'Field & Risk Allowance'}</span>
                 <p className="font-black font-mono text-amber-600">
-                  SAR {role.fieldAllowance} / {lang === 'ar' ? 'شهرياً مضاف' : 'fixed monthly'}
+                  <SaudiRiyal /> {role.fieldAllowance} / {lang === 'ar' ? 'شهرياً مضاف' : 'fixed monthly'}
                 </p>
               </div>
 
@@ -253,15 +254,24 @@ export default function HrJobManagementTab({ lang }: HrJobManagementTabProps) {
                 <input required type="text" value={newTitleEn} onChange={e => setNewTitleEn(e.target.value)} className="w-full p-2 border rounded-xl" />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الحد الأدنى للراتب' : 'Salary min range (SAR)'}</label>
+                <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                  <span>{lang === 'ar' ? 'الحد الأدنى للراتب' : 'Salary min range'}</span>
+                  <SaudiRiyal />
+                </label>
                 <input type="number" lang="en" value={newMinPay} onChange={e => setNewMinPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'الحد الأقصى للراتب' : 'Salary max range (SAR)'}</label>
+                <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                  <span>{lang === 'ar' ? 'الحد الأقصى للراتب' : 'Salary max range'}</span>
+                  <SaudiRiyal />
+                </label>
                 <input type="number" lang="en" value={newMaxPay} onChange={e => setNewMaxPay(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div className="col-span-2">
-                <label className="block text-slate-400 mb-1">{lang === 'ar' ? 'البدلات الميدانية والحياكة المضافة' : 'Field/Risk Allowance (SAR)'}</label>
+                <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                  <span>{lang === 'ar' ? 'البدلات الميدانية والحياكة المضافة' : 'Field/Risk Allowance'}</span>
+                  <SaudiRiyal />
+                </label>
                 <input type="number" lang="en" value={newFieldAllow} onChange={e => setNewFieldAllow(Number(e.target.value))} className="w-full p-2 border rounded-xl" />
               </div>
               <div className="col-span-2">
