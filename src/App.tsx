@@ -2329,11 +2329,7 @@ export default function App() {
               </div>
 
               {/* Dashboard Nav (Global) */}
-              {(user.role === "Super Admin" ||
-                user.username.toUpperCase() === "FERAS" || user.username.toUpperCase() === "FERASADMIN" ||
-                user.username.toUpperCase() === "فراس" ||
-                user.role === "الادارة العليا" ||
-                user.role === "الإدارة العليا") && (
+              {user && (
                 <button
                   id="tab-btn-dashboard"
                   onClick={() => setActiveTab("dashboard")}

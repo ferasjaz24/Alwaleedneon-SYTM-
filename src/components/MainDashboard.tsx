@@ -31,9 +31,12 @@ import {
  AlertTriangle,
  UserPlus,
  Zap,
+ Sparkles,
+ Shield,
+ ArrowRight,
 } from "lucide-react";
 import { User } from "../types";
-import { hasAdvancedPermission } from "../lib/permissions";
+import { hasAdvancedPermission, canAccessModule } from "../lib/permissions";
 import {
  BarChart,
  Bar,
@@ -539,22 +542,214 @@ export default function MainDashboard({
  );
  }
 
- const isTopManagement = hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_main');
+ const isSuperAdminOrOwner = !!(user && (
+   user.username?.toUpperCase() === "FERAS" ||
+   user.username?.toUpperCase() === "FERASADMIN" ||
+   user.username?.toUpperCase() === "فراس" ||
+   user.username?.toUpperCase() === "ADMIN" ||
+   user.role === "الادارة العليا" ||
+   user.role === "الإدارة العليا" ||
+   user.role === "top_management" ||
+   user.role === "Super Admin" ||
+   user.role === "Admin"
+ ));
 
- if (!isTopManagement) {
- return (
- <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 text-slate-500">
- <ShieldAlert className="w-16 h-16 text-slate-300" />
- <h2 className="text-xl font-bold">
- {lang === "ar" ? "غير مصرح بالدخول" : "Access Denied"}
- </h2>
- <p className="max-w-md text-sm leading-relaxed">
- {lang === "ar"
- ? "هذه اللوحة مخصصة للقيادة التنفيذية العليا فقط (فراس، الإدارة العليا). الرجاء التوجه لقسمك المختص من القائمة الجانبية."
- : "This executive dashboard is restricted to Top Management. Please navigate to your authorized module from the sidebar."}
- </p>
- </div>
- );
+ const canViewMain = isSuperAdminOrOwner || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_main');
+ const canViewSales = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales');
+ const canViewProduction = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_production');
+ const canViewHR = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_hr');
+ const canViewProcurement = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement');
+ const canViewAlerts = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_alerts');
+ const canViewLogs = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_logs');
+ const canViewShortcuts = canViewMain || hasAdvancedPermission(user, 'dashboard', 'quick_shortcuts', 'view_main_shortcuts');
+ const canFilterDate = canViewMain || hasAdvancedPermission(user, 'dashboard', 'metrics', 'filter_date');
+
+ const hasAnyDashboardMetric = canViewMain || canViewSales || canViewProduction || canViewHR || canViewProcurement || canViewAlerts || canViewLogs || canViewShortcuts;
+
+ if (!hasAnyDashboardMetric) {
+   return (
+     <div className="space-y-8 pb-12 animate-in fade-in duration-300">
+       {/* Welcome Hero Banner */}
+       <div className="relative overflow-hidden bg-gradient-to-r from-[#0a2540] via-[#0072BC] to-[#00558c] rounded-3xl p-8 lg:p-10 text-white shadow-xl">
+         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+           <div className="space-y-3 max-w-2xl">
+             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-bold tracking-wide text-blue-100">
+               <Sparkles className="w-4 h-4 text-amber-300" />
+               <span>{lang === "ar" ? "نظام شركة فنون الوليد" : "Fonoun Alwaleed ERP"}</span>
+             </div>
+             <h1 className="text-2xl md:text-3xl lg:text-4xl font-black leading-tight">
+               {lang === "ar"
+                 ? `أهلاً وسهلاً بك، ${user?.username || "المستخدم"} 👋`
+                 : `Welcome back, ${user?.username || "User"} 👋`}
+             </h1>
+             <p className="text-blue-100 text-sm font-medium leading-relaxed">
+               {lang === "ar"
+                 ? "مرحباً بك في لوحتك الرئيسية. يمكنك الوصول المباشر إلى جميع الأقسام والخدمات المصرح لك باستخدامها أدناه."
+                 : "Welcome to your personal dashboard. Access all your authorized system modules and services below."}
+             </p>
+           </div>
+           
+           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 text-xs font-bold text-white shadow-inner">
+             <Shield className="w-5 h-5 text-emerald-400" />
+             <div>
+               <p className="text-blue-200 text-[10px]">{lang === "ar" ? "المسمى الوظيفي / الدور" : "Role / Title"}</p>
+               <p className="font-extrabold text-sm">{user?.role || "عضو في النظام"}</p>
+             </div>
+           </div>
+         </div>
+       </div>
+
+       {/* Authorized Modules Navigation */}
+       <div className="space-y-4">
+         <div className="flex items-center justify-between">
+           <h2 className="text-xl font-black text-[#0a2540] flex items-center gap-2">
+             <LayoutDashboard className="w-5 h-5 text-[#0072BC]" />
+             {lang === "ar" ? "الأقسام المتاحة بحسابك" : "Your Accessible Modules"}
+           </h2>
+           <span className="text-xs text-slate-500 font-bold">
+             {lang === "ar" ? "توجيه سريع للخدمات المصرحة" : "Quick navigation"}
+           </span>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           {canAccessModule(user, 'hr') && (
+             <div 
+               onClick={() => onNavigate("hr", "hr_inquiries")}
+               className="group bg-white rounded-3xl p-6 border border-slate-200 hover:border-[#0072BC] shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-5"
+             >
+               <div className="space-y-3">
+                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0072BC] flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
+                   <Users className="w-6 h-6" />
+                 </div>
+                 <h3 className="font-black text-lg text-[#0a2540] group-hover:text-[#0072BC] transition-colors">
+                   {lang === "ar" ? "الموارد البشرية والخدمة الذاتية" : "HR & Self Service"}
+                 </h3>
+                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                   {lang === "ar"
+                     ? "الاستعلامات، تقديم الطلبات، متابعة الإجازات، والخدمات الموظف الذاتية."
+                     : "Employee enquiries, leave applications, and self service features."}
+                 </p>
+               </div>
+               <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs font-bold text-[#0072BC]">
+                 <span>{lang === "ar" ? "الانتقال إلى القسم" : "Open Module"}</span>
+                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+               </div>
+             </div>
+           )}
+
+           {canAccessModule(user, 'sales') && (
+             <div 
+               onClick={() => onNavigate("sales", "sales_quotations")}
+               className="group bg-white rounded-3xl p-6 border border-slate-200 hover:border-[#0072BC] shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-5"
+             >
+               <div className="space-y-3">
+                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
+                   <Briefcase className="w-6 h-6" />
+                 </div>
+                 <h3 className="font-black text-lg text-[#0a2540] group-hover:text-[#0072BC] transition-colors">
+                   {lang === "ar" ? "المبيعات والعملاء" : "Sales & Clients"}
+                 </h3>
+                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                   {lang === "ar"
+                     ? "إدارة العملاء، عروض الأسعار، متابعة التحصيل والخطابات."
+                     : "Client management, quotations, collections, and correspondence."}
+                 </p>
+               </div>
+               <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs font-bold text-emerald-600">
+                 <span>{lang === "ar" ? "الانتقال إلى القسم" : "Open Module"}</span>
+                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+               </div>
+             </div>
+           )}
+
+           {canAccessModule(user, 'production') && (
+             <div 
+               onClick={() => onNavigate("production", "prod_active_projects")}
+               className="group bg-white rounded-3xl p-6 border border-slate-200 hover:border-[#0072BC] shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-5"
+             >
+               <div className="space-y-3">
+                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
+                   <Box className="w-6 h-6" />
+                 </div>
+                 <h3 className="font-black text-lg text-[#0a2540] group-hover:text-[#0072BC] transition-colors">
+                   {lang === "ar" ? "مركز التحكم بالإنتاج" : "Production Center"}
+                 </h3>
+                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                   {lang === "ar"
+                     ? "متابعة أوامر الإنتاج اليومية، المشاريع القائمة، وقسم التركيب."
+                     : "Follow daily production orders, active projects, and installations."}
+                 </p>
+               </div>
+               <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs font-bold text-indigo-600">
+                 <span>{lang === "ar" ? "الانتقال إلى القسم" : "Open Module"}</span>
+                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+               </div>
+             </div>
+           )}
+
+           {canAccessModule(user, 'procurement') && (
+             <div 
+               onClick={() => onNavigate("warehouse", "materials_warehouse")}
+               className="group bg-white rounded-3xl p-6 border border-slate-200 hover:border-[#0072BC] shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-5"
+             >
+               <div className="space-y-3">
+                 <div className="w-12 h-12 rounded-2xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
+                   <Package className="w-6 h-6" />
+                 </div>
+                 <h3 className="font-black text-lg text-[#0a2540] group-hover:text-[#0072BC] transition-colors">
+                   {lang === "ar" ? "المستودعات والمشتريات" : "Warehouse & Procurement"}
+                 </h3>
+                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                   {lang === "ar"
+                     ? "مستودع المواد والأصناف، طلبات الشراء، وأوامر الموردين."
+                     : "Manage raw materials, inventory items, and purchase requests."}
+                 </p>
+               </div>
+               <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs font-bold text-fuchsia-600">
+                 <span>{lang === "ar" ? "الانتقال إلى القسم" : "Open Module"}</span>
+                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+               </div>
+             </div>
+           )}
+
+           {canAccessModule(user, 'finance') && (
+             <div 
+               onClick={() => onNavigate("finance", "accounting_dashboard")}
+               className="group bg-white rounded-3xl p-6 border border-slate-200 hover:border-[#0072BC] shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-5"
+             >
+               <div className="space-y-3">
+                 <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
+                   <DollarSign className="w-6 h-6" />
+                 </div>
+                 <h3 className="font-black text-lg text-[#0a2540] group-hover:text-[#0072BC] transition-colors">
+                   {lang === "ar" ? "الإدارة المالية والحسابات" : "Finance & Accounting"}
+                 </h3>
+                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                   {lang === "ar"
+                     ? "القيود اليومية، الفواتير، المصروفات، والصندوق والبنك."
+                     : "General journal, invoices, expenses, cash & bank accounts."}
+                 </p>
+               </div>
+               <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs font-bold text-amber-600">
+                 <span>{lang === "ar" ? "الانتقال إلى القسم" : "Open Module"}</span>
+                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+               </div>
+             </div>
+           )}
+         </div>
+       </div>
+
+       {/* Notice Info Card */}
+       <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 flex items-center gap-3 text-xs text-blue-800 font-medium">
+         <Sparkles className="w-5 h-5 text-[#0072BC] shrink-0" />
+         <p>
+           {lang === "ar"
+             ? "ملاحظة: يمكنك طلب تفويض صلاحيات إضافية لعرض مؤشرات القيادة التنفيذية من مسؤول النظام عبر قسم إدارة الصلاحيات المتقدمة."
+             : "Note: You can request additional permissions to view executive metrics from your system administrator."}
+         </p>
+       </div>
+     </div>
+   );
  }
 
  const kpiFormatter = new Intl.NumberFormat("en-US", {
@@ -640,7 +835,7 @@ export default function MainDashboard({
 
  {/* 3. TOP EXECUTIVE KPIs */}
  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
+ {canViewSales && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_quotations")}
  title={lang === "ar" ? "إجمالي المبيعات" : "Total Sales"}
@@ -658,7 +853,7 @@ export default function MainDashboard({
  badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
+ {canViewSales && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_collections")}
  title={lang === "ar" ? "التحصيل النقدي الفعلي" : "Actual Collected"}
@@ -672,7 +867,7 @@ export default function MainDashboard({
  badgeColor="text-emerald-700 bg-emerald-50 border-emerald-100"
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
+ {canViewSales && (
  <KpiCard
  onClick={() => onNavigate("sales", "sales_collections")}
  title={lang === "ar" ? "المتأخرات" : "Overdue"}
@@ -686,7 +881,7 @@ export default function MainDashboard({
  badgeColor="text-rose-700 bg-rose-50 border-rose-100"
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_production') && (
+ {canViewProduction && (
  <KpiCard
  onClick={() => onNavigate("production", "prod_active_projects")}
  title={lang === "ar" ? "مشاريع قيد الإنتاج" : "In Production"}
@@ -699,7 +894,7 @@ export default function MainDashboard({
  badgeColor="text-indigo-700 bg-indigo-50 border-indigo-100"
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_hr') && (
+ {canViewHR && (
  <KpiCard
  onClick={() => onNavigate("hr", "hr_employees")}
  title={lang === "ar" ? "إجمالي الموظفين" : "Total Employees"}
@@ -710,7 +905,7 @@ export default function MainDashboard({
  subtitle={lang === "ar" ? "موظفين على رأس العمل" : "Active workforce"}
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
+ {canViewProcurement && (
  <KpiCard
  onClick={() => onNavigate("warehouse", "materials_warehouse")}
  title={lang === "ar" ? "قيمة المخروات والمخزون" : "Inventory Value"}
@@ -724,7 +919,7 @@ export default function MainDashboard({
  }
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
+ {canViewProcurement && (
  <KpiCard
  onClick={() => onNavigate("warehouse", "procurement_requests")}
  title={lang === "ar" ? "طلبات مواد معلقة" : "Pending Mat"}
@@ -739,7 +934,7 @@ export default function MainDashboard({
  badgeColor="text-fuchsia-700 bg-fuchsia-50 border-fuchsia-100"
  />
  )}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_alerts') && (
+ {canViewAlerts && (
  <KpiCard
  title={lang === "ar" ? "تنبيهات النظام" : "Alerts"}
  value={topAlerts.length}
@@ -756,7 +951,7 @@ export default function MainDashboard({
  {/* 4. OPERATIONAL AREAS */}
 
  {/* A. SALES & COLLECTIONS */}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_sales') && (
+ {canViewSales && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -991,7 +1186,7 @@ export default function MainDashboard({
  )}
 
  {/* B. PRODUCTION CONTROL */}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_production') && (
+ {canViewProduction && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1188,7 +1383,7 @@ export default function MainDashboard({
  )}
 
  {/* C. WAREHOUSE & PROCUREMENT */}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_procurement') && (
+ {canViewProcurement && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1320,7 +1515,7 @@ export default function MainDashboard({
  )}
 
  {/* D. HUMAN RESOURCES */}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_hr') && (
+ {canViewHR && (
  <section className="bg-white rounded-[28px] p-6 lg:p-8 border border-slate-200 shadow-sm space-y-8">
  <div className="flex items-center justify-between">
  <div>
@@ -1480,7 +1675,7 @@ export default function MainDashboard({
  )}
 
  {/* 5. QUICK ACTIONS */}
- {hasAdvancedPermission(user, 'dashboard', 'quick_shortcuts', 'view_main_shortcuts') && (
+ {canViewShortcuts && (
  <section className="bg-gradient-to-l from-[#0072BC] to-[#0a2540] p-6 lg:p-8 rounded-[28px] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
  <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
  <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500 opacity-20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4"></div>
@@ -1547,7 +1742,7 @@ export default function MainDashboard({
  )}
 
  {/* 6. HISTORY */}
- {hasAdvancedPermission(user, 'dashboard', 'metrics', 'view_logs') && (
+ {canViewLogs && (
  <section className="bg-white rounded-[28px] border border-slate-200 shadow-sm overflow-hidden">
  <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between">
  <div>
