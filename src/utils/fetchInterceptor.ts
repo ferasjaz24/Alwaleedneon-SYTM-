@@ -69,7 +69,7 @@ function handleFirestoreError(
 }
 
 // Data mapping helpers to preserve original interface specs
-export function mapEmployeeFromDB(row: any): any {
+function mapEmployeeFromDB(row: any): any {
   if (!row) return null;
   return {
     id: row.id,
