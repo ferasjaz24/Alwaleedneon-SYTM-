@@ -444,6 +444,29 @@ const PERMISSIONS_SCHEMA = {
           { id: 'view_zatca', labelAr: 'عرض إعدادات زاتكا وتكامل الفواتير', labelEn: 'عرض إعدادات زاتكا وتكامل الفواتير', type: 'view' },
           { id: 'edit_zatca', labelAr: 'تعديل إعدادات زاتكا والربط الضريبي', labelEn: 'تعديل إعدادات زاتكا والربط الضريبي', type: 'sensitive' }
         ]
+      },
+      eos_calculator: {
+        ar: 'حاسبة مستحقات نهاية الخدمة والإجازات', en: 'EOS & Vacation Calculator',
+        perms: [
+          { id: 'view_calculator', labelAr: 'عرض حاسبة مستحقات نهاية الخدمة والإجازات', labelEn: 'View End of Service & Leave Calculator', type: 'view' },
+          { id: 'create_calc', labelAr: 'إنشاء حساب وتصفية (اختيار موظف والنوع)', labelEn: 'Create Calculation & Settlement', type: 'add' },
+          { id: 'view_formulas', labelAr: 'عرض تفاصيل المعادلات والاحتسابات التلقائية', labelEn: 'View Live Mathematical Formulas & Equations', type: 'view' },
+          { id: 'view_saved', labelAr: 'عرض سجل العمليات الحسابية والتصفيات المحفوظة', labelEn: 'View Saved Calculations Log', type: 'view' },
+          { id: 'scope_all', labelAr: 'رؤية حسابات وتصفيات جميع الموظفين بالنظام', labelEn: 'Scope: View All Employee Settlements', type: 'view' },
+          { id: 'scope_own', labelAr: 'رؤية حسابات وتصفيات الموظفين الخاصة بي فقط', labelEn: 'Scope: View Own User Calculations Only', type: 'view' },
+          { id: 'print_calc', labelAr: 'طباعة وتصدير مستند التصفية', labelEn: 'Print & Export Settlement Document', type: 'export' },
+          { id: 'approve_calc', labelAr: 'اعتماد التصفية والعملية الحسابية (تفعيل زر الاعتماد)', labelEn: 'Approve Calculation & Settlement', type: 'approve' },
+          { id: 'revoke_approval', labelAr: 'إلغاء الاعتماد (للإدارة)', labelEn: 'Revoke Settlement Approval', type: 'sensitive' },
+          { id: 'edit_calc', labelAr: 'تعديل الحسبة والعملية الحسابية', labelEn: 'Edit Saved Calculation', type: 'edit' },
+          { id: 'delete_calc', labelAr: 'حذف سجل العملية الحسابية', labelEn: 'Delete Saved Calculation Log', type: 'delete' }
+        ]
+      },
+      firas: {
+        ar: 'المحاسب المالي الذكي (فراس)', en: 'Smart Financial Accountant (Firas)',
+        perms: [
+          { id: 'view_firas', labelAr: 'الوصول واستخدام المحاسب المالي الذكي', labelEn: 'Access and Use Smart Financial Accountant', type: 'view' },
+          { id: 'save_chats', labelAr: 'حفظ وتصدير محادثات المحاسب الذكي', labelEn: 'Save and Export Smart Accountant Chats', type: 'add' }
+        ]
       }
     }
   },

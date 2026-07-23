@@ -3,11 +3,13 @@ import { db, auth } from "../../firebase";
 import { collection, doc, setDoc, getDocs, deleteDoc } from "firebase/firestore";
 import { 
   FileText, Search, Printer, Trash2, Plus, X, Calendar, User, 
-  TrendingUp, TrendingDown, Percent, DollarSign, Calculator, HelpCircle, Pencil
+  TrendingUp, TrendingDown, Percent, DollarSign, Calculator, HelpCircle, Pencil,
+  Check, CheckCircle, Ban
 } from "lucide-react";
 import { Employee, User as AppUser } from "../../types";
 import { sharedPrintHeader, sharedPrintFooter, sharedPrintStyles } from "../../utils/PrintShared";
 import { generatePrintTemplate } from "../../utils/printTemplates";
+import { hasAdvancedPermission, getAdvancedPermissionScope } from "../../lib/permissions";
 
 // Firestore Error Handling matching integration guidelines
 enum OperationType {
@@ -79,6 +81,10 @@ interface SavedCalculation {
   createdAt: string;
   createdBy: string;
   userId: string;
+  isApproved?: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
+  approvedUserId?: string;
 }
 
 const getCalculationSerial = (calc: SavedCalculation) => {
@@ -110,9 +116,27 @@ const getCalculationSerial = (calc: SavedCalculation) => {
 };
 
 export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeaveCalculatorTabProps) {
+  // --- DETAILED PERMISSIONS ---
+  const canCreate = hasAdvancedPermission(user, "finance", "eos_calculator", "create_calc");
+  const canViewFormulas = hasAdvancedPermission(user, "finance", "eos_calculator", "view_formulas");
+  const canViewSaved = hasAdvancedPermission(user, "finance", "eos_calculator", "view_saved");
+  const canPrint = hasAdvancedPermission(user, "finance", "eos_calculator", "print_calc");
+  const canApprove = hasAdvancedPermission(user, "finance", "eos_calculator", "approve_calc");
+  const canRevokeApproval = hasAdvancedPermission(user, "finance", "eos_calculator", "revoke_approval");
+  const canEdit = hasAdvancedPermission(user, "finance", "eos_calculator", "edit_calc");
+  const canDelete = hasAdvancedPermission(user, "finance", "eos_calculator", "delete_calc");
+
+  // Scope Filtering
+  const scopeAll = hasAdvancedPermission(user, "finance", "eos_calculator", "scope_all");
+  const scopeOwn = hasAdvancedPermission(user, "finance", "eos_calculator", "scope_own");
+  const isOwnDataOnly = scopeOwn && !scopeAll;
+
   // --- CORE UI STATE ---
   const [editingCalcId, setEditingCalcId] = useState<string | null>(null);
+  const isAllowedToCalculate = editingCalcId ? canEdit : canCreate;
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [approveConfirmId, setApproveConfirmId] = useState<string | null>(null);
+  const [revokeConfirmId, setRevokeConfirmId] = useState<string | null>(null);
   const isSettingEditData = useRef(false);
 
   const [calcType, setCalcType] = useState<"eos" | "leave">("eos");
@@ -635,6 +659,68 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
     }
   };
 
+  // Approve saved calculation
+  const handleApproveCalculation = async (calc: SavedCalculation) => {
+    try {
+      const updatedCalc = {
+        ...calc,
+        isApproved: true,
+        approvedBy: (user as any).username || (user as any).displayName || auth.currentUser?.email || "Super Admin",
+        approvedAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        approvedUserId: auth.currentUser?.uid || user.uid,
+      };
+
+      // Optimistically update local state
+      setSavedCalculations(prev => prev.map(c => c.id === calc.id ? updatedCalc : c));
+
+      await setDoc(doc(db, "eos_leave_calculations", calc.id), updatedCalc);
+      setNotification({
+        type: "success",
+        text: lang === "ar" ? "تم اعتماد التصفية والعملية الحسابية بنجاح" : "Settlement calculation approved successfully."
+      });
+      setApproveConfirmId(null);
+      loadSavedCalculations();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, "eos_leave_calculations");
+      setNotification({
+        type: "error",
+        text: lang === "ar" ? "فشل اعتماد الحسبة في قاعدة البيانات" : "Failed to approve calculation in database."
+      });
+      loadSavedCalculations();
+    }
+  };
+
+  // Revoke approval of saved calculation
+  const handleRevokeCalculation = async (calc: SavedCalculation) => {
+    try {
+      const updatedCalc = {
+        ...calc,
+        isApproved: false,
+        approvedBy: "",
+        approvedAt: "",
+        approvedUserId: "",
+      };
+
+      // Optimistically update local state
+      setSavedCalculations(prev => prev.map(c => c.id === calc.id ? updatedCalc : c));
+
+      await setDoc(doc(db, "eos_leave_calculations", calc.id), updatedCalc);
+      setNotification({
+        type: "success",
+        text: lang === "ar" ? "تم إلغاء اعتماد التصفية بنجاح" : "Settlement approval revoked successfully."
+      });
+      setRevokeConfirmId(null);
+      loadSavedCalculations();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, "eos_leave_calculations");
+      setNotification({
+        type: "error",
+        text: lang === "ar" ? "فشل إلغاء اعتماد الحسبة في قاعدة البيانات" : "Failed to revoke calculation approval in database."
+      });
+      loadSavedCalculations();
+    }
+  };
+
   // --- PRINT WINDOW PREVIEW GENERATOR ---
   const handlePrint = () => {
     if (!selectedEmp || !calcResults) return;
@@ -680,7 +766,8 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
   const filteredCalculations = savedCalculations.filter(calc => {
     const matchesEmployee = searchEmployee === "" || calc.employeeName.toLowerCase().includes(searchEmployee.toLowerCase());
     const matchesMonth = searchMonth === "" || calc.calculationMonth === searchMonth;
-    return matchesEmployee && matchesMonth;
+    const matchesScope = !isOwnDataOnly || calc.userId === (auth.currentUser?.uid || user?.uid);
+    return matchesEmployee && matchesMonth && matchesScope;
   });
 
   return (
@@ -709,6 +796,16 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-6" id="calculation-inputs-card">
             
+            {!isAllowedToCalculate && (
+              <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-4 text-center">
+                <span className="text-amber-800 font-extrabold text-xs block">
+                  {lang === "ar" 
+                    ? "⚠️ ليس لديك الصلاحية الكافية لإجراء أو تعديل العمليات الحسابية لتصفية المستحقات." 
+                    : "⚠️ You do not have sufficient permission to perform or modify settlement calculations."}
+                </span>
+              </div>
+            )}
+
             {/* Calculation Type & Employee Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Type Selection */}
@@ -720,16 +817,18 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
                   <button
                     type="button"
                     id="btn-calc-type-eos"
-                    onClick={() => setCalcType("eos")}
-                    className={`p-2.5 rounded-xl font-bold text-xs border transition-all text-center ${calcType === "eos" ? "bg-[#0072BC] text-white border-[#0072BC]" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"}`}
+                    onClick={() => isAllowedToCalculate && setCalcType("eos")}
+                    disabled={!isAllowedToCalculate}
+                    className={`p-2.5 rounded-xl font-bold text-xs border transition-all text-center ${calcType === "eos" ? "bg-[#0072BC] text-white border-[#0072BC]" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"} disabled:opacity-50`}
                   >
                     {lang === "ar" ? "نهاية الخدمة" : "End of Service"}
                   </button>
                   <button
                     type="button"
                     id="btn-calc-type-leave"
-                    onClick={() => setCalcType("leave")}
-                    className={`p-2.5 rounded-xl font-bold text-xs border transition-all text-center ${calcType === "leave" ? "bg-[#0072BC] text-white border-[#0072BC]" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"}`}
+                    onClick={() => isAllowedToCalculate && setCalcType("leave")}
+                    disabled={!isAllowedToCalculate}
+                    className={`p-2.5 rounded-xl font-bold text-xs border transition-all text-center ${calcType === "leave" ? "bg-[#0072BC] text-white border-[#0072BC]" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"} disabled:opacity-50`}
                   >
                     {lang === "ar" ? "إجازة سنوية" : "Annual Leave"}
                   </button>
@@ -745,7 +844,8 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
                   id="select-employee-id"
                   value={selectedEmpId}
                   onChange={(e) => setSelectedEmpId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-[#0072BC]"
+                  disabled={!isAllowedToCalculate}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-[#0072BC] disabled:opacity-50"
                 >
                   <option value="">{lang === "ar" ? "-- اختر موظف من القائمة --" : "-- Select Employee --"}</option>
                   {employees.map((emp) => (
@@ -1367,36 +1467,40 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
                 {/* Print and Save buttons */}
                 <div className="flex flex-col gap-2 pt-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      id="btn-print-calc"
-                      onClick={handlePrint}
-                      className="flex items-center justify-center gap-1.5 p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer border border-slate-750"
-                    >
-                      <Printer className="w-4 h-4 text-blue-400" />
-                      <span>{lang === "ar" ? "طباعة" : "Print"}</span>
-                    </button>
+                    {canPrint && (
+                      <button
+                        type="button"
+                        id="btn-print-calc"
+                        onClick={handlePrint}
+                        className="flex items-center justify-center gap-1.5 p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer border border-slate-750"
+                      >
+                        <Printer className="w-4 h-4 text-blue-400" />
+                        <span>{lang === "ar" ? "طباعة" : "Print"}</span>
+                      </button>
+                    )}
 
-                    <button
-                      type="button"
-                      id="btn-save-calc"
-                      disabled={saveLoading}
-                      onClick={handleSaveCalculation}
-                      className={`flex items-center justify-center gap-1.5 p-2.5 text-white rounded-xl text-xs font-black transition-all cursor-pointer ${editingCalcId ? "bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800" : "bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800"}`}
-                    >
-                      {saveLoading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <FileText className="w-4 h-4" />
-                          <span>
-                            {editingCalcId 
-                              ? (lang === "ar" ? "حفظ التعديلات" : "Save Changes") 
-                              : (lang === "ar" ? "حفظ الحسبة" : "Save Log")}
-                          </span>
-                        </>
-                      )}
-                    </button>
+                    {((editingCalcId && canEdit) || (!editingCalcId && canCreate)) && (
+                      <button
+                        type="button"
+                        id="btn-save-calc"
+                        disabled={saveLoading}
+                        onClick={handleSaveCalculation}
+                        className={`flex items-center justify-center gap-1.5 p-2.5 text-white rounded-xl text-xs font-black transition-all cursor-pointer ${editingCalcId ? "bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800" : "bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800"} ${!canPrint ? "col-span-2" : ""}`}
+                      >
+                        {saveLoading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <FileText className="w-4 h-4" />
+                            <span>
+                              {editingCalcId 
+                                ? (lang === "ar" ? "حفظ التعديلات" : "Save Changes") 
+                                : (lang === "ar" ? "حفظ الحسبة" : "Save Log")}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {editingCalcId && (
@@ -1439,7 +1543,13 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
           </p>
         </div>
 
-        {!selectedEmp || !calcResults ? (
+        {!canViewFormulas ? (
+          <div className="text-center py-6 text-slate-500 bg-white rounded-2xl border border-slate-100 font-bold text-xs shadow-sm">
+            🔒 {lang === "ar" 
+              ? "عذراً، ليس لديك صلاحية لرؤية المعادلات وتفاصيل الاحتساب التلقائي." 
+              : "Sorry, you do not have permission to view mathematical formula details."}
+          </div>
+        ) : !selectedEmp || !calcResults ? (
           <div className="text-center py-4 text-slate-400 italic text-xs font-bold">
             {lang === "ar" ? "الرجاء اختيار موظف لعرض تفاصيل ومعادلات الاحتساب التلقائي هنا" : "Please select an employee to view live mathematical calculation details."}
           </div>
@@ -1535,42 +1645,50 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
           </div>
 
           {/* Search bar controls */}
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            {/* Search Employee name */}
-            <div className="relative w-full md:w-56">
-              <Search className="absolute right-3 top-2.5 w-4 h-4 text-slate-400" />
+          {canViewSaved && (
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+              {/* Search Employee name */}
+              <div className="relative w-full md:w-56">
+                <Search className="absolute right-3 top-2.5 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchEmployee}
+                  onChange={(e) => setSearchEmployee(e.target.value)}
+                  placeholder={lang === "ar" ? "ابحث باسم الموظف..." : "Search Employee..."}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-3 pr-9 text-xs font-bold text-slate-700"
+                />
+              </div>
+
+              {/* Filter by Month */}
               <input
-                type="text"
-                value={searchEmployee}
-                onChange={(e) => setSearchEmployee(e.target.value)}
-                placeholder={lang === "ar" ? "ابحث باسم الموظف..." : "Search Employee..."}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-3 pr-9 text-xs font-bold text-slate-700"
+                type="month"
+                value={searchMonth}
+                onChange={(e) => setSearchMonth(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700"
               />
+
+              {/* Clear filters */}
+              {(searchEmployee || searchMonth) && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchEmployee(""); setSearchMonth(""); }}
+                  className="text-xs text-slate-500 hover:text-slate-800 font-black"
+                >
+                  {lang === "ar" ? "إعادة تعيين" : "Reset"}
+                </button>
+              )}
             </div>
-
-            {/* Filter by Month */}
-            <input
-              type="month"
-              value={searchMonth}
-              onChange={(e) => setSearchMonth(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700"
-            />
-
-            {/* Clear filters */}
-            {(searchEmployee || searchMonth) && (
-              <button
-                type="button"
-                onClick={() => { setSearchEmployee(""); setSearchMonth(""); }}
-                className="text-xs text-slate-500 hover:text-slate-800 font-black"
-              >
-                {lang === "ar" ? "إعادة تعيين" : "Reset"}
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Database List / Table of calculations */}
-        {dbLoading ? (
+        {!canViewSaved ? (
+          <div className="text-center py-8 text-slate-500 font-bold text-xs bg-slate-50 rounded-2xl border border-slate-100">
+            🔒 {lang === "ar" 
+              ? "عذراً، ليس لديك صلاحية لعرض سجل العمليات الحسابية والتصفيات المحفوظة." 
+              : "Sorry, you do not have permission to view saved calculations log."}
+          </div>
+        ) : dbLoading ? (
           <div className="flex justify-center items-center py-10" id="db-list-loading">
             <div className="w-8 h-8 border-3 border-[#0072BC] border-t-transparent rounded-full animate-spin"></div>
           </div>
@@ -1586,6 +1704,7 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
                   <th className="p-3 text-left">{lang === "ar" ? "إجمالي المستحقات" : "Total Due"}</th>
                   <th className="p-3 text-center">{lang === "ar" ? "الموثق واللوق" : "Logged User"}</th>
                   <th className="p-3 text-center">{lang === "ar" ? "تاريخ الحفظ" : "Saved Date"}</th>
+                  <th className="p-3 text-center">{lang === "ar" ? "حالة الاعتماد" : "Approval Status"}</th>
                   <th className="p-3 text-center">{lang === "ar" ? "إجراءات" : "Actions"}</th>
                 </tr>
               </thead>
@@ -1618,209 +1737,260 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
                       </span>
                     </td>
                     <td className="p-3 text-center font-mono text-[10px] text-slate-400">
-                      {calc.createdAt ? new Date(calc.createdAt).toLocaleString("ar-SA") : ""}
+                      {calc.createdAt ? new Date(calc.createdAt).toLocaleString("en-US") : ""}
+                    </td>
+                    <td className="p-3 text-center">
+                      {calc.isApproved ? (
+                        <div className="flex flex-col items-center justify-center space-y-1">
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 font-extrabold px-2.5 py-1 rounded-full text-[10px] border border-emerald-200">
+                            <CheckCircle className="w-3 h-3 text-emerald-600" />
+                            {lang === "ar" ? "معتمد" : "Approved"}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-bold block leading-tight">
+                            👤 {calc.approvedBy}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-mono block leading-tight">
+                            📅 {calc.approvedAt}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 font-extrabold px-2.5 py-1 rounded-full text-[10px] border border-amber-200">
+                          {lang === "ar" ? "مسودة غير معتمد" : "Draft / Pending"}
+                        </span>
+                      )}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Quick reprint from log
-                            // We can construct a mock employee to invoke handlePrint
-                            const dummyEmp: Employee = {
-                              id: calc.employeeId,
-                              arabicName: calc.employeeName,
-                              englishName: calc.employeeName,
-                              iqamaId: "",
-                              passportDetails: "",
-                              jobTitle: "",
-                              grade: "",
-                              basicSalary: calc.results.basicSalary,
-                              allowances: { housing: 0, transport: 0 },
-                              homeAddress: "",
-                              custody: {},
-                              birthDate: "",
-                              dateOfJoining: "",
-                              contractExpiry: "",
-                              department: ""
-                            };
-                            
-                            // Load saved allowances in active allowances array
-                            // Call print window safely
-                            const printWindow = window.open("", "_blank");
-                            if (printWindow) {
-                              const todayStr = new Date(calc.createdAt).toLocaleDateString("ar-SA");
-                              const isEos = calc.calculationType === "eos";
-                              
-                              printWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html dir="rtl" lang="ar">
-                                <head>
-                                  <meta charset="utf-8">
-                                  <title>تصفية مستحقات - ${calc.employeeName}</title>
-                                  <style>
-                                    ${sharedPrintStyles}
-                                    body {
-                                      color: #1e293b;
-                                      background-color: #ffffff;
-                                      margin: 0;
-                                      padding: 20px;
-                                      font-size: 12px;
-                                    }
-                                    .container {
-                                      max-width: 800px;
-                                      margin: 0 auto;
-                                      border: 1px solid #e2e8f0;
-                                      border-radius: 12px;
-                                      padding: 24px;
-                                    }
-                                    .info-grid {
-                                      display: grid;
-                                      grid-template-columns: repeat(2, 1fr);
-                                      gap: 12px;
-                                      background-color: #f8fafc;
-                                      border: 1px solid #e2e8f0;
-                                      border-radius: 10px;
-                                      padding: 16px;
-                                      margin-bottom: 20px;
-                                    }
-                                    .info-item { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
-                                    .section-title { font-size: 13px; font-weight: 800; color: #0284c7; border-right: 3px solid #0284c7; padding-right: 8px; margin: 16px 0 10px 0; }
-                                    .calc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                                    .calc-table th { background-color: #f1f5f9; text-align: right; padding: 10px; font-weight: 700; border-bottom: 2px solid #cbd5e1; }
-                                    .calc-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-                                    .grand-total-panel { background-color: #0f172a; color: #ffffff; border-radius: 10px; padding: 16px; text-align: center; }
-                                    .grand-total-value { font-size: 24px; font-weight: 800; color: #34d399; }
-                                    .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
-                                    .sig-box { display: flex; flex-direction: column; justify-content: space-between; height: 80px; }
-                                    @media print {
-                                      body { padding: 0; }
-                                      .container { border: none; padding: 0; }
-                                      @page { size: A4 portrait; margin: 12mm; }
-                                    }
-                                  </style>
-                                </head>
-                                <body>
-                                  <div class="container">
-                                    <!-- 1. Header -->
-                                    ${sharedPrintHeader}
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -15px; margin-bottom: 20px; font-size: 11px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
-                                      <div><strong>رقم المستند:</strong> ${getCalculationSerial(calc)}</div>
-                                      <div><strong>التاريخ:</strong> ${todayStr}</div>
-                                      <div><strong>الصفحة:</strong> 1 من 1</div>
-                                    </div>
-
-                                    <div style="text-align: center; margin-bottom: 20px;">
-                                      <h1 style="font-size: 18px; margin: 0; font-weight: 800;">نسخة مؤرشفة - مستند تصفية ومستحقات الموظف</h1>
-                                      <span style="display: inline-block; background-color: #f0f9ff; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 11px; margin-top: 6px; border: 1px solid #bae6fd;">
-                                        ${isEos ? "نهاية خدمة ومستحقات" : "إجازة سنوية"}
-                                      </span>
-                                    </div>
-
-                                    <div class="info-grid">
-                                      <div class="info-item"><span>اسم الموظف:</span><span style="font-weight:700;">${calc.employeeName}</span></div>
-                                      <div class="info-item"><span>الرقم الوظيفي:</span><span>${calc.employeeId}</span></div>
-                                      <div class="info-item"><span>نوع التصفية:</span><span>${isEos ? "تصفية نهاية خدمة" : "تصفية إجازة سنوية"}</span></div>
-                                      <div class="info-item"><span>تاريخ التصفية وحفظ السجل:</span><span>${todayStr}</span></div>
-                                    </div>
-
-                                    <div class="section-title">الأجر والمستحقات المدونة بالسجل</div>
-                                    <table class="calc-table">
-                                      <thead>
-                                        <tr>
-                                          <th>البيان المالي</th>
-                                          <th style="text-align: left;">القيمة المالية</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        <tr>
-                                          <td>الأجر الأساسي التعاقدي الشهري</td>
-                                          <td style="text-align: left;">${Number(calc.results.basicSalary).toLocaleString()} ر.س</td>
-                                        </tr>
-                                        <tr>
-                                          <td>صافي راتب الشهر النشط المعتمد للتسوية</td>
-                                          <td style="text-align: left;">${Number(calc.results.netSalary).toLocaleString()} ر.س</td>
-                                        </tr>
-                                        ${isEos ? `
-                                          <tr>
-                                            <td>مكافأة نهاية الخدمة (EOS)</td>
-                                            <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.eosAward).toLocaleString()} ر.س</td>
-                                          </tr>
-                                          <tr>
-                                            <td>مستحقات تصفية الإجازة (${Number(calc.results.vacationDays).toFixed(1)} يوم)</td>
-                                            <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.vacationPay).toLocaleString()} ر.س</td>
-                                          </tr>
-                                        ` : `
-                                          <tr>
-                                            <td>أجر الإجازة السنوية المستحق (${Number(calc.results.vacationDays)} يوم)</td>
-                                            <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.vacationPay).toLocaleString()} ر.s</td>
-                                          </tr>
-                                        `}
-                                      </tbody>
-                                    </table>
-
-                                    <div class="grand-total-panel">
-                                      <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">إجمالي المستحقات المؤرشفة النهائية</div>
-                                      <div class="grand-total-value">${Number(calc.results.totalDue).toLocaleString(undefined, { minimumFractionDigits: 2 })} ر.س</div>
-                                      <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">تم الحفظ بواسطة 👤 ${calc.createdBy} بتاريخ ${todayStr}</div>
-                                    </div>
-
-                                    <div class="signatures">
-                                      <div class="sig-box"><span style="font-weight:700;">إدارة شؤون الموظفين</span><span style="border-top:1px dashed #cbd5e1; margin-top:auto; padding-top:4px;">توقيع واعتماد</span></div>
-                                      <div class="sig-box"><span style="font-weight:700;">المحاسب المالي</span><span style="border-top:1px dashed #cbd5e1; margin-top:auto; padding-top:4px;">توقيع واعتماد</span></div>
-                                      <div class="sig-box"><span style="font-weight:700;">توقيع الموظف</span><span style="border-top:1px solid #0f172a; margin-top:auto; padding-top:4px;">${calc.employeeName}</span></div>
-                                    </div>
-                                  </div>
-                                  <script>window.onload = function() { window.print(); };</script>
-                                </body>
-                                </html>
-                              `);
-                              printWindow.document.close();
-                            }
-                          }}
-                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg hover:text-slate-900 transition-all cursor-pointer"
-                          title={lang === "ar" ? "معاينة وطباعة" : "Reprint log"}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleEditCalculation(calc)}
-                          className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg hover:text-amber-800 transition-all cursor-pointer"
-                          title={lang === "ar" ? "تعديل الحسبة" : "Edit calculation"}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-
-                        {deleteConfirmId === calc.id ? (
-                          <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCalculation(calc.id)}
-                              className="px-2 py-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-extrabold text-[10px] cursor-pointer transition-all shadow-sm"
-                              title={lang === "ar" ? "تأكيد الحذف نهائياً" : "Confirm delete permanently"}
-                            >
-                              {lang === "ar" ? "تأكيد" : "Confirm"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirmId(null)}
-                              className="px-2 py-1 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-extrabold text-[10px] cursor-pointer transition-all"
-                              title={lang === "ar" ? "إلغاء" : "Cancel"}
-                            >
-                              {lang === "ar" ? "إلغاء" : "Cancel"}
-                            </button>
-                          </div>
-                        ) : (
+                        {canPrint && (
                           <button
                             type="button"
-                            onClick={() => setDeleteConfirmId(calc.id)}
-                            className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg hover:text-rose-800 transition-all cursor-pointer"
-                            title={lang === "ar" ? "حذف السجل" : "Delete record"}
+                            onClick={() => {
+                              // Quick reprint from log
+                              // We can construct a mock employee to invoke handlePrint
+                              const dummyEmp: Employee = {
+                                id: calc.employeeId,
+                                arabicName: calc.employeeName,
+                                englishName: calc.employeeName,
+                                iqamaId: "",
+                                passportDetails: "",
+                                jobTitle: "",
+                                grade: "",
+                                basicSalary: calc.results.basicSalary,
+                                allowances: { housing: 0, transport: 0 },
+                                homeAddress: "",
+                                custody: {},
+                                birthDate: "",
+                                dateOfJoining: "",
+                                contractExpiry: "",
+                                department: ""
+                              };
+                              
+                              // Load saved allowances in active allowances array
+                              // Call print window safely
+                              const printWindow = window.open("", "_blank");
+                              if (printWindow) {
+                                const todayStr = new Date(calc.createdAt).toLocaleDateString("ar-SA");
+                                const isEos = calc.calculationType === "eos";
+                                
+                                printWindow.document.write(`
+                                  <!DOCTYPE html>
+                                  <html dir="rtl" lang="ar">
+                                  <head>
+                                    <meta charset="utf-8">
+                                    <title>تصفية مستحقات - ${calc.employeeName}</title>
+                                    <style>
+                                      ${sharedPrintStyles}
+                                      body {
+                                        color: #1e293b;
+                                        background-color: #ffffff;
+                                        margin: 0;
+                                        padding: 20px;
+                                        font-size: 12px;
+                                      }
+                                      .container {
+                                        max-width: 800px;
+                                        margin: 0 auto;
+                                        border: 1px solid #e2e8f0;
+                                        border-radius: 12px;
+                                        padding: 24px;
+                                      }
+                                      .info-grid {
+                                        display: grid;
+                                        grid-template-columns: repeat(2, 1fr);
+                                        gap: 12px;
+                                        background-color: #f8fafc;
+                                        border: 1px solid #e2e8f0;
+                                        border-radius: 10px;
+                                        padding: 16px;
+                                        margin-bottom: 20px;
+                                      }
+                                      .info-item { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+                                      .section-title { font-size: 13px; font-weight: 800; color: #0284c7; border-right: 3px solid #0284c7; padding-right: 8px; margin: 16px 0 10px 0; }
+                                      .calc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                                      .calc-table th { background-color: #f1f5f9; text-align: right; padding: 10px; font-weight: 700; border-bottom: 2px solid #cbd5e1; }
+                                      .calc-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+                                      .grand-total-panel { background-color: #0f172a; color: #ffffff; border-radius: 10px; padding: 16px; text-align: center; }
+                                      .grand-total-value { font-size: 24px; font-weight: 800; color: #34d399; }
+                                      .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+                                      .sig-box { display: flex; flex-direction: column; justify-content: space-between; height: 80px; }
+                                      @media print {
+                                        body { padding: 0; }
+                                        .container { border: none; padding: 0; }
+                                        @page { size: A4 portrait; margin: 12mm; }
+                                      }
+                                    </style>
+                                  </head>
+                                  <body>
+                                    <div class="container">
+                                      <!-- 1. Header -->
+                                      ${sharedPrintHeader}
+                                      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -15px; margin-bottom: 20px; font-size: 11px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                                        <div><strong>رقم المستند:</strong> ${getCalculationSerial(calc)}</div>
+                                        <div><strong>التاريخ:</strong> ${todayStr}</div>
+                                        <div><strong>الصفحة:</strong> 1 من 1</div>
+                                      </div>
+
+                                      <div style="text-align: center; margin-bottom: 20px;">
+                                        <h1 style="font-size: 18px; margin: 0; font-weight: 800;">نسخة مؤرشفة - مستند تصفية ومستحقات الموظف</h1>
+                                        <span style="display: inline-block; background-color: #f0f9ff; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 11px; margin-top: 6px; border: 1px solid #bae6fd;">
+                                          ${isEos ? "نهاية خدمة ومستحقات" : "إجازة سنوية"}
+                                        </span>
+                                      </div>
+
+                                      <div class="info-grid">
+                                        <div class="info-item"><span>اسم الموظف:</span><span style="font-weight:700;">${calc.employeeName}</span></div>
+                                        <div class="info-item"><span>الرقم الوظيفي:</span><span>${calc.employeeId}</span></div>
+                                        <div class="info-item"><span>نوع التصفية:</span><span>${isEos ? "تصفية نهاية خدمة" : "تصفية إجازة سنوية"}</span></div>
+                                        <div class="info-item"><span>تاريخ التصفية وحفظ السجل:</span><span>${todayStr}</span></div>
+                                      </div>
+
+                                      <div class="section-title">الأجر والمستحقات المدونة بالسجل</div>
+                                      <table class="calc-table">
+                                        <thead>
+                                          <tr>
+                                            <th>البيان المالي</th>
+                                            <th style="text-align: left;">القيمة المالية</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr>
+                                            <td>الأجر الأساسي التعاقدي الشهري</td>
+                                            <td style="text-align: left;">${Number(calc.results.basicSalary).toLocaleString()} ر.س</td>
+                                          </tr>
+                                          <tr>
+                                            <td>صافي راتب الشهر النشط المعتمد للتسوية</td>
+                                            <td style="text-align: left;">${Number(calc.results.netSalary).toLocaleString()} ر.س</td>
+                                          </tr>
+                                          ${isEos ? `
+                                            <tr>
+                                              <td>مكافأة نهاية الخدمة (EOS)</td>
+                                              <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.eosAward).toLocaleString()} ر.س</td>
+                                            </tr>
+                                            <tr>
+                                              <td>مستحقات تصفية الإجازة (${Number(calc.results.vacationDays).toFixed(1)} يوم)</td>
+                                              <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.vacationPay).toLocaleString()} ر.س</td>
+                                            </tr>
+                                          ` : `
+                                            <tr>
+                                              <td>أجر الإجازة السنوية المستحق (${Number(calc.results.vacationDays)} يوم)</td>
+                                              <td style="text-align: left; font-weight: bold; color: #0284c7;">${Number(calc.results.vacationPay).toLocaleString()} ر.س</td>
+                                            </tr>
+                                          `}
+                                        </tbody>
+                                      </table>
+
+                                      <div class="grand-total-panel">
+                                        <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">إجمالي المستحقات المؤرشفة النهائية</div>
+                                        <div class="grand-total-value">${Number(calc.results.totalDue).toLocaleString(undefined, { minimumFractionDigits: 2 })} ر.س</div>
+                                        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">تم الحفظ بواسطة 👤 ${calc.createdBy} بتاريخ ${todayStr}</div>
+                                      </div>
+
+                                      <div class="signatures">
+                                        <div class="sig-box"><span style="font-weight:700;">إدارة شؤون الموظفين</span><span style="border-top:1px dashed #cbd5e1; margin-top:auto; padding-top:4px;">توقيع واعتماد</span></div>
+                                        <div class="sig-box"><span style="font-weight:700;">المحاسب المالي</span><span style="border-top:1px dashed #cbd5e1; margin-top:auto; padding-top:4px;">توقيع واعتماد</span></div>
+                                        <div class="sig-box"><span style="font-weight:700;">توقيع الموظف</span><span style="border-top:1px solid #0f172a; margin-top:auto; padding-top:4px;">${calc.employeeName}</span></div>
+                                      </div>
+                                    </div>
+                                    <script>window.onload = function() { window.print(); };</script>
+                                  </body>
+                                  </html>
+                                `);
+                                printWindow.document.close();
+                              }
+                            }}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg hover:text-slate-900 transition-all cursor-pointer"
+                            title={lang === "ar" ? "معاينة وطباعة" : "Reprint log"}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Printer className="w-3.5 h-3.5" />
                           </button>
+                        )}
+
+                        {canEdit && !calc.isApproved && (
+                          <button
+                            type="button"
+                            onClick={() => handleEditCalculation(calc)}
+                            className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg hover:text-amber-800 transition-all cursor-pointer"
+                            title={lang === "ar" ? "تعديل الحسبة" : "Edit calculation"}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {/* Approval Action */}
+                        {!calc.isApproved ? (
+                          canApprove && (
+                            <button
+                              type="button"
+                              onClick={() => setApproveConfirmId(calc.id)}
+                              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg hover:text-emerald-800 transition-all cursor-pointer animate-in fade-in"
+                              title={lang === "ar" ? "اعتماد الحسبة" : "Approve calculation"}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                          )
+                        ) : (
+                          canRevokeApproval && (
+                            <button
+                              type="button"
+                              onClick={() => setRevokeConfirmId(calc.id)}
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg hover:text-rose-800 transition-all cursor-pointer animate-in fade-in"
+                              title={lang === "ar" ? "إلغاء اعتماد الحسبة" : "Revoke calculation approval"}
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                            </button>
+                          )
+                        )}
+
+                        {canDelete && (
+                          deleteConfirmId === calc.id ? (
+                            <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCalculation(calc.id)}
+                                className="px-2 py-0.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-extrabold text-[10px] cursor-pointer transition-all shadow-sm"
+                                title={lang === "ar" ? "تأكيد الحذف نهائياً" : "Confirm delete permanently"}
+                              >
+                                {lang === "ar" ? "تأكيد" : "Confirm"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirmId(null)}
+                                className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-extrabold text-[10px] cursor-pointer transition-all"
+                                title={lang === "ar" ? "إلغاء" : "Cancel"}
+                              >
+                                {lang === "ar" ? "إلغاء" : "Cancel"}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirmId(calc.id)}
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg hover:text-rose-800 transition-all cursor-pointer"
+                              title={lang === "ar" ? "حذف السجل" : "Delete record"}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>
@@ -1836,6 +2006,129 @@ export default function EosLeaveCalculatorTab({ lang, user, employees }: EosLeav
         )}
       </div>
 
+      {/* Approve Calculation Overlay Modal */}
+      {approveConfirmId && (() => {
+        const calc = savedCalculations.find(c => c.id === approveConfirmId);
+        if (!calc) return null;
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150 text-right" dir="rtl">
+              <div className="px-6 py-4 border-b border-slate-100 bg-emerald-50">
+                <h3 className="text-sm font-black text-emerald-900 flex items-center gap-2">
+                  <Check className="w-5 h-5 text-emerald-600" />
+                  {lang === "ar" ? "اعتماد الحسبة والتصفية المالية" : "Approve Settlement Calculation"}
+                </h3>
+              </div>
+              <div className="p-6 space-y-4 text-slate-600 text-sm">
+                <p>
+                  {lang === "ar" 
+                    ? "هل أنت متأكد من رغبتك في اعتماد هذه الحسبة والتصفية المالية للموظف الموضح أدناه؟" 
+                    : "Are you sure you want to approve this settlement calculation for the employee listed below?"}
+                </p>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold block">{lang === "ar" ? "الموظف:" : "Employee:"}</span>
+                    <span className="font-extrabold text-slate-800">{calc.employeeName}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold block">{lang === "ar" ? "نوع الحسبة:" : "Calculation Type:"}</span>
+                    <span className="font-extrabold text-slate-800">
+                      {calc.calculationType === "eos" 
+                        ? (lang === "ar" ? "تصفية نهاية خدمة" : "End of Service Settlement") 
+                        : (lang === "ar" ? "تصفية إجازة سنوية" : "Annual Leave Settlement")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold block">{lang === "ar" ? "المبلغ المستحق النهائي:" : "Final Total Due:"}</span>
+                    <span className="font-mono font-black text-emerald-600 text-base">
+                      {Number(calc.results.totalDue).toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 italic">
+                  {lang === "ar" 
+                    ? "عند الاعتماد، سيتم تجميد هذا السجل واعتباره تصفية رسمية معتمدة من قبل إدارة الشؤون المالية." 
+                    : "Once approved, this record will be frozen and recorded as an official approved financial settlement."}
+                </p>
+              </div>
+              <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApproveConfirmId(null)}
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors cursor-pointer"
+                >
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApproveCalculation(calc)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-black transition-colors shadow-sm cursor-pointer"
+                >
+                  {lang === "ar" ? "نعم، اعتمد الحسبة" : "Yes, Approve"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Revoke Calculation Overlay Modal */}
+      {revokeConfirmId && (() => {
+        const calc = savedCalculations.find(c => c.id === revokeConfirmId);
+        if (!calc) return null;
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150 text-right" dir="rtl">
+              <div className="px-6 py-4 border-b border-slate-100 bg-rose-50">
+                <h3 className="text-sm font-black text-rose-900 flex items-center gap-2">
+                  <Ban className="w-5 h-5 text-rose-600" />
+                  {lang === "ar" ? "إلغاء اعتماد التصفية" : "Revoke Settlement Approval"}
+                </h3>
+              </div>
+              <div className="p-6 space-y-4 text-slate-600 text-sm">
+                <p>
+                  {lang === "ar" 
+                    ? "هل أنت متأكد من رغبتك في إلغاء اعتماد هذه التصفية المالية وإعادتها لحالة المسودة؟" 
+                    : "Are you sure you want to revoke the approval of this settlement and return it to draft?"}
+                </p>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold block">{lang === "ar" ? "الموظف:" : "Employee:"}</span>
+                    <span className="font-extrabold text-slate-800">{calc.employeeName}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold block">{lang === "ar" ? "المبلغ المستحق الحالي:" : "Current Total Due:"}</span>
+                    <span className="font-mono font-black text-rose-600 text-base">
+                      {Number(calc.results.totalDue).toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 italic">
+                  {lang === "ar" 
+                    ? "عند إلغاء الاعتماد، سيصبح بإمكان المشرفين تعديل أو حذف أو إعادة حساب القيم لهذا السجل المالي." 
+                    : "Once revoked, financial supervisors will be able to edit, delete, or recalculate values for this record."}
+                </p>
+              </div>
+              <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRevokeConfirmId(null)}
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors cursor-pointer"
+                >
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRevokeCalculation(calc)}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-lg text-xs font-black transition-colors shadow-sm cursor-pointer"
+                >
+                  {lang === "ar" ? "نعم، ألغِ الاعتماد" : "Yes, Revoke"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

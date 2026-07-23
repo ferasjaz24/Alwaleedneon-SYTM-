@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-
 @font-face {
   font-family: "EnglishNumbersOnly";
   unicode-range: U+0030-0039, U+002E, U+002F, U+002D, U+0025; /* Digits, dot, slash, hyphen, percent */
-  src: url('/fonts/Gotham-Pro.ttf') format('truetype'), local("Arial");
+  src: url('/fonts/Gotham-Pro.ttf') format('truetype'),
+       local("Gotham Pro"), local("GothamPro");
 }
 
 /* Prepared @font-face structures for local fonts */
@@ -27,15 +27,15 @@
 }
 
 @theme {
-  --font-sans: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-arabic: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-english: "EnglishNumbersOnly", "Gotham Pro", Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "EnglishNumbersOnly", "GE SS Two", "Gotham Pro", sans-serif;
+  --font-arabic: "EnglishNumbersOnly", "GE SS Two", sans-serif;
+  --font-english: "EnglishNumbersOnly", "Gotham Pro", sans-serif;
+  --font-mono: "EnglishNumbersOnly", "Gotham Pro", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --font-arabic: "EnglishNumbersOnly", "Gotham Pro", "GE SS Two", "Tajawal", Arial, sans-serif;
-  --font-english: "EnglishNumbersOnly", "Gotham Pro", Arial, sans-serif;
+  --font-arabic: "EnglishNumbersOnly", "GE SS Two", sans-serif;
+  --font-english: "EnglishNumbersOnly", "Gotham Pro", sans-serif;
   --primary-color: #0072BC;
   --accent-color: #00AEEF;
   --bg-dark-accent: #0f172a;
@@ -45,7 +45,7 @@
 .ql-font-tajawal { font-family: 'EnglishNumbersOnly', 'GE SS Two', sans-serif; }
 .ql-font-arial { font-family: 'Arial', sans-serif; }
 .ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
-.ql-font-cairo { font-family: 'Cairo', sans-serif; }
+.ql-font-cairo { font-family: 'GE SS Two', sans-serif; }
 .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
 
 .ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before,
@@ -57,7 +57,7 @@
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tahoma"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tahoma"]::before { content: 'Tahoma'; font-family: 'Tahoma'; }
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before { content: 'Cairo'; font-family: 'Cairo'; }
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before { content: 'GE SS Two'; font-family: 'GE SS Two'; }
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before { content: 'Times New Roman'; font-family: 'Times New Roman'; }
 
@@ -70,11 +70,11 @@ body {
 }
 
 [dir="rtl"], [dir="rtl"] * {
-  font-family: "EnglishNumbersOnly", "GE SS Two", "Tajawal", Arial, sans-serif !important;
+  font-family: "EnglishNumbersOnly", "GE SS Two", sans-serif !important;
 }
 
 [dir="ltr"], [dir="ltr"] * {
-  font-family: "EnglishNumbersOnly", "Gotham Pro", Arial, sans-serif !important;
+  font-family: "EnglishNumbersOnly", "Gotham Pro", sans-serif !important;
 }
 
 

@@ -427,8 +427,34 @@ function mapAuditTrailFromDB(a: any) {
 let cachedApiKey = process.env.GEMINI_API_KEY || "";
 let aiClient: GoogleGenAI | null = null;
 async function getGeminiClient(): Promise<GoogleGenAI> {
-  const settingsDoc = await getDoc(doc(db, "system_settings", "gemini"));
-  const currentKey = settingsDoc.exists() ? settingsDoc.data().apiKey : process.env.GEMINI_API_KEY;
+  let currentKey = "";
+
+  // 1. Try fetching from system_settings/ai_config
+  try {
+    const aiConfigDoc = await getDoc(doc(db, "system_settings", "ai_config"));
+    if (aiConfigDoc.exists() && aiConfigDoc.data().apiKey) {
+      currentKey = aiConfigDoc.data().apiKey;
+    }
+  } catch (err) {
+    console.error("Failed to fetch system_settings/ai_config:", err);
+  }
+
+  // 2. If not found, try fetching from system_settings/gemini
+  if (!currentKey) {
+    try {
+      const geminiDoc = await getDoc(doc(db, "system_settings", "gemini"));
+      if (geminiDoc.exists() && geminiDoc.data().apiKey) {
+        currentKey = geminiDoc.data().apiKey;
+      }
+    } catch (err) {
+      console.error("Failed to fetch system_settings/gemini:", err);
+    }
+  }
+
+  // 3. Fallback to process.env.GEMINI_API_KEY
+  if (!currentKey) {
+    currentKey = process.env.GEMINI_API_KEY || "";
+  }
   
   if (!currentKey) {
     throw new Error("GEMINI_API_KEY is missing. Please configure it in the System Settings -> AI Setup.");
@@ -2713,6 +2739,78 @@ Text to translate: ${text}`;
     } catch (err) {
       console.error("AI Generation Error:", err);
       res.status(500).json({ error: "AI Generation Failed", details: err.message });
+    }
+  });
+
+  app.post("/api/gemini/firas-chat", async (req, res) => {
+    try {
+      const { messages } = req.body;
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: "messages array is required" });
+      }
+
+      const ai = await getGeminiClient();
+
+      // Format and filter previous messages to conform to Content object structures.
+      // Gemini strictly requires the conversation to start with a 'user' message
+      // and alternate strictly between 'user' and 'model'.
+      const conversation: any[] = [];
+      let expectedRole = "user"; // Start with user
+
+      for (const m of messages) {
+        if (!m.content || !m.content.trim()) continue;
+        const mappedRole = m.role === "assistant" ? "model" : "user";
+
+        if (mappedRole === expectedRole) {
+          conversation.push({
+            role: mappedRole,
+            parts: [{ text: m.content }],
+          });
+          expectedRole = expectedRole === "user" ? "model" : "user";
+        } else if (mappedRole === "user" && expectedRole === "model") {
+          // If we got consecutive user messages, merge them or append as user
+          conversation.push({
+            role: "user",
+            parts: [{ text: m.content }],
+          });
+          expectedRole = "model";
+        }
+      }
+
+      // If conversation is empty, fallback to the last user message
+      if (conversation.length === 0) {
+        const lastUser = messages.filter((m: any) => m.role === "user").pop();
+        if (lastUser) {
+          conversation.push({
+            role: "user",
+            parts: [{ text: lastUser.content }],
+          });
+        }
+      }
+
+      const systemInstruction = `
+You are "المحاسب المالي الذكي" (Smart Financial Accountant), a Senior Financial AI Assistant and Expert Accountant with over 60 years of experience in accounting, auditing, budgeting, tax, and corporate financial management.
+Your tone is professional, highly authoritative yet friendly, clear, and objective.
+
+Scope & Rules:
+1. You only answer questions related to finance, accounting, taxation, invoicing, balance sheets, salaries, vacation payouts, end of service, and general financial management.
+2. If the user asks any question that is NOT related to finance or accounting (e.g., cooking, coding, weather, sports, general entertainment), you must politely but firmly refuse to answer. Explain in a professional manner that you are a specialized Financial AI Assistant and can only help with accounting and financial inquiries.
+3. You must write all numbers and figures using English numerals (e.g., 1, 2, 3) system-wide, even when writing in Arabic. Never use Arabic-Indic numerals (١, ٢, ٣).
+4. Always respond in a clear, well-structured format (using Markdown list items and bold text where appropriate) to make financial insights easy to scan and read.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: conversation,
+        config: {
+          systemInstruction,
+        }
+      });
+
+      res.json({ text: response.text });
+    } catch (err: any) {
+      console.error("Firas Chat Error:", err);
+      res.status(500).json({ error: "AI Assistant failed to generate response", details: err.message });
     }
   });
 

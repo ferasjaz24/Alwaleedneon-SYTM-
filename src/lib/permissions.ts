@@ -57,6 +57,18 @@ export function getAccessLevel(
 export function canAccessModule(user: User | null, module: keyof UserPermissions['moduleAccess']): boolean {
   if (!user) return false;
   
+  // A new pending user (Employee with no advanced permissions) can ONLY access the HR module (specifically Employee Inquiries)
+  const username = user.username?.toLowerCase() || '';
+  const roleName = user.role?.toLowerCase() || '';
+  const isSuperAdmin = username === 'feras' || username === 'ferasadmin' || username === 'admin' || roleName === 'super admin' || roleName === 'general admin director' || roleName.includes('الادارة العليا') || roleName === 'senior management';
+  
+  if (!isSuperAdmin && roleName === 'employee') {
+    const hasAnyGranted = user.permissions && user.permissions.advanced && Object.keys(user.permissions.advanced).length > 0;
+    if (!hasAnyGranted) {
+      return module === 'hr';
+    }
+  }
+
   const lvl = getAccessLevel(user, module, 'viewAccess');
   return lvl === 'all' || lvl === 'own';
 }
@@ -247,9 +259,11 @@ export function canShowSubmenu(user: User | null, module: string, subId: string)
     if (subId === 'accounting_expenses') return hasAdvancedPermission(user, 'finance', 'expenses', 'view_expenses');
     if (subId === 'accounting_payroll') return hasAdvancedPermission(user, 'finance', 'payroll', 'view_payroll');
     if (subId === 'accounting_cash_bank') return hasAdvancedPermission(user, 'finance', 'cash_bank', 'view_portal');
+    if (subId === 'accounting_eos_leave') return hasAdvancedPermission(user, 'finance', 'eos_calculator', 'view_calculator');
     if (subId === 'accounting_zakat_tax') return hasAdvancedPermission(user, 'finance', 'zakat_tax', 'view_zakat_tax');
     if (subId === 'accounting_reports') return hasAdvancedPermission(user, 'finance', 'reports', 'view_reports');
     if (subId === 'accounting_zatca') return hasAdvancedPermission(user, 'finance', 'zatca', 'view_zatca');
+    if (subId === 'accounting_firas') return hasAdvancedPermission(user, 'finance', 'firas', 'view_firas');
   }
 
   return true;

@@ -30,6 +30,7 @@ import {
   Globe,
   Settings,
   Lock,
+  Clock,
   Database,
   RefreshCw,
   ChevronLeft,
@@ -89,6 +90,7 @@ import ZatcaSettingsTab from "./components/finance/ZatcaSettingsTab";
 import ZakatTaxCalculatorTab from "./components/finance/ZakatTaxCalculatorTab";
 import AccountingReportsTab from "./components/finance/AccountingReportsTab";
 import AccountingDashboard from "./components/finance/AccountingDashboard";
+import FirasAssistantTab from "./components/finance/FirasAssistantTab";
 
 
 export const hrSubmenus = [
@@ -243,6 +245,11 @@ export const financeSubmenus = [
     id: "accounting_zatca",
     ar: "⚙️ إعدادات الزكاة والضريبة",
     en: "⚙️ ZATCA Settings"
+  },
+  {
+    id: "accounting_firas",
+    ar: "🤖 المحاسب المالي الذكي",
+    en: "🤖 Smart Financial Accountant"
   }
 ];
 
@@ -2267,9 +2274,11 @@ export default function App() {
                           if (!canShowSubmenu(user, "hr", sub.id)) {
                             return false;
                           }
+                          const isPendingNewUser = user && user.role === "Employee" && (!user.permissions?.advanced || Object.keys(user.permissions.advanced).length === 0);
                           if (
                             user.role === "Employee (Inquiries)" ||
-                            user.role === "موظف - استعلامات"
+                            user.role === "موظف - استعلامات" ||
+                            isPendingNewUser
                           ) {
                             return sub.id === "ess_dashboard";
                           }
@@ -2915,25 +2924,52 @@ export default function App() {
           >
             {!isCurrentTabAccessible() ? (
               <div className="flex flex-col items-center justify-center min-h-[500px] p-8 bg-white border border-slate-200 rounded-3xl shadow-sm text-center">
-                <div className="p-4 bg-rose-50 text-rose-600 rounded-full mb-6">
-                  <Lock className="w-12 h-12 stroke-[2]" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-800 mb-2">
-                  {lang === 'ar' ? 'عذراً، لا تملك صلاحية الوصول!' : 'Access Denied!'}
-                </h3>
-                <p className="text-sm text-slate-500 max-w-md leading-relaxed mb-8">
-                  {lang === 'ar' 
-                    ? 'ليس لديك الصلاحيات الكافية لاستعراض أو استخدام هذا القسم الفرعي. يرجى التواصل مع المدير المسؤول أو مالك النظام لتعديل صلاحيات حسابك.' 
-                    : 'You do not have the required permissions to view or interact with this section. Please contact your administrator to adjust your account permissions.'}
-                </p>
-                <button
-                  onClick={() => {
-                    setActiveTab('dashboard');
-                  }}
-                  className="px-6 py-3 bg-[#0072BC] hover:bg-[#005a96] text-white rounded-xl text-sm font-black transition-all shadow-md flex items-center gap-2"
-                >
-                  <span>{lang === 'ar' ? 'الرجوع إلى لوحة المؤشرات' : 'Back to Dashboard'}</span>
-                </button>
+                {user && user.role === "Employee" && (!user.permissions?.advanced || Object.keys(user.permissions.advanced).length === 0) ? (
+                  <>
+                    <div className="p-4 bg-sky-50 text-[#0072BC] rounded-full mb-6 animate-pulse">
+                      <Clock className="w-12 h-12 stroke-[2]" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">
+                      {lang === 'ar' ? 'مرحباً بك في النظام!' : 'Welcome to the system!'}
+                    </h3>
+                    <p className="text-sm text-slate-600 max-w-md leading-relaxed mb-8 font-bold">
+                      {lang === 'ar'
+                        ? 'مرحباً بك في النظام، حسابك قيد المراجعة حالياً بانتظار موافقة الإدارة.'
+                        : 'Welcome to the system, your account is under review awaiting administrative approval.'}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setActiveTab("hr");
+                        setActiveHrSubTab("ess_dashboard");
+                      }}
+                      className="px-6 py-3 bg-[#0072BC] hover:bg-[#005a96] text-white rounded-xl text-sm font-black transition-all shadow-md flex items-center gap-2"
+                    >
+                      <span>{lang === 'ar' ? 'الانتقال إلى الخدمة الذاتية والاستعلامات' : 'Go to Employee Inquiries'}</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 bg-rose-50 text-rose-600 rounded-full mb-6">
+                      <Lock className="w-12 h-12 stroke-[2]" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">
+                      {lang === 'ar' ? 'عذراً، لا تملك صلاحية الوصول!' : 'Access Denied!'}
+                    </h3>
+                    <p className="text-sm text-slate-500 max-w-md leading-relaxed mb-8">
+                      {lang === 'ar' 
+                        ? 'ليس لديك الصلاحيات الكافية لاستعراض أو استخدام هذا القسم الفرعي. يرجى التواصل مع المدير المسؤول أو مالك النظام لتعديل صلاحيات حسابك.' 
+                        : 'You do not have the required permissions to view or interact with this section. Please contact your administrator to adjust your account permissions.'}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setActiveTab('dashboard');
+                      }}
+                      className="px-6 py-3 bg-[#0072BC] hover:bg-[#005a96] text-white rounded-xl text-sm font-black transition-all shadow-md flex items-center gap-2"
+                    >
+                      <span>{lang === 'ar' ? 'الرجوع إلى لوحة المؤشرات' : 'Back to Dashboard'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             ) : isNavigating ? (
               <div id="navigation-loading-view" className="flex flex-col items-center justify-center min-h-[450px] p-12 bg-white border border-slate-100 rounded-3xl shadow-sm relative overflow-hidden transition-all duration-300">
@@ -5669,6 +5705,12 @@ export default function App() {
             {activeTab === "finance" && activeFinanceSubTab === "accounting_zatca" && (
               <div id="content-tab-finance-zatca" className="space-y-6">
                 <ZatcaSettingsTab lang={lang} user={user!} />
+              </div>
+            )}
+
+            {activeTab === "finance" && activeFinanceSubTab === "accounting_firas" && (
+              <div id="content-tab-finance-firas" className="space-y-6">
+                <FirasAssistantTab lang={lang} user={user!} />
               </div>
             )}
 
