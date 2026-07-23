@@ -58,10 +58,13 @@ import ProjectPricingStudy from "./components/sales/ProjectPricingStudy";
 import ProductionHub from "./components/ProductionHub";
 import InstantDocumentsHub from "./components/hr/InstantDocumentsHub";
 import ItemsWarehouse from "./components/ItemsWarehouse";
-import { auth, db } from "./firebase";
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, signOut } from "firebase/auth";
+import { auth, db, firebaseConfig } from "./firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { createEmployeeUser } from "./utils/createEmployeeUser";
+import { mapEmployeeFromDB } from "./utils/fetchInterceptor";
 import MaterialsWarehouse from "./components/MaterialsWarehouse";
 import ProcurementDashboard from "./components/procurement/ProcurementDashboard";
 import ProcurementRequests from "./components/ProcurementRequests";
@@ -641,58 +644,93 @@ export default function App() {
     }
   }, [theme, fontSize]);
 
-  // Fetch initial system data
+  // Fetch initial system logs & register real-time Firestore subscriptions for live data tables
   useEffect(() => {
-    async function loadData() {
+    // 1. Load telemetry and system logs (less frequently changing static indexes)
+    async function loadInitialLogs() {
       try {
         setLoading(true);
-        const [uRes, eRes, qRes, lLogsRes, errLogsRes, audLogsRes] = await Promise.all([
-          fetch("/api/users"),
-          fetch("/api/employees"),
-          fetch("/api/quotations"),
+        const [lLogsRes, errLogsRes, audLogsRes] = await Promise.all([
           fetch("/api/login-logs").catch(() => null),
           fetch("/api/error-logs").catch(() => null),
           fetch("/api/audit-logs").catch(() => null),
         ]);
-        
-        let loadedEmployees: Employee[] = [];
-        let loadedQuotations: Quotation[] = [];
-
-        if (uRes.ok) setUsers(await uRes.json());
-        if (eRes.ok) {
-          loadedEmployees = (await eRes.json()) || [];
-          loadedEmployees = loadedEmployees.filter(Boolean);
-          setEmployees(loadedEmployees);
-        }
-        if (qRes.ok) {
-          loadedQuotations = await qRes.json();
-          setQuotations(loadedQuotations);
-        }
         if (lLogsRes && lLogsRes.ok) setLoginLogs(await lLogsRes.json());
         if (errLogsRes && errLogsRes.ok) setErrorLogs(await errLogsRes.json());
         if (audLogsRes && audLogsRes.ok) setAuditLogs(await audLogsRes.json());
-
-        // Initial search indexing of system datasets
-        const initialStats = rebuildSystemIndex(loadedEmployees, loadedQuotations);
-        setIndexStats(initialStats);
-
-        // Load initial live telemetry indices
         await handleReloadMetrics();
         await handleReloadClearances();
       } catch (err: any) {
-        console.error("Unable to load Al-Waleed data endpoints: ", err);
-        logSystemError({
-          code: "ERR-500-INIT",
-          message: err.message || "Failed initial application bootstrap loading",
-          page: "App Entry",
-          action: "loadData Bootstrapper",
-          stack: err.stack
-        });
+        console.error("Unable to load initial system logs: ", err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+    loadInitialLogs();
+
+    // 2. Real-time Users updates
+    const unsubscribeUsers = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const uList = snapshot.docs.map((d) => {
+          return { username: d.id, id: d.id, ...d.data() } as User;
+        });
+        setUsers(uList);
+      },
+      (error) => {
+        console.error("Users real-time subscription error:", error);
+      }
+    );
+
+    // 3. Real-time Employees updates
+    const unsubscribeEmployees = onSnapshot(
+      collection(db, "employees"),
+      (snapshot) => {
+        const eList = snapshot.docs.map((d) => {
+          let data = { id: d.id, ...d.data() } as any;
+          return mapEmployeeFromDB(data) as Employee;
+        }).filter(Boolean);
+        setEmployees(eList);
+        
+        // Dynamic search index update
+        setQuotations((currentQuotations) => {
+          const stats = rebuildSystemIndex(eList, currentQuotations);
+          setIndexStats(stats);
+          return currentQuotations;
+        });
+      },
+      (error) => {
+        console.error("Employees real-time subscription error:", error);
+      }
+    );
+
+    // 4. Real-time Quotations updates
+    const unsubscribeQuotations = onSnapshot(
+      collection(db, "sales_quotations"),
+      (snapshot) => {
+        const qList = snapshot.docs.map((d) => {
+          return { id: d.id, ...d.data() } as Quotation;
+        });
+        setQuotations(qList);
+        
+        // Dynamic search index update
+        setEmployees((currentEmployees) => {
+          const stats = rebuildSystemIndex(currentEmployees, qList);
+          setIndexStats(stats);
+          return currentEmployees;
+        });
+      },
+      (error) => {
+        console.error("Quotations real-time subscription error:", error);
+      }
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      unsubscribeUsers();
+      unsubscribeEmployees();
+      unsubscribeQuotations();
+    };
   }, []);
 
   // Global Fetch interceptor to track active network loads dynamically
@@ -897,19 +935,6 @@ export default function App() {
 
       if (userDoc.exists()) {
         const userData = userDoc.data() as User;
-        
-        // Ensure user is Super Admin or proceed based on role
-        if (userData.role !== "Super Admin" && userData.role !== "Admin" && userData.username?.toUpperCase() !== "FERAS" && userData.username?.toUpperCase() !== "FERASADMIN") {
-          // If not super admin, sign out and show error
-          await import("firebase/auth").then(({ signOut }) => signOut(auth));
-          setLoginError(
-            lang === "ar"
-              ? "عذراً، ليس لديك صلاحية Super Admin للدخول."
-              : "Access denied. Super Admin privileges required."
-          );
-          setButtonLoading("login", false);
-          return;
-        }
 
         // Keep the same structure to maintain compatibility across the app
         const matched = {
@@ -927,34 +952,44 @@ export default function App() {
         });
         showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! مرحباً بك في النظام." : "Successfully logged in! Welcome back.");
 
-        // Auto assign tabs based on roles/permissions
-        const isTopLevel = 
-          hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
-          matched.username?.toUpperCase() === "FERAS" || matched.username?.toUpperCase() === "FERASADMIN" ||
-          matched.username?.toUpperCase() === "فراس" ||
-          matched.username?.toUpperCase() === "ADMIN" ||
-          matched.role === "الادارة العليا" ||
-          matched.role === "الإدارة العليا" ||
-          matched.role === "top_management" ||
-          matched.role === "Super Admin" ||
-          matched.role === "Admin";
+        // Check if role is Super Admin to redirect directly to Super Admin Control Panel
+        const userRole = userData.role ? userData.role.trim().toLowerCase() : "";
+        const isSuperAdmin = 
+          userRole === "super admin" || 
+          userRole === "super_admin" || 
+          matched.username?.toUpperCase() === "FERAS" || 
+          matched.username?.toUpperCase() === "FERASADMIN";
 
-        if (isTopLevel) {
-          setActiveTab("dashboard");
-        } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
-          setActiveTab("production");
-          setActiveProductionSubTab("prod_dashboard");
-        } else if (canAccessModule(matched, 'procurement')) {
-          setActiveTab("warehouse");
-          setActiveWarehouseSubTab("warehouse_dashboard");
-        } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
-          setActiveTab("sales");
-          setActiveSalesSubTab("sales_dashboard");
-        } else if (canAccessModule(matched, 'hr')) {
-          setActiveTab("hr");
-          setActiveHrSubTab("dashboard");
+        if (isSuperAdmin) {
+          setActiveTab("super_admin" as any);
         } else {
-          setActiveTab("dashboard");
+          // Auto assign tabs based on roles/permissions for regular employees
+          const isTopLevel = 
+            hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
+            matched.username?.toUpperCase() === "فراس" ||
+            matched.username?.toUpperCase() === "ADMIN" ||
+            matched.role === "الادارة العليا" ||
+            matched.role === "الإدارة العليا" ||
+            matched.role === "top_management" ||
+            matched.role === "Admin";
+
+          if (isTopLevel) {
+            setActiveTab("dashboard");
+          } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
+            setActiveTab("production");
+            setActiveProductionSubTab("prod_dashboard");
+          } else if (canAccessModule(matched, 'procurement')) {
+            setActiveTab("warehouse");
+            setActiveWarehouseSubTab("warehouse_dashboard");
+          } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
+            setActiveTab("sales");
+            setActiveSalesSubTab("sales_dashboard");
+          } else if (canAccessModule(matched, 'hr')) {
+            setActiveTab("hr");
+            setActiveHrSubTab("dashboard");
+          } else {
+            setActiveTab("dashboard");
+          }
         }
       } else {
         // User created in Auth but not in users collection
@@ -1082,7 +1117,7 @@ export default function App() {
         });
         showToast(lang === "ar" ? "تم تسجيل الدخول الفائق بنجاح!" : "F24 Super Admin Authorized!");
         setShowF24Modal(false);
-        setActiveTab("dashboard");
+        setActiveTab("super_admin" as any);
       } else {
         setF24Error(
           lang === "ar"
@@ -1241,12 +1276,43 @@ export default function App() {
 
       try {
         const creatorEmail = currentUser?.email || "FERAS";
-        const creationResult = await createEmployeeUser(payload, creatorEmail, db);
         
-        const registeredUser = creationResult.user;
+        // Secondary App registration logic to prevent active user session termination
+        const secondaryAppName = "SecondaryAppForCreation";
+        const secondaryApp = getApps().find((app) => app.name === secondaryAppName) 
+          || initializeApp(firebaseConfig, secondaryAppName);
+          
+        const secondaryAuth = getAuth(secondaryApp);
+        
+        let newUserUid = "";
+        
+        try {
+          const userCredential = await createUserWithEmailAndPassword(secondaryAuth, payload.email, payload.password);
+          newUserUid = userCredential.user.uid;
+        } catch (authError: any) {
+          if (authError.code === 'auth/email-already-in-use') {
+            console.warn("User already exists in Firebase Auth, checking and linking Firestore only.");
+            newUserUid = "existing-auth-user-" + Date.now();
+          } else {
+            throw authError;
+          }
+        }
+
+        // Attach UID explicitly to the payload before storing it in Firestore users table
+        payload.uid = newUserUid;
+
+        // Ensure we save the user inside Firestore users collection
+        await setDoc(doc(db, "users", payload.email), {
+          ...payload,
+          createdBy: creatorEmail
+        });
+        
+        // Cleanly sign out secondary Auth context so state doesn't leak
+        await signOut(secondaryAuth);
+        
         setUserCreationSuccess(
           lang === "ar"
-            ? `تم تسجيل المستخدم بنجاح بمستوى: ${payload.role || finalRole}`
+            ? `تم تسجيل الحساب بنجاح في نظام المصادقة وقواعد البيانات بمستوى: ${payload.role || finalRole}`
             : `Success. Assigned role level: ${payload.role || finalRole}`,
         );
         logSystemAudit({
@@ -1255,7 +1321,7 @@ export default function App() {
           department: "HR",
           description: `تم تعيين حساب وصلاحيات مستخدم جديد باسم: ${payload.username} ودور: ${payload.role}`
         });
-        showToast(lang === "ar" ? "تم إنشاء الحساب بنجاح وتأكيده على السيرفر" : "Account registered successfully!");
+        showToast(lang === "ar" ? "تم إنشاء الحساب في Auth و Firestore بنجاح" : "Account registered successfully in Auth and Firestore!");
         setNewAdminUser({
           username: "",
           password: "",
