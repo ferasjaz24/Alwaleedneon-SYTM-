@@ -884,39 +884,29 @@ export default function App() {
     e.preventDefault();
     setLoginError("");
     setButtonLoading("login", true);
+
+    // 1. Unify Email (Case Insensitive & Trimmed)
     const userInput = loginUsername.trim().toLowerCase();
     
     try {
-      // 1. Sign in with Firebase Auth using the email (userInput) and password
+      // 2. Authenticate via Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, userInput, loginPassword);
       const firebaseUser = userCredential.user;
 
-      // 2. Fetch user data from Firestore using the email as document ID
+      // 3. Fetch user profile document from Firestore using unified email as Document ID
       const userDocRef = doc(db, "users", userInput);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const userData = userDoc.data() as User;
         
-        // Ensure user is Super Admin or proceed based on role
-        if (userData.role !== "Super Admin" && userData.role !== "Admin" && userData.username?.toUpperCase() !== "FERAS" && userData.username?.toUpperCase() !== "FERASADMIN") {
-          // If not super admin, sign out and show error
-          await import("firebase/auth").then(({ signOut }) => signOut(auth));
-          setLoginError(
-            lang === "ar"
-              ? "عذراً، ليس لديك صلاحية Super Admin للدخول."
-              : "Access denied. Super Admin privileges required."
-          );
-          setButtonLoading("login", false);
-          return;
-        }
-
-        // Keep the same structure to maintain compatibility across the app
+        // Keep the matched structure to maintain compatibility across the app
         const matched = {
           ...userData,
           email: userInput,
         };
 
+        // 5. Store the full user document (User Document) in State to drive UI permissions
         setUser(matched);
         logLoginEvent(matched.username || userInput);
         logSystemAudit({
@@ -927,41 +917,21 @@ export default function App() {
         });
         showToast(lang === "ar" ? "تم تسجيل الدخول بنجاح! مرحباً بك في النظام." : "Successfully logged in! Welcome back.");
 
-        // Auto assign tabs based on roles/permissions
-        const isTopLevel = 
-          hasAdvancedPermission(matched, 'dashboard', 'metrics', 'view_main') || 
-          matched.username?.toUpperCase() === "FERAS" || matched.username?.toUpperCase() === "FERASADMIN" ||
-          matched.username?.toUpperCase() === "فراس" ||
-          matched.username?.toUpperCase() === "ADMIN" ||
-          matched.role === "الادارة العليا" ||
-          matched.role === "الإدارة العليا" ||
-          matched.role === "top_management" ||
-          matched.role === "Super Admin" ||
-          matched.role === "Admin";
-
-        if (isTopLevel) {
-          setActiveTab("dashboard");
-        } else if (hasAdvancedPermission(matched, 'production', 'prod_dashboard', 'view_prod_dashboard') || canAccessModule(matched, 'production')) {
-          setActiveTab("production");
-          setActiveProductionSubTab("prod_dashboard");
-        } else if (canAccessModule(matched, 'procurement')) {
-          setActiveTab("warehouse");
-          setActiveWarehouseSubTab("warehouse_dashboard");
-        } else if (hasAdvancedPermission(matched, 'sales', 'dashboard', 'view_dashboard') || canAccessModule(matched, 'sales')) {
-          setActiveTab("sales");
-          setActiveSalesSubTab("sales_dashboard");
-        } else if (canAccessModule(matched, 'hr')) {
-          setActiveTab("hr");
-          setActiveHrSubTab("dashboard");
+        // 4. Smart Routing
+        if (userData.role === "Super Admin") {
+          // Route immediately to Super Admin Control Panel (/admin concept)
+          setActiveTab("super_admin" as any);
         } else {
+          // Route immediately to Employee Dashboard (/dashboard concept)
           setActiveTab("dashboard");
         }
       } else {
-        // User created in Auth but not in users collection
+        // Document not found in Firestore: Show explicit error, sign out from Auth, and prevent access
+        await import("firebase/auth").then(({ signOut }) => signOut(auth));
         setLoginError(
           lang === "ar"
-            ? "حسابك غير موجود في قاعدة بيانات الموظفين"
-            : "Your account is not found in the employees database."
+            ? "ملف المستخدم غير موجود في قاعدة البيانات"
+            : "Your account is not found in the database."
         );
         logSystemError({
           code: "ERR-404-AUTH-DOC",
