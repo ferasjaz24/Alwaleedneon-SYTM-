@@ -406,7 +406,7 @@ export default function App() {
     role?: string;
     empId?: string;
     email: string;
-  }>({ username: "", password: "", jobTitle: "HR Assistant", email: "" });
+  }>({ username: "", password: "", jobTitle: "HR Assistant", email: "", role: "Employee" });
   const [userCreationError, setUserCreationError] = useState("");
   const [userCreationSuccess, setUserCreationSuccess] = useState("");
   const [showAISettings, setShowAISettings] = useState(false);
@@ -1152,8 +1152,8 @@ export default function App() {
       return;
     }
 
-    // 6. All newly created users default to the "Employee" role with no auto-permissions
-    const finalRole = "Employee";
+    // 6. Read the role from form select dropdown, defaulting to Employee
+    const finalRole = newAdminUser.role || "Employee";
 
     setButtonLoading("addUser", true);
     try {
@@ -1230,7 +1230,7 @@ export default function App() {
           username: "",
           password: "",
           jobTitle: "HR Assistant",
-          role: "",
+          role: "Employee",
           empId: "",
           email: ""
         });
@@ -2829,6 +2829,34 @@ export default function App() {
                       </select>
                     </div>
 
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 mb-0.5">
+                        {lang === "ar"
+                          ? "الدور الإداري (Role)"
+                          : "System Role Access (Role)"}
+                      </label>
+                      <select
+                        value={newAdminUser.role || "Employee"}
+                        onChange={(e) =>
+                          setNewAdminUser({
+                            ...newAdminUser,
+                            role: e.target.value,
+                          })
+                        }
+                        className="w-full text-xs px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold"
+                      >
+                        <option value="Super Admin">
+                          {lang === "ar" ? "Super Admin (مشرف فائق)" : "Super Admin"}
+                        </option>
+                        <option value="Admin">
+                          {lang === "ar" ? "Admin (مدير قسم)" : "Admin"}
+                        </option>
+                        <option value="Employee">
+                          {lang === "ar" ? "Employee (موظف)" : "Employee"}
+                        </option>
+                      </select>
+                    </div>
+
                     {userCreationError && (
                       <p className="text-[10px] text-rose-500 font-medium">
                         {userCreationError}
@@ -3066,6 +3094,32 @@ export default function App() {
                           }
                           className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl"
                         />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 block mb-1">
+                          {lang === "ar" ? "الدور الإداري (Role)" : "Account Role (Role)"}
+                        </label>
+                        <select
+                          value={newAdminUser.role || "Employee"}
+                          onChange={(e) =>
+                            setNewAdminUser({
+                              ...newAdminUser,
+                              role: e.target.value,
+                            })
+                          }
+                          className="w-full text-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-semibold bg-white"
+                        >
+                          <option value="Super Admin">
+                            {lang === "ar" ? "Super Admin (مشرف فائق)" : "Super Admin"}
+                          </option>
+                          <option value="Admin">
+                            {lang === "ar" ? "Admin (مدير قسم)" : "Admin"}
+                          </option>
+                          <option value="Employee">
+                            {lang === "ar" ? "Employee (موظف)" : "Employee"}
+                          </option>
+                        </select>
                       </div>
 
                       {/* Map to Real Employee list */}
