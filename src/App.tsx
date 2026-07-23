@@ -930,7 +930,7 @@ export default function App() {
       const firebaseUser = userCredential.user;
 
       // 2. Fetch user data from Firestore using the email as document ID
-      const userDocRef = doc(db, "users", userInput);
+      const userDocRef = doc(db, "users", userInput.toLowerCase());
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
@@ -1300,6 +1300,11 @@ export default function App() {
 
         // Attach UID explicitly to the payload before storing it in Firestore users table
         payload.uid = newUserUid;
+
+        // Ensure email is lowercase
+        if (payload.email) {
+          payload.email = payload.email.trim().toLowerCase();
+        }
 
         // Ensure we save the user inside Firestore users collection
         await setDoc(doc(db, "users", payload.email), {

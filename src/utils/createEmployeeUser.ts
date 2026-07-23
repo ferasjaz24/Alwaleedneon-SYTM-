@@ -39,7 +39,7 @@ export const createEmployeeUser = async (
       }
     }
 
-    const employeeDocRef = doc(primaryDb, "users", payload.email);
+    const employeeDocRef = doc(primaryDb, "users", payload.email.toLowerCase());
     
     await setDoc(employeeDocRef, {
       ...payload,
